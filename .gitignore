@@ -1,0 +1,15 @@
+node_modules/
+web/dist/
+server/dist/*
+!server/dist/index.html
+/chess
+/chess-linux-amd64
+*.tsbuildinfo
+.vite/
+coverage/
+*.log
+.env
+.env.*
+.DS_Store
+.idea/
+.vscode/
