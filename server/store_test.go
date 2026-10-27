@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
@@ -19,19 +20,19 @@ import (
 // the same path again reopens the same data, like a server restart. The schema
 // is dropped when the test ends.
 //
-// Tests use CHESS_TEST_DATABASE_URL, else the Postgres from docker-compose.yml,
-// and are skipped if it isn't running.
+// Tests use CHESS_TEST_DATABASE_URL, else DATABASE_URL, else the local chess
+// database, and are skipped if Postgres isn't running.
 func openTestStore(t *testing.T, path string) *Store {
 	t.Helper()
-	base := envOr("CHESS_TEST_DATABASE_URL", defaultDatabaseURL)
+	base := envOr("CHESS_TEST_DATABASE_URL", envOr("DATABASE_URL", defaultDatabaseURL))
+	if err := createDatabaseIfMissing(context.Background(), base); err != nil {
+		t.Skipf("no Postgres for tests (is it running? or set CHESS_TEST_DATABASE_URL): %v", err)
+	}
 	admin, err := sql.Open("pgx", base)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer admin.Close()
-	if err := admin.Ping(); err != nil {
-		t.Skipf("no Postgres for tests (start it with `make db`, or set CHESS_TEST_DATABASE_URL): %v", err)
-	}
 	sum := sha256.Sum256([]byte(path))
 	schema := "test_" + hex.EncodeToString(sum[:8])
 	if _, err := admin.Exec(`CREATE SCHEMA IF NOT EXISTS ` + schema); err != nil {

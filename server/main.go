@@ -28,6 +28,7 @@ var verbose = flag.Bool("v", false, "log every match action with how long it too
 func main() {
 	addr := flag.String("addr", ":8080", "listen address")
 	dbURL := flag.String("db", envOr("DATABASE_URL", defaultDatabaseURL), "Postgres connection URL for accounts and games (or set DATABASE_URL)")
+	migrateOnly := flag.Bool("migrate", false, "create the database if needed, apply migrations, and exit")
 	flag.Parse()
 	if *verbose {
 		log.Printf("verbose: logging every match action with timings")
@@ -36,6 +37,11 @@ func main() {
 	store, err := OpenStore(*dbURL)
 	if err != nil {
 		log.Fatalf("opening database: %v", err)
+	}
+	if *migrateOnly {
+		store.Close()
+		log.Printf("database %s is up to date", redactURL(*dbURL))
+		return
 	}
 	hub := NewHub(store)
 	auth := &Auth{store: store, limiter: newFailLimiter()}
