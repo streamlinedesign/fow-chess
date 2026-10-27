@@ -1,6 +1,7 @@
 package main
 
 import (
+	"slices"
 	"strings"
 
 	"chess/engine"
@@ -48,6 +49,29 @@ type gameView struct {
 	Last    *lastMove `json:"last"`
 	Check   string    `json:"check,omitempty"`
 	History []string  `json:"history"` // SAN, or "?" for moves the viewer may not know
+	// Captured lists the pieces each side has taken, as FEN letters, most valuable first.
+	// Players know all of it even under fog: they saw what they took and see what they lost.
+	Captured map[string]string `json:"captured"`
+}
+
+// captured lists the pieces each side has taken, most valuable first.
+func captured(hist []engine.PlayedMove) map[string]string {
+	var by [2][]engine.Piece
+	for i, pm := range hist {
+		if !pm.Captured.IsEmpty() {
+			by[i%2] = append(by[i%2], pm.Captured)
+		}
+	}
+	out := map[string]string{}
+	for c, pcs := range by {
+		slices.SortStableFunc(pcs, func(a, b engine.Piece) int { return int(b.Kind()) - int(a.Kind()) })
+		letters := make([]byte, len(pcs))
+		for i, pc := range pcs {
+			letters[i] = pc.Letter()
+		}
+		out[engine.Color(c).String()] = string(letters)
+	}
+	return out
 }
 
 // viewFor builds the game as seen by viewer (-1 for spectators). Legal moves are
@@ -62,10 +86,11 @@ func viewFor(g *engine.Game, viewer int, playable, fog bool) gameView {
 	hist := g.History()
 	n := len(hist)
 	v := gameView{
-		Turn:    pos.Turn.String(),
-		Ply:     n,
-		Legal:   []string{},
-		History: make([]string, n),
+		Turn:     pos.Turn.String(),
+		Ply:      n,
+		Legal:    []string{},
+		History:  make([]string, n),
+		Captured: captured(hist),
 	}
 	if playable && !g.Over() && viewer == int(pos.Turn) {
 		for _, m := range g.LegalMoves() {
