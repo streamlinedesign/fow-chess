@@ -41,6 +41,8 @@
     font-weight: 500;
     min-height: 100dvh;
     overflow-x: hidden;
+    /* Avoid single-word last lines in paragraphs. Inherited, so it reaches every block of text. */
+    text-wrap: pretty;
     -webkit-tap-highlight-color: transparent;
   }
 
@@ -289,5 +291,21 @@
     --board: min(100vw - 620px, 600px, max(320px, 100dvh - 230px));
     flex: none;
     margin-inline: 0;
+  }
+}
+
+/* Loading */
+.spinner {
+  width: 1.1em;
+  height: 1.1em;
+  flex: none;
+  border-radius: 9999px;
+  border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-top-color: currentColor;
+  animation: spin 700ms linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Board } from './Board'
 import { Captured } from './Captured'
+import { Spinner } from './ui'
 import type { Color } from './useMatch'
 
 type Side = { board: string; last: { from: string; to: string } | null; check?: string }
@@ -25,8 +26,9 @@ const VIEWS: [View, string][] = [
 
 /**
  * Replays Morphy's Opera Game as the players saw it under fog. By default each
- * move shows from the mover's side, then the fog shifts to whoever moves next. The frames come from the real server rules
- * (server/showcase_test.go), so the replay never drifts from what players see.
+ * move shows from the mover's side, then the fog shifts to whoever moves next.
+ * The frames come from the real server rules (server/showcase_test.go), so the
+ * replay never drifts from what players see.
  */
 export function Showcase() {
   const [frames, setFrames] = useState<Frame[] | null>(null)
@@ -87,7 +89,12 @@ export function Showcase() {
         </div>
       </div>
 
-      <div className="pointer-events-none" aria-hidden>
+      <div className="pointer-events-none relative" aria-hidden={!!frames}>
+        {!frames && (
+          <div className="absolute inset-0 z-20 grid place-items-center text-[#fffabd]">
+            <Spinner label="Loading replay" />
+          </div>
+        )}
         <Board
           board={f ? f[side].board : '?'.repeat(64)}
           orientation="w"

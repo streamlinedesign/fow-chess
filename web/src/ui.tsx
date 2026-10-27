@@ -2,7 +2,12 @@ import * as RadixDialog from '@radix-ui/react-dialog'
 import * as Tooltip from '@radix-ui/react-tooltip'
 import type { ComponentProps, ReactNode } from 'react'
 
-type ButtonProps = ComponentProps<'button'> & { variant?: 'solid' | 'outline' | 'ghost'; icon?: boolean }
+type ButtonProps = ComponentProps<'button'> & {
+  variant?: 'solid' | 'outline' | 'ghost'
+  icon?: boolean
+  /** Shows a spinner over the label and disables the button, keeping its size. */
+  loading?: boolean
+}
 
 const variants = {
   solid: 'bg-fg text-bg hover:opacity-85',
@@ -10,12 +15,33 @@ const variants = {
   ghost: 'hover:bg-fg/10',
 }
 
-export function Button({ variant = 'outline', icon, className = '', ...props }: ButtonProps) {
+export function Button({ variant = 'outline', icon, loading, className = '', children, disabled, ...props }: ButtonProps) {
   return (
     <button
-      className={`inline-flex h-11 items-center justify-center gap-2 rounded-full ${icon ? 'w-11 shrink-0' : 'px-5'} text-[15px] font-semibold whitespace-nowrap transition-[opacity,background-color,color] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 ${variants[variant]} ${className}`}
+      className={`relative inline-flex h-11 items-center justify-center gap-2 rounded-full ${icon ? 'w-11 shrink-0' : 'px-5'} text-[15px] font-semibold whitespace-nowrap transition-[opacity,background-color,color] active:scale-[0.98] disabled:pointer-events-none ${loading ? '' : 'disabled:opacity-40'} ${variants[variant]} ${className}`}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
-    />
+    >
+      {loading ? (
+        <>
+          <span className="invisible contents">{children}</span>
+          <Spinner className="absolute" />
+        </>
+      ) : (
+        children
+      )}
+    </button>
+  )
+}
+
+/** A small spinning ring in the current text colour. */
+export function Spinner({ className = '', label }: { className?: string; label?: string }) {
+  return (
+    <span role={label ? 'status' : undefined} className={`inline-flex items-center gap-2 ${className}`}>
+      <span className="spinner" aria-hidden />
+      {label && <span>{label}</span>}
+    </span>
   )
 }
 
