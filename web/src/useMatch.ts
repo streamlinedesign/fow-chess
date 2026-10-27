@@ -25,7 +25,8 @@ export type MatchState = {
   status: 'waiting' | 'playing' | 'over'
   result?: '1-0' | '0-1' | '1/2-1/2'
   reason?: string
-  players: Record<Color, { taken: boolean; online: boolean }>
+  /** name is the username of a signed-in player, absent for a guest. */
+  players: Record<Color, { taken: boolean; online: boolean; name?: string }>
   rematch: Record<Color, boolean>
   draw: Record<Color, boolean>
 }
@@ -35,7 +36,7 @@ export type Outgoing = { type: 'move'; uci: string } | { type: 'resign' } | { ty
 export type Connection = 'connecting' | 'open' | 'closed' | 'failed' | 'missing' | 'outdated'
 
 /** Must match protocolVersion in server/match.go. */
-const PROTOCOL = 4
+const PROTOCOL = 5
 
 export function useMatch(id: string) {
   const [state, setState] = useState<MatchState | null>(null)
@@ -68,8 +69,7 @@ export function useMatch(id: string) {
             return setConn('outdated')
           }
           setState(msg)
-        }
-        else if (msg.type === 'pong') setRtt(Math.round(performance.now() - msg.t))
+        } else if (msg.type === 'pong') setRtt(Math.round(performance.now() - msg.t))
       }
       sock.onclose = async () => {
         // A socket from an earlier effect run (React StrictMode mounts twice in dev)
@@ -96,7 +96,8 @@ export function useMatch(id: string) {
 
     // Round-trip time to the server, shown on the match page for play testing.
     const ping = () => {
-      if (ws.current?.readyState === WebSocket.OPEN) ws.current.send(JSON.stringify({ type: 'ping', t: performance.now() }))
+      if (ws.current?.readyState === WebSocket.OPEN)
+        ws.current.send(JSON.stringify({ type: 'ping', t: performance.now() }))
     }
     const pinger = setInterval(ping, 5000)
 
