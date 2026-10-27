@@ -17,6 +17,18 @@ The creator picks the rules when making a match, for play testing:
 
 The rules live in `server/engine` (`Rules`, `Position.Vision`), and what each viewer receives is decided in `server/view.go`.
 
+## Accounts and saved games
+
+Players can sign up with just a username and password (no email). Passwords are hashed with bcrypt, and sessions are a random token in an http-only cookie, with only a hash of it stored. Guests can still play without an account.
+
+Everything lives in one SQLite file, `chess.db` next to where the server runs (change it with `-db path/to/file.db`). The server is still a single binary: the SQLite driver is pure Go.
+
+- Every game is saved as it's played, so a server restart no longer ends games: reopen the link and play on.
+- Games with at least one signed-in player are kept forever. Games between two guests are deleted after 30 days.
+- A guest who signs in mid-game keeps their seat.
+- `/u/<username>` shows a player's rating, current games and finished games. Finished games can be replayed move by move at `/g/<match id>/<round>`, with the fog lifted. Games still being played can't be replayed, since that would reveal the board.
+- Everyone starts at a rating of 1500. One rating covers every game mode. It starts changing once rated games arrive with clocks.
+
 ## Landing page replay
 
 The landing page replays Morphy's Opera Game as White and Black each saw it under fog. The frames in `web/src/showcase.json` are produced by the server's own rules, and a test fails if they drift. After changing what players see, regenerate them with `cd server && go test -run Showcase -update`.
@@ -64,7 +76,8 @@ make build      # builds web, embeds it, writes ./chess
    After=network.target
 
    [Service]
-   ExecStart=/opt/chess/chess -addr 127.0.0.1:8080
+   ExecStart=/opt/chess/chess -addr 127.0.0.1:8080 -db /var/lib/chess/chess.db
+   StateDirectory=chess
    Restart=always
    DynamicUser=yes
 
@@ -81,7 +94,7 @@ make build      # builds web, embeds it, writes ./chess
    }
    ```
 
-Matches live in memory, so a restart ends games in progress. Idle matches are cleaned up after 2 hours.
+Accounts and games live in `/var/lib/chess/chess.db`, which survives redeploys; back it up. Idle matches leave memory after 2 hours and load again from the database when someone opens them.
 
 ## Protocol
 
@@ -90,6 +103,7 @@ Matches live in memory, so a restart ends games in progress. Idle matches are cl
 - `GET /ws/{id}?player=<browser id>`: the server sends `{"type":"state", ...}` to each viewer after every change, built for that viewer:
   - `board`: 64 characters from a1 to h8. FEN letters for pieces (uppercase is white), `.` for empty, and `?` for squares the viewer can't see (reserved for fog of war).
   - `settings`, `turn`, `ply`, `last` (`{from,to}`), `check` (king square), `history` (SAN, `?` for moves hidden by fog).
+  - `players`: `{"w":{"taken":true,"online":true,"name":"Uriel"},"b":{...}}`, where `name` is the username of a signed-in player and absent for a guest.
   - `captured`: `{"w":"qnp","b":"P"}`, the pieces each side has taken as FEN letters, most valuable first. Sent to everyone, since players know this even under fog.
   - `legal`: UCI moves the viewer may play now, sent only to the player whose turn it is.
 - The client sends `{"type":"move","uci":"e7e8q"}`, `{"type":"draw"}`, `{"type":"resign"}`, `{"type":"rematch"}`, or `{"type":"ping","t":<ms>}`, which the server answers with `{"type":"pong","t":<same>}`. The draw and rematch messages toggle the offer.

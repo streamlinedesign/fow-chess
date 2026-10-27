@@ -144,14 +144,21 @@ export function MatchPage({ id }: { id: string }) {
 
         <aside className="flex w-full flex-col gap-4 lg:w-[320px] lg:pt-9">
           <p className="flex items-center gap-2.5 text-2xl font-bold tracking-tight" aria-live="polite">
-            {conn !== 'open' ? <span className="spinner text-[0.75em]" aria-hidden /> : yourMove && <span className="turn-dot" aria-hidden />}
+            {conn !== 'open' ? (
+              <span className="spinner text-[0.75em]" aria-hidden />
+            ) : (
+              yourMove && <span className="turn-dot" aria-hidden />
+            )}
             {status}
           </p>
 
           {state && (
             <ul className="flex flex-wrap gap-1.5" aria-label="Match rules">
               {describeSettings(state.settings).map((r) => (
-                <li key={r} className="rounded-full px-2.5 py-1 text-xs font-semibold shadow-[inset_0_0_0_1.5px_var(--color-fg)]">
+                <li
+                  key={r}
+                  className="rounded-full px-2.5 py-1 text-xs font-semibold shadow-[inset_0_0_0_1.5px_var(--color-fg)]"
+                >
                   {r}
                 </li>
               ))}
@@ -191,7 +198,16 @@ export function MatchPage({ id }: { id: string }) {
             )}
             <Tip label="Flip board">
               <Button variant="ghost" icon aria-label="Flip board" onClick={() => setFlipped((f) => !f)}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3" />
                 </svg>
               </Button>
@@ -216,11 +232,7 @@ export function MatchPage({ id }: { id: string }) {
         </aside>
       </div>
 
-      <Dialog
-        open={!!promotion}
-        onOpenChange={(o) => !o && setPromotion(null)}
-        title="Promote to"
-      >
+      <Dialog open={!!promotion} onOpenChange={(o) => !o && setPromotion(null)} title="Promote to">
         <div className="grid grid-cols-4 gap-2">
           {(['q', 'r', 'b', 'n'] as const).map((p) => (
             <button
@@ -292,15 +304,30 @@ type PlayerBarProps = { color: Color; state: MatchState | null; you: Color | nul
 
 function PlayerBar({ color, state, you, active }: PlayerBarProps) {
   const seat = state?.players[color]
-  const label = color === you ? 'You' : !seat?.taken ? 'Waiting…' : you ? 'Opponent' : 'Player'
+  const name = seat?.name
+  const label = !seat?.taken ? 'Waiting…' : name || (color === you ? 'You' : you ? 'Opponent' : 'Guest')
   return (
     <div className="player-bar flex h-10 items-center gap-2 rounded-full px-3 text-[15px]" data-active={active}>
       <span
         className={`size-3.5 shrink-0 rounded-full shadow-[0_0_0_1.5px_var(--color-fg)] ${color === 'w' ? 'bg-[#fff]' : 'bg-[#111]'}`}
         aria-hidden
       />
-      <span className="font-semibold">{label}</span>
-      <span className="text-accent">{NAMES[color]}</span>
+      {name ? (
+        <a
+          href={`/u/${name}`}
+          onClick={(e) => {
+            e.preventDefault()
+            navigate(`/u/${name}`)
+          }}
+          className="min-w-0 truncate font-semibold hover:underline"
+        >
+          {label}
+        </a>
+      ) : (
+        <span className="font-semibold">{label}</span>
+      )}
+      {name && color === you && <span className="text-accent">(you)</span>}
+      <span className="text-accent max-sm:hidden">{NAMES[color]}</span>
       {active && <span className="turn-tag">to move</span>}
       <span className="ml-auto flex min-w-0 items-center gap-2">
         {seat?.taken && !seat.online && <span className="text-sm text-danger">offline</span>}
@@ -346,7 +373,16 @@ function CopyLink({ link, wide }: { link: string; wide?: boolean }) {
   return (
     <Tip label={copied ? 'Copied' : 'Copy match link'}>
       <Button variant="ghost" icon aria-label="Copy match link" onClick={share}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
           <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
         </svg>
       </Button>
@@ -365,7 +401,10 @@ function MoveList({ history }: { history: string[] }) {
   for (let i = 0; i < history.length; i += 2) rows.push([history[i], history[i + 1]])
 
   return (
-    <ol ref={ref} className="grid max-h-[40dvh] max-w-[300px] grid-cols-[2.5rem_1fr_1fr] gap-y-1 overflow-y-auto font-mono text-[15px] tabular-nums lg:max-h-[50dvh]">
+    <ol
+      ref={ref}
+      className="grid max-h-[40dvh] max-w-[300px] grid-cols-[2.5rem_1fr_1fr] gap-y-1 overflow-y-auto font-mono text-[15px] tabular-nums lg:max-h-[50dvh]"
+    >
       {rows.map(([w, b], i) => (
         <li key={i} className="contents">
           <span className="text-accent">{i + 1}.</span>

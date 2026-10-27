@@ -1,13 +1,18 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"encoding/json"
 	"flag"
 	"io/fs"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/coder/websocket"
 )
@@ -21,24 +26,48 @@ var verbose = flag.Bool("v", false, "log every match action with how long it too
 
 func main() {
 	addr := flag.String("addr", ":8080", "listen address")
+	dbPath := flag.String("db", "chess.db", "SQLite database file for accounts and games")
 	flag.Parse()
 	if *verbose {
 		log.Printf("verbose: logging every match action with timings")
 	}
 
-	hub := NewHub()
+	store, err := OpenStore(*dbPath)
+	if err != nil {
+		log.Fatalf("opening %s: %v", *dbPath, err)
+	}
+	hub := NewHub(store)
+	auth := &Auth{store: store, limiter: newFailLimiter()}
 	mux := http.NewServeMux()
+	auth.routes(mux)
+	profileRoutes(mux, store, auth)
+
+	// playerFor is who a request comes from: the signed-in user, else the guest
+	// ID the browser sends. Nil if there's neither.
+	playerFor := func(r *http.Request, u *User) *player {
+		browserID := r.URL.Query().Get("player")
+		if len(browserID) > 64 {
+			browserID = ""
+		}
+		if u != nil {
+			return userPlayer(u, browserID)
+		}
+		if browserID == "" {
+			return nil
+		}
+		return guestPlayer(browserID)
+	}
 
 	mux.HandleFunc("POST /api/matches", func(w http.ResponseWriter, r *http.Request) {
 		// The creator gets white even if the opponent's browser connects first.
-		player := r.URL.Query().Get("player")
-		if len(player) > 64 {
-			player = ""
+		p := playerFor(r, auth.user(r))
+		if p == nil {
+			p = &player{}
 		}
 		// Settings come as an optional JSON body; an empty body means standard chess.
 		var settings Settings
 		json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&settings)
-		m := hub.Create(player, settings)
+		m := hub.Create(p, settings)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"id": m.id})
 	})
@@ -53,25 +82,40 @@ func main() {
 
 	mux.HandleFunc("GET /ws/{id}", func(w http.ResponseWriter, r *http.Request) {
 		m := hub.Get(strings.ToUpper(r.PathValue("id")))
-		player := r.URL.Query().Get("player")
-		if m == nil || player == "" || len(player) > 64 {
+		p := playerFor(r, auth.userForSocket(r))
+		if m == nil || p == nil {
 			http.NotFound(w, r)
 			return
 		}
-		// Skip the same-origin check: dev proxies and LAN IPs (a phone on
-		// 192.168.x.x) make Origin and Host disagree, and the socket carries no
-		// cookies, so a cross-origin page can't do more than any other client.
+		// Skip the library's same-origin check: dev proxies and LAN IPs (a phone
+		// on 192.168.x.x) make Origin and Host disagree. The session cookie only
+		// counts for our own origin (userForSocket), so a cross-origin page plays
+		// as a guest and can't act as a signed-in user.
 		conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true})
 		if err != nil {
 			return
 		}
-		m.serve(r.Context(), conn, player)
+		m.serve(r.Context(), conn, p)
 	})
 
 	mux.Handle("/", spa(dist))
 
-	log.Printf("chess listening on %s", *addr)
-	log.Fatal(http.ListenAndServe(*addr, mux))
+	srv := &http.Server{Addr: *addr, Handler: mux}
+	go func() {
+		// On Ctrl-C or a service stop, finish writing queued games before exiting.
+		stop := make(chan os.Signal, 1)
+		signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+		<-stop
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		srv.Shutdown(ctx)
+	}()
+
+	log.Printf("chess listening on %s (database %s)", *addr, *dbPath)
+	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+		log.Fatal(err)
+	}
+	store.Close()
 }
 
 // spa serves static files and falls back to index.html so /m/ABC123 deep links work.

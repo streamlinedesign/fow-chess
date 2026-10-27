@@ -5,7 +5,10 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,18 +26,21 @@ const (
 
 var colorNames = [2]string{"w", "b"}
 
+// Hub holds the matches in play. Every match is also saved to the store, so one
+// that was dropped from memory, or lived through a restart, loads again on demand.
 type Hub struct {
 	mu      sync.Mutex
 	matches map[string]*Match
+	store   *Store
 }
 
-func NewHub() *Hub {
-	h := &Hub{matches: make(map[string]*Match)}
+func NewHub(store *Store) *Hub {
+	h := &Hub{matches: make(map[string]*Match), store: store}
 	go h.sweep()
 	return h
 }
 
-func (h *Hub) Create(creator string, settings Settings) *Match {
+func (h *Hub) Create(creator *player, settings Settings) *Match {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	for {
@@ -42,17 +48,35 @@ func (h *Hub) Create(creator string, settings Settings) *Match {
 		if _, taken := h.matches[id]; taken {
 			continue
 		}
-		m := &Match{id: id, settings: settings, game: engine.NewGameWithRules(settings.rules()), clients: make(map[*client]struct{}), touched: time.Now()}
-		m.seats[white] = creator
+		if g, _ := h.store.LatestGame(id); g != nil {
+			continue
+		}
+		m := newMatch(h.store, id, settings)
+		m.seat(white, creator)
+		m.save()
 		h.matches[id] = m
 		return m
 	}
 }
 
+// Get returns a match from memory, or loads it from the store; nil if there's no such match.
 func (h *Hub) Get(id string) *Match {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	return h.matches[id]
+	if m := h.matches[id]; m != nil {
+		return m
+	}
+	rec, err := h.store.LatestGame(id)
+	if err != nil || rec == nil {
+		return nil
+	}
+	m, err := restoreMatch(h.store, rec)
+	if err != nil {
+		log.Printf("restoring match %s: %v", id, err)
+		return nil
+	}
+	h.matches[id] = m
+	return m
 }
 
 // sweep drops matches nobody has been connected to for a while.
@@ -78,6 +102,21 @@ func newID(n int) string {
 		b[i] = idAlphabet[int(b[i])%len(idAlphabet)]
 	}
 	return string(b)
+}
+
+// player is who is behind a connection: a signed-in user, or a guest known by a
+// random ID their browser keeps.
+type player struct {
+	key    string // seat key: "u:<user id>" or the guest's browser ID
+	userID int64  // 0 for guests
+	name   string // username, empty for guests
+	guest  string // the browser ID, so a guest who signs in keeps their seat
+}
+
+func guestPlayer(browserID string) *player { return &player{key: browserID, guest: browserID} }
+
+func userPlayer(u *User, browserID string) *player {
+	return &player{key: "u:" + strconv.FormatInt(u.ID, 10), userID: u.ID, name: u.Username, guest: browserID}
 }
 
 type client struct {
@@ -129,25 +168,98 @@ func (c *client) drain() [][]byte {
 
 type Match struct {
 	mu       sync.Mutex
+	store    *Store
 	id       string
 	settings Settings
 	game     *engine.Game
-	seats    [2]string // player IDs holding white and black
+	seats    [2]string // player keys holding white and black
+	users    [2]int64  // user IDs of signed-in players, 0 for guests
+	names    [2]string // their usernames
 	clients  map[*client]struct{}
 	rematch  [2]bool
 	draw     [2]bool
 	round    int
+	started  time.Time // when this round began
 	touched  time.Time
 }
 
+func newMatch(store *Store, id string, settings Settings) *Match {
+	now := time.Now()
+	return &Match{
+		store: store, id: id, settings: settings, game: engine.NewGameWithRules(settings.rules()),
+		clients: make(map[*client]struct{}), round: 1, started: now, touched: now,
+	}
+}
+
+// restoreMatch rebuilds a match from its newest saved round by replaying the moves.
+func restoreMatch(store *Store, rec *gameRecord) (*Match, error) {
+	m := newMatch(store, rec.MatchID, rec.Settings)
+	m.round, m.started = rec.Round, rec.CreatedAt
+	m.seats, m.users = rec.Seats, rec.Users
+	m.names = [2]string{rec.whiteName, rec.blackName}
+	g, err := replay(rec)
+	if err != nil {
+		return nil, err
+	}
+	m.game = g
+	return m, nil
+}
+
+// replay plays a saved game's moves and applies a result the moves don't show
+// (a resignation or an agreed draw).
+func replay(rec *gameRecord) (*engine.Game, error) {
+	g := engine.NewGameWithRules(rec.Settings.rules())
+	for _, uci := range strings.Fields(rec.Moves) {
+		if _, err := g.PlayUCI(uci); err != nil {
+			return nil, fmt.Errorf("move %s: %w", uci, err)
+		}
+	}
+	if !g.Over() && rec.Result != "" {
+		switch {
+		case rec.Reason == engine.Agreement.String():
+			g.AgreeDraw()
+		case rec.Result == engine.WhiteWins.String():
+			g.Resign(engine.Black)
+		case rec.Result == engine.BlackWins.String():
+			g.Resign(engine.White)
+		}
+	}
+	return g, nil
+}
+
+// seat puts a player in a seat. Callers hold m.mu (or own the match exclusively).
+func (m *Match) seat(color int, p *player) {
+	m.seats[color], m.users[color], m.names[color] = p.key, p.userID, p.name
+}
+
+// save queues this round for the store. Callers hold m.mu.
+func (m *Match) save() {
+	var moves strings.Builder
+	for i, pm := range m.game.History() {
+		if i > 0 {
+			moves.WriteByte(' ')
+		}
+		moves.WriteString(pm.Move.UCI())
+	}
+	rec := gameRecord{
+		MatchID: m.id, Round: m.round, Settings: m.settings, Seats: m.seats, Users: m.users,
+		Moves: moves.String(), CreatedAt: m.started, UpdatedAt: time.Now(),
+	}
+	if m.game.Over() {
+		rec.Result, rec.Reason = m.game.Outcome().String(), m.game.Method().String()
+	}
+	m.store.SaveGame(rec)
+}
+
 type seatState struct {
-	Taken  bool `json:"taken"`
-	Online bool `json:"online"`
+	Taken  bool   `json:"taken"`
+	Online bool   `json:"online"`
+	Name   string `json:"name,omitempty"` // username; empty for a guest
 }
 
 // protocolVersion changes whenever the state message changes shape, so a web app
 // talking to a server from another version can say so instead of breaking.
-const protocolVersion = 4
+const protocolVersion = 5
 
 type stateMsg struct {
 	Type     string   `json:"type"`
@@ -171,15 +283,22 @@ type inMsg struct {
 	T    float64 `json:"t"` // ping timestamp, echoed back
 }
 
-// join seats the player if a seat is free (white first) and returns their color, or -1 for spectators.
-func (m *Match) join(c *client) {
+// join seats the player if a seat is free (white first); anyone else watches.
+// A guest who signs in mid-game keeps the seat their browser held.
+func (m *Match) join(c *client, p *player) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if m.colorOf(c.playerID) < 0 {
-		for i := range m.seats {
-			if m.seats[i] == "" {
-				m.seats[i] = c.playerID
-				break
+	if m.colorOf(p.key) < 0 {
+		if i := m.colorOf(p.guest); i >= 0 && p.userID != 0 {
+			m.seat(i, p)
+			m.save()
+		} else {
+			for i := range m.seats {
+				if m.seats[i] == "" {
+					m.seat(i, p)
+					m.save()
+					break
+				}
 			}
 		}
 	}
@@ -221,7 +340,7 @@ func (m *Match) handle(c *client, msg inMsg) {
 	if color < 0 {
 		return
 	}
-	over := m.game.Over()
+	over, plies, round := m.game.Over(), len(m.game.History()), m.round
 	m.touched = time.Now()
 
 	switch msg.Type {
@@ -253,10 +372,16 @@ func (m *Match) handle(c *client, msg inMsg) {
 		if m.rematch[white] && m.rematch[black] {
 			m.game = engine.NewGameWithRules(m.settings.rules())
 			m.seats[white], m.seats[black] = m.seats[black], m.seats[white]
+			m.users[white], m.users[black] = m.users[black], m.users[white]
+			m.names[white], m.names[black] = m.names[black], m.names[white]
 			m.rematch = [2]bool{}
 			m.draw = [2]bool{}
 			m.round++
+			m.started = time.Now()
 		}
+	}
+	if len(m.game.History()) != plies || m.game.Over() != over || m.round != round {
+		m.save()
 	}
 	m.broadcast()
 }
@@ -278,7 +403,7 @@ func (m *Match) broadcast() {
 		Draw:    map[string]bool{"w": m.draw[white], "b": m.draw[black]},
 	}
 	for i, name := range colorNames {
-		base.Players[name] = seatState{Taken: m.seats[i] != "", Online: m.seats[i] != "" && m.online(i)}
+		base.Players[name] = seatState{Taken: m.seats[i] != "", Online: m.seats[i] != "" && m.online(i), Name: m.names[i]}
 	}
 	playable := status == "playing"
 	var views [3][]byte // white, black, spectator; built once per broadcast
@@ -301,8 +426,8 @@ func (m *Match) broadcast() {
 }
 
 // serve runs one websocket connection until it closes.
-func (m *Match) serve(ctx context.Context, conn *websocket.Conn, playerID string) {
-	c := newClient(playerID)
+func (m *Match) serve(ctx context.Context, conn *websocket.Conn, p *player) {
+	c := newClient(p.key)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -332,7 +457,7 @@ func (m *Match) serve(ctx context.Context, conn *websocket.Conn, playerID string
 		}
 	}()
 
-	m.join(c)
+	m.join(c, p)
 	defer m.leave(c)
 
 	conn.SetReadLimit(1024)
