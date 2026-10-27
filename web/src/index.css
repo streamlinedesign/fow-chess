@@ -29,6 +29,11 @@
     overscroll-behavior: none;
   }
 
+  /* The canvas behind the page (overscroll, safe areas) follows the theme too. */
+  html {
+    background: light-dark(#fffabd, #050505);
+  }
+
   body {
     background: light-dark(#fffabd, #050505);
     color: light-dark(#050505, #fffabd);
@@ -278,4 +283,11 @@
   --board: min(100vw - 32px, 520px, max(300px, 100dvh - 260px));
   width: var(--board);
   margin-inline: auto;
+}
+@media (min-width: 1024px) {
+  .showcase {
+    --board: min(100vw - 620px, 600px, max(320px, 100dvh - 230px));
+    flex: none;
+    margin-inline: 0;
+  }
 }

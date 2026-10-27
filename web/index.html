@@ -6,12 +6,22 @@
     <meta name="theme-color" content="#fffabd" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>Chess</title>
+    <style>
+      /* Paint the page in the right theme before the stylesheet loads. */
+      html { background: #fffabd; color: #050505; color-scheme: light; }
+      html[data-theme='dark'] { background: #050505; color: #fffabd; color-scheme: dark; }
+    </style>
     <script>
-      // Set the theme before first paint so there is no flash.
-      try {
-        var t = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      // Set the theme before first paint so there is no flash, and match the browser bar to it.
+      ;(function () {
+        var t
+        try {
+          t = localStorage.getItem('theme')
+        } catch (e) {}
+        if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
         document.documentElement.dataset.theme = t
-      } catch (e) {}
+        document.querySelector('meta[name=theme-color]').setAttribute('content', t === 'dark' ? '#050505' : '#fffabd')
+      })()
     </script>
   </head>
   <body>

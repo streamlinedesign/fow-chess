@@ -41,10 +41,10 @@ export function Landing() {
 
   return (
     <main className="flex flex-1 flex-col">
-      <section className="mx-auto flex w-full max-w-[520px] flex-col gap-8 px-4 pt-4 pb-10 sm:pt-8">
+      <section className="mx-auto flex w-full max-w-[520px] flex-col gap-8 px-4 pt-4 pb-10 sm:pt-8 lg:max-w-[1180px] lg:flex-row-reverse lg:items-center lg:gap-16 lg:px-8 lg:my-auto lg:pt-6">
         <Showcase />
 
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 lg:max-w-[460px] lg:flex-1">
           <SettingsPanel value={settings} onChange={setSettings} />
 
           <Button variant="solid" className="h-14 text-lg" onClick={create} disabled={busy}>
