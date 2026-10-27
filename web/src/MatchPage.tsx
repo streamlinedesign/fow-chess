@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Board } from './Board'
 import { Captured } from './Captured'
+import { Chat } from './Chat'
 import { applyLocal, pieceImg } from './position'
 import { navigate } from './router'
 import { describeSettings } from './settings'
@@ -18,7 +19,7 @@ function resultText(s: MatchState) {
 }
 
 export function MatchPage({ id }: { id: string }) {
-  const { state, conn, send, rtt } = useMatch(id)
+  const { state, conn, send, rtt, chat } = useMatch(id)
   const [pending, setPending] = useState<{ uci: string; sentWith: MatchState; sentAt: number } | null>(null)
   const [promotion, setPromotion] = useState<{ from: string; to: string } | null>(null)
   const [flipped, setFlipped] = useState(false)
@@ -214,6 +215,16 @@ export function MatchPage({ id }: { id: string }) {
             </Tip>
             <CopyLink link={link} />
           </div>
+
+          {state && you && them && state.status !== 'waiting' && (
+            <Chat
+              lines={chat}
+              you={you}
+              themName={state.players[them].name}
+              disabled={conn !== 'open'}
+              onSend={(text) => send({ type: 'chat', text })}
+            />
+          )}
 
           <MoveList history={state?.history ?? []} />
 

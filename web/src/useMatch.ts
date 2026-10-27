@@ -31,17 +31,26 @@ export type MatchState = {
   draw: Record<Color, boolean>
 }
 
-export type Outgoing = { type: 'move'; uci: string } | { type: 'resign' } | { type: 'draw' } | { type: 'rematch' }
+/** A chat message between the two players. The server keeps them only while the game lasts. */
+export type ChatLine = { id: number; from: Color; text: string; at: number }
+
+export type Outgoing =
+  | { type: 'move'; uci: string }
+  | { type: 'resign' }
+  | { type: 'draw' }
+  | { type: 'rematch' }
+  | { type: 'chat'; text: string }
 
 export type Connection = 'connecting' | 'open' | 'closed' | 'failed' | 'missing' | 'outdated'
 
 /** Must match protocolVersion in server/match.go. */
-const PROTOCOL = 5
+const PROTOCOL = 6
 
 export function useMatch(id: string) {
   const [state, setState] = useState<MatchState | null>(null)
   const [conn, setConn] = useState<Connection>('connecting')
   const [rtt, setRtt] = useState<number | null>(null)
+  const [chat, setChat] = useState<ChatLine[]>([])
   const ws = useRef<WebSocket | null>(null)
 
   useEffect(() => {
@@ -69,6 +78,9 @@ export function useMatch(id: string) {
             return setConn('outdated')
           }
           setState(msg)
+        } else if (msg.type === 'chat') {
+          // Players get the whole chat on (re)connecting and at a rematch, then each new line.
+          setChat((c) => (msg.reset ? msg.lines : [...c, ...msg.lines]))
         } else if (msg.type === 'pong') setRtt(Math.round(performance.now() - msg.t))
       }
       sock.onclose = async () => {
@@ -112,11 +124,13 @@ export function useMatch(id: string) {
     }
   }, [id])
 
+  useEffect(() => setChat([]), [id])
+
   const send = useCallback((msg: Outgoing) => {
     if (ws.current?.readyState !== WebSocket.OPEN) return false
     ws.current.send(JSON.stringify(msg))
     return true
   }, [])
 
-  return { state, conn, send, rtt }
+  return { state, conn, send, rtt, chat }
 }
