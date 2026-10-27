@@ -5,7 +5,7 @@ import { describeSettings, type Settings } from './settings'
 import { Button, Spinner } from './ui'
 import type { Color } from './useMatch'
 
-type GameSummary = {
+export type GameSummary = {
   matchId: string
   round: number
   color: Color
@@ -17,6 +17,9 @@ type GameSummary = {
   result?: string
   reason?: string
   updatedAt: number
+  rated?: boolean
+  /** The owner's rating change, once the game is rated. */
+  ratingDiff?: number
 }
 
 type Profile = {
@@ -29,7 +32,7 @@ type Profile = {
 
 const dateFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 
-function ago(ms: number) {
+export function ago(ms: number) {
   const s = (Date.now() - ms) / 1000
   if (s < 60) return 'just now'
   if (s < 3600) return `${Math.floor(s / 60)} min ago`
@@ -44,7 +47,7 @@ function outcome(g: GameSummary) {
   return won ? 'Won' : 'Lost'
 }
 
-function go(e: React.MouseEvent, href: string) {
+export function go(e: React.MouseEvent, href: string) {
   e.preventDefault()
   navigate(href)
 }
@@ -173,7 +176,15 @@ export function ProfilePage({ name }: { name: string }) {
                         {result} by {g.reason} · {describeSettings(g.settings).join(' · ')}
                       </span>
                     </span>
-                    <span className="text-sm text-accent">{ago(g.updatedAt)}</span>
+                    <span className="flex flex-col items-end text-sm text-accent">
+                      {g.ratingDiff != null && (
+                        <span className="font-mono font-semibold text-fg tabular-nums">
+                          {g.ratingDiff > 0 ? '+' : g.ratingDiff < 0 ? '−' : '±'}
+                          {Math.abs(g.ratingDiff)}
+                        </span>
+                      )}
+                      {ago(g.updatedAt)}
+                    </span>
                   </a>
                 </li>
               )
@@ -185,7 +196,7 @@ export function ProfilePage({ name }: { name: string }) {
   )
 }
 
-function ColorDot({ color }: { color: Color }) {
+export function ColorDot({ color }: { color: Color }) {
   return (
     <span
       className={`size-3.5 shrink-0 rounded-full shadow-[0_0_0_1.5px_var(--color-fg)] ${color === 'w' ? 'bg-[#fff]' : 'bg-[#111]'}`}

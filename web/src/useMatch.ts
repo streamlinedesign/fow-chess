@@ -29,6 +29,14 @@ export type MatchState = {
   players: Record<Color, { taken: boolean; online: boolean; name?: string }>
   rematch: Record<Color, boolean>
   draw: Record<Color, boolean>
+  /** Time left as of when this state was sent, and whose clock is ticking. Absent for No clock games. */
+  clock?: { left: Record<Color, number>; running?: Color }
+  /** Whether the game counts toward rating: two signed-in players and a clock. */
+  rated: boolean
+  /** Each side's rating change, once a rated game is over and saved. */
+  ratingDiff?: Record<Color, number>
+  /** When this state arrived, by performance.now(), for counting the clock down. Set here, not by the server. */
+  receivedAt: number
 }
 
 /** A chat message between the two players. The server keeps them only while the game lasts. */
@@ -44,7 +52,7 @@ export type Outgoing =
 export type Connection = 'connecting' | 'open' | 'closed' | 'failed' | 'missing' | 'outdated'
 
 /** Must match protocolVersion in server/match.go. */
-const PROTOCOL = 6
+const PROTOCOL = 7
 
 export function useMatch(id: string) {
   const [state, setState] = useState<MatchState | null>(null)
@@ -77,7 +85,7 @@ export function useMatch(id: string) {
             sock.close()
             return setConn('outdated')
           }
-          setState(msg)
+          setState({ ...msg, receivedAt: performance.now() })
         } else if (msg.type === 'chat') {
           // Players get the whole chat on (re)connecting and at a rematch, then each new line.
           setChat((c) => (msg.reset ? msg.lines : [...c, ...msg.lines]))
