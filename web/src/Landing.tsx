@@ -76,11 +76,6 @@ export function Landing() {
           </p>
         </div>
       </section>
-
-      <footer aria-hidden className="text-fg">
-        <div className="wave" />
-        <div className="h-16 bg-fg sm:h-24" />
-      </footer>
     </main>
   )
 }
