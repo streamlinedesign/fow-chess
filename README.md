@@ -21,7 +21,7 @@ The rules live in `server/engine` (`Rules`, `Position.Vision`), and what each vi
 
 Players can sign up with just a username and password (no email). Passwords are hashed with bcrypt, and sessions are a random token in an http-only cookie, with only a hash of it stored. Guests can still play without an account.
 
-Everything lives in Postgres. The server connects to `DATABASE_URL` (or `-db <url>`), and defaults to the local Postgres from `docker-compose.yml`. Tables are created and updated on startup from the numbered SQL files in `server/migrations/`: to change the schema, add a new file rather than editing one that has shipped.
+Everything lives in Postgres. The server connects to `DATABASE_URL` (or `-db <url>`), and defaults to a database called `chess` in the Postgres installed on your machine. On startup it creates that database if it's missing, then creates and updates the tables from the numbered SQL files in `server/migrations/`: to change the schema, add a new file rather than editing one that has shipped.
 
 - Every game is saved as it's played, so a server restart no longer ends games: reopen the link and play on.
 - Games with at least one signed-in player are kept forever. Games between two guests are deleted after 30 days.
@@ -41,33 +41,35 @@ The landing page replays Morphy's Opera Game as White and Black each saw it unde
 
 - Go 1.24+
 - Node 20+
-- Docker (Docker Desktop on a Mac), which runs Postgres for you
+- PostgreSQL 14+, installed and running (for example `brew install postgresql@17 && brew services start postgresql@17`)
 
 ## Run locally
 
-Start Docker Desktop, then:
+With Postgres running:
 
 ```sh
 make dev
 ```
 
-Then open http://localhost:5173. `make dev` starts Postgres in Docker first (the first run downloads the image, about 30 seconds), waits until it's ready, and the server creates its tables. Postgres keeps running in the background after you stop `make dev`, so the next start is instant.
+Then open http://localhost:5173. On the first start the server creates a `chess` database and its tables, so there's nothing to set up by hand. It connects through Postgres's local socket as your own user, which is how Homebrew and Postgres.app install it. If your Postgres needs a user, password or another host, set `DATABASE_URL` instead, for example `export DATABASE_URL=postgres://chess:secret@localhost:5432/chess`.
 
-- `make db-stop` stops Postgres. Your accounts and games are kept.
-- `make db-reset` deletes every account and game and starts fresh.
+- `make migrate` creates the database if needed and applies migrations, without starting the server.
 - `make psql` opens a SQL shell on the database.
-- Already running your own Postgres on port 5432? Stop it, or create a `chess` database there and set `DATABASE_URL` to it: `make dev` then skips Docker and uses yours.
-- Accounts and games from the old SQLite `chess.db` aren't carried over. To play against yourself, open a second browser or a private window, since each browser gets one seat. Vite is started with `--host`, so a phone on the same Wi-Fi can open `http://<your-computer-ip>:5173`.
+- `make db-reset` deletes every account and game in the local `chess` database and starts fresh.
+- On Linux, where Postgres only knows the `postgres` user at first, give yourself a role once: `sudo -u postgres createuser --superuser $USER`.
+- Accounts and games from the old SQLite `chess.db` aren't carried over.
+
+To play against yourself, open a second browser or a private window, since each browser gets one seat. Vite is started with `--host`, so a phone on the same Wi-Fi can open `http://<your-computer-ip>:5173`.
 
 ## Tests
 
 ```sh
-make test                          # starts Postgres if needed, then runs every Go test
+make test                          # runs every Go test
 cd server && go test ./...         # includes perft to depth 4-5 on the standard test positions (~3s)
 cd server && go test -short ./...  # skips the deep perft runs
 ```
 
-Tests that touch the database each get their own Postgres schema, dropped afterwards, so they never touch your dev data. They use `CHESS_TEST_DATABASE_URL` if set, else the Docker Postgres, and are skipped with a note if neither is running.
+Tests that touch the database each get their own Postgres schema, dropped afterwards, so they never touch your dev data. They use `CHESS_TEST_DATABASE_URL` if set, else the same database as the server, and are skipped with a note if Postgres isn't running.
 
 If a page says **Server out of date** or `make dev` says port 8080 is in use, an older copy of the server (often a previously built `./chess`) is still running. Stop it and run `make dev` again.
 
@@ -82,17 +84,25 @@ DATABASE_URL=postgres://user:pass@host:5432/chess ./chess   # serves everything 
 
 ## Droplet (later)
 
-1. Copy `chess-linux-amd64` to the droplet, for example `/opt/chess/chess`.
-2. Run it with systemd:
+1. Install Postgres and make a user and database for the app:
+
+   ```sh
+   sudo apt install postgresql
+   sudo -u postgres createuser --pwprompt chess   # pick a password
+   sudo -u postgres createdb --owner chess chess
+   ```
+
+2. Copy `chess-linux-amd64` to the droplet, for example `/opt/chess/chess`. It applies migrations itself when it starts. To apply them on their own, for example before switching over, run it with `-migrate`.
+3. Run it with systemd:
 
    ```ini
    # /etc/systemd/system/chess.service
    [Unit]
    Description=chess
-   After=network.target
+   After=network.target postgresql.service
 
    [Service]
-   Environment=DATABASE_URL=postgres://chess:CHANGE_ME@localhost:5432/chess?sslmode=disable
+   Environment=DATABASE_URL=postgres://chess:YOUR_PASSWORD@localhost:5432/chess
    ExecStart=/opt/chess/chess -addr 127.0.0.1:8080
    Restart=always
    DynamicUser=yes
@@ -101,7 +111,7 @@ DATABASE_URL=postgres://user:pass@host:5432/chess ./chess   # serves everything 
    WantedBy=multi-user.target
    ```
 
-3. Put Caddy in front for HTTPS and compression:
+4. Put Caddy in front for HTTPS and compression:
 
    ```
    chess.example.com {
@@ -110,7 +120,7 @@ DATABASE_URL=postgres://user:pass@host:5432/chess ./chess   # serves everything 
    }
    ```
 
-Accounts and games live in Postgres (install it on the droplet or use a managed one), which survives redeploys; back it up with `pg_dump`. Idle matches leave memory after 2 hours and load again from the database when someone opens them.
+Accounts and games live in Postgres, which survives redeploys; back it up with `sudo -u postgres pg_dump chess > chess-backup.sql`. Idle matches leave memory after 2 hours and load again from the database when someone opens them.
 
 ## Protocol
 

@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -23,14 +24,22 @@ type Store struct {
 	closed bool
 }
 
-// defaultDatabaseURL matches the Postgres in docker-compose.yml.
-const defaultDatabaseURL = "postgres://chess:chess@localhost:5432/chess?sslmode=disable"
+// defaultDatabaseURL is a database called chess in the Postgres installed on
+// this machine, reached through its local socket as the current OS user. That's
+// how Homebrew and Postgres.app set Postgres up, so it works with no config.
+const defaultDatabaseURL = "postgres:///chess"
 
 // guestGameTTL is how long games without a signed-in player are kept.
 const guestGameTTL = 30 * 24 * time.Hour
 
 // OpenStore connects to Postgres and brings its tables up to date.
+// The database itself is created if it doesn't exist yet.
 func OpenStore(url string) (*Store, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := createDatabaseIfMissing(ctx, url); err != nil {
+		return nil, fmt.Errorf("can't reach Postgres at %s (is it running?): %w", redactURL(url), err)
+	}
 	db, err := sql.Open("pgx", url)
 	if err != nil {
 		return nil, err
@@ -38,12 +47,6 @@ func OpenStore(url string) (*Store, error) {
 	db.SetMaxOpenConns(10)
 	db.SetMaxIdleConns(10)
 	db.SetConnMaxIdleTime(5 * time.Minute)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := db.PingContext(ctx); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("can't reach Postgres (is it running? try `make db`): %w", err)
-	}
 	if err := migrate(db); err != nil {
 		db.Close()
 		return nil, err
@@ -52,6 +55,33 @@ func OpenStore(url string) (*Store, error) {
 	go s.writer()
 	go s.cleanup()
 	return s, nil
+}
+
+// createDatabaseIfMissing connects to the database in url and, if Postgres says
+// it doesn't exist, creates it from the built-in postgres database.
+func createDatabaseIfMissing(ctx context.Context, url string) error {
+	cfg, err := pgx.ParseConfig(url)
+	if err != nil {
+		return err
+	}
+	conn, err := pgx.ConnectConfig(ctx, cfg)
+	if err == nil {
+		return conn.Close(ctx)
+	}
+	if pgErr := (*pgconn.PgError)(nil); !errors.As(err, &pgErr) || pgErr.Code != "3D000" { // invalid_catalog_name
+		return err
+	}
+	name := cfg.Database
+	cfg.Database = "postgres"
+	if conn, err = pgx.ConnectConfig(ctx, cfg); err != nil {
+		return err
+	}
+	defer conn.Close(ctx)
+	if _, err := conn.Exec(ctx, `CREATE DATABASE `+pgx.Identifier{name}.Sanitize()); err != nil {
+		return fmt.Errorf("creating database %s: %w", name, err)
+	}
+	log.Printf("created database %s", name)
+	return nil
 }
 
 // Close finishes queued game writes and closes the database.
