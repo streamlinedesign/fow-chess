@@ -20,6 +20,8 @@ export type MatchState = {
   check?: string
   /** Moves so far in algebraic notation. */
   history: string[]
+  /** Pieces each side has taken, as FEN letters, most valuable first. */
+  captured: Record<Color, string>
   status: 'waiting' | 'playing' | 'over'
   result?: '1-0' | '0-1' | '1/2-1/2'
   reason?: string
@@ -33,7 +35,7 @@ export type Outgoing = { type: 'move'; uci: string } | { type: 'resign' } | { ty
 export type Connection = 'connecting' | 'open' | 'closed' | 'failed' | 'missing' | 'outdated'
 
 /** Must match protocolVersion in server/match.go. */
-const PROTOCOL = 3
+const PROTOCOL = 4
 
 export function useMatch(id: string) {
   const [state, setState] = useState<MatchState | null>(null)

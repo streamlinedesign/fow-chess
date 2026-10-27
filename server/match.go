@@ -147,7 +147,7 @@ type seatState struct {
 
 // protocolVersion changes whenever the state message changes shape, so a web app
 // talking to a server from another version can say so instead of breaking.
-const protocolVersion = 3
+const protocolVersion = 4
 
 type stateMsg struct {
 	Type     string   `json:"type"`

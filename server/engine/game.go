@@ -45,6 +45,8 @@ func (m Method) String() string {
 type PlayedMove struct {
 	Move Move
 	SAN  string
+	// Captured is the piece this move took, or NoPiece.
+	Captured Piece
 }
 
 // Game tracks a position plus the history the draw rules need.
@@ -111,8 +113,12 @@ func (g *Game) PlayUCI(uci string) (PlayedMove, error) {
 
 func (g *Game) play(m Move) PlayedMove {
 	san := g.pos.SAN(m)
+	captured := g.pos.Board[m.To]
+	if m.Is(FlagEnPassant) {
+		captured = NewPiece(g.pos.Turn.Other(), Pawn)
+	}
 	g.pos = g.pos.Apply(m)
-	pm := PlayedMove{Move: m, SAN: san}
+	pm := PlayedMove{Move: m, SAN: san, Captured: captured}
 	g.history = append(g.history, pm)
 	g.seen[g.pos.repetitionKey()]++
 	g.evaluate()

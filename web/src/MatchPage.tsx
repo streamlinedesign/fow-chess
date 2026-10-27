@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Board } from './Board'
+import { Captured } from './Captured'
 import { applyLocal, pieceImg } from './position'
 import { navigate } from './router'
 import { describeSettings } from './settings'
@@ -45,6 +46,9 @@ export function MatchPage({ id }: { id: string }) {
   const orientation: Color = (you === 'b') !== flipped ? 'b' : 'w'
   const playing = state?.status === 'playing'
   const ply = state?.ply ?? 0
+  const turn = state && (predicting ? other(state.turn) : state.turn)
+  const toMove = playing && conn === 'open' ? turn : null
+  const yourMove = !!you && toMove === you
 
   const sendMove = useCallback(
     (uci: string) => {
@@ -60,6 +64,15 @@ export function MatchPage({ id }: { id: string }) {
     },
     [legal, sendMove],
   )
+
+  // Say whose move it is in the tab title, so a backgrounded tab shows when it's your turn.
+  useEffect(() => {
+    if (!you || !playing) return
+    document.title = yourMove ? '● Your move · Chess' : 'Their move · Chess'
+    return () => {
+      document.title = 'Chess'
+    }
+  }, [you, playing, yourMove])
 
   // Haptic tick when a move lands, on phones that support it.
   const lastPly = useRef(ply)
@@ -97,9 +110,8 @@ export function MatchPage({ id }: { id: string }) {
     if (conn !== 'open') return 'Reconnecting…'
     if (state.status === 'waiting') return 'Waiting for an opponent'
     if (over) return `${over.title} by ${state.reason}`
-    const turn = predicting ? other(state.turn) : state.turn
     const check = state.check && !predicting ? 'Check. ' : ''
-    if (!you) return `${check}${NAMES[turn]} to move`
+    if (!you) return `${check}${NAMES[turn!]} to move`
     return `${check}${turn === you ? 'Your move' : 'Their move'}`
   })()
 
@@ -109,9 +121,9 @@ export function MatchPage({ id }: { id: string }) {
   return (
     <main className="flex flex-1 justify-center px-4 pb-6 sm:px-8">
       <div className="flex w-full max-w-[1100px] flex-col gap-6 lg:flex-row lg:items-start lg:justify-center">
-        <section className="board-wrap mx-auto flex flex-col gap-2 lg:mx-0">
-          <PlayerBar color={top} state={state} you={you} />
-          <div className="relative">
+        <section className="board-wrap mx-auto flex flex-col gap-3 lg:mx-0">
+          <PlayerBar color={top} state={state} you={you} active={toMove === top} />
+          <div className="board-turn relative rounded-md" data-your-move={yourMove}>
             <Board
               board={board}
               orientation={orientation}
@@ -122,11 +134,12 @@ export function MatchPage({ id }: { id: string }) {
             />
             {state?.status === 'waiting' && <WaitingCard id={id} link={link} />}
           </div>
-          <PlayerBar color={bottom} state={state} you={you} />
+          <PlayerBar color={bottom} state={state} you={you} active={toMove === bottom} />
         </section>
 
         <aside className="flex w-full flex-col gap-4 lg:w-[320px] lg:pt-9">
-          <p className="text-2xl font-bold tracking-tight" aria-live="polite">
+          <p className="flex items-center gap-2.5 text-2xl font-bold tracking-tight" aria-live="polite">
+            {yourMove && <span className="turn-dot" aria-hidden />}
             {status}
           </p>
 
@@ -270,18 +283,24 @@ export function MatchPage({ id }: { id: string }) {
   )
 }
 
-function PlayerBar({ color, state, you }: { color: Color; state: MatchState | null; you: Color | null }) {
+type PlayerBarProps = { color: Color; state: MatchState | null; you: Color | null; active: boolean }
+
+function PlayerBar({ color, state, you, active }: PlayerBarProps) {
   const seat = state?.players[color]
   const label = color === you ? 'You' : !seat?.taken ? 'Waiting…' : you ? 'Opponent' : 'Player'
   return (
-    <div className="flex h-7 items-center gap-2 text-[15px]">
+    <div className="player-bar flex h-10 items-center gap-2 rounded-full px-3 text-[15px]" data-active={active}>
       <span
-        className={`size-3.5 rounded-full shadow-[0_0_0_1.5px_var(--color-fg)] ${color === 'w' ? 'bg-[#fff]' : 'bg-[#111]'}`}
+        className={`size-3.5 shrink-0 rounded-full shadow-[0_0_0_1.5px_var(--color-fg)] ${color === 'w' ? 'bg-[#fff]' : 'bg-[#111]'}`}
         aria-hidden
       />
       <span className="font-semibold">{label}</span>
       <span className="text-accent">{NAMES[color]}</span>
-      {seat?.taken && !seat.online && <span className="ml-auto text-sm text-danger">offline</span>}
+      {active && <span className="turn-tag">to move</span>}
+      <span className="ml-auto flex min-w-0 items-center gap-2">
+        {seat?.taken && !seat.online && <span className="text-sm text-danger">offline</span>}
+        <Captured pieces={state?.captured[color] ?? ''} className="text-[clamp(16px,calc(var(--board)/30),22px)]" />
+      </span>
     </div>
   )
 }

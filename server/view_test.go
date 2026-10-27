@@ -119,3 +119,19 @@ func TestFogViews(t *testing.T) {
 		t.Errorf("finished game still fogged: %s %v", v.Board, v.History)
 	}
 }
+
+func TestCapturedPieces(t *testing.T) {
+	g := engine.NewGame()
+	// White takes a pawn, then one en passant, then a knight.
+	for _, uci := range []string{"e2e4", "d7d5", "e4d5", "g8f6", "c2c4", "c7c5", "d5c6", "f6e4", "d2d3", "a7a6", "d3e4"} {
+		if _, err := g.PlayUCI(uci); err != nil {
+			t.Fatal(uci, err)
+		}
+	}
+	for _, viewer := range []int{white, black, -1} {
+		v := viewFor(g, viewer, true, true)
+		if v.Captured["w"] != "npp" || v.Captured["b"] != "" {
+			t.Errorf("viewer %d: captured %v", viewer, v.Captured)
+		}
+	}
+}
