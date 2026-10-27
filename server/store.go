@@ -1,18 +1,20 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
-	"strings"
 	"sync"
 	"time"
 
-	_ "modernc.org/sqlite"
+	"github.com/jackc/pgx/v5/pgconn"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-// Store keeps users, sessions and games in one SQLite file, so the server stays a
-// single binary and games survive a restart.
+// Store keeps users, sessions and games in Postgres, so games survive a restart.
+// The tables are defined in migrations/.
 type Store struct {
 	db     *sql.DB
 	writes chan gameRecord
@@ -21,55 +23,28 @@ type Store struct {
 	closed bool
 }
 
-const schema = `
-CREATE TABLE IF NOT EXISTS users (
-	id            INTEGER PRIMARY KEY,
-	username      TEXT NOT NULL UNIQUE COLLATE NOCASE,
-	password_hash BLOB NOT NULL,
-	-- Glicko-2, one rating across every game mode.
-	rating        REAL NOT NULL DEFAULT 1500,
-	deviation     REAL NOT NULL DEFAULT 350,
-	volatility    REAL NOT NULL DEFAULT 0.06,
-	created_at    INTEGER NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS sessions (
-	token_hash BLOB PRIMARY KEY,
-	user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-	expires_at INTEGER NOT NULL
-);
-
--- One row per game: a match's rematches are rounds 1, 2, 3...
-CREATE TABLE IF NOT EXISTS games (
-	match_id     TEXT NOT NULL,
-	round        INTEGER NOT NULL,
-	settings     TEXT NOT NULL,
-	white        TEXT NOT NULL DEFAULT '', -- seat key: "u:<id>" or a guest browser ID
-	black        TEXT NOT NULL DEFAULT '',
-	white_user   INTEGER REFERENCES users(id),
-	black_user   INTEGER REFERENCES users(id),
-	moves        TEXT NOT NULL DEFAULT '', -- UCI, space separated
-	result       TEXT NOT NULL DEFAULT '', -- empty while the game is on
-	reason       TEXT NOT NULL DEFAULT '',
-	created_at   INTEGER NOT NULL,
-	updated_at   INTEGER NOT NULL,
-	PRIMARY KEY (match_id, round)
-);
-CREATE INDEX IF NOT EXISTS games_white_user ON games(white_user, updated_at);
-CREATE INDEX IF NOT EXISTS games_black_user ON games(black_user, updated_at);
-`
+// defaultDatabaseURL matches the Postgres in docker-compose.yml.
+const defaultDatabaseURL = "postgres://chess:chess@localhost:5432/chess?sslmode=disable"
 
 // guestGameTTL is how long games without a signed-in player are kept.
 const guestGameTTL = 30 * 24 * time.Hour
 
-func OpenStore(path string) (*Store, error) {
-	// WAL lets reads run alongside the single writer; busy_timeout rides out brief lock waits.
-	db, err := sql.Open("sqlite", "file:"+path+"?_pragma=journal_mode(WAL)&_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)&_pragma=synchronous(NORMAL)")
+// OpenStore connects to Postgres and brings its tables up to date.
+func OpenStore(url string) (*Store, error) {
+	db, err := sql.Open("pgx", url)
 	if err != nil {
 		return nil, err
 	}
-	db.SetMaxOpenConns(1)
-	if _, err := db.Exec(schema); err != nil {
+	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(10)
+	db.SetConnMaxIdleTime(5 * time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := db.PingContext(ctx); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("can't reach Postgres (is it running? try `make db`): %w", err)
+	}
+	if err := migrate(db); err != nil {
 		db.Close()
 		return nil, err
 	}
@@ -82,6 +57,10 @@ func OpenStore(path string) (*Store, error) {
 // Close finishes queued game writes and closes the database.
 func (s *Store) Close() {
 	s.mu.Lock()
+	if s.closed {
+		s.mu.Unlock()
+		return
+	}
 	s.closed = true
 	s.mu.Unlock()
 	close(s.writes)
@@ -123,14 +102,14 @@ func (s *Store) writer() {
 		settings, _ := jsonString(r.Settings)
 		_, err := s.db.Exec(`
 			INSERT INTO games (match_id, round, settings, white, black, white_user, black_user, moves, result, reason, created_at, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 			ON CONFLICT (match_id, round) DO UPDATE SET
 				white = excluded.white, black = excluded.black,
 				white_user = excluded.white_user, black_user = excluded.black_user,
 				moves = excluded.moves, result = excluded.result, reason = excluded.reason,
 				updated_at = excluded.updated_at`,
 			r.MatchID, r.Round, settings, r.Seats[white], r.Seats[black], nullID(r.Users[white]), nullID(r.Users[black]),
-			r.Moves, r.Result, r.Reason, r.CreatedAt.Unix(), r.UpdatedAt.Unix())
+			r.Moves, r.Result, r.Reason, r.CreatedAt, r.UpdatedAt)
 		if err != nil {
 			log.Printf("saving game %s/%d: %v", r.MatchID, r.Round, err)
 		}
@@ -140,9 +119,8 @@ func (s *Store) writer() {
 // cleanup deletes old guest games and expired sessions once a day.
 func (s *Store) cleanup() {
 	for {
-		cutoff := time.Now().Add(-guestGameTTL).Unix()
-		s.db.Exec(`DELETE FROM games WHERE white_user IS NULL AND black_user IS NULL AND updated_at < ?`, cutoff)
-		s.db.Exec(`DELETE FROM sessions WHERE expires_at < ?`, time.Now().Unix())
+		s.db.Exec(`DELETE FROM games WHERE white_user IS NULL AND black_user IS NULL AND updated_at < $1`, time.Now().Add(-guestGameTTL))
+		s.db.Exec(`DELETE FROM sessions WHERE expires_at < now()`)
 		select {
 		case <-s.done:
 			return
@@ -153,7 +131,7 @@ func (s *Store) cleanup() {
 
 // LatestGame loads the newest round of a match, or nil if there is none.
 func (s *Store) LatestGame(matchID string) (*gameRecord, error) {
-	rows, err := s.queryGames(`WHERE g.match_id = ? ORDER BY g.round DESC LIMIT 1`, matchID)
+	rows, err := s.queryGames(`WHERE g.match_id = $1 ORDER BY g.round DESC LIMIT 1`, matchID)
 	if err != nil || len(rows) == 0 {
 		return nil, err
 	}
@@ -162,7 +140,7 @@ func (s *Store) LatestGame(matchID string) (*gameRecord, error) {
 
 // Game loads one round of a match, or nil if it doesn't exist.
 func (s *Store) Game(matchID string, round int) (*gameRecord, error) {
-	rows, err := s.queryGames(`WHERE g.match_id = ? AND g.round = ?`, matchID, round)
+	rows, err := s.queryGames(`WHERE g.match_id = $1 AND g.round = $2`, matchID, round)
 	if err != nil || len(rows) == 0 {
 		return nil, err
 	}
@@ -171,12 +149,12 @@ func (s *Store) Game(matchID string, round int) (*gameRecord, error) {
 
 // GamesOf lists a user's games, newest first.
 func (s *Store) GamesOf(userID int64, limit int) ([]gameRecord, error) {
-	return s.queryGames(`WHERE g.white_user = ?1 OR g.black_user = ?1 ORDER BY g.updated_at DESC LIMIT ?2`, userID, limit)
+	return s.queryGames(`WHERE g.white_user = $1 OR g.black_user = $1 ORDER BY g.updated_at DESC LIMIT $2`, userID, limit)
 }
 
 func (s *Store) queryGames(where string, args ...any) ([]gameRecord, error) {
 	rows, err := s.db.Query(`
-		SELECT g.match_id, g.round, g.settings, g.white, g.black, coalesce(g.white_user, 0), coalesce(g.black_user, 0),
+		SELECT g.match_id, g.round, g.settings::text, g.white, g.black, coalesce(g.white_user, 0), coalesce(g.black_user, 0),
 			g.moves, g.result, g.reason, g.created_at, g.updated_at, coalesce(wu.username, ''), coalesce(bu.username, '')
 		FROM games g
 		LEFT JOIN users wu ON wu.id = g.white_user
@@ -190,13 +168,11 @@ func (s *Store) queryGames(where string, args ...any) ([]gameRecord, error) {
 	for rows.Next() {
 		var r gameRecord
 		var settings string
-		var created, updated int64
 		if err := rows.Scan(&r.MatchID, &r.Round, &settings, &r.Seats[white], &r.Seats[black], &r.Users[white], &r.Users[black],
-			&r.Moves, &r.Result, &r.Reason, &created, &updated, &r.whiteName, &r.blackName); err != nil {
+			&r.Moves, &r.Result, &r.Reason, &r.CreatedAt, &r.UpdatedAt, &r.whiteName, &r.blackName); err != nil {
 			return nil, err
 		}
 		parseJSON(settings, &r.Settings)
-		r.CreatedAt, r.UpdatedAt = time.Unix(created, 0), time.Unix(updated, 0)
 		out = append(out, r)
 	}
 	return out, rows.Err()
@@ -215,50 +191,48 @@ var ErrUsernameTaken = errors.New("username taken")
 
 func (s *Store) CreateUser(username string, hash []byte) (*User, error) {
 	now := time.Now()
-	res, err := s.db.Exec(`INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)`, username, hash, now.Unix())
+	var id int64
+	err := s.db.QueryRow(`INSERT INTO users (username, password_hash, created_at) VALUES ($1, $2, $3) RETURNING id`, username, hash, now).Scan(&id)
+	if pgErr := (*pgconn.PgError)(nil); errors.As(err, &pgErr) && pgErr.Code == "23505" { // unique_violation
+		return nil, ErrUsernameTaken
+	}
 	if err != nil {
-		if strings.Contains(err.Error(), "UNIQUE") {
-			return nil, ErrUsernameTaken
-		}
 		return nil, err
 	}
-	id, _ := res.LastInsertId()
 	return &User{ID: id, Username: username, Rating: 1500, CreatedAt: now}, nil
 }
 
 // UserByName finds a user regardless of case, or returns nil.
 func (s *Store) UserByName(username string) (*User, error) {
-	return s.user(`username = ?`, username)
+	return s.user(`lower(username) = lower($1)`, username)
 }
 
 func (s *Store) UserByID(id int64) (*User, error) {
-	return s.user(`id = ?`, id)
+	return s.user(`id = $1`, id)
 }
 
 func (s *Store) user(where string, arg any) (*User, error) {
 	var u User
-	var created int64
 	err := s.db.QueryRow(`SELECT id, username, rating, created_at, password_hash FROM users WHERE `+where, arg).
-		Scan(&u.ID, &u.Username, &u.Rating, &created, &u.hash)
+		Scan(&u.ID, &u.Username, &u.Rating, &u.CreatedAt, &u.hash)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	u.CreatedAt = time.Unix(created, 0)
 	return &u, nil
 }
 
 func (s *Store) CreateSession(tokenHash []byte, userID int64, expires time.Time) error {
-	_, err := s.db.Exec(`INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)`, tokenHash, userID, expires.Unix())
+	_, err := s.db.Exec(`INSERT INTO sessions (token_hash, user_id, expires_at) VALUES ($1, $2, $3)`, tokenHash, userID, expires)
 	return err
 }
 
 // SessionUser returns the user a session token belongs to, or nil if it's unknown or expired.
 func (s *Store) SessionUser(tokenHash []byte) (*User, error) {
 	var id int64
-	err := s.db.QueryRow(`SELECT user_id FROM sessions WHERE token_hash = ? AND expires_at > ?`, tokenHash, time.Now().Unix()).Scan(&id)
+	err := s.db.QueryRow(`SELECT user_id FROM sessions WHERE token_hash = $1 AND expires_at > now()`, tokenHash).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -269,7 +243,7 @@ func (s *Store) SessionUser(tokenHash []byte) (*User, error) {
 }
 
 func (s *Store) DeleteSession(tokenHash []byte) error {
-	_, err := s.db.Exec(`DELETE FROM sessions WHERE token_hash = ?`, tokenHash)
+	_, err := s.db.Exec(`DELETE FROM sessions WHERE token_hash = $1`, tokenHash)
 	return err
 }
 

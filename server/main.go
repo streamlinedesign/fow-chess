@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -26,15 +27,15 @@ var verbose = flag.Bool("v", false, "log every match action with how long it too
 
 func main() {
 	addr := flag.String("addr", ":8080", "listen address")
-	dbPath := flag.String("db", "chess.db", "SQLite database file for accounts and games")
+	dbURL := flag.String("db", envOr("DATABASE_URL", defaultDatabaseURL), "Postgres connection URL for accounts and games (or set DATABASE_URL)")
 	flag.Parse()
 	if *verbose {
 		log.Printf("verbose: logging every match action with timings")
 	}
 
-	store, err := OpenStore(*dbPath)
+	store, err := OpenStore(*dbURL)
 	if err != nil {
-		log.Fatalf("opening %s: %v", *dbPath, err)
+		log.Fatalf("opening database: %v", err)
 	}
 	hub := NewHub(store)
 	auth := &Auth{store: store, limiter: newFailLimiter()}
@@ -111,11 +112,26 @@ func main() {
 		srv.Shutdown(ctx)
 	}()
 
-	log.Printf("chess listening on %s (database %s)", *addr, *dbPath)
+	log.Printf("chess listening on %s (database %s)", *addr, redactURL(*dbURL))
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		log.Fatal(err)
 	}
 	store.Close()
+}
+
+func envOr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
+
+// redactURL hides the password in a connection URL so it can be logged.
+func redactURL(s string) string {
+	if u, err := url.Parse(s); err == nil {
+		return u.Redacted()
+	}
+	return "(unparseable URL)"
 }
 
 // spa serves static files and falls back to index.html so /m/ABC123 deep links work.

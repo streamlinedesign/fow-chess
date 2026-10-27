@@ -1,21 +1,65 @@
 package main
 
 import (
+	"crypto/sha256"
+	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"net/url"
 	"path/filepath"
 	"strings"
 	"testing"
 )
 
+// openTestStore opens a store in a Postgres schema of its own, named after
+// path, so tests don't touch each other's data or the dev database. Opening
+// the same path again reopens the same data, like a server restart. The schema
+// is dropped when the test ends.
+//
+// Tests use CHESS_TEST_DATABASE_URL, else the Postgres from docker-compose.yml,
+// and are skipped if it isn't running.
 func openTestStore(t *testing.T, path string) *Store {
 	t.Helper()
-	s, err := OpenStore(path)
+	base := envOr("CHESS_TEST_DATABASE_URL", defaultDatabaseURL)
+	admin, err := sql.Open("pgx", base)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer admin.Close()
+	if err := admin.Ping(); err != nil {
+		t.Skipf("no Postgres for tests (start it with `make db`, or set CHESS_TEST_DATABASE_URL): %v", err)
+	}
+	sum := sha256.Sum256([]byte(path))
+	schema := "test_" + hex.EncodeToString(sum[:8])
+	if _, err := admin.Exec(`CREATE SCHEMA IF NOT EXISTS ` + schema); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		admin, err := sql.Open("pgx", base)
+		if err != nil {
+			return
+		}
+		defer admin.Close()
+		if _, err := admin.Exec(`DROP SCHEMA IF EXISTS ` + schema + ` CASCADE`); err != nil {
+			t.Errorf("dropping test schema: %v", err)
+		}
+	})
+
+	u, err := url.Parse(base)
+	if err != nil {
+		t.Fatal(err)
+	}
+	q := u.Query()
+	q.Set("search_path", schema)
+	u.RawQuery = q.Encode()
+	s, err := OpenStore(u.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(s.Close) // runs before the schema is dropped
 	return s
 }
 
