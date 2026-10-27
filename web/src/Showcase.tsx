@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react'
 import { Board } from './Board'
 import { Captured } from './Captured'
+import { Spinner } from './ui'
 import type { Color } from './useMatch'
 
 type Side = { board: string; last: { from: string; to: string } | null; check?: string }
 type Frame = { turn: Color; w: Side; b: Side; captured: Record<Color, string> }
 type View = 'turns' | Color
 
+// In Auto, each move first shows on the board of the side that played it, then
+// the fog shifts to the side about to move. Pinned to one side, it's one step per move.
+const MOVE_MS = 1300
+const FOG_MS = 1300
 const STEP_MS = 2400
 const END_HOLD_MS = 6000
 const noMoves: string[] = []
@@ -20,14 +25,15 @@ const VIEWS: [View, string][] = [
 ]
 
 /**
- * Replays Morphy's Opera Game as the players saw it under fog. By default the
- * board shows the view of whoever is about to move, so you see the fog shift
- * between sides. The frames come from the real server rules
- * (server/showcase_test.go), so the replay never drifts from what players see.
+ * Replays Morphy's Opera Game as the players saw it under fog. By default each
+ * move shows from the mover's side, then the fog shifts to whoever moves next.
+ * The frames come from the real server rules (server/showcase_test.go), so the
+ * replay never drifts from what players see.
  */
 export function Showcase() {
   const [frames, setFrames] = useState<Frame[] | null>(null)
   const [i, setI] = useState(0)
+  const [phase, setPhase] = useState<'move' | 'fog'>('move')
   const [view, setView] = useState<View>('turns')
 
   useEffect(() => {
@@ -37,13 +43,24 @@ export function Showcase() {
   useEffect(() => {
     if (!frames) return
     const atEnd = i === frames.length - 1
-    const t = setTimeout(() => setI(atEnd ? 0 : i + 1), atEnd ? END_HOLD_MS : i === 0 ? STEP_MS * 1.5 : STEP_MS)
+    const next = () => {
+      setI(atEnd ? 0 : i + 1)
+      setPhase('move')
+    }
+    let t: ReturnType<typeof setTimeout>
+    if (atEnd) t = setTimeout(next, END_HOLD_MS)
+    else if (view !== 'turns') t = setTimeout(next, i === 0 ? STEP_MS * 1.5 : STEP_MS)
+    else if (phase === 'move' && i > 0) t = setTimeout(() => setPhase('fog'), MOVE_MS)
+    else t = setTimeout(next, i === 0 ? FOG_MS * 2 : FOG_MS)
     return () => clearTimeout(t)
-  }, [frames, i])
+  }, [frames, i, phase, view])
 
   const f = frames?.[i]
   const over = !!frames && i === frames.length - 1
-  const side: Color = view === 'turns' ? (f?.turn ?? 'w') : view
+  // Ply i was played by white when i is odd (the first frame is the start position).
+  const mover: Color = i % 2 === 1 ? 'w' : 'b'
+  const autoSide: Color = i > 0 && phase === 'move' ? mover : (f?.turn ?? 'w')
+  const side: Color = view === 'turns' ? autoSide : view
   const moveNo = Math.ceil(i / 2)
 
   return (
@@ -72,7 +89,12 @@ export function Showcase() {
         </div>
       </div>
 
-      <div className="pointer-events-none" aria-hidden>
+      <div className="pointer-events-none relative" aria-hidden={!!frames}>
+        {!frames && (
+          <div className="absolute inset-0 z-20 grid place-items-center text-[#fffabd]">
+            <Spinner label="Loading replay" />
+          </div>
+        )}
         <Board
           board={f ? f[side].board : '?'.repeat(64)}
           orientation="w"

@@ -4,7 +4,7 @@ import { Captured } from './Captured'
 import { applyLocal, pieceImg } from './position'
 import { navigate } from './router'
 import { describeSettings } from './settings'
-import { Button, Dialog, Tip } from './ui'
+import { Button, Dialog, Spinner, Tip } from './ui'
 import { useMatch, type Color, type MatchState } from './useMatch'
 
 const NAMES: Record<Color, string> = { w: 'White', b: 'Black' }
@@ -133,13 +133,18 @@ export function MatchPage({ id }: { id: string }) {
               onMove={onMove}
             />
             {state?.status === 'waiting' && <WaitingCard id={id} link={link} />}
+            {!state && (
+              <div className="absolute inset-0 z-20 grid place-items-center rounded-md bg-bg/60 text-lg font-semibold">
+                <Spinner label="Joining match" />
+              </div>
+            )}
           </div>
           <PlayerBar color={bottom} state={state} you={you} active={toMove === bottom} />
         </section>
 
         <aside className="flex w-full flex-col gap-4 lg:w-[320px] lg:pt-9">
           <p className="flex items-center gap-2.5 text-2xl font-bold tracking-tight" aria-live="polite">
-            {yourMove && <span className="turn-dot" aria-hidden />}
+            {conn !== 'open' ? <span className="spinner text-[0.75em]" aria-hidden /> : yourMove && <span className="turn-dot" aria-hidden />}
             {status}
           </p>
 

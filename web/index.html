@@ -6,16 +6,33 @@
     <meta name="theme-color" content="#fffabd" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <title>Chess</title>
+    <style>
+      /* Paint the page in the right theme before the stylesheet loads. */
+      html { background: #fffabd; color: #050505; color-scheme: light; }
+      html[data-theme='dark'] { background: #050505; color: #fffabd; color-scheme: dark; }
+      /* Shown until the app's first render replaces #root. */
+      .boot-spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid color-mix(in srgb, currentColor 25%, transparent); border-top-color: currentColor; animation: boot-spin 700ms linear infinite; }
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+    </style>
     <script>
-      // Set the theme before first paint so there is no flash.
-      try {
-        var t = localStorage.getItem('theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      // Set the theme before first paint so there is no flash, and match the browser bar to it.
+      ;(function () {
+        var t
+        try {
+          t = localStorage.getItem('theme')
+        } catch (e) {}
+        if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
         document.documentElement.dataset.theme = t
-      } catch (e) {}
+        document.querySelector('meta[name=theme-color]').setAttribute('content', t === 'dark' ? '#050505' : '#fffabd')
+      })()
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="min-height: 100dvh; display: grid; place-items: center">
+        <div class="boot-spinner" role="status" aria-label="Loading"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
