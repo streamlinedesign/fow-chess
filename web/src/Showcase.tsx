@@ -5,20 +5,30 @@ import type { Color } from './useMatch'
 
 type Side = { board: string; last: { from: string; to: string } | null; check?: string }
 type Frame = { turn: Color; w: Side; b: Side; captured: Record<Color, string> }
+type View = 'turns' | Color
 
-const STEP_MS = 1300
-const END_HOLD_MS = 5000
+const STEP_MS = 2400
+const END_HOLD_MS = 6000
 const noMoves: string[] = []
 const noop = () => {}
+const NAMES: Record<Color, string> = { w: 'White', b: 'Black' }
+
+const VIEWS: [View, string][] = [
+  ['turns', 'Auto'],
+  ['w', 'White'],
+  ['b', 'Black'],
+]
 
 /**
- * Replays Morphy's Opera Game as each player saw it under fog, side by side.
- * The frames come from the real server rules (server/showcase_test.go), so the
- * replay never drifts from what players actually see.
+ * Replays Morphy's Opera Game as the players saw it under fog. By default the
+ * board shows the view of whoever is about to move, so you see the fog shift
+ * between sides. The frames come from the real server rules
+ * (server/showcase_test.go), so the replay never drifts from what players see.
  */
 export function Showcase() {
   const [frames, setFrames] = useState<Frame[] | null>(null)
   const [i, setI] = useState(0)
+  const [view, setView] = useState<View>('turns')
 
   useEffect(() => {
     import('./showcase.json').then((m) => setFrames(m.default as Frame[]))
@@ -27,44 +37,61 @@ export function Showcase() {
   useEffect(() => {
     if (!frames) return
     const atEnd = i === frames.length - 1
-    const t = setTimeout(() => setI(atEnd ? 0 : i + 1), atEnd ? END_HOLD_MS : i === 0 ? STEP_MS * 2 : STEP_MS)
+    const t = setTimeout(() => setI(atEnd ? 0 : i + 1), atEnd ? END_HOLD_MS : i === 0 ? STEP_MS * 1.5 : STEP_MS)
     return () => clearTimeout(t)
   }, [frames, i])
 
   const f = frames?.[i]
   const over = !!frames && i === frames.length - 1
+  const side: Color = view === 'turns' ? (f?.turn ?? 'w') : view
+  const moveNo = Math.ceil(i / 2)
 
   return (
-    <figure className="flex w-full flex-col gap-3" aria-label="A fog of war game seen from both sides">
-      <div className="showcase grid grid-cols-2 gap-3 sm:gap-5">
-        {(['w', 'b'] as const).map((c) => (
-          <div key={c} className="flex min-w-0 flex-col gap-2">
-            <div className="flex h-6 items-center gap-2 text-sm">
-              <span
-                className={`size-3 shrink-0 rounded-full shadow-[0_0_0_1.5px_var(--color-fg)] ${c === 'w' ? 'bg-[#fff]' : 'bg-[#111]'}`}
-                aria-hidden
-              />
-              <span className="font-semibold">{c === 'w' ? 'White' : 'Black'} sees</span>
-              {f && !over && f.turn === c && <span className="turn-tag max-sm:hidden">to move</span>}
-              <Captured pieces={f?.captured[c] ?? ''} className="ml-auto text-[clamp(12px,2.6vw,18px)]" />
-            </div>
-            <div className="pointer-events-none" aria-hidden>
-              <Board
-                board={f ? f[c].board : '?'.repeat(64)}
-                orientation={c}
-                legal={noMoves}
-                lastMove={f?.[c].last}
-                check={f?.[c].check}
-                onMove={noop}
-              />
-            </div>
-          </div>
-        ))}
+    <figure className="showcase flex flex-col gap-3" aria-label="A fog of war game replayed from each side">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2 text-[15px] whitespace-nowrap">
+          <span
+            className={`size-3.5 shrink-0 rounded-full shadow-[0_0_0_1.5px_var(--color-fg)] transition-colors ${side === 'w' ? 'bg-[#fff]' : 'bg-[#111]'}`}
+            aria-hidden
+          />
+          <span className="font-semibold">{over ? 'Fog lifted' : `${NAMES[side]}'s view`}</span>
+          {moveNo > 0 && <span className="font-mono text-sm text-accent tabular-nums max-[359px]:hidden">move {moveNo}</span>}
+        </div>
+        <div role="radiogroup" aria-label="Whose view" className="flex shrink-0 rounded-full p-0.5 shadow-[inset_0_0_0_1.5px_var(--color-fg)]">
+          {VIEWS.map(([v, label]) => (
+            <button
+              key={v}
+              role="radio"
+              aria-checked={view === v}
+              onClick={() => setView(v)}
+              className="rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition-colors aria-checked:bg-fg aria-checked:text-bg"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
-      <figcaption className="text-sm text-accent">
-        {over
-          ? 'Checkmate. The fog lifts when the game ends.'
-          : "Same game, two boards. Each side sees only what its pieces see, and never the opponent's moves."}
+
+      <div className="pointer-events-none" aria-hidden>
+        <Board
+          board={f ? f[side].board : '?'.repeat(64)}
+          orientation="w"
+          legal={noMoves}
+          lastMove={f?.[side].last}
+          check={f?.[side].check}
+          onMove={noop}
+        />
+      </div>
+
+      <div className="flex h-6 items-center justify-between gap-3 text-[clamp(14px,4vw,18px)]">
+        <Captured pieces={f?.captured.w ?? ''} />
+        <Captured pieces={f?.captured.b ?? ''} className="ml-auto" />
+      </div>
+
+      <figcaption className="text-center text-sm text-accent">
+        <span className="font-semibold text-fg">The Opera Game</span>, Morphy vs. the Duke of Brunswick and Count Isouard,
+        Paris 1858, replayed with fog of war.{' '}
+        {over ? 'At checkmate the fog lifts for both sides.' : 'Each side sees only what its own pieces can reach.'}
       </figcaption>
     </figure>
   )

@@ -273,7 +273,9 @@
   filter: drop-shadow(0 0 1px var(--color-fg));
 }
 
-/* Landing page replay: two small boards side by side. */
+/* Landing page replay: one board, sized to leave the settings in reach. */
 .showcase {
-  --board: min(44vw, 340px);
+  --board: min(100vw - 32px, 520px, max(300px, 100dvh - 260px));
+  width: var(--board);
+  margin-inline: auto;
 }
