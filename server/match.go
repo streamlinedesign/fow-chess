@@ -7,10 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 
 	"chess/engine"
 	"github.com/coder/websocket"
@@ -123,7 +125,7 @@ type client struct {
 	playerID string
 	mu       sync.Mutex
 	latest   []byte        // newest unsent state; older unsent states are dropped
-	pongs    [][]byte      // ping replies, always sent
+	queue    [][]byte      // ping replies and chat, always sent in order
 	wake     chan struct{} // signals the writer that something is queued
 }
 
@@ -140,9 +142,10 @@ func (c *client) push(b []byte) {
 	c.signal()
 }
 
-func (c *client) pong(b []byte) {
+// send queues a message that must not be skipped, unlike a state.
+func (c *client) send(b []byte) {
 	c.mu.Lock()
-	c.pongs = append(c.pongs, b)
+	c.queue = append(c.queue, b)
 	c.mu.Unlock()
 	c.signal()
 }
@@ -157,8 +160,8 @@ func (c *client) signal() {
 func (c *client) drain() [][]byte {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	out := c.pongs
-	c.pongs = nil
+	out := c.queue
+	c.queue = nil
 	if c.latest != nil {
 		out = append(out, c.latest)
 		c.latest = nil
@@ -181,6 +184,28 @@ type Match struct {
 	round    int
 	started  time.Time // when this round began
 	touched  time.Time
+	// chat between the two players in this round. Kept only in memory, and
+	// cleared when the next round starts or both players leave a finished game.
+	chat   []chatLine
+	chatID int
+}
+
+const (
+	chatMaxLen   = 500 // characters per message
+	chatMaxLines = 200 // older lines are dropped
+)
+
+type chatLine struct {
+	ID   int    `json:"id"`
+	From string `json:"from"` // "w" or "b"
+	Text string `json:"text"`
+	At   int64  `json:"at"` // unix milliseconds
+}
+
+type chatMsg struct {
+	Type  string     `json:"type"`
+	Reset bool       `json:"reset,omitempty"` // replace the chat instead of adding to it
+	Lines []chatLine `json:"lines"`
 }
 
 func newMatch(store *Store, id string, settings Settings) *Match {
@@ -259,7 +284,7 @@ type seatState struct {
 
 // protocolVersion changes whenever the state message changes shape, so a web app
 // talking to a server from another version can say so instead of breaking.
-const protocolVersion = 5
+const protocolVersion = 6
 
 type stateMsg struct {
 	Type     string   `json:"type"`
@@ -280,7 +305,8 @@ type stateMsg struct {
 type inMsg struct {
 	Type string  `json:"type"`
 	UCI  string  `json:"uci"`
-	T    float64 `json:"t"` // ping timestamp, echoed back
+	Text string  `json:"text"` // chat message
+	T    float64 `json:"t"`    // ping timestamp, echoed back
 }
 
 // join seats the player if a seat is free (white first); anyone else watches.
@@ -304,6 +330,9 @@ func (m *Match) join(c *client, p *player) {
 	}
 	m.clients[c] = struct{}{}
 	m.touched = time.Now()
+	if m.colorOf(c.playerID) >= 0 {
+		c.send(m.chatJSON(true, m.chat))
+	}
 	m.broadcast()
 }
 
@@ -312,6 +341,9 @@ func (m *Match) leave(c *client) {
 	defer m.mu.Unlock()
 	delete(m.clients, c)
 	m.touched = time.Now()
+	if m.game.Over() && !m.online(white) && !m.online(black) {
+		m.chat = nil
+	}
 	m.broadcast()
 }
 
@@ -378,12 +410,49 @@ func (m *Match) handle(c *client, msg inMsg) {
 			m.draw = [2]bool{}
 			m.round++
 			m.started = time.Now()
+			m.chat = nil
+			m.sendChat(true, nil)
 		}
+	case "chat":
+		text := strings.TrimSpace(msg.Text)
+		if text == "" || !utf8.ValidString(text) {
+			break
+		}
+		if utf8.RuneCountInString(text) > chatMaxLen {
+			text = string([]rune(text)[:chatMaxLen])
+		}
+		m.chatID++
+		line := chatLine{ID: m.chatID, From: colorNames[color], Text: text, At: time.Now().UnixMilli()}
+		m.chat = append(m.chat, line)
+		if len(m.chat) > chatMaxLines {
+			m.chat = slices.Clone(m.chat[len(m.chat)-chatMaxLines:])
+		}
+		m.sendChat(false, []chatLine{line})
+		return // the game didn't change
 	}
 	if len(m.game.History()) != plies || m.game.Over() != over || m.round != round {
 		m.save()
 	}
 	m.broadcast()
+}
+
+func (m *Match) chatJSON(reset bool, lines []chatLine) []byte {
+	if lines == nil {
+		lines = []chatLine{}
+	}
+	b, _ := json.Marshal(chatMsg{Type: "chat", Reset: reset, Lines: lines})
+	return b
+}
+
+// sendChat sends chat lines to the players' connections; spectators don't see
+// the chat. Callers hold m.mu.
+func (m *Match) sendChat(reset bool, lines []chatLine) {
+	b := m.chatJSON(reset, lines)
+	for c := range m.clients {
+		if m.colorOf(c.playerID) >= 0 {
+			c.send(b)
+		}
+	}
 }
 
 // broadcast sends every client its own view of the match. Callers hold m.mu.
@@ -460,7 +529,7 @@ func (m *Match) serve(ctx context.Context, conn *websocket.Conn, p *player) {
 	m.join(c, p)
 	defer m.leave(c)
 
-	conn.SetReadLimit(1024)
+	conn.SetReadLimit(4096) // room for a chat message, even one escaped in full
 	for {
 		_, b, err := conn.Read(ctx)
 		if err != nil {
@@ -475,7 +544,7 @@ func (m *Match) serve(ctx context.Context, conn *websocket.Conn, p *player) {
 		}
 		if msg.Type == "ping" {
 			pong, _ := json.Marshal(map[string]any{"type": "pong", "t": msg.T})
-			c.pong(pong)
+			c.send(pong)
 			continue
 		}
 		start := time.Now()

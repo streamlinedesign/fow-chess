@@ -29,6 +29,10 @@ Everything lives in one SQLite file, `chess.db` next to where the server runs (c
 - `/u/<username>` shows a player's rating, current games and finished games. Finished games can be replayed move by move at `/g/<match id>/<round>`, with the fog lifted. Games still being played can't be replayed, since that would reveal the board.
 - Everyone starts at a rating of 1500. One rating covers every game mode. It starts changing once rated games arrive with clocks.
 
+## Chat
+
+The two players can chat during a game. Spectators don't see it. Messages are kept only in the server's memory, never in the database: a rematch starts a fresh chat, and once a game is over and both players have left, its chat is deleted. A server restart clears every chat. Messages are capped at 500 characters, and a game keeps its last 200.
+
 ## Landing page replay
 
 The landing page replays Morphy's Opera Game as White and Black each saw it under fog. The frames in `web/src/showcase.json` are produced by the server's own rules, and a test fails if they drift. After changing what players see, regenerate them with `cd server && go test -run Showcase -update`.
@@ -107,7 +111,8 @@ Accounts and games live in `/var/lib/chess/chess.db`, which survives redeploys; 
   - `captured`: `{"w":"qnp","b":"P"}`, the pieces each side has taken as FEN letters, most valuable first. Sent to everyone, since players know this even under fog.
   - `legal`: UCI moves the viewer may play now, sent only to the player whose turn it is.
 - The client sends `{"type":"move","uci":"e7e8q"}`, `{"type":"draw"}`, `{"type":"resign"}`, `{"type":"rematch"}`, or `{"type":"ping","t":<ms>}`, which the server answers with `{"type":"pong","t":<same>}`. The draw and rematch messages toggle the offer.
-- A slow connection skips straight to the newest state instead of queueing old ones.
+- Players send `{"type":"chat","text":"gg"}`. The server sends players `{"type":"chat","reset":true,"lines":[...]}` with the whole chat when they connect and when a rematch clears it, then `{"type":"chat","lines":[{"id":3,"from":"w","text":"gg","at":<unix ms>}]}` for each new message.
+- A slow connection skips straight to the newest state instead of queueing old ones. Chat messages and pongs are never skipped.
 
 ## Measuring sync speed
 

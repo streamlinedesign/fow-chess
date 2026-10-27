@@ -268,9 +268,17 @@
       0 0 0 18px transparent;
   }
 }
+/* Chat: new lines and the unread pill ease in. */
+.chat-line,
+.chat-pill {
+  animation: fade-in 150ms ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .turn-dot,
-  .board-turn[data-your-move='true'] {
+  .board-turn[data-your-move='true'],
+  .chat-line,
+  .chat-pill {
     animation: none;
   }
 }
