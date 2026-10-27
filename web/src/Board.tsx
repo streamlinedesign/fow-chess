@@ -115,6 +115,7 @@ export const Board = memo(function Board({ board, orientation, legal, lastMove, 
       const sq = squareAt(col, row, orientation)
       const i = squareIndex(sq)
       const piece = pieceAt(board, sq)
+      const fog = board[i] === '?'
       const target = targets.has(sq)
       // A pawn moving diagonally onto an empty square is capturing en passant.
       const capture = target && (piece !== null || (pieceAt(board, sel!)?.toLowerCase() === 'p' && sel![0] !== sq[0]))
@@ -124,11 +125,12 @@ export const Board = memo(function Board({ board, orientation, legal, lastMove, 
           className="sq"
           data-square={sq}
           data-light={((i & 7) + (i >> 3)) % 2 === 1}
-          data-last={lastMove?.from === sq || lastMove?.to === sq}
+          // Under fog the square your piece left is often out of sight; a highlight there would read as visible.
+          data-last={!fog && (lastMove?.from === sq || lastMove?.to === sq)}
           data-selected={sel === sq}
           data-check={check === sq}
           data-target={target ? (capture ? 'capture' : 'move') : undefined}
-          data-fog={board[i] === '?'}
+          data-fog={fog}
         >
           {col === 0 && <span className="coord top-[4%] left-[5%]">{sq[1]}</span>}
           {row === 7 && <span className="coord right-[5%] bottom-[4%]">{sq[0]}</span>}

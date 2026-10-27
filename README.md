@@ -13,7 +13,7 @@ Rules: full legal moves including castling, en passant and promotion (with a pic
 The creator picks the rules when making a match, for play testing:
 
 - **Fog of war** on or off. With fog on, each piece sees its own square and every square it could move to, captures included. A pawn always sees the square straight ahead, even when blocked, and sees its diagonals only when it can capture there. You get no hints about the opponent: no last-move highlight, `?` in the move list for their moves, and no check marks on your own moves. Spectators see only the last move of each side. When the game ends, everyone sees the full board.
-- **Win by** checkmate (normal check rules) or capturing the king. In capture-the-king mode there is no check: kings may walk into danger and may castle out of, through or into attack.
+- **Win by** checkmate (normal check rules) or Eat the King (win by capturing the king). In Eat the King mode there is no check: kings may walk into danger and may castle out of, through or into attack.
 
 The rules live in `server/engine` (`Rules`, `Position.Vision`), and what each viewer receives is decided in `server/view.go`.
 

@@ -22,5 +22,5 @@ export function saveSettings(s: Settings) {
 }
 
 export function describeSettings(s: Settings) {
-  return [s.fog ? 'Fog of war' : 'Full board', s.kingCapture ? 'Capture the king' : 'Checkmate']
+  return [s.fog ? 'Fog of war' : 'Full board', s.kingCapture ? 'Eat the King' : 'Checkmate']
 }

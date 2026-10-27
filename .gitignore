@@ -4,6 +4,7 @@ server/dist/*
 !server/dist/index.html
 /chess
 /chess-linux-amd64
+/.dev-server
 *.tsbuildinfo
 .vite/
 coverage/

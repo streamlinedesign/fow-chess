@@ -32,7 +32,7 @@ export function SettingsPanel({ value, onChange }: { value: Settings; onChange: 
           className="grid grid-cols-2 gap-2"
         >
           {[
-            ['capture', 'Capturing the king', 'No check. Kings can walk into danger.'],
+            ['capture', 'Eat the King', 'No check. Kings can walk into danger.'],
             ['mate', 'Checkmate', 'Normal check rules.'],
           ].map(([v, label, hint]) => (
             <RadioGroup.Item
