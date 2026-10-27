@@ -41,45 +41,37 @@ export function Landing() {
 
   return (
     <main className="flex flex-1 flex-col">
-      <section className="grid flex-1 content-center gap-12 px-4 py-10 sm:px-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-center lg:gap-16">
-        <div className="flex flex-col gap-10">
-          <h1 className="text-[clamp(52px,13vw,124px)] lg:text-[clamp(56px,6.5vw,112px)] leading-[0.9] font-bold tracking-[-0.04em]">
-            Two players.
-            <br />
-            One board.
-          </h1>
-
-          <div className="flex max-w-xl flex-col gap-4">
-            <SettingsPanel value={settings} onChange={setSettings} />
-
-            <Button variant="solid" className="h-14 text-lg" onClick={create} disabled={busy}>
-              New match
-            </Button>
-
-            <form onSubmit={join} className="flex gap-2">
-              <input
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
-                placeholder="Match ID"
-                aria-label="Match ID"
-                maxLength={12}
-                autoCapitalize="characters"
-                autoComplete="off"
-                spellCheck={false}
-                className="h-14 min-w-0 flex-1 rounded-full bg-transparent px-6 font-mono text-lg tracking-[0.2em] uppercase shadow-[inset_0_0_0_2px_var(--color-fg)] outline-none placeholder:font-sans placeholder:tracking-normal placeholder:normal-case placeholder:text-accent focus-visible:shadow-[inset_0_0_0_3px_var(--color-fg)]"
-              />
-              <Button type="submit" className="h-14 text-lg" disabled={busy || !code}>
-                Join
-              </Button>
-            </form>
-
-            <p role="alert" className="min-h-6 text-danger">
-              {error}
-            </p>
-          </div>
-        </div>
-
+      <section className="mx-auto flex w-full max-w-[520px] flex-col gap-8 px-4 pt-4 pb-10 sm:pt-8">
         <Showcase />
+
+        <div className="flex flex-col gap-4">
+          <SettingsPanel value={settings} onChange={setSettings} />
+
+          <Button variant="solid" className="h-14 text-lg" onClick={create} disabled={busy}>
+            New match
+          </Button>
+
+          <form onSubmit={join} className="flex gap-2">
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+              placeholder="Match ID"
+              aria-label="Match ID"
+              maxLength={12}
+              autoCapitalize="characters"
+              autoComplete="off"
+              spellCheck={false}
+              className="h-14 min-w-0 flex-1 rounded-full bg-transparent px-6 font-mono text-lg tracking-[0.2em] uppercase shadow-[inset_0_0_0_2px_var(--color-fg)] outline-none placeholder:font-sans placeholder:tracking-normal placeholder:normal-case placeholder:text-accent focus-visible:shadow-[inset_0_0_0_3px_var(--color-fg)]"
+            />
+            <Button type="submit" className="h-14 text-lg" disabled={busy || !code}>
+              Join
+            </Button>
+          </form>
+
+          <p role="alert" className="min-h-6 text-danger">
+            {error}
+          </p>
+        </div>
       </section>
     </main>
   )
