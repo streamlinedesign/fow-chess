@@ -3,7 +3,7 @@
 Two-player online chess. One player creates a match and shares the 6-character ID (or link), and the other joins with it.
 
 - **web/**: React 19, Vite, TypeScript, Tailwind v4, Radix, Geist. The browser knows no chess rules: it draws the board the server sends and only offers the legal moves the server lists.
-- **server/**: Go. It holds every match in memory, checks each move with its own rules engine, and pushes state over WebSockets. In production it also serves the built web app from inside the binary.
+- **server/**: Go, with Postgres for accounts and games. It holds every live match in memory, checks each move with its own rules engine, and pushes state over WebSockets. In production it also serves the built web app from inside the binary.
 - **server/engine/**: the rules engine. Positions, FEN, move generation, legality, SAN, and game results. It has no dependencies and knows nothing about networking, so variants like fog of war build on top of it.
 
 Rules: full legal moves including castling, en passant and promotion (with a picker), check, checkmate, stalemate, insufficient material, threefold repetition and the fifty-move rule (both end the game automatically). Players can offer a draw, resign, and rematch (colors swap). Refreshing or losing signal reconnects you to your seat. Anyone else who opens the link watches.
@@ -21,7 +21,7 @@ The rules live in `server/engine` (`Rules`, `Position.Vision`), and what each vi
 
 Players can sign up with just a username and password (no email). Passwords are hashed with bcrypt, and sessions are a random token in an http-only cookie, with only a hash of it stored. Guests can still play without an account.
 
-Everything lives in one SQLite file, `chess.db` next to where the server runs (change it with `-db path/to/file.db`). The server is still a single binary: the SQLite driver is pure Go.
+Everything lives in Postgres. The server connects to `DATABASE_URL` (or `-db <url>`), and defaults to the local Postgres from `docker-compose.yml`. Tables are created and updated on startup from the numbered SQL files in `server/migrations/`: to change the schema, add a new file rather than editing one that has shipped.
 
 - Every game is saved as it's played, so a server restart no longer ends games: reopen the link and play on.
 - Games with at least one signed-in player are kept forever. Games between two guests are deleted after 30 days.
@@ -37,21 +37,33 @@ The landing page replays Morphy's Opera Game as White and Black each saw it unde
 
 - Go 1.24+
 - Node 20+
+- Docker (Docker Desktop on a Mac), which runs Postgres for you
 
 ## Run locally
+
+Start Docker Desktop, then:
 
 ```sh
 make dev
 ```
 
-Then open http://localhost:5173. To play against yourself, open a second browser or a private window, since each browser gets one seat. Vite is started with `--host`, so a phone on the same Wi-Fi can open `http://<your-computer-ip>:5173`.
+Then open http://localhost:5173. `make dev` starts Postgres in Docker first (the first run downloads the image, about 30 seconds), waits until it's ready, and the server creates its tables. Postgres keeps running in the background after you stop `make dev`, so the next start is instant.
+
+- `make db-stop` stops Postgres. Your accounts and games are kept.
+- `make db-reset` deletes every account and game and starts fresh.
+- `make psql` opens a SQL shell on the database.
+- Already running your own Postgres on port 5432? Stop it, or create a `chess` database there and set `DATABASE_URL` to it: `make dev` then skips Docker and uses yours.
+- Accounts and games from the old SQLite `chess.db` aren't carried over. To play against yourself, open a second browser or a private window, since each browser gets one seat. Vite is started with `--host`, so a phone on the same Wi-Fi can open `http://<your-computer-ip>:5173`.
 
 ## Tests
 
 ```sh
+make test                          # starts Postgres if needed, then runs every Go test
 cd server && go test ./...         # includes perft to depth 4-5 on the standard test positions (~3s)
 cd server && go test -short ./...  # skips the deep perft runs
 ```
+
+Tests that touch the database each get their own Postgres schema, dropped afterwards, so they never touch your dev data. They use `CHESS_TEST_DATABASE_URL` if set, else the Docker Postgres, and are skipped with a note if neither is running.
 
 If a page says **Server out of date** or `make dev` says port 8080 is in use, an older copy of the server (often a previously built `./chess`) is still running. Stop it and run `make dev` again.
 
@@ -59,7 +71,7 @@ If a page says **Server out of date** or `make dev` says port 8080 is in use, an
 
 ```sh
 make build      # builds web, embeds it, writes ./chess
-./chess         # serves everything on :8080 (use -addr :3000 to change)
+DATABASE_URL=postgres://user:pass@host:5432/chess ./chess   # serves everything on :8080 (use -addr :3000 to change)
 ```
 
 `make build-linux` also writes `chess-linux-amd64` for a droplet.
@@ -76,8 +88,8 @@ make build      # builds web, embeds it, writes ./chess
    After=network.target
 
    [Service]
-   ExecStart=/opt/chess/chess -addr 127.0.0.1:8080 -db /var/lib/chess/chess.db
-   StateDirectory=chess
+   Environment=DATABASE_URL=postgres://chess:CHANGE_ME@localhost:5432/chess?sslmode=disable
+   ExecStart=/opt/chess/chess -addr 127.0.0.1:8080
    Restart=always
    DynamicUser=yes
 
@@ -94,7 +106,7 @@ make build      # builds web, embeds it, writes ./chess
    }
    ```
 
-Accounts and games live in `/var/lib/chess/chess.db`, which survives redeploys; back it up. Idle matches leave memory after 2 hours and load again from the database when someone opens them.
+Accounts and games live in Postgres (install it on the droplet or use a managed one), which survives redeploys; back it up with `pg_dump`. Idle matches leave memory after 2 hours and load again from the database when someone opens them.
 
 ## Protocol
 
