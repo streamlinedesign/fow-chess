@@ -63,6 +63,12 @@ const paths = {
   check: <path d="m3 7.8 3 3 6-6.6" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />,
   plus: <path d="M7.5 2.5v10M2.5 7.5h10" strokeLinecap="round" />,
   send: <path d="M2 7.5h9.5M8 3.5l4 4-4 4" strokeLinecap="round" strokeLinejoin="round" />,
+  eye: (
+    <>
+      <path d="M1.5 7.5S3.8 3 7.5 3s6 4.5 6 4.5-2.3 4.5-6 4.5-6-4.5-6-4.5Z" strokeLinejoin="round" />
+      <circle cx="7.5" cy="7.5" r="1.8" />
+    </>
+  ),
   trend: <path d="M1.5 11 5.5 7l2.5 2.5L13.5 4M10 4h3.5v3.5" strokeLinecap="round" strokeLinejoin="round" />,
 }
 

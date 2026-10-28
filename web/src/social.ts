@@ -8,6 +8,8 @@ export type UserCard = {
   online: boolean
   /** Unix ms; missing when they hide it. */
   lastSeen?: number
+  /** The match they're playing right now, to watch. */
+  playing?: string
 }
 
 export type FriendState = 'none' | 'friends' | 'sent' | 'received'
@@ -58,7 +60,8 @@ export async function api<T = unknown>(method: string, path: string, body?: unkn
 const dayFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' })
 
 /** "Online", "Last seen 40 min ago", or nothing when hidden. */
-export function presence(u: Pick<UserCard, 'online' | 'lastSeen'>) {
+export function presence(u: Pick<UserCard, 'online' | 'lastSeen' | 'playing'>) {
+  if (u.playing) return 'In a game'
   if (u.online) return 'Online'
   if (!u.lastSeen) return ''
   const s = (Date.now() - u.lastSeen) / 1000

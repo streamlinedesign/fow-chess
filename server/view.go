@@ -84,6 +84,8 @@ type gameView struct {
 	// Captured lists the pieces each side has taken, as FEN letters, most valuable first.
 	// Players know all of it even under fog: they saw what they took and see what they lost.
 	Captured map[string]string `json:"captured"`
+	// Behind is how many of the moves played a spectator isn't shown yet.
+	Behind int `json:"behind,omitempty"`
 }
 
 // captured lists the pieces each side has taken, most valuable first.
@@ -106,13 +108,13 @@ func captured(hist []engine.PlayedMove) map[string]string {
 	return out
 }
 
-// viewFor builds the game as seen by viewer (-1 for spectators). Legal moves are
-// only sent to the player whose turn it is, so the browser never has to know the rules.
+// viewFor builds the game as seen by viewer (-1 for everything, which is how
+// spectators see a game without fog). Legal moves are only sent to the player
+// whose turn it is, so the browser never has to know the rules.
 //
 // With fog, a player sees only what their pieces see and gets no hint of the
 // opponent's moves: no last-move highlight, no notation, and no check marks on
-// their own moves. Spectators see just the last move of each side. Once the
-// game is over everyone sees everything.
+// their own moves. Once the game is over everyone sees everything.
 func viewFor(g *engine.Game, viewer int, playable, fog bool) gameView {
 	pos := g.Position()
 	hist := g.History()
@@ -130,7 +132,7 @@ func viewFor(g *engine.Game, viewer int, playable, fog bool) gameView {
 		}
 	}
 
-	if !fog || g.Over() {
+	if !fog || g.Over() || viewer < 0 {
 		v.Board = boardView(&pos, nil)
 		for i, pm := range hist {
 			v.History[i] = pm.SAN
@@ -146,23 +148,6 @@ func viewFor(g *engine.Game, viewer int, playable, fog bool) gameView {
 
 	// Ply i was played by white when i is even (games start from the initial position).
 	mover := func(i int) int { return i % 2 }
-
-	if viewer < 0 {
-		var visible [64]bool
-		for i := range v.History {
-			v.History[i] = "?"
-		}
-		for i := max(0, n-2); i < n; i++ {
-			m := hist[i].Move
-			visible[m.From], visible[m.To] = true, true
-			v.History[i] = hist[i].SAN
-		}
-		v.Board = boardView(&pos, &visible)
-		if n > 0 {
-			v.Last = &lastMove{From: hist[n-1].Move.From.String(), To: hist[n-1].Move.To.String()}
-		}
-		return v
-	}
 
 	vision := pos.Vision(engine.Color(viewer))
 	v.Board = boardView(&pos, &vision)
@@ -180,5 +165,31 @@ func viewFor(g *engine.Game, viewer int, playable, fog bool) gameView {
 	if viewer == int(pos.Turn) && pos.InCheck() {
 		v.Check = pos.KingSquare(pos.Turn).String()
 	}
+	return v
+}
+
+// spectatorDelay is how many moves (by either side) spectators of a fog game
+// are kept behind, so nobody watching can tell a player what the fog hides
+// from them right now.
+const spectatorDelay = 6
+
+// spectatorView is the game as a spectator sees it. Without fog, or once the
+// game is over, that's everything. In a fog game still being played, it's what
+// side saw spectatorDelay moves ago; the turn and move count stay current, so
+// the page can say whose move it is.
+func spectatorView(g *engine.Game, rules engine.Rules, side int, fog bool) gameView {
+	if !fog || g.Over() {
+		return viewFor(g, -1, false, fog)
+	}
+	hist := g.History()
+	shown := max(0, len(hist)-spectatorDelay)
+	past := engine.NewGameWithRules(rules)
+	for _, pm := range hist[:shown] {
+		past.PlayUCI(pm.Move.UCI())
+	}
+	v := viewFor(past, side, false, true)
+	v.Turn = g.Turn().String()
+	v.Ply = len(hist)
+	v.Behind = len(hist) - shown
 	return v
 }

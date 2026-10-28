@@ -12,7 +12,7 @@ Rules: full legal moves including castling, en passant and promotion (with a pic
 
 The creator picks the rules when making a match, for play testing:
 
-- **Fog of war** on or off. With fog on, each piece sees its own square and every square it could move to, captures included. A pawn always sees the square straight ahead, even when blocked, and sees its diagonals only when it can capture there. You get no hints about the opponent: no last-move highlight, `?` in the move list for their moves, and no check marks on your own moves. Spectators see only the last move of each side. When the game ends, everyone sees the full board.
+- **Fog of war** on or off. With fog on, each piece sees its own square and every square it could move to, captures included. A pawn always sees the square straight ahead, even when blocked, and sees its diagonals only when it can capture there. You get no hints about the opponent: no last-move highlight, `?` in the move list for their moves, and no check marks on your own moves. Spectators see one side's view, 6 moves behind (see Watching below). When the game ends, everyone sees the full board.
 - **Win by** checkmate (normal check rules) or Eat the King (win by capturing the king). In Eat the King mode there is no check: kings may walk into danger and may castle out of, through or into attack.
 
 The rules live in `server/engine` (`Rules`, `Position.Vision`), and what each viewer receives is decided in `server/view.go`.
@@ -52,6 +52,12 @@ Signed-in players can be friends, message each other and offer matches. Guests k
 - **The bell** holds friend requests, match offers and answers to them, game results you weren't there to see, and moves in Daily or No clock games that took more than 4 hours (`slowMove` in `server/match.go`). It's a dropdown, or a sheet on phones.
 - **Live updates** go to every open tab of a signed-in player over server-sent events (`GET /api/live`, `server/live.go`). Having a tab open is what makes a player online.
 - **Settings** (`/settings`): theme, change password (which signs out other devices), log out everywhere, delete account, and privacy: hide your online status, take match offers from friends only, and turn off friend requests. A deleted account's games stay, played by a guest.
+
+## Watching
+
+- **Watch** (`/watch`, in the top bar when signed out and in the avatar menu when signed in) lists the games being played right now, with friends' games first, then the strongest players. A game is listed once both seats are taken and a player has it open; before the first move, both players need to be there. Your own games aren't listed. The list refreshes every 10 seconds.
+- **Spectators** open a match by its link like anyone else and pick whether to see it as White or Black. In a fog game still being played, they see exactly what that player saw 6 moves ago (`spectatorDelay` in `server/view.go`, counting both sides' moves), so nobody watching can tell a player what the fog hides. Clocks and whose move it is stay live. Without fog, or once the game is over, spectators see everything as it is. Players see how many people are watching.
+- **In a game**: a friend playing right now shows as "In a game" on the Friends page, their profile and your chat, with a Watch button. Hiding your online status hides this too.
 
 ## Landing page replay
 
@@ -152,7 +158,9 @@ Accounts and games live in Postgres, which survives redeploys; back it up with `
   - `players`: `{"w":{"taken":true,"online":true,"name":"Uriel"},"b":{...}}`, where `name` is the username of a signed-in player and absent for a guest.
   - `captured`: `{"w":"qnp","b":"P"}`, the pieces each side has taken as FEN letters, most valuable first. Sent to everyone, since players know this even under fog.
   - `legal`: UCI moves the viewer may play now, sent only to the player whose turn it is.
+  - `spectators`: how many people are watching, not counting the players. Spectators also get `watching` (`w` or `b`, the side they see the game as) and, in a fog game, `behind` (how many moves they aren't shown yet).
 - The client sends `{"type":"move","uci":"e7e8q"}`, `{"type":"draw"}`, `{"type":"resign"}`, `{"type":"rematch"}`, or `{"type":"ping","t":<ms>}`, which the server answers with `{"type":"pong","t":<same>}`. The draw and rematch messages toggle the offer.
+- Spectators send `{"type":"watch","side":"b"}` to see the game as the other side. Every spectator starts as White.
 - Players send `{"type":"chat","text":"gg"}`. The server sends players `{"type":"chat","reset":true,"lines":[...]}` with the whole chat when they connect and when a rematch clears it, then `{"type":"chat","lines":[{"id":3,"from":"w","text":"gg","at":<unix ms>}]}` for each new message.
 - A slow connection skips straight to the newest state instead of queueing old ones. Chat messages and pongs are never skipped.
 

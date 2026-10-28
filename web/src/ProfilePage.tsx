@@ -36,6 +36,8 @@ type Profile = {
   joined: number
   online: boolean
   lastSeen?: number
+  /** The match they're playing right now. */
+  playing?: string
   /** Only on your own profile. */
   hideOnline?: boolean
   stats: Record
@@ -149,6 +151,12 @@ export function ProfilePage({ name }: { name: string }) {
           </div>
         </div>
         <div className="prof-acts">
+          {!own && profile.playing && (
+            <Button onClick={() => navigate(`/m/${profile.playing}`)}>
+              <Icon name="eye" />
+              Watch
+            </Button>
+          )}
           {own ? (
             <Button onClick={() => navigate('/settings')}>
               <Icon name="gear" />

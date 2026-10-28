@@ -32,6 +32,7 @@ type profileResponse struct {
 	Joined   int64         `json:"joined"` // unix milliseconds
 	Online   bool          `json:"online"`
 	LastSeen int64         `json:"lastSeen,omitempty"` // unix milliseconds; left out when hidden
+	Playing  string        `json:"playing,omitempty"`  // the match they're playing right now
 	Stats    record        `json:"stats"`
 	Current  []gameSummary `json:"current"`
 	Finished []gameSummary `json:"finished"`
@@ -154,7 +155,7 @@ func profileRoutes(mux *http.ServeMux, store *Store, auth *Auth, live *Live) {
 		card := live.card(*p)
 		resp := profileResponse{
 			Username: u.Username, Rating: int(u.Rating + 0.5), Joined: u.CreatedAt.UnixMilli(),
-			Online: card.Online, LastSeen: card.LastSeen, Stats: stats,
+			Online: card.Online, LastSeen: card.LastSeen, Playing: card.Playing, Stats: stats,
 			Current: []gameSummary{}, Finished: []gameSummary{},
 		}
 		if rank, err := store.Rank(u.ID); err == nil && rank != nil {

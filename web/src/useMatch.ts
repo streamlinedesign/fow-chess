@@ -35,6 +35,12 @@ export type MatchState = {
   rated: boolean
   /** Each side's rating change, once a rated game is over and saved. */
   ratingDiff?: Record<Color, number>
+  /** The side a spectator sees the game as. Absent for players. */
+  watching?: Color
+  /** How many moves a spectator of a fog game is kept behind the players. */
+  behind?: number
+  /** People watching, not counting the players. */
+  spectators: number
   /** When this state arrived, by performance.now(), for counting the clock down. Set here, not by the server. */
   receivedAt: number
 }
@@ -48,11 +54,12 @@ export type Outgoing =
   | { type: 'draw' }
   | { type: 'rematch' }
   | { type: 'chat'; text: string }
+  | { type: 'watch'; side: Color }
 
 export type Connection = 'connecting' | 'open' | 'closed' | 'failed' | 'missing' | 'outdated'
 
 /** Must match protocolVersion in server/match.go. */
-const PROTOCOL = 7
+const PROTOCOL = 8
 
 export function useMatch(id: string) {
   const [state, setState] = useState<MatchState | null>(null)

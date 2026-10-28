@@ -14,6 +14,7 @@ import { OfferDialog } from './OfferDialog'
 import { ProfilePage } from './ProfilePage'
 import { ReplayPage } from './ReplayPage'
 import { usePath } from './router'
+import { WatchPage } from './WatchPage'
 import { SettingsPage } from './SettingsPage'
 import { showToast } from './social'
 import { Toaster } from './Toaster'
@@ -52,6 +53,8 @@ export function App() {
     <MessagesPage name={chat[1]} />
   ) : path === '/friends' ? (
     <FriendsPage />
+  ) : path === '/watch' ? (
+    <WatchPage />
   ) : path === '/settings' ? (
     <SettingsPage />
   ) : path === '/' ? (

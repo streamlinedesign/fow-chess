@@ -34,8 +34,16 @@ type Hub struct {
 	mu      sync.Mutex
 	matches map[string]*Match
 	store   *Store
+	hooks   matchHooks
+}
+
+// matchHooks tell the rest of the site what happens in matches.
+type matchHooks struct {
 	// notify, if set, puts a game result or a slow move in a player's bell.
 	notify func(notification)
+	// playing, if set, is told when a signed-in player starts or stops playing
+	// a game, so friends see them in a game.
+	playing func(userID int64)
 }
 
 func NewHub(store *Store) *Hub {
@@ -57,7 +65,7 @@ func (h *Hub) Create(creator *player, settings Settings) *Match {
 			continue
 		}
 		m := newMatch(h.store, id, settings)
-		m.notify = h.notify
+		m.hooks = h.hooks
 		m.seat(white, creator)
 		m.save()
 		h.matches[id] = m
@@ -65,11 +73,11 @@ func (h *Hub) Create(creator *player, settings Settings) *Match {
 	}
 }
 
-// SetNotify sets where game results and slow moves go.
-func (h *Hub) SetNotify(f func(notification)) {
+// SetHooks sets where game results, slow moves and who's playing go.
+func (h *Hub) SetHooks(hooks matchHooks) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.notify = f
+	h.hooks = hooks
 }
 
 // CreateBetween starts a match from an accepted offer, both seats taken. The
@@ -95,7 +103,7 @@ func (h *Hub) Get(id string) *Match {
 	if err != nil || rec == nil {
 		return nil
 	}
-	m, err := restoreMatch(h.store, rec, h.notify)
+	m, err := restoreMatch(h.store, rec, h.hooks)
 	if err != nil {
 		log.Printf("restoring match %s: %v", id, err)
 		return nil
@@ -168,6 +176,7 @@ func userPlayer(u *User, browserID string) *player {
 
 type client struct {
 	playerID string
+	side     int // which side a spectator sees the game as; guarded by the match's mu
 	mu       sync.Mutex
 	latest   []byte        // newest unsent state; older unsent states are dropped
 	queue    [][]byte      // ping replies and chat, always sent in order
@@ -238,7 +247,7 @@ type Match struct {
 	ratingDiff *[2]int     // set once a rated game's ratings are saved
 	// turnBegan is when the side to move got the turn, clock or not.
 	turnBegan time.Time
-	notify    func(notification)
+	hooks     matchHooks
 	// overNotified is the round whose result has gone to the players' bells.
 	overNotified int
 	// chat between the two players in this round. Kept only in memory, and
@@ -285,9 +294,9 @@ func (m *Match) resetClock() {
 }
 
 // restoreMatch rebuilds a match from its newest saved round by replaying the moves.
-func restoreMatch(store *Store, rec *gameRecord, notify func(notification)) (*Match, error) {
+func restoreMatch(store *Store, rec *gameRecord, hooks matchHooks) (*Match, error) {
 	m := newMatch(store, rec.MatchID, rec.Settings)
-	m.notify = notify
+	m.hooks = hooks
 	m.round, m.started, m.turnBegan = rec.Round, rec.CreatedAt, rec.UpdatedAt
 	m.seats, m.users = rec.Seats, rec.Users
 	m.names = [2]string{rec.whiteName, rec.blackName}
@@ -373,6 +382,7 @@ func (m *Match) save() {
 		if m.overNotified != m.round {
 			m.overNotified = m.round
 			m.notifyOver()
+			m.playingChanged()
 		}
 	}
 	m.store.SaveGame(rec)
@@ -385,7 +395,7 @@ const slowMove = 4 * time.Hour
 // notifyOver tells signed-in players who aren't watching how their game ended.
 // Callers hold m.mu.
 func (m *Match) notifyOver() {
-	if m.notify == nil {
+	if m.hooks.notify == nil {
 		return
 	}
 	outcome := m.game.Outcome().String()
@@ -400,7 +410,7 @@ func (m *Match) notifyOver() {
 				result = "won"
 			}
 		}
-		go m.notify(notification{
+		go m.hooks.notify(notification{
 			UserID: m.users[c], Kind: notifyGameOver, ActorID: m.users[1-c], MatchID: m.id, Round: m.round,
 			Data: map[string]any{"result": result, "reason": m.game.Method().String(), "kingCapture": m.settings.KingCapture},
 		})
@@ -492,7 +502,7 @@ type seatState struct {
 
 // protocolVersion changes whenever the state message changes shape, so a web app
 // talking to a server from another version can say so instead of breaking.
-const protocolVersion = 7
+const protocolVersion = 8
 
 type stateMsg struct {
 	Type     string   `json:"type"`
@@ -512,6 +522,10 @@ type stateMsg struct {
 	Rated   bool                 `json:"rated"`
 	// RatingDiff is each side's rating change, once a rated game is over and saved.
 	RatingDiff map[string]int `json:"ratingDiff,omitempty"`
+	// Watching is the side a spectator sees the game as; empty for players.
+	Watching string `json:"watching,omitempty"`
+	// Spectators is how many people are watching, not counting the players.
+	Spectators int `json:"spectators"`
 }
 
 // clockView is the clocks as of the moment the state is sent; the browser
@@ -525,6 +539,7 @@ type inMsg struct {
 	Type string  `json:"type"`
 	UCI  string  `json:"uci"`
 	Text string  `json:"text"` // chat message
+	Side string  `json:"side"` // "w" or "b": the side a spectator wants to see the game as
 	T    float64 `json:"t"`    // ping timestamp, echoed back
 }
 
@@ -561,6 +576,7 @@ func (m *Match) join(c *client, p *player) {
 	}
 	if m.colorOf(c.playerID) >= 0 {
 		c.send(m.chatJSON(true, m.chat))
+		m.playingChanged()
 	}
 	m.broadcast()
 }
@@ -573,7 +589,49 @@ func (m *Match) leave(c *client) {
 	if m.game.Over() && !m.online(white) && !m.online(black) {
 		m.chat = nil
 	}
+	if i := m.colorOf(c.playerID); i >= 0 && !m.online(i) {
+		m.playingChanged()
+	}
 	m.broadcast()
+}
+
+// playingChanged tells the site that whether this match's players are playing
+// may have changed. Callers hold m.mu.
+func (m *Match) playingChanged() {
+	if m.hooks.playing == nil {
+		return
+	}
+	for _, id := range m.users {
+		if id != 0 {
+			go m.hooks.playing(id)
+		}
+	}
+}
+
+// live is whether the match is being played right now: both seats taken, the
+// game not over, and a player here. A game nobody has moved in yet needs both
+// players, so a match from an offer isn't listed while it waits for one.
+// Callers hold m.mu.
+func (m *Match) live() bool {
+	if m.seats[white] == "" || m.seats[black] == "" || m.game.Over() {
+		return false
+	}
+	if len(m.game.History()) == 0 {
+		return m.online(white) && m.online(black)
+	}
+	return m.online(white) || m.online(black)
+}
+
+// spectators counts the people watching who aren't playing; two tabs count once.
+// Callers hold m.mu.
+func (m *Match) spectators() int {
+	seen := map[string]bool{}
+	for c := range m.clients {
+		if m.colorOf(c.playerID) < 0 {
+			seen[c.playerID] = true
+		}
+	}
+	return len(seen)
 }
 
 func (m *Match) colorOf(playerID string) int {
@@ -599,6 +657,16 @@ func (m *Match) handle(c *client, msg inMsg) {
 	defer m.mu.Unlock()
 	color := m.colorOf(c.playerID)
 	if color < 0 {
+		if msg.Type == "watch" {
+			side := white
+			if msg.Side == "b" {
+				side = black
+			}
+			if c.side != side {
+				c.side = side
+				c.push(m.state(c))
+			}
+		}
 		return
 	}
 	over, plies, round := m.game.Over(), len(m.game.History()), m.round
@@ -620,9 +688,9 @@ func (m *Match) handle(c *client, msg inMsg) {
 		}
 		m.draw = [2]bool{}
 		t := m.settings.Time
-		if opp := 1 - color; m.notify != nil && (t.PerMove > 0 || !t.clocked()) && now.Sub(m.turnBegan) > slowMove &&
+		if opp := 1 - color; m.hooks.notify != nil && (t.PerMove > 0 || !t.clocked()) && now.Sub(m.turnBegan) > slowMove &&
 			m.users[opp] != 0 && !m.online(opp) && !m.game.Over() {
-			go m.notify(notification{UserID: m.users[opp], Kind: notifyMove, ActorID: m.users[color], MatchID: m.id, Round: m.round})
+			go m.hooks.notify(notification{UserID: m.users[opp], Kind: notifyMove, ActorID: m.users[color], MatchID: m.id, Round: m.round})
 		}
 		m.turnBegan = now
 		if running {
@@ -712,8 +780,8 @@ func (m *Match) sendChat(reset bool, lines []chatLine) {
 	}
 }
 
-// broadcast sends every client its own view of the match. Callers hold m.mu.
-func (m *Match) broadcast() {
+// base is the part of the state message that's the same for everyone. Callers hold m.mu.
+func (m *Match) base() stateMsg {
 	status, result, reason := "playing", "", ""
 	switch {
 	case m.game.Over():
@@ -724,10 +792,11 @@ func (m *Match) broadcast() {
 	base := stateMsg{
 		Type: "state", Protocol: protocolVersion, ID: m.id, Round: m.round, Settings: m.settings,
 		Status: status, Result: result, Reason: reason,
-		Players: map[string]seatState{},
-		Rematch: map[string]bool{"w": m.rematch[white], "b": m.rematch[black]},
-		Draw:    map[string]bool{"w": m.draw[white], "b": m.draw[black]},
-		Rated:   m.rated(),
+		Players:    map[string]seatState{},
+		Rematch:    map[string]bool{"w": m.rematch[white], "b": m.rematch[black]},
+		Draw:       map[string]bool{"w": m.draw[white], "b": m.draw[black]},
+		Rated:      m.rated(),
+		Spectators: m.spectators(),
 	}
 	if m.settings.Time.clocked() {
 		now := time.Now()
@@ -745,21 +814,41 @@ func (m *Match) broadcast() {
 	for i, name := range colorNames {
 		base.Players[name] = seatState{Taken: m.seats[i] != "", Online: m.seats[i] != "" && m.online(i), Name: m.names[i]}
 	}
-	playable := status == "playing"
-	var views [3][]byte // white, black, spectator; built once per broadcast
+	return base
+}
+
+// view fills in a state message for a player (color 0 or 1) or for a spectator
+// (color -1) who sees the game as side. Callers hold m.mu.
+func (m *Match) view(msg stateMsg, color, side int) []byte {
+	if color >= 0 {
+		msg.You = colorNames[color]
+		msg.gameView = viewFor(m.game, color, msg.Status == "playing", m.settings.Fog)
+	} else {
+		msg.Watching = colorNames[side]
+		msg.gameView = spectatorView(m.game, m.settings.rules(), side, m.settings.Fog)
+	}
+	b, _ := json.Marshal(msg)
+	return b
+}
+
+// state is the state message for one client. Callers hold m.mu.
+func (m *Match) state(c *client) []byte {
+	return m.view(m.base(), m.colorOf(c.playerID), c.side)
+}
+
+// broadcast sends every client its own view of the match. Callers hold m.mu.
+func (m *Match) broadcast() {
+	base := m.base()
+	// White, black, and spectators seeing it as white or black; built once per broadcast.
+	var views [4][]byte
 	for c := range m.clients {
 		color := m.colorOf(c.playerID)
 		slot := color
 		if slot < 0 {
-			slot = 2
+			slot = 2 + c.side
 		}
 		if views[slot] == nil {
-			msg := base
-			if color >= 0 {
-				msg.You = colorNames[color]
-			}
-			msg.gameView = viewFor(m.game, color, playable, m.settings.Fog)
-			views[slot], _ = json.Marshal(msg)
+			views[slot] = m.view(base, color, c.side)
 		}
 		c.push(views[slot])
 	}
