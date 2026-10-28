@@ -20,10 +20,10 @@ func place(board, from, to string) string {
 func TestCheckSetup(t *testing.T) {
 	back, ship := setupModes["backRow"], setupModes["battleship"]
 	for _, c := range []int{white, black} {
-		if err := checkSetup(back, c, ownSetup(c)); err != nil {
+		if err := checkSetup(back, c, ownSetup(c), false); err != nil {
 			t.Errorf("the usual position as a back row setup for %d: %v", c, err)
 		}
-		if err := checkSetup(ship, c, ownSetup(c)); err != nil {
+		if err := checkSetup(ship, c, ownSetup(c), false); err != nil {
 			t.Errorf("the usual position as a battleship setup for %d: %v", c, err)
 		}
 	}
@@ -45,9 +45,17 @@ func TestCheckSetup(t *testing.T) {
 		{"usual position has no setup", setupModes[""], white, ownSetup(white), false},
 	}
 	for _, tc := range tests {
-		if err := checkSetup(tc.mode, tc.color, tc.board); (err == nil) != tc.ok {
+		if err := checkSetup(tc.mode, tc.color, tc.board, false); (err == nil) != tc.ok {
 			t.Errorf("%s: %v", tc.name, err)
 		}
+	}
+	// In King of the Hill the king can't start on the hill.
+	onHill := place(ownSetup(white), "e1", "e4")
+	if err := checkSetup(ship, white, onHill, true); err == nil {
+		t.Error("a king set up on the hill was allowed")
+	}
+	if err := checkSetup(ship, white, onHill, false); err != nil {
+		t.Errorf("without the hill: %v", err)
 	}
 }
 
@@ -196,4 +204,31 @@ func setupOf(t *testing.T, s map[string]any) map[string]any {
 		t.Fatalf("no setup in %v", s)
 	}
 	return v
+}
+
+func TestHillAndBackPawnsMatch(t *testing.T) {
+	store := openTestStore(t, filepath.Join(t.TempDir(), "x"))
+	hub := NewHub(store)
+	// A jump king reaches the hill in two hops; without check, the pawn on e5 can't stop it.
+	m := hub.Create(guestPlayer("g1"), Settings{KingCapture: true, Hill: true, JumpKing: true})
+	cw, cb := newClient("g1"), newClient("g2")
+	m.join(cw, guestPlayer("g1"))
+	m.join(cb, guestPlayer("g2"))
+	m.handle(cw, inMsg{Type: "move", UCI: "e1f3"})
+	m.handle(cb, inMsg{Type: "move", UCI: "e7e5"})
+	m.handle(cw, inMsg{Type: "move", UCI: "f3d4"})
+	if s := lastState(t, cw); s["result"] != "1-0" || s["reason"] != "reaching the hill" {
+		t.Fatalf("result %v reason %v", s["result"], s["reason"])
+	}
+
+	b := hub.Create(guestPlayer("g3"), Settings{Fog: true, BackPawns: true})
+	c3, c4 := newClient("g3"), newClient("g4")
+	b.join(c3, guestPlayer("g3"))
+	b.join(c4, guestPlayer("g4"))
+	b.handle(c3, inMsg{Type: "move", UCI: "e2e4"})
+	b.handle(c4, inMsg{Type: "move", UCI: "e7e5"})
+	b.handle(c3, inMsg{Type: "move", UCI: "e4e3"})
+	if n := len(b.game.History()); n != 3 {
+		t.Fatalf("the pawn didn't step back: %d plies", n)
+	}
 }

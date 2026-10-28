@@ -180,6 +180,7 @@ export function MatchPage({ id }: { id: string }) {
                   legal={legal}
                   lastMove={last}
                   check={predicting ? undefined : state?.check}
+                  hill={state?.settings.hill}
                   onMove={onMove}
                 />
                 {state?.status === 'waiting' && <WaitingCard id={id} link={link} />}
@@ -462,10 +463,11 @@ function Spectating({ state, side, setSide }: { state: MatchState; side: Color; 
 /** What the setup rules are, for the player arranging their pieces. */
 function setupHint(s: MatchState) {
   const rows = s.settings.setup === 'backRow' ? 'your back row; the pawns stay put' : 'your four rows'
+  const hill = s.settings.hill ? " The king can't start on the hill." : ''
   const hidden = s.settings.fog
     ? "Under fog you won't see their setup, and they won't see yours."
     : "Once they're ready, their setup shows on the board."
-  return `Tap a piece, then a square in ${rows}. ${hidden} The clock starts when you're both ready.`
+  return `Drag a piece to a square in ${rows}, or tap it and then the square.${hill} ${hidden} The clock starts when you're both ready.`
 }
 
 /** Covers the board for a spectator while the players set up. */

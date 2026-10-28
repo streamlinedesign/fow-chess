@@ -15,7 +15,9 @@ The creator picks the modes when making a match, and they mix freely:
 - **Fog of war** on or off. With fog on, each piece sees its own square and every square it could move to, captures included. A pawn always sees the square straight ahead, even when blocked, and sees its diagonals only when it can capture there. You get no hints about the opponent: no last-move highlight, `?` in the move list for their moves, and no check marks on your own moves. Spectators see one side's view, 6 moves behind (see Watching below). When the game ends, everyone sees the full board.
 - **Win by** checkmate (normal check rules) or Eat the King (win by capturing the king). In Eat the King mode there is no check: kings may walk into danger and may castle out of, through or into attack.
 - **Pieces**: Standard (the usual start), **Back row** (each player arranges their back row; pawns stay put) or **Battleship** (each player places all sixteen pieces anywhere in their own four rows). Both players set up at the same time, and the clock doesn't run until both are ready. Under fog you never see the other setup; without fog, a player's setup shows once they press Ready. Castling is allowed only for a king and rook that start on their usual squares. Setups are checked in `server/setup.go`, and a game saves the position it started from (`start_fen`) so replays and restarts work.
+- **King of the Hill**: on top of checkmate or Eat the King, a king that reaches d4, e4, d5 or e5 wins at once. Two lone kings aren't a dead draw here, and in a setup mode the king can't start on the hill.
 - **Jump King**: the king also moves like a knight (and so attacks like one).
+- **Backward pawns**: pawns can also step one square straight back onto an empty square, and under fog they see the square behind them the way they see the one ahead. No captures or promotions backwards.
 - **Rated or Unrated**: a game can be rated only with two signed-in players and a clock; the creator can turn rating off.
 
 A king that starts in danger after setup is left as it is. A win on the winner's very first move (checkmate or king capture) is a **Sniper Win**: it counts, but moves both ratings only a quarter as far as a whole game (`sniperWeight` in `server/setup.go`).
@@ -155,7 +157,7 @@ Accounts and games live in Postgres, which survives redeploys; back it up with `
 
 ## Protocol
 
-- `POST /api/matches?player=<browser id>` with an optional body `{"fog":true,"kingCapture":true,"setup":"battleship","jumpKing":true,"unrated":false,"time":{...}}` (`setup` is `""`, `"backRow"` or `"battleship"`) returns `{"id":"K7QF2M"}`. The creator gets white.
+- `POST /api/matches?player=<browser id>` with an optional body `{"fog":true,"kingCapture":true,"setup":"battleship","jumpKing":true,"backPawns":true,"hill":true,"unrated":false,"time":{...}}` (`setup` is `""`, `"backRow"` or `"battleship"`) returns `{"id":"K7QF2M"}`. The creator gets white.
 - `GET /api/matches/{id}` returns 204 if the match exists, 404 if it doesn't
 - `GET /ws/{id}?player=<browser id>`: the server sends `{"type":"state", ...}` to each viewer after every change, built for that viewer:
   - `board`: 64 characters from a1 to h8. FEN letters for pieces (uppercase is white), `.` for empty, and `?` for squares the viewer can't see (reserved for fog of war).

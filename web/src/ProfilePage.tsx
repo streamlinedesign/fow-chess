@@ -358,7 +358,11 @@ function VisitorActions({ profile, onChange }: { profile: Profile; onChange: () 
   )
 }
 
-const HOW: { [reason: string]: string } = { time: 'on time', 'capturing the king': 'by eating the king' }
+const HOW: { [reason: string]: string } = {
+  time: 'on time',
+  'capturing the king': 'by eating the king',
+  'reaching the hill': 'by taking the hill',
+}
 
 function MatchCard({ g, owner }: { g: GameSummary; owner: string }) {
   const r = result(g)
@@ -374,9 +378,13 @@ function MatchCard({ g, owner }: { g: GameSummary; owner: string }) {
           ? r === 'win'
             ? 'Ate the king'
             : 'King got ate'
-          : r === 'win'
-            ? 'Won'
-            : 'Lost'
+          : g.reason === 'reaching the hill'
+            ? r === 'win'
+              ? 'Took the hill'
+              : 'Lost the hill'
+            : r === 'win'
+              ? 'Won'
+              : 'Lost'
   const opponent = g.opponent || 'Guest'
   const winner = r === 'draw' ? 'No winner' : `${r === 'win' ? owner : opponent} won`
   const how = HOW[g.reason ?? ''] ?? `by ${g.reason}`

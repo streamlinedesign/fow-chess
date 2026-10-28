@@ -21,12 +21,16 @@ type Settings struct {
 	Setup string `json:"setup,omitempty"`
 	// JumpKing lets kings also jump like a knight.
 	JumpKing bool `json:"jumpKing,omitempty"`
+	// BackPawns lets pawns also step one square straight back, and see behind them.
+	BackPawns bool `json:"backPawns,omitempty"`
+	// Hill is King of the Hill: a king on one of the four centre squares wins.
+	Hill bool `json:"hill,omitempty"`
 	// Unrated keeps a game that could be rated from counting.
 	Unrated bool `json:"unrated,omitempty"`
 }
 
 func (s Settings) rules() engine.Rules {
-	return engine.Rules{KingCapture: s.KingCapture, JumpKing: s.JumpKing}
+	return engine.Rules{KingCapture: s.KingCapture, JumpKing: s.JumpKing, BackPawns: s.BackPawns, Hill: s.Hill}
 }
 
 func (s Settings) valid() bool {

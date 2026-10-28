@@ -37,10 +37,11 @@ const (
 	KingCaptured
 	Timeout
 	TimeoutVsInsufficientMaterial
+	KingOfTheHill
 )
 
 func (m Method) String() string {
-	return [...]string{"", "checkmate", "resignation", "stalemate", "agreement", "repetition", "fifty-move rule", "insufficient material", "capturing the king", "time", "timeout vs insufficient material"}[m]
+	return [...]string{"", "checkmate", "resignation", "stalemate", "agreement", "repetition", "fifty-move rule", "insufficient material", "capturing the king", "time", "timeout vs insufficient material", "reaching the hill"}[m]
 }
 
 // PlayedMove is one entry in a game's history.
@@ -75,6 +76,10 @@ type Rules struct {
 	KingCapture bool
 	// JumpKing lets kings also jump like a knight.
 	JumpKing bool
+	// BackPawns lets pawns also step one square straight back.
+	BackPawns bool
+	// Hill is King of the Hill: a king on one of the four centre squares wins.
+	Hill bool
 }
 
 func NewGameWithRules(r Rules) *Game {
@@ -88,7 +93,8 @@ func NewGameFromFEN(fen string, rules ...Rules) (*Game, error) {
 		return nil, err
 	}
 	if len(rules) > 0 {
-		pos.KingCapture, pos.JumpKing = rules[0].KingCapture, rules[0].JumpKing
+		r := rules[0]
+		pos.KingCapture, pos.JumpKing, pos.BackPawns, pos.Hill = r.KingCapture, r.JumpKing, r.BackPawns, r.Hill
 	}
 	g := &Game{pos: pos, seen: map[string]int{}, start: fen}
 	g.seen[pos.repetitionKey()] = 1
@@ -165,6 +171,11 @@ func (g *Game) evaluate() {
 	switch {
 	case p.KingSquare(p.Turn) == NoSquare:
 		g.outcome, g.method = winFor(p.Turn.Other()), KingCaptured
+	case p.Hill && OnHill(p.KingSquare(p.Turn.Other())):
+		// The side that just moved got its king to the centre.
+		g.outcome, g.method = winFor(p.Turn.Other()), KingOfTheHill
+	case p.Hill && OnHill(p.KingSquare(p.Turn)):
+		g.outcome, g.method = winFor(p.Turn), KingOfTheHill
 	case !p.HasLegalMove():
 		if p.InCheck() {
 			g.outcome, g.method = winFor(p.Turn.Other()), Checkmate
@@ -181,8 +192,12 @@ func (g *Game) evaluate() {
 }
 
 // cannotWin reports whether c has only a king, or a king and one bishop or
-// knight, which is too little to win against any defence.
+// knight, which is too little to win against any defence. In King of the Hill
+// a lone king can still win.
 func (p *Position) cannotWin(c Color) bool {
+	if p.Hill {
+		return false
+	}
 	minors := 0
 	for _, pc := range p.Board {
 		if !pc.Is(c) {
@@ -203,6 +218,9 @@ func (p *Position) cannotWin(c Color) bool {
 // king vs king, king and one minor piece vs king, and kings with bishops that all
 // stand on the same square color.
 func (p *Position) insufficientMaterial() bool {
+	if p.Hill {
+		return false
+	}
 	minors, knights := 0, 0
 	bishopColors := [2]bool{}
 	for sq, pc := range p.Board {

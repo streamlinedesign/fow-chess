@@ -2,9 +2,23 @@ import * as RadioGroup from '@radix-ui/react-radio-group'
 import * as Switch from '@radix-ui/react-switch'
 import { useId, useState } from 'react'
 import type { ReactNode } from 'react'
-import { clocked, describeTime, SETUPS, setupMode, TIME_GROUPS, timeGroup, timeLabel, type Settings } from './settings'
+import {
+  clocked,
+  describeTime,
+  SETUPS,
+  setupMode,
+  TIME_GROUPS,
+  timeGroup,
+  timeLabel,
+  twists,
+  type Settings,
+} from './settings'
 
-/** The rules and clock for a new match, boxed like a board of its own. */
+/**
+ * The rules and clock for a new match, boxed like a board of its own. Fog of
+ * war comes first, since it's the point of the game; the modes below it mix
+ * freely.
+ */
 export function SettingsPanel({
   value,
   onChange,
@@ -22,34 +36,29 @@ export function SettingsPanel({
     <fieldset className={`setup flex min-w-0 flex-col overflow-hidden rounded-xl ${className}`}>
       <legend className="sr-only">Match settings</legend>
       <div className="flex items-center justify-between gap-3 border-b border-border bg-muted px-4 py-3 text-[13px] sm:px-5">
-        <span className="text-sm font-semibold">Match settings</span>
+        <span className="shrink-0 text-sm font-semibold whitespace-nowrap">Match settings</span>
         <span className="truncate text-accent">
           {[
             value.fog ? 'Fog' : 'Full board',
             value.kingCapture ? 'Eat the King' : 'Checkmate',
-            setupMode(value).value && setupMode(value).label,
-            value.jumpKing && 'Jump King',
+            ...twists(value),
             describeTime(value.time),
-          ]
-            .filter(Boolean)
-            .join(' · ')}
+          ].join(' · ')}
         </span>
       </div>
 
       <div className="flex flex-1 flex-col justify-between gap-6 p-4 sm:p-5">
         <Toggle
+          big
           label="Fog of war"
-          hint="Hide what your pieces can't see."
+          hint={value.fog ? 'You only see what your pieces see.' : 'The whole board, as in normal chess.'}
           checked={value.fog}
           onChange={(fog) => onChange({ ...value, fog })}
         />
 
-        <div className="flex flex-col gap-2.5">
-          <span className="font-semibold" id={`${id}-win-by`}>
-            Win by
-          </span>
+        <Group id={`${id}-win`} label="Win by">
           <RadioGroup.Root
-            aria-labelledby={`${id}-win-by`}
+            aria-labelledby={`${id}-win`}
             value={value.kingCapture ? 'capture' : 'mate'}
             onValueChange={(v) => onChange({ ...value, kingCapture: v === 'capture' })}
             className="grid grid-cols-2 gap-2.5"
@@ -58,51 +67,80 @@ export function SettingsPanel({
               ['capture', 'Eat the King', 'No check. Take the king to win.'],
               ['mate', 'Checkmate', 'Normal chess rules with check.'],
             ].map(([v, label, hint]) => (
-              <RadioGroup.Item
-                key={v}
-                value={v}
-                className="flex min-h-[104px] flex-col items-start gap-1.5 rounded-lg border border-border p-3.5 text-left transition-colors hover:border-fg data-[state=checked]:border-fg data-[state=checked]:bg-fg data-[state=checked]:text-bg sm:min-h-[112px] sm:p-4"
-              >
-                <span className="text-lg leading-tight font-semibold tracking-tight sm:text-xl">{label}</span>
-                <span className="text-[13px] leading-snug opacity-70">{hint}</span>
-              </RadioGroup.Item>
+              <Choice key={v} value={v} label={label} hint={hint} tall />
             ))}
           </RadioGroup.Root>
-        </div>
+          <Toggle
+            label="King of the Hill"
+            hint="Also win by getting your king to one of the four centre squares."
+            checked={!!value.hill}
+            onChange={(hill) => onChange({ ...value, hill })}
+          />
+        </Group>
 
-        <div className="flex flex-col gap-2.5">
-          <span className="font-semibold" id={`${id}-setup`}>
-            Pieces
-          </span>
+        <Group id={`${id}-setup`} label="Pieces">
           <RadioGroup.Root
             aria-labelledby={`${id}-setup`}
             value={setupMode(value).value || 'standard'}
-            onValueChange={(v) => onChange({ ...value, setup: v === 'standard' ? '' : (v as Settings['setup']) })}
+            onValueChange={(v) => {
+              const setup = v === 'standard' ? '' : (v as Settings['setup'])
+              // Battleship is a guessing game: it turns fog on, though you can turn it back off.
+              onChange({ ...value, setup, fog: value.fog || setup === 'battleship' })
+            }}
             className="grid grid-cols-3 gap-2"
           >
             {SETUPS.map((m) => (
-              <RadioGroup.Item
-                key={m.value}
-                value={m.value || 'standard'}
-                className="flex flex-col items-start gap-1 rounded-lg border border-border p-3 text-left transition-colors hover:border-fg data-[state=checked]:border-fg data-[state=checked]:bg-fg data-[state=checked]:text-bg"
-              >
-                <span className="leading-tight font-semibold tracking-tight sm:text-[17px]">{m.label}</span>
-                <span className="text-[12.5px] leading-snug opacity-70">{m.hint}</span>
-              </RadioGroup.Item>
+              <Choice key={m.value} value={m.value || 'standard'} label={m.label} hint={m.hint} />
             ))}
           </RadioGroup.Root>
-        </div>
+        </Group>
 
-        <Toggle
-          label="Jump King"
-          hint="Your king can also jump like a knight."
-          checked={!!value.jumpKing}
-          onChange={(jumpKing) => onChange({ ...value, jumpKing })}
-        />
+        <Group id={`${id}-twists`} label="Twists">
+          <Toggle
+            label="Jump King"
+            hint="Your king can also jump like a knight."
+            checked={!!value.jumpKing}
+            onChange={(jumpKing) => onChange({ ...value, jumpKing })}
+          />
+          <Toggle
+            label="Backward pawns"
+            hint="Pawns can also step one square back, and see behind them."
+            checked={!!value.backPawns}
+            onChange={(backPawns) => onChange({ ...value, backPawns })}
+          />
+        </Group>
 
         <TimePicker value={value} onChange={onChange} signedIn={signedIn} />
       </div>
     </fieldset>
+  )
+}
+
+function Group({ id, label, children }: { id: string; label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3">
+      <span className="font-semibold" id={id}>
+        {label}
+      </span>
+      {children}
+    </div>
+  )
+}
+
+/** One card in a radio group of modes. */
+function Choice({ value, label, hint, tall }: { value: string; label: string; hint: string; tall?: boolean }) {
+  return (
+    <RadioGroup.Item
+      value={value}
+      className={`flex flex-col items-start gap-1 rounded-lg border border-border text-left transition-colors hover:border-fg data-[state=checked]:border-fg data-[state=checked]:bg-fg data-[state=checked]:text-bg ${
+        tall ? 'min-h-[96px] gap-1.5 p-3.5 sm:p-4' : 'p-3'
+      }`}
+    >
+      <span className={`leading-tight font-semibold tracking-tight ${tall ? 'text-lg sm:text-xl' : 'sm:text-[17px]'}`}>
+        {label}
+      </span>
+      <span className={`leading-snug opacity-70 ${tall ? 'text-[13px]' : 'text-[12.5px]'}`}>{hint}</span>
+    </RadioGroup.Item>
   )
 }
 
@@ -111,27 +149,38 @@ function Toggle({
   hint,
   checked,
   disabled,
+  big,
   onChange,
 }: {
   label: ReactNode
   hint: ReactNode
   checked: boolean
   disabled?: boolean
+  /** The headline setting, set in larger type. */
+  big?: boolean
   onChange: (on: boolean) => void
 }) {
   return (
     <label className={`flex items-center justify-between gap-4 ${disabled ? 'opacity-60' : 'cursor-pointer'}`}>
       <span>
-        <span className="block font-semibold">{label}</span>
-        <span className="block text-sm text-accent">{hint}</span>
+        <span className={`block font-semibold ${big ? 'text-[22px] leading-tight tracking-tight' : ''}`}>{label}</span>
+        <span className={`block text-accent ${big ? 'mt-0.5 text-[15px]' : 'text-sm'}`}>{hint}</span>
       </span>
       <Switch.Root
         checked={checked}
         disabled={disabled}
         onCheckedChange={onChange}
-        className="relative h-6 w-10 shrink-0 rounded-full bg-fg/10 shadow-[inset_0_0_0_1px_var(--color-border)] transition-colors data-[state=checked]:bg-fg"
+        className={`relative shrink-0 rounded-full bg-fg/10 shadow-[inset_0_0_0_1px_var(--color-border)] transition-colors data-[state=checked]:bg-fg ${
+          big ? 'h-8 w-[52px]' : 'h-6 w-10'
+        }`}
       >
-        <Switch.Thumb className="block size-[18px] translate-x-[3px] rounded-full bg-fg transition-transform data-[state=checked]:translate-x-[19px] data-[state=checked]:bg-bg" />
+        <Switch.Thumb
+          className={`block rounded-full bg-fg transition-transform data-[state=checked]:bg-bg ${
+            big
+              ? 'size-6 translate-x-1 data-[state=checked]:translate-x-6'
+              : 'size-[18px] translate-x-[3px] data-[state=checked]:translate-x-[19px]'
+          }`}
+        />
       </Switch.Root>
     </label>
   )

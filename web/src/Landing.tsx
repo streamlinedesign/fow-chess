@@ -6,6 +6,7 @@ import { playerId } from './player'
 import { ago, go, type GameSummary } from './ProfilePage'
 import { navigate } from './router'
 import { describeTime, loadSettings, NO_CLOCK, saveSettings, type Settings } from './settings'
+import { SettingsBoard } from './SettingsBoard'
 import { SettingsPanel } from './SettingsPanel'
 import { Rules } from './Rules'
 import { Showcase } from './Showcase'
@@ -88,7 +89,7 @@ export function Landing() {
           )}
         </div>
 
-        <Showcase boardClassName="hero-board" captionClassName="hero-cap" />
+        <SettingsBoard settings={settings} boardClassName="hero-board" captionClassName="hero-cap" />
       </section>
 
       {me && <YourGames username={me.username} />}
@@ -96,6 +97,18 @@ export function Landing() {
       <div className="max-w-[720px]">
         <Leaderboard me={me?.username} />
       </div>
+
+      <section className="flex flex-col gap-5" aria-labelledby="replay-heading">
+        <div className="border-b border-fg pb-4">
+          <h2 id="replay-heading" className="text-[clamp(30px,5vw,44px)] leading-none font-semibold tracking-tight">
+            Fog of war, replayed
+          </h2>
+          <p className="mt-2 text-accent">A famous game, shown the way each player would have seen it.</p>
+        </div>
+        <div className="replay-grid grid items-start gap-5 lg:grid-cols-[minmax(0,520px)_minmax(0,1fr)] lg:gap-10">
+          <Showcase boardClassName="w-full" captionClassName="w-full lg:pt-2" />
+        </div>
+      </section>
 
       <Rules />
     </main>

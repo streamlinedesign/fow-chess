@@ -318,3 +318,73 @@ func kingMoves(g *Game) int {
 	}
 	return n
 }
+
+func TestBackPawns(t *testing.T) {
+	// A white pawn on e4 can step back to e3 but not capture backward or go back two.
+	g, err := NewGameFromFEN("4k3/8/8/8/4P3/8/8/4K3 w - - 0 1", Rules{BackPawns: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var pawn []string
+	for _, m := range g.LegalMoves() {
+		if m.From == SquareAt(4, 3) {
+			pawn = append(pawn, m.UCI())
+		}
+	}
+	if strings.Join(pawn, " ") != "e4e5 e4e3" {
+		t.Errorf("pawn moves %v, want e4e5 e4e3", pawn)
+	}
+	if _, err := g.PlayUCI("e4e3"); err != nil {
+		t.Fatalf("stepping back: %v", err)
+	}
+	if san := g.History()[0].SAN; san != "e3" {
+		t.Errorf("SAN %q", san)
+	}
+	// A blocked pawn still sees the square behind it, like the one ahead.
+	p, _ := ParseFEN("4k3/8/8/8/3P4/3r4/8/K7 w - - 0 1")
+	p.BackPawns = true
+	if got := visionString(p.Vision(White)); got != "......../......../......../...x..../...x..../...x..../xx....../xx......" {
+		t.Errorf("vision\n got %s", got)
+	}
+	plain, _ := NewGameFromFEN("4k3/8/8/8/4P3/8/8/4K3 w - - 0 1")
+	if _, err := plain.PlayUCI("e4e3"); err == nil {
+		t.Error("a normal pawn stepped back")
+	}
+}
+
+func TestKingOfTheHill(t *testing.T) {
+	g, err := NewGameFromFEN("4k3/8/8/8/8/8/8/3K4 w - - 0 1", Rules{Hill: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Two kings are not a dead draw when the hill wins.
+	if g.Over() {
+		t.Fatalf("over at the start: %v %v", g.Outcome(), g.Method())
+	}
+	for _, uci := range []string{"d1d2", "e8e7", "d2d3", "e7e6", "d3d4"} {
+		if _, err := g.PlayUCI(uci); err != nil {
+			t.Fatalf("%s: %v", uci, err)
+		}
+	}
+	if g.Outcome() != WhiteWins || g.Method() != KingOfTheHill {
+		t.Errorf("after Kd4: %v %v", g.Outcome(), g.Method())
+	}
+	if g.Method().String() != "reaching the hill" {
+		t.Errorf("method %q", g.Method())
+	}
+	// With check on, the king can't reach the hill through check.
+	h, _ := NewGameFromFEN("4k3/8/8/8/8/3r4/8/3K4 w - - 0 1", Rules{Hill: true})
+	if _, err := h.PlayUCI("d1d2"); err == nil {
+		t.Error("walked into check to reach the hill")
+	}
+	// A jump king gets there faster.
+	j, _ := NewGameFromFEN("4k3/8/8/8/8/8/8/3K4 w - - 0 1", Rules{Hill: true, JumpKing: true})
+	j.PlayUCI("d1e3")
+	j.PlayUCI("e8d8")
+	if _, err := j.PlayUCI("e3d5"); err != nil || j.Outcome() != WhiteWins {
+		t.Errorf("jump onto the hill: %v %v", err, j.Outcome())
+	}
+	if !OnHill(SquareAt(3, 3)) || !OnHill(SquareAt(4, 4)) || OnHill(SquareAt(2, 3)) {
+		t.Error("hill squares")
+	}
+}

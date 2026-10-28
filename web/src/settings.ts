@@ -18,11 +18,18 @@ export type Settings = {
   setup?: Setup
   /** Kings can also jump like a knight. */
   jumpKing?: boolean
+  /** Pawns can also step one square straight back, and see behind them. */
+  backPawns?: boolean
+  /** King of the Hill: a king on one of the four centre squares wins. */
+  hill?: boolean
   /** Play a game that could be rated without rating it. */
   unrated?: boolean
 }
 
 export type Setup = '' | 'backRow' | 'battleship'
+
+/** The hill in King of the Hill: the four centre squares. */
+export const HILL = ['d4', 'e4', 'd5', 'e5']
 
 /** The setup modes: how many of your own rows you arrange, and whether the pawns stay put. */
 export const SETUPS: { value: Setup; label: string; hint: string; rows: number; pawnsFixed: boolean }[] = [
@@ -52,7 +59,16 @@ export const TIME_GROUPS: [string, TimeControl[]][] = [
 ]
 
 export const NO_CLOCK = tc(0)
-const DEFAULTS: Settings = { fog: true, kingCapture: true, time: tc(300), setup: '', jumpKing: false, unrated: false }
+const DEFAULTS: Settings = {
+  fog: true,
+  kingCapture: true,
+  time: tc(300),
+  setup: '',
+  jumpKing: false,
+  backPawns: false,
+  hill: false,
+  unrated: false,
+}
 
 export const sameTime = (a: TimeControl, b: TimeControl) =>
   a.base === b.base && a.inc === b.inc && a.perMove === b.perMove
@@ -95,25 +111,27 @@ export function saveSettings(s: Settings) {
   } catch {}
 }
 
-/** Games saved before clocks existed have no time setting; those had no clock. */
-/** A game's kind in a few words for a card: "Eat the King · Fog · Battleship". */
-export function modeName(s: Settings) {
-  const setup = setupMode(s)
+/** The extra rules a game has on, as short labels. */
+export function twists(s: Settings) {
   return [
-    s.kingCapture ? 'Eat the King' : 'Checkmate',
-    ...(s.fog ? ['Fog'] : []),
-    ...(setup.value ? [setup.label] : []),
+    ...(s.hill ? ['King of the Hill'] : []),
+    ...(setupMode(s).value ? [setupMode(s).label] : []),
     ...(s.jumpKing ? ['Jump King'] : []),
-  ].join(' · ')
+    ...(s.backPawns ? ['Backward pawns'] : []),
+  ]
 }
 
+/** A game's kind in a few words for a card: "Eat the King · Fog · Battleship". */
+export function modeName(s: Settings) {
+  return [s.kingCapture ? 'Eat the King' : 'Checkmate', ...(s.fog ? ['Fog'] : []), ...twists(s)].join(' · ')
+}
+
+/** Games saved before clocks existed have no time setting; those had no clock. */
 export function describeSettings(s: Settings) {
-  const setup = setupMode(s)
   return [
     s.fog ? 'Fog of war' : 'Full board',
     s.kingCapture ? 'Eat the King' : 'Checkmate',
-    ...(setup.value ? [setup.label] : []),
-    ...(s.jumpKing ? ['Jump King'] : []),
+    ...twists(s),
     describeTime(s.time ?? NO_CLOCK),
   ]
 }

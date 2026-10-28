@@ -315,6 +315,27 @@
   }
 }
 
+/* King of the Hill: the four centre squares are ringed. */
+.sq[data-hill='true'] {
+  box-shadow: inset 0 0 0 calc(var(--board, 400px) / 110) color-mix(in srgb, var(--color-fg) 32%, transparent);
+}
+.sq[data-hill='true'][data-fog='true'] {
+  box-shadow: inset 0 0 0 calc(var(--board, 400px) / 110) color-mix(in srgb, #fffabd 28%, transparent);
+}
+
+/* A tray piece being dragged onto the board. */
+.drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  pointer-events: none;
+  will-change: transform;
+}
+.tray-piece {
+  touch-action: none;
+}
+
 /* Fog: squares the viewer's pieces can't see. */
 .sq[data-fog='true'] {
   background: repeating-linear-gradient(135deg, transparent 0 6px, rgb(255 250 189 / 0.05) 6px 7px), var(--color-fog);
@@ -445,6 +466,11 @@
   .hero-cap {
     margin: 0;
   }
+}
+
+/* The Opera Game replay below the hero. */
+.replay-grid {
+  --board: min(100vw - 32px, 520px);
 }
 
 /* Top 100. */
