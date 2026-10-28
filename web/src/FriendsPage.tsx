@@ -69,7 +69,19 @@ export function FriendsPage() {
                     <Who name={f.username} sub={f.rating} size={44} online={f.online} />
                   </a>
                   <div className="f-acts">
-                    <span className="hide-sm mr-2 text-[13px] text-accent">{f.online ? '' : presence(f)}</span>
+                    <span className="hide-sm mr-2 text-[13px] text-accent">
+                      {f.online && !f.playing ? '' : presence(f)}
+                    </span>
+                    {f.playing && (
+                      <Button
+                        className="squash h-9 px-3.5 text-sm"
+                        onClick={() => navigate(`/m/${f.playing}`)}
+                        aria-label={`Watch ${f.username}`}
+                      >
+                        <Icon name="eye" />
+                        <span className="txt">Watch</span>
+                      </Button>
+                    )}
                     <Button className="squash h-9 px-3.5 text-sm" onClick={() => openOffer(f.username)}>
                       <Icon name="swords" />
                       <span className="txt">Offer a match</span>

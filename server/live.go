@@ -16,6 +16,8 @@ type Live struct {
 	mu    sync.Mutex
 	conns map[int64]map[chan []byte]struct{}
 	store *Store
+	// playing, if set, is the match a player is playing right now, or "".
+	playing func(userID int64) string
 }
 
 func NewLive(store *Store) *Live {
@@ -64,6 +66,9 @@ func (l *Live) card(p person) userCard {
 	c := userCard{Username: p.Username, Rating: int(p.Rating + 0.5)}
 	if !p.HideOnline {
 		c.Online = l.online(p.ID)
+		if c.Online && l.playing != nil {
+			c.Playing = l.playing(p.ID)
+		}
 		if !p.LastSeen.IsZero() {
 			c.LastSeen = p.LastSeen.UnixMilli()
 		}
@@ -77,6 +82,8 @@ type userCard struct {
 	Rating   int    `json:"rating"`
 	Online   bool   `json:"online"`
 	LastSeen int64  `json:"lastSeen,omitempty"` // unix milliseconds; left out when hidden
+	// Playing is the match they're playing right now, so friends can watch.
+	Playing string `json:"playing,omitempty"`
 }
 
 func (l *Live) cards(ps []person) []userCard {

@@ -87,20 +87,6 @@ func TestFogViews(t *testing.T) {
 		t.Errorf("black history %q", got)
 	}
 
-	s := viewFor(g, -1, true, true)
-	visible := 0
-	for _, c := range s.Board {
-		if c != '?' {
-			visible++
-		}
-	}
-	if visible != 4 || s.Board[21] != 'N' || s.Board[42] != 'n' { // f3 and c6
-		t.Errorf("spectator should see just the last two moves: %s", s.Board)
-	}
-	if got := strings.Join(s.History, " "); got != "? ? Nf3 Nc6" {
-		t.Errorf("spectator history %q", got)
-	}
-
 	// Check marks on your own moves would reveal the enemy king.
 	g2 := engine.NewGame()
 	for _, uci := range []string{"e2e4", "f7f6", "d1h5"} {
@@ -133,5 +119,50 @@ func TestCapturedPieces(t *testing.T) {
 		if v.Captured["w"] != "npp" || v.Captured["b"] != "" {
 			t.Errorf("viewer %d: captured %v", viewer, v.Captured)
 		}
+	}
+}
+
+func TestSpectatorsAreBehindInFog(t *testing.T) {
+	moves := []string{"e2e4", "e7e5", "g1f3", "b8c6", "f1c4", "g8f6", "d2d3", "f8c5"}
+	g := engine.NewGame()
+	for _, uci := range moves {
+		if _, err := g.PlayUCI(uci); err != nil {
+			t.Fatal(err)
+		}
+	}
+	rules := engine.Rules{}
+
+	// Two moves are shown, so a spectator sees what each side saw after 1. e4 e5.
+	past := engine.NewGame()
+	past.PlayUCI("e2e4")
+	past.PlayUCI("e7e5")
+	for side := range 2 {
+		v := spectatorView(g, rules, side, true)
+		want := viewFor(past, side, false, true)
+		if v.Board != want.Board {
+			t.Errorf("side %d sees %s, want %s", side, v.Board, want.Board)
+		}
+		if len(v.History) != 2 || v.Behind != 6 || v.Ply != 8 || v.Turn != "w" || len(v.Legal) != 0 {
+			t.Errorf("side %d: history %v, behind %d, ply %d, turn %s, legal %v", side, v.History, v.Behind, v.Ply, v.Turn, v.Legal)
+		}
+	}
+	if v := spectatorView(g, rules, black, true); v.Board[12] != '?' || v.Board[52] != '.' {
+		t.Errorf("black's view shouldn't show white's pieces it can't see: %s", v.Board)
+	}
+
+	// Early on there's nothing to show yet but the starting position as that side sees it.
+	early := engine.NewGame()
+	early.PlayUCI("e2e4")
+	if v := spectatorView(early, rules, white, true); len(v.History) != 0 || v.Behind != 1 || v.Last != nil {
+		t.Errorf("early view: %+v", v)
+	}
+
+	// Without fog, and once a fog game is over, spectators see everything as it is.
+	if v := spectatorView(g, rules, black, false); v.Behind != 0 || strings.Contains(v.Board, "?") || len(v.History) != 8 {
+		t.Errorf("no fog view: %+v", v)
+	}
+	g.Resign(engine.Black)
+	if v := spectatorView(g, rules, black, true); v.Behind != 0 || strings.Contains(v.Board, "?") {
+		t.Errorf("finished view: %+v", v)
 	}
 }

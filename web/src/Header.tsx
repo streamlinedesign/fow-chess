@@ -61,6 +61,13 @@ export function Header() {
           </>
         ) : (
           <>
+            <a
+              href="/watch"
+              onClick={(e) => go(e, '/watch')}
+              className="flex h-9 items-center rounded-md px-3 text-sm font-semibold transition-colors hover:bg-muted"
+            >
+              Watch
+            </a>
             <button
               onClick={toggleTheme}
               aria-label="Toggle dark mode"
@@ -131,6 +138,10 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
                 {unreadChats}
               </span>
             )}
+          </Menu.Item>
+          <Menu.Item className="menu-item" onSelect={() => navigate('/watch')}>
+            <Icon name="eye" />
+            Watch
           </Menu.Item>
           <Menu.Item className="menu-item" onSelect={() => navigate('/settings')}>
             <Icon name="gear" />

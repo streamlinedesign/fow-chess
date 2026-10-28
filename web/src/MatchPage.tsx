@@ -4,6 +4,7 @@ import { Board } from './Board'
 import { Captured } from './Captured'
 import { Chat } from './Chat'
 import { Clock } from './Clock'
+import { Icon } from './icons'
 import { applyLocal, pieceImg } from './position'
 import { navigate } from './router'
 import { describeSettings } from './settings'
@@ -30,6 +31,8 @@ export function MatchPage({ id }: { id: string }) {
   const [pending, setPending] = useState<{ uci: string; sentWith: MatchState; sentAt: number } | null>(null)
   const [promotion, setPromotion] = useState<{ from: string; to: string } | null>(null)
   const [flipped, setFlipped] = useState(false)
+  // Which side a spectator sees the game as.
+  const [side, setSide] = useState<Color>('w')
   const [confirmResign, setConfirmResign] = useState(false)
   const [dismissedOver, setDismissedOver] = useState('')
   const [moveMs, setMoveMs] = useState<number | null>(null)
@@ -57,7 +60,7 @@ export function MatchPage({ id }: { id: string }) {
 
   const you = state?.you || null
   const them = you ? other(you) : null
-  const orientation: Color = (you === 'b') !== flipped ? 'b' : 'w'
+  const orientation: Color = you ? ((you === 'b') !== flipped ? 'b' : 'w') : side
   const playing = state?.status === 'playing'
   const ply = state?.ply ?? 0
   const turn = state && (predicting ? other(state.turn) : state.turn)
@@ -78,6 +81,12 @@ export function MatchPage({ id }: { id: string }) {
     },
     [legal, sendMove],
   )
+
+  // The server starts every spectator as White, including after a reconnect.
+  const watching = state?.watching
+  useEffect(() => {
+    if (watching && watching !== side) send({ type: 'watch', side })
+  }, [watching, side, send])
 
   // Say whose move it is in the tab title, so a backgrounded tab shows when it's your turn.
   useEffect(() => {
@@ -124,7 +133,7 @@ export function MatchPage({ id }: { id: string }) {
     if (conn !== 'open') return 'Reconnecting…'
     if (state.status === 'waiting') return 'Waiting for an opponent'
     if (over) return state.result === '1/2-1/2' ? `Draw by ${state.reason}` : `${over.title} ${how(state.reason)}`
-    const check = state.check && !predicting ? 'Check. ' : ''
+    const check = state.check && !predicting && !state.behind ? 'Check. ' : ''
     if (!you) return `${check}${NAMES[turn!]} to move`
     return `${check}${turn === you ? 'Your move' : 'Their move'}`
   })()
@@ -174,8 +183,16 @@ export function MatchPage({ id }: { id: string }) {
                 </li>
               ))}
               <li className={`tag ${state.rated ? 'tag-solid' : ''}`}>{state.rated ? 'Rated' : 'Unrated'}</li>
+              {state.spectators > 0 && (
+                <li className="tag flex items-center gap-1.5">
+                  <Icon name="eye" size={14} />
+                  {state.spectators} watching
+                </li>
+              )}
             </ul>
           )}
+
+          {!you && state && state.status !== 'waiting' && <Spectating state={state} side={side} setSide={setSide} />}
 
           {state && you && them && state.draw[them] && playing && (
             <div className="flex items-center justify-between gap-3 rounded-lg p-3 shadow-[inset_0_0_0_1.5px_var(--color-fg)]">
@@ -209,7 +226,12 @@ export function MatchPage({ id }: { id: string }) {
               )
             )}
             <Tip label="Flip board">
-              <Button variant="ghost" icon aria-label="Flip board" onClick={() => setFlipped((f) => !f)}>
+              <Button
+                variant="ghost"
+                icon
+                aria-label="Flip board"
+                onClick={() => (you ? setFlipped((f) => !f) : setSide(other(side)))}
+              >
                 <svg
                   width="20"
                   height="20"
@@ -238,13 +260,6 @@ export function MatchPage({ id }: { id: string }) {
           )}
 
           <MoveList history={state?.history ?? []} />
-
-          {!you && state && state.status !== 'waiting' && (
-            <p className="text-sm text-accent">
-              You're watching this match.
-              {state.settings.fog && state.status === 'playing' && " With fog on, you see only each side's last move."}
-            </p>
-          )}
 
           {rtt !== null && (
             <p className="font-mono text-xs text-accent tabular-nums">
@@ -372,6 +387,37 @@ function PlayerBar({ color, state, you, active }: PlayerBarProps) {
           />
         )}
       </span>
+    </div>
+  )
+}
+
+/** A spectator picks whose side to see the game from. In a fog game that's
+ * what that player saw a few moves ago, so nobody watching can help them. */
+function Spectating({ state, side, setSide }: { state: MatchState; side: Color; setSide: (c: Color) => void }) {
+  const behind = state.behind ?? 0
+  return (
+    <div className="flex flex-col gap-2.5">
+      <div className="flex items-center gap-3 text-sm">
+        <span>See it as</span>
+        <div role="radiogroup" aria-label="See the game as" className="flex gap-0.5 rounded-lg bg-muted p-[3px]">
+          {(['w', 'b'] as const).map((c) => (
+            <button
+              key={c}
+              role="radio"
+              aria-checked={side === c}
+              onClick={() => setSide(c)}
+              className="h-8 rounded-[5px] px-3 text-[13px] font-medium transition-colors hover:bg-fg/10 aria-checked:bg-fg aria-checked:text-bg"
+            >
+              {NAMES[c]}
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="text-sm text-accent">
+        {behind > 0
+          ? `You see what ${NAMES[side]} saw ${behind === 1 ? 'a move' : `${behind} moves`} ago, so nothing you see can help either player.`
+          : "You're watching this match."}
+      </p>
     </div>
   )
 }

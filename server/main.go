@@ -47,11 +47,13 @@ func main() {
 	auth := &Auth{store: store, limiter: newFailLimiter()}
 	live := NewLive(store)
 	social := &Social{store: store, live: live, hub: hub, auth: auth}
-	hub.SetNotify(social.notify)
+	live.playing = hub.Playing
+	hub.SetHooks(matchHooks{notify: social.notify, playing: live.presence})
 	mux := http.NewServeMux()
 	auth.routes(mux)
 	profileRoutes(mux, store, auth, live)
 	social.routes(mux)
+	social.watchRoutes(mux)
 
 	// playerFor is who a request comes from: the signed-in user, else the guest
 	// ID the browser sends. Nil if there's neither.
