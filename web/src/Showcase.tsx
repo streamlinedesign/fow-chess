@@ -28,9 +28,16 @@ const VIEWS: [View, string][] = [
  * Replays Morphy's Opera Game as the players saw it under fog. By default each
  * move shows from the mover's side, then the fog shifts to whoever moves next.
  * The frames come from the real server rules (server/showcase_test.go), so the
- * replay never drifts from what players see.
+ * replay never drifts from what players see. It renders as two blocks, the
+ * board and its caption, so the page can line the board up with the settings.
  */
-export function Showcase() {
+export function Showcase({
+  boardClassName = '',
+  captionClassName = '',
+}: {
+  boardClassName?: string
+  captionClassName?: string
+}) {
   const [frames, setFrames] = useState<Frame[] | null>(null)
   const [i, setI] = useState(0)
   const [phase, setPhase] = useState<'move' | 'fog'>('move')
@@ -64,32 +71,12 @@ export function Showcase() {
   const moveNo = Math.ceil(i / 2)
 
   return (
-    <figure className="showcase flex flex-col gap-3" aria-label="A fog of war game replayed from each side">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2 text-[15px] whitespace-nowrap">
-          <span
-            className={`size-3.5 shrink-0 rounded-full shadow-[0_0_0_1.5px_var(--color-fg)] transition-colors ${side === 'w' ? 'bg-[#fff]' : 'bg-[#111]'}`}
-            aria-hidden
-          />
-          <span className="font-semibold">{over ? 'Fog lifted' : `${NAMES[side]}'s view`}</span>
-          {moveNo > 0 && <span className="font-mono text-sm text-accent tabular-nums max-[359px]:hidden">move {moveNo}</span>}
-        </div>
-        <div role="radiogroup" aria-label="Whose view" className="flex shrink-0 rounded-full p-0.5 shadow-[inset_0_0_0_1.5px_var(--color-fg)]">
-          {VIEWS.map(([v, label]) => (
-            <button
-              key={v}
-              role="radio"
-              aria-checked={view === v}
-              onClick={() => setView(v)}
-              className="rounded-full px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition-colors aria-checked:bg-fg aria-checked:text-bg"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="pointer-events-none relative" aria-hidden={!!frames}>
+    <>
+      <div
+        className={`pointer-events-none relative ${boardClassName}`}
+        role="img"
+        aria-label={`A fog of war game replayed from each side. ${over ? 'Fog lifted' : `${NAMES[side]}'s view`}, move ${moveNo}.`}
+      >
         {!frames && (
           <div className="absolute inset-0 z-20 grid place-items-center text-[#fffabd]">
             <Spinner label="Loading replay" />
@@ -105,16 +92,42 @@ export function Showcase() {
         />
       </div>
 
-      <div className="flex h-6 items-center justify-between gap-3 text-[clamp(14px,4vw,18px)]">
-        <Captured pieces={f?.captured.w ?? ''} />
-        <Captured pieces={f?.captured.b ?? ''} className="ml-auto" />
+      <div className={`flex flex-col gap-2.5 ${captionClassName}`}>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2 text-[15px] whitespace-nowrap">
+            <span
+              className={`size-3.5 shrink-0 rounded-full shadow-[0_0_0_1.5px_var(--color-fg)] transition-colors ${side === 'w' ? 'bg-[#fff]' : 'bg-[#111]'}`}
+              aria-hidden
+            />
+            <span className="font-semibold">{over ? 'Fog lifted' : `${NAMES[side]}'s view`}</span>
+            {moveNo > 0 && (
+              <span className="font-mono text-sm text-accent tabular-nums max-[359px]:hidden">move {moveNo}</span>
+            )}
+          </div>
+          <div role="radiogroup" aria-label="Whose view" className="flex shrink-0 gap-0.5 rounded-md bg-muted p-[3px]">
+            {VIEWS.map(([v, label]) => (
+              <button
+                key={v}
+                role="radio"
+                aria-checked={view === v}
+                onClick={() => setView(v)}
+                className="rounded px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition-colors aria-checked:bg-fg aria-checked:text-bg"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex h-6 items-center justify-between gap-3 text-[clamp(14px,4vw,18px)]">
+          <Captured pieces={f?.captured.w ?? ''} />
+          <Captured pieces={f?.captured.b ?? ''} className="ml-auto" />
+        </div>
+        <p className="text-sm text-accent">
+          <span className="font-semibold text-fg">The Opera Game</span>, Morphy vs. the Duke of Brunswick and Count
+          Isouard, Paris 1858, replayed with fog of war.{' '}
+          {over ? 'At checkmate the fog lifts for both sides.' : 'Each side sees only what its own pieces can reach.'}
+        </p>
       </div>
-
-      <figcaption className="text-center text-sm text-accent">
-        <span className="font-semibold text-fg">The Opera Game</span>, Morphy vs. the Duke of Brunswick and Count Isouard,
-        Paris 1858, replayed with fog of war.{' '}
-        {over ? 'At checkmate the fog lifts for both sides.' : 'Each side sees only what its own pieces can reach.'}
-      </figcaption>
-    </figure>
+    </>
   )
 }

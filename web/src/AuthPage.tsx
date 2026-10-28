@@ -4,7 +4,7 @@ import { navigate } from './router'
 import { Button } from './ui'
 
 const inputClass =
-  'h-13 w-full rounded-xl bg-transparent px-4 text-base shadow-[inset_0_0_0_2px_color-mix(in_srgb,var(--color-fg)_35%,transparent)] outline-none placeholder:text-accent focus-visible:shadow-[inset_0_0_0_2px_var(--color-fg)]'
+  'h-13 w-full rounded-md bg-transparent px-4 text-base shadow-[inset_0_0_0_2px_color-mix(in_srgb,var(--color-fg)_35%,transparent)] outline-none placeholder:text-accent focus-visible:shadow-[inset_0_0_0_2px_var(--color-fg)]'
 
 function Field({ label, hint, ...props }: { label: string; hint?: string } & React.ComponentProps<'input'>) {
   return (

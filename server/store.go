@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
+	"strings"
 	"sync"
 	"time"
 
@@ -110,8 +112,26 @@ type gameRecord struct {
 	Reason    string
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	whiteName string
-	blackName string
+	// Clock is each side's time left as of TurnStart, when the side to move's
+	// clock started. A zero TurnStart means no clock is running.
+	Clock     [2]time.Duration
+	TurnStart time.Time
+	// Rated games move both players' ratings once they finish.
+	Rated      bool
+	RatingDiff [2]*int // nil until the ratings have been updated
+	whiteName  string
+	blackName  string
+	// onRated, if set, is called with the rating changes once they're saved.
+	onRated func(diff [2]int)
+}
+
+// deadline is when the side to move runs out of time, or nil if no clock is running.
+func (r *gameRecord) deadline() *time.Time {
+	if r.TurnStart.IsZero() {
+		return nil
+	}
+	d := r.TurnStart.Add(r.Clock[len(strings.Fields(r.Moves))%2])
+	return &d
 }
 
 // SaveGame queues a game snapshot. Writes happen off the match's lock so a
@@ -130,20 +150,160 @@ func (s *Store) writer() {
 	defer close(s.done)
 	for r := range s.writes {
 		settings, _ := jsonString(r.Settings)
+		var turnStart any
+		if !r.TurnStart.IsZero() {
+			turnStart = r.TurnStart
+		}
 		_, err := s.db.Exec(`
-			INSERT INTO games (match_id, round, settings, white, black, white_user, black_user, moves, result, reason, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			INSERT INTO games (match_id, round, settings, white, black, white_user, black_user, moves, result, reason, created_at, updated_at,
+				white_clock_ms, black_clock_ms, turn_started_at, deadline, rated)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 			ON CONFLICT (match_id, round) DO UPDATE SET
 				white = excluded.white, black = excluded.black,
 				white_user = excluded.white_user, black_user = excluded.black_user,
 				moves = excluded.moves, result = excluded.result, reason = excluded.reason,
-				updated_at = excluded.updated_at`,
+				updated_at = excluded.updated_at,
+				white_clock_ms = excluded.white_clock_ms, black_clock_ms = excluded.black_clock_ms,
+				turn_started_at = excluded.turn_started_at, deadline = excluded.deadline, rated = excluded.rated`,
 			r.MatchID, r.Round, settings, r.Seats[white], r.Seats[black], nullID(r.Users[white]), nullID(r.Users[black]),
-			r.Moves, r.Result, r.Reason, r.CreatedAt, r.UpdatedAt)
+			r.Moves, r.Result, r.Reason, r.CreatedAt, r.UpdatedAt,
+			r.Clock[white].Milliseconds(), r.Clock[black].Milliseconds(), turnStart, r.deadline(), r.Rated)
 		if err != nil {
 			log.Printf("saving game %s/%d: %v", r.MatchID, r.Round, err)
+			continue
+		}
+		if r.Rated && r.Result != "" {
+			diff, err := s.rate(r)
+			if err != nil {
+				log.Printf("rating game %s/%d: %v", r.MatchID, r.Round, err)
+			} else if diff != nil && r.onRated != nil {
+				r.onRated(*diff)
+			}
 		}
 	}
+}
+
+// rate updates both players' ratings for a finished game and records the
+// changes on the game. It returns nil if the game was already rated.
+func (s *Store) rate(r gameRecord) (*[2]int, error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+	var done bool
+	err = tx.QueryRow(`SELECT white_rating_diff IS NOT NULL FROM games WHERE match_id = $1 AND round = $2 FOR UPDATE`,
+		r.MatchID, r.Round).Scan(&done)
+	if err != nil || done {
+		return nil, err
+	}
+	// Lock in id order so two games finishing at once can't deadlock.
+	rows, err := tx.Query(`SELECT id, rating, deviation, volatility FROM users WHERE id IN ($1, $2) ORDER BY id FOR UPDATE`,
+		r.Users[white], r.Users[black])
+	if err != nil {
+		return nil, err
+	}
+	var before [2]glicko
+	for rows.Next() {
+		var id int64
+		var g glicko
+		if err := rows.Scan(&id, &g.Rating, &g.Deviation, &g.Volatility); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		for c := range r.Users {
+			if r.Users[c] == id {
+				before[c] = g
+			}
+		}
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	score := map[string]float64{"1-0": 1, "0-1": 0, "1/2-1/2": 0.5}[r.Result]
+	after := [2]glicko{
+		before[white].rate([]glickoResult{{before[black], score}}),
+		before[black].rate([]glickoResult{{before[white], 1 - score}}),
+	}
+	var diff [2]int
+	for c := range after {
+		diff[c] = int(math.Round(after[c].Rating)) - int(math.Round(before[c].Rating))
+		if _, err := tx.Exec(`UPDATE users SET rating = $2, deviation = $3, volatility = $4, rated_games = rated_games + 1 WHERE id = $1`,
+			r.Users[c], after[c].Rating, after[c].Deviation, after[c].Volatility); err != nil {
+			return nil, err
+		}
+	}
+	if _, err := tx.Exec(`UPDATE games SET white_rating_diff = $3, black_rating_diff = $4 WHERE match_id = $1 AND round = $2`,
+		r.MatchID, r.Round, diff[white], diff[black]); err != nil {
+		return nil, err
+	}
+	return &diff, tx.Commit()
+}
+
+// ExpiredGames lists games still on whose side to move has run out of time.
+func (s *Store) ExpiredGames() ([]string, error) {
+	rows, err := s.db.Query(`SELECT DISTINCT match_id FROM games WHERE deadline < now() AND result = ''`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+// leader is one row of the leaderboard.
+type leader struct {
+	Rank     int    `json:"rank"`
+	Username string `json:"username"`
+	Rating   int    `json:"rating"`
+	Games    int    `json:"games"`
+}
+
+// Leaderboard lists the best-rated players who have played a rated game.
+func (s *Store) Leaderboard(limit int) ([]leader, error) {
+	rows, err := s.db.Query(`SELECT username, rating, rated_games FROM users WHERE rated_games > 0 ORDER BY rating DESC, id LIMIT $1`, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []leader{}
+	for rows.Next() {
+		var l leader
+		var rating float64
+		if err := rows.Scan(&l.Username, &rating, &l.Games); err != nil {
+			return nil, err
+		}
+		l.Rank, l.Rating = len(out)+1, int(math.Round(rating))
+		out = append(out, l)
+	}
+	return out, rows.Err()
+}
+
+// Rank is a user's place on the leaderboard, or nil if they haven't played a rated game.
+func (s *Store) Rank(userID int64) (*leader, error) {
+	var l leader
+	var rating float64
+	err := s.db.QueryRow(`
+		SELECT u.username, u.rating, u.rated_games,
+			(SELECT count(*) FROM users o WHERE o.rated_games > 0 AND (o.rating > u.rating OR (o.rating = u.rating AND o.id < u.id))) + 1
+		FROM users u WHERE u.id = $1 AND u.rated_games > 0`, userID).Scan(&l.Username, &rating, &l.Games, &l.Rank)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	l.Rating = int(math.Round(rating))
+	return &l, nil
 }
 
 // cleanup deletes old guest games and expired sessions once a day.
@@ -185,7 +345,8 @@ func (s *Store) GamesOf(userID int64, limit int) ([]gameRecord, error) {
 func (s *Store) queryGames(where string, args ...any) ([]gameRecord, error) {
 	rows, err := s.db.Query(`
 		SELECT g.match_id, g.round, g.settings::text, g.white, g.black, coalesce(g.white_user, 0), coalesce(g.black_user, 0),
-			g.moves, g.result, g.reason, g.created_at, g.updated_at, coalesce(wu.username, ''), coalesce(bu.username, '')
+			g.moves, g.result, g.reason, g.created_at, g.updated_at, coalesce(wu.username, ''), coalesce(bu.username, ''),
+			coalesce(g.white_clock_ms, 0), coalesce(g.black_clock_ms, 0), g.turn_started_at, g.rated, g.white_rating_diff, g.black_rating_diff
 		FROM games g
 		LEFT JOIN users wu ON wu.id = g.white_user
 		LEFT JOIN users bu ON bu.id = g.black_user
@@ -198,10 +359,22 @@ func (s *Store) queryGames(where string, args ...any) ([]gameRecord, error) {
 	for rows.Next() {
 		var r gameRecord
 		var settings string
+		var clock [2]int64
+		var turnStart sql.NullTime
+		var diff [2]sql.NullInt64
 		if err := rows.Scan(&r.MatchID, &r.Round, &settings, &r.Seats[white], &r.Seats[black], &r.Users[white], &r.Users[black],
-			&r.Moves, &r.Result, &r.Reason, &r.CreatedAt, &r.UpdatedAt, &r.whiteName, &r.blackName); err != nil {
+			&r.Moves, &r.Result, &r.Reason, &r.CreatedAt, &r.UpdatedAt, &r.whiteName, &r.blackName,
+			&clock[white], &clock[black], &turnStart, &r.Rated, &diff[white], &diff[black]); err != nil {
 			return nil, err
 		}
+		for c := range clock {
+			r.Clock[c] = time.Duration(clock[c]) * time.Millisecond
+			if diff[c].Valid {
+				d := int(diff[c].Int64)
+				r.RatingDiff[c] = &d
+			}
+		}
+		r.TurnStart = turnStart.Time
 		parseJSON(settings, &r.Settings)
 		out = append(out, r)
 	}

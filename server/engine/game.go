@@ -35,10 +35,12 @@ const (
 	FiftyMoves
 	InsufficientMaterial
 	KingCaptured
+	Timeout
+	TimeoutVsInsufficientMaterial
 )
 
 func (m Method) String() string {
-	return [...]string{"", "checkmate", "resignation", "stalemate", "agreement", "repetition", "fifty-move rule", "insufficient material", "capturing the king"}[m]
+	return [...]string{"", "checkmate", "resignation", "stalemate", "agreement", "repetition", "fifty-move rule", "insufficient material", "capturing the king", "time", "timeout vs insufficient material"}[m]
 }
 
 // PlayedMove is one entry in a game's history.
@@ -132,6 +134,19 @@ func (g *Game) Resign(c Color) {
 	}
 }
 
+// TimeOut ends the game because the side to move ran out of time. It's a loss,
+// unless the opponent has too little left to ever win, which is a draw.
+func (g *Game) TimeOut() {
+	if g.Over() {
+		return
+	}
+	if g.pos.cannotWin(g.pos.Turn.Other()) {
+		g.outcome, g.method = Drawn, TimeoutVsInsufficientMaterial
+	} else {
+		g.outcome, g.method = winFor(g.pos.Turn.Other()), Timeout
+	}
+}
+
 // AgreeDraw ends the game as a draw by agreement.
 func (g *Game) AgreeDraw() {
 	if !g.Over() {
@@ -159,6 +174,25 @@ func (g *Game) evaluate() {
 	case p.Halfmove >= 100:
 		g.outcome, g.method = Drawn, FiftyMoves
 	}
+}
+
+// cannotWin reports whether c has only a king, or a king and one bishop or
+// knight, which is too little to win against any defence.
+func (p *Position) cannotWin(c Color) bool {
+	minors := 0
+	for _, pc := range p.Board {
+		if !pc.Is(c) {
+			continue
+		}
+		switch pc.Kind() {
+		case King:
+		case Bishop, Knight:
+			minors++
+		default:
+			return false
+		}
+	}
+	return minors <= 1
 }
 
 // insufficientMaterial covers the positions where no sequence of moves can mate:

@@ -71,9 +71,14 @@ func main() {
 		if p == nil {
 			p = &player{}
 		}
-		// Settings come as an optional JSON body; an empty body means standard chess.
+		// Settings come as an optional JSON body; an empty body means standard
+		// chess with no clock.
 		var settings Settings
 		json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&settings)
+		if !settings.Time.valid() {
+			jsonError(w, "That time control isn't one of the presets.", http.StatusBadRequest)
+			return
+		}
 		m := hub.Create(p, settings)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"id": m.id})

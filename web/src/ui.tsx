@@ -11,14 +11,22 @@ type ButtonProps = ComponentProps<'button'> & {
 
 const variants = {
   solid: 'bg-fg text-bg hover:opacity-85',
-  outline: 'shadow-[inset_0_0_0_2px_var(--color-fg)] hover:bg-fg hover:text-bg',
+  outline: 'shadow-[inset_0_0_0_1.5px_var(--color-fg)] hover:bg-fg hover:text-bg',
   ghost: 'hover:bg-fg/10',
 }
 
-export function Button({ variant = 'outline', icon, loading, className = '', children, disabled, ...props }: ButtonProps) {
+export function Button({
+  variant = 'outline',
+  icon,
+  loading,
+  className = '',
+  children,
+  disabled,
+  ...props
+}: ButtonProps) {
   return (
     <button
-      className={`relative inline-flex h-11 items-center justify-center gap-2 rounded-full ${icon ? 'w-11 shrink-0' : 'px-5'} text-[15px] font-semibold whitespace-nowrap transition-[opacity,background-color,color] active:scale-[0.98] disabled:pointer-events-none ${loading ? '' : 'disabled:opacity-40'} ${variants[variant]} ${className}`}
+      className={`relative inline-flex h-11 items-center justify-center gap-2 rounded-md ${icon ? 'w-11 shrink-0' : 'px-5'} text-[15px] font-semibold whitespace-nowrap transition-[opacity,background-color,color] active:scale-[0.98] disabled:pointer-events-none ${loading ? '' : 'disabled:opacity-40'} ${variants[variant]} ${className}`}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       {...props}
@@ -73,7 +81,7 @@ export function Dialog({ open, onOpenChange, title, description, children, dismi
       <RadixDialog.Portal>
         <RadixDialog.Overlay className="overlay fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]" />
         <RadixDialog.Content
-          className="dialog fixed top-1/2 left-1/2 z-50 w-[min(92vw,380px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-bg p-6 text-fg shadow-[0_0_0_2px_var(--color-fg),0_20px_60px_rgb(0_0_0/0.35)]"
+          className="dialog fixed top-1/2 left-1/2 z-50 w-[min(92vw,380px)] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-bg p-6 text-fg shadow-[0_0_0_1.5px_var(--color-fg),0_20px_60px_rgb(0_0_0/0.35)]"
           onPointerDownOutside={(e) => !dismissable && e.preventDefault()}
           onEscapeKeyDown={(e) => !dismissable && e.preventDefault()}
         >

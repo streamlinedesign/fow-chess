@@ -1,6 +1,6 @@
-# Chess
+# Eat the King
 
-Two-player online chess. One player creates a match and shares the 6-character ID (or link), and the other joins with it.
+Two-player online chess with fog of war. One player creates a match and shares the 6-character ID (or link), and the other joins with it.
 
 - **web/**: React 19, Vite, TypeScript, Tailwind v4, Radix, Geist. The browser knows no chess rules: it draws the board the server sends and only offers the legal moves the server lists.
 - **server/**: Go, with Postgres for accounts and games. It holds every live match in memory, checks each move with its own rules engine, and pushes state over WebSockets. In production it also serves the built web app from inside the binary.
@@ -27,7 +27,16 @@ Everything lives in Postgres. The server connects to `DATABASE_URL` (or `-db <ur
 - Games with at least one signed-in player are kept forever. Games between two guests are deleted after 30 days.
 - A guest who signs in mid-game keeps their seat.
 - `/u/<username>` shows a player's rating, current games and finished games. Finished games can be replayed move by move at `/g/<match id>/<round>`, with the fog lifted. Games still being played can't be replayed, since that would reveal the board.
-- Everyone starts at a rating of 1500. One rating covers every game mode. It starts changing once rated games arrive with clocks.
+- The home page shows your games in progress and the Top 100 (`GET /api/leaderboard`, which also returns your own rank when you're signed in).
+
+## Clocks and rating
+
+The creator picks a time control from fixed presets (`timeControls` in `server/view.go`, `TIME_GROUPS` in `web/src/settings.ts`, which must match): Bullet 1+0 and 2+1, Blitz 3+0, 3+2, 5+0 and 5+3, Rapid 10+0, 10+5 and 15+10, Classical 30+0, 30+20 and 90+30, Daily (24 hours per move, reset after every move), or No clock. The server refuses anything else.
+
+- Clocks run on the server. White's clock starts once Black sits down. The increment is added after each move.
+- When a clock runs out, that side loses on time, unless the opponent has only a king, or a king and one minor piece, which is a draw. A timer ends the game even with nobody connected, and every 30 seconds the server also checks the database for games whose deadline passed while it wasn't holding them (after a restart, for example).
+- The browser counts down locally from the last state the server sent, so the clock stays smooth between messages.
+- A game is **rated** when both players are signed in and it has a clock (Daily counts, No clock never does). Ratings use Glicko-2, starting at 1500 with one rating for every mode, and each game is its own rating period. The change is applied once, in a transaction, when the finished game is saved, and shown in the game-over dialog and on the profile.
 
 ## Chat
 

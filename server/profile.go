@@ -10,17 +10,20 @@ import (
 
 // gameSummary is one game in a profile's lists.
 type gameSummary struct {
-	MatchID   string   `json:"matchId"`
-	Round     int      `json:"round"`
-	Color     string   `json:"color"`    // the profile owner's color
-	Opponent  string   `json:"opponent"` // username, or "" for a guest or an empty seat
-	Waiting   bool     `json:"waiting"`  // no opponent has joined yet
-	Settings  Settings `json:"settings"`
-	Plies     int      `json:"plies"`
-	Turn      string   `json:"turn"`
-	Result    string   `json:"result,omitempty"`
-	Reason    string   `json:"reason,omitempty"`
-	UpdatedAt int64    `json:"updatedAt"` // unix milliseconds
+	MatchID  string   `json:"matchId"`
+	Round    int      `json:"round"`
+	Color    string   `json:"color"`    // the profile owner's color
+	Opponent string   `json:"opponent"` // username, or "" for a guest or an empty seat
+	Waiting  bool     `json:"waiting"`  // no opponent has joined yet
+	Settings Settings `json:"settings"`
+	Plies    int      `json:"plies"`
+	Turn     string   `json:"turn"`
+	Result   string   `json:"result,omitempty"`
+	Reason   string   `json:"reason,omitempty"`
+	Rated    bool     `json:"rated"`
+	// RatingDiff is the profile owner's rating change, once a rated game is over.
+	RatingDiff *int  `json:"ratingDiff,omitempty"`
+	UpdatedAt  int64 `json:"updatedAt"` // unix milliseconds
 }
 
 type profileResponse struct {
@@ -84,12 +87,33 @@ func profileRoutes(mux *http.ServeMux, store *Store, auth *Auth) {
 				MatchID: g.MatchID, Round: g.Round, Color: colorNames[color],
 				Opponent: [2]string{g.whiteName, g.blackName}[other], Waiting: g.Seats[other] == "",
 				Settings: g.Settings, Plies: plies, Turn: colorNames[plies%2],
-				Result: g.Result, Reason: g.Reason, UpdatedAt: g.UpdatedAt.UnixMilli(),
+				Result: g.Result, Reason: g.Reason, Rated: g.Rated, RatingDiff: g.RatingDiff[color],
+				UpdatedAt: g.UpdatedAt.UnixMilli(),
 			}
 			if g.Result == "" {
 				resp.Current = append(resp.Current, s)
 			} else {
 				resp.Finished = append(resp.Finished, s)
+			}
+		}
+		writeJSON(w, resp)
+	})
+
+	// The Top 100, plus where the signed-in player stands if they're further down.
+	mux.HandleFunc("GET /api/leaderboard", func(w http.ResponseWriter, r *http.Request) {
+		top, err := store.Leaderboard(100)
+		if err != nil {
+			jsonError(w, "Couldn't load the leaderboard.", http.StatusInternalServerError)
+			return
+		}
+		resp := struct {
+			Top []leader `json:"top"`
+			Me  *leader  `json:"me"`
+		}{Top: top}
+		if u := auth.user(r); u != nil {
+			if resp.Me, err = store.Rank(u.ID); err != nil {
+				jsonError(w, "Couldn't load the leaderboard.", http.StatusInternalServerError)
+				return
 			}
 		}
 		writeJSON(w, resp)

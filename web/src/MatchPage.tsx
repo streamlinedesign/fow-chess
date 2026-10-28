@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { refreshMe } from './auth'
 import { Board } from './Board'
 import { Captured } from './Captured'
 import { Chat } from './Chat'
+import { Clock } from './Clock'
 import { applyLocal, pieceImg } from './position'
 import { navigate } from './router'
 import { describeSettings } from './settings'
@@ -15,7 +17,12 @@ function resultText(s: MatchState) {
   if (s.result === '1/2-1/2') return { title: 'Draw', detail: `By ${s.reason}.` }
   const winner: Color = s.result === '1-0' ? 'w' : 'b'
   const title = s.you ? (s.you === winner ? 'You win' : 'You lose') : `${NAMES[winner]} wins`
-  return { title, detail: `${NAMES[winner]} wins by ${s.reason}.` }
+  return { title, detail: `${NAMES[winner]} wins ${how(s.reason)}.` }
+}
+
+/** "on time", or "by checkmate" and the like. */
+function how(reason?: string) {
+  return reason === 'time' ? 'on time' : `by ${reason}`
 }
 
 export function MatchPage({ id }: { id: string }) {
@@ -33,6 +40,12 @@ export function MatchPage({ id }: { id: string }) {
   const board = state ? (predicting ? applyLocal(state.board, pending!.uci) : state.board) : '.'.repeat(64)
   const legal = state && !predicting && conn === 'open' ? state.legal : []
   const last = predicting ? { from: pending!.uci.slice(0, 2), to: pending!.uci.slice(2, 4) } : state?.last
+
+  // Once the game is rated, the rating in the top bar is out of date.
+  const rated = !!state?.ratingDiff
+  useEffect(() => {
+    if (rated) refreshMe()
+  }, [rated])
 
   // How long the server took to confirm our move, for tracking sync lag.
   useEffect(() => {
@@ -69,9 +82,9 @@ export function MatchPage({ id }: { id: string }) {
   // Say whose move it is in the tab title, so a backgrounded tab shows when it's your turn.
   useEffect(() => {
     if (!you || !playing) return
-    document.title = yourMove ? '● Your move · Chess' : 'Their move · Chess'
+    document.title = yourMove ? '● Your move · Eat the King' : 'Their move · Eat the King'
     return () => {
-      document.title = 'Chess'
+      document.title = 'Eat the King'
     }
   }, [you, playing, yourMove])
 
@@ -110,7 +123,7 @@ export function MatchPage({ id }: { id: string }) {
     if (conn === 'failed') return "Can't reach the game server. Retrying…"
     if (conn !== 'open') return 'Reconnecting…'
     if (state.status === 'waiting') return 'Waiting for an opponent'
-    if (over) return `${over.title} by ${state.reason}`
+    if (over) return state.result === '1/2-1/2' ? `Draw by ${state.reason}` : `${over.title} ${how(state.reason)}`
     const check = state.check && !predicting ? 'Check. ' : ''
     if (!you) return `${check}${NAMES[turn!]} to move`
     return `${check}${turn === you ? 'Your move' : 'Their move'}`
@@ -156,18 +169,16 @@ export function MatchPage({ id }: { id: string }) {
           {state && (
             <ul className="flex flex-wrap gap-1.5" aria-label="Match rules">
               {describeSettings(state.settings).map((r) => (
-                <li
-                  key={r}
-                  className="rounded-full px-2.5 py-1 text-xs font-semibold shadow-[inset_0_0_0_1.5px_var(--color-fg)]"
-                >
+                <li key={r} className="tag">
                   {r}
                 </li>
               ))}
+              <li className={`tag ${state.rated ? 'tag-solid' : ''}`}>{state.rated ? 'Rated' : 'Unrated'}</li>
             </ul>
           )}
 
           {state && you && them && state.draw[them] && playing && (
-            <div className="flex items-center justify-between gap-3 rounded-xl p-3 shadow-[inset_0_0_0_2px_var(--color-fg)]">
+            <div className="flex items-center justify-between gap-3 rounded-lg p-3 shadow-[inset_0_0_0_1.5px_var(--color-fg)]">
               <span>They offer a draw.</span>
               <Button variant="solid" className="h-9 px-4" onClick={() => send({ type: 'draw' })}>
                 Accept
@@ -250,7 +261,7 @@ export function MatchPage({ id }: { id: string }) {
               key={p}
               autoFocus={p === 'q'}
               aria-label={{ q: 'Queen', r: 'Rook', b: 'Bishop', n: 'Knight' }[p]}
-              className="aspect-square rounded-xl bg-sq-light p-1 shadow-[inset_0_0_0_2px_var(--color-fg)] transition-transform hover:scale-105 active:scale-95"
+              className="aspect-square rounded-lg bg-sq-light p-1 shadow-[inset_0_0_0_1.5px_var(--color-fg)] transition-transform hover:scale-105 active:scale-95"
               onClick={() => {
                 sendMove(promotion!.from + promotion!.to + p)
                 setPromotion(null)
@@ -288,7 +299,16 @@ export function MatchPage({ id }: { id: string }) {
         open={!!over && dismissedOver !== overKey}
         onOpenChange={(o) => !o && setDismissedOver(overKey)}
         title={over?.title ?? ''}
-        description={over?.detail}
+        description={
+          <>
+            {over?.detail}
+            {state?.rated && you && (
+              <span className="mt-3 block font-mono text-fg tabular-nums">
+                {state.ratingDiff ? `Rating ${signed(state.ratingDiff[you])}` : 'Updating your rating…'}
+              </span>
+            )}
+          </>
+        }
       >
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setDismissedOver(overKey)}>
@@ -318,7 +338,7 @@ function PlayerBar({ color, state, you, active }: PlayerBarProps) {
   const name = seat?.name
   const label = !seat?.taken ? 'Waiting…' : name || (color === you ? 'You' : you ? 'Opponent' : 'Guest')
   return (
-    <div className="player-bar flex h-10 items-center gap-2 rounded-full px-3 text-[15px]" data-active={active}>
+    <div className="player-bar flex h-12 items-center gap-2 rounded-lg pr-1.5 pl-3 text-[15px]" data-active={active}>
       <span
         className={`size-3.5 shrink-0 rounded-full shadow-[0_0_0_1.5px_var(--color-fg)] ${color === 'w' ? 'bg-[#fff]' : 'bg-[#111]'}`}
         aria-hidden
@@ -339,19 +359,32 @@ function PlayerBar({ color, state, you, active }: PlayerBarProps) {
       )}
       {name && color === you && <span className="text-accent">(you)</span>}
       <span className="text-accent max-sm:hidden">{NAMES[color]}</span>
-      {active && <span className="turn-tag">to move</span>}
+      {active && !state?.clock && <span className="turn-tag">to move</span>}
       <span className="ml-auto flex min-w-0 items-center gap-2">
         {seat?.taken && !seat.online && <span className="text-sm text-danger">offline</span>}
         <Captured pieces={state?.captured[color] ?? ''} className="text-[clamp(16px,calc(var(--board)/30),22px)]" />
+        {state?.clock && (
+          <Clock
+            left={state.clock.left[color]}
+            running={state.clock.running === color}
+            since={state.receivedAt}
+            daily={state.settings.time.perMove > 0}
+          />
+        )}
       </span>
     </div>
   )
 }
 
+/** "+12", "−8" or "±0". */
+function signed(n: number) {
+  return n > 0 ? `+${n}` : n < 0 ? `−${-n}` : '±0'
+}
+
 function WaitingCard({ id, link }: { id: string; link: string }) {
   return (
     <div className="absolute inset-0 z-20 grid place-items-center bg-bg/70 p-4 backdrop-blur-[3px]">
-      <div className="flex w-full max-w-[320px] flex-col items-center gap-4 rounded-2xl bg-bg p-6 text-center shadow-[0_0_0_2px_var(--color-fg)]">
+      <div className="flex w-full max-w-[320px] flex-col items-center gap-4 rounded-xl bg-bg p-6 text-center shadow-[0_0_0_1.5px_var(--color-fg)]">
         <p className="text-accent">Send this ID to your opponent</p>
         <p className="font-mono text-4xl font-bold tracking-[0.2em] select-all">{id}</p>
         <CopyLink link={link} wide />

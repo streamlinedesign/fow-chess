@@ -47,7 +47,11 @@ export function Chat({ lines, you, themName, disabled, onSend }: ChatProps) {
   }
 
   return (
-    <section ref={panel} aria-label="Chat" className="flex flex-col gap-2 rounded-xl p-3 shadow-[inset_0_0_0_2px_var(--color-fg)]">
+    <section
+      ref={panel}
+      aria-label="Chat"
+      className="flex flex-col gap-2 rounded-lg p-3 shadow-[inset_0_0_0_1.5px_var(--color-fg)]"
+    >
       <h3 className="flex items-baseline justify-between gap-2 font-semibold">
         Chat
         <span className="text-xs font-medium text-accent">Cleared when the game ends</span>
@@ -64,7 +68,7 @@ export function Chat({ lines, you, themName, disabled, onSend }: ChatProps) {
           return (
             <li
               key={l.id}
-              className={`chat-line max-w-[85%] rounded-2xl px-3 py-1.5 break-words whitespace-pre-wrap ${
+              className={`chat-line max-w-[85%] rounded-xl px-3 py-1.5 break-words whitespace-pre-wrap ${
                 mine
                   ? 'self-end rounded-br-md bg-fg text-bg'
                   : 'self-start rounded-bl-md shadow-[inset_0_0_0_1.5px_var(--color-fg)]'
@@ -89,7 +93,7 @@ export function Chat({ lines, you, themName, disabled, onSend }: ChatProps) {
           autoComplete="off"
           disabled={disabled}
           // 16px keeps iOS from zooming in on focus.
-          className="h-11 min-w-0 flex-1 rounded-full bg-transparent px-4 text-base shadow-[inset_0_0_0_2px_color-mix(in_srgb,var(--color-fg)_35%,transparent)] outline-none placeholder:text-accent focus-visible:shadow-[inset_0_0_0_2px_var(--color-fg)] disabled:opacity-40"
+          className="h-11 min-w-0 flex-1 rounded-md bg-transparent px-4 text-base shadow-[inset_0_0_0_2px_color-mix(in_srgb,var(--color-fg)_35%,transparent)] outline-none placeholder:text-accent focus-visible:shadow-[inset_0_0_0_2px_var(--color-fg)] disabled:opacity-40"
         />
         <Button type="submit" variant="solid" icon aria-label="Send" disabled={disabled || !text.trim()}>
           <svg
@@ -109,7 +113,7 @@ export function Chat({ lines, you, themName, disabled, onSend }: ChatProps) {
 
       {unread > 0 && !inView && (
         <button
-          className="chat-pill fixed bottom-[max(16px,env(safe-area-inset-bottom))] left-1/2 z-30 h-10 -translate-x-1/2 rounded-full bg-fg px-4 text-sm font-semibold text-bg shadow-[0_8px_24px_rgb(0_0_0/0.25)]"
+          className="chat-pill fixed bottom-[max(16px,env(safe-area-inset-bottom))] left-1/2 z-30 h-10 -translate-x-1/2 rounded-md bg-fg px-4 text-sm font-semibold text-bg shadow-[0_8px_24px_rgb(0_0_0/0.25)]"
           onClick={() => panel.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
         >
           {unread === 1 ? '1 new message' : `${unread} new messages`}

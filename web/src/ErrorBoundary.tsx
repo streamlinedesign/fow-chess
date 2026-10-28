@@ -15,8 +15,10 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { error: E
     return (
       <main className="flex flex-1 flex-col items-start justify-center gap-6 px-4 py-10 sm:px-8">
         <h2 className="text-[clamp(42px,8vw,64px)] leading-none font-bold tracking-tight">Something broke</h2>
-        <p className="max-w-xl text-accent">Reloading usually fixes it. If it keeps happening, send this message along:</p>
-        <pre className="max-w-full overflow-x-auto rounded-xl p-4 font-mono text-sm whitespace-pre-wrap shadow-[inset_0_0_0_2px_var(--color-fg)]">
+        <p className="max-w-xl text-accent">
+          Reloading usually fixes it. If it keeps happening, send this message along:
+        </p>
+        <pre className="max-w-full overflow-x-auto rounded-lg p-4 font-mono text-sm whitespace-pre-wrap shadow-[inset_0_0_0_2px_var(--color-fg)]">
           {error.message}
         </pre>
         <Button variant="solid" onClick={() => location.reload()}>

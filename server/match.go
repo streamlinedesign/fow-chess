@@ -39,6 +39,7 @@ type Hub struct {
 func NewHub(store *Store) *Hub {
 	h := &Hub{matches: make(map[string]*Match), store: store}
 	go h.sweep()
+	go h.flagExpired()
 	return h
 }
 
@@ -88,12 +89,34 @@ func (h *Hub) sweep() {
 		for id, m := range h.matches {
 			m.mu.Lock()
 			idle := len(m.clients) == 0 && time.Since(m.touched) > 2*time.Hour
+			if idle && m.timer != nil {
+				// flagExpired catches this game running out of time from now on.
+				m.timer.Stop()
+				m.timer = nil
+			}
 			m.mu.Unlock()
 			if idle {
 				delete(h.matches, id)
 			}
 		}
 		h.mu.Unlock()
+	}
+}
+
+// flagExpired ends games whose clock ran out while nobody had them loaded, like
+// a Daily game left alone for a day, or any game when the server restarts.
+func (h *Hub) flagExpired() {
+	for {
+		ids, err := h.store.ExpiredGames()
+		if err != nil {
+			log.Printf("looking for games out of time: %v", err)
+		}
+		for _, id := range ids {
+			if m := h.Get(id); m != nil {
+				m.checkFlag()
+			}
+		}
+		time.Sleep(30 * time.Second)
 	}
 }
 
@@ -184,6 +207,13 @@ type Match struct {
 	round    int
 	started  time.Time // when this round began
 	touched  time.Time
+	// clock is each side's time left as of turnStart, when the side to move's
+	// clock started. A zero turnStart means no clock is running: there's no
+	// clock, the opponent hasn't joined yet, or the game is over.
+	clock      [2]time.Duration
+	turnStart  time.Time
+	timer      *time.Timer // ends the game when the side to move runs out
+	ratingDiff *[2]int     // set once a rated game's ratings are saved
 	// chat between the two players in this round. Kept only in memory, and
 	// cleared when the next round starts or both players leave a finished game.
 	chat   []chatLine
@@ -210,10 +240,21 @@ type chatMsg struct {
 
 func newMatch(store *Store, id string, settings Settings) *Match {
 	now := time.Now()
-	return &Match{
+	m := &Match{
 		store: store, id: id, settings: settings, game: engine.NewGameWithRules(settings.rules()),
 		clients: make(map[*client]struct{}), round: 1, started: now, touched: now,
 	}
+	m.resetClock()
+	return m
+}
+
+// resetClock puts both clocks at the starting time, stopped.
+func (m *Match) resetClock() {
+	t := m.settings.Time
+	start := time.Duration(t.Base+t.PerMove) * time.Second
+	m.clock = [2]time.Duration{start, start}
+	m.turnStart = time.Time{}
+	m.stopTimer()
 }
 
 // restoreMatch rebuilds a match from its newest saved round by replaying the moves.
@@ -227,6 +268,17 @@ func restoreMatch(store *Store, rec *gameRecord) (*Match, error) {
 		return nil, err
 	}
 	m.game = g
+	m.clock, m.turnStart = rec.Clock, rec.TurnStart
+	if d := rec.RatingDiff; d[white] != nil && d[black] != nil {
+		m.ratingDiff = &[2]int{*d[white], *d[black]}
+	}
+	if m.running() {
+		if m.flagged(time.Now()) {
+			m.save()
+		} else {
+			m.armTimer()
+		}
+	}
 	return m, nil
 }
 
@@ -241,6 +293,8 @@ func replay(rec *gameRecord) (*engine.Game, error) {
 	}
 	if !g.Over() && rec.Result != "" {
 		switch {
+		case rec.Reason == engine.Timeout.String() || rec.Reason == engine.TimeoutVsInsufficientMaterial.String():
+			g.TimeOut()
 		case rec.Reason == engine.Agreement.String():
 			g.AgreeDraw()
 		case rec.Result == engine.WhiteWins.String():
@@ -269,11 +323,101 @@ func (m *Match) save() {
 	rec := gameRecord{
 		MatchID: m.id, Round: m.round, Settings: m.settings, Seats: m.seats, Users: m.users,
 		Moves: moves.String(), CreatedAt: m.started, UpdatedAt: time.Now(),
+		Clock: m.clock, TurnStart: m.turnStart, Rated: m.rated(),
+	}
+	round := m.round
+	rec.onRated = func(diff [2]int) {
+		// Called from the store's writer, which must not wait on this match.
+		go func() {
+			m.mu.Lock()
+			defer m.mu.Unlock()
+			if m.round == round {
+				m.ratingDiff = &diff
+				m.broadcast()
+			}
+		}()
 	}
 	if m.game.Over() {
 		rec.Result, rec.Reason = m.game.Outcome().String(), m.game.Method().String()
 	}
 	m.store.SaveGame(rec)
+}
+
+// rated is whether this game counts toward rating: two different signed-in
+// players and a clock.
+func (m *Match) rated() bool {
+	return m.settings.Time.clocked() && m.users[white] != 0 && m.users[black] != 0 && m.users[white] != m.users[black]
+}
+
+func (m *Match) running() bool { return !m.turnStart.IsZero() }
+
+// left is how much time c has at now.
+func (m *Match) left(c int, now time.Time) time.Duration {
+	d := m.clock[c]
+	if m.running() && int(m.game.Turn()) == c {
+		d -= now.Sub(m.turnStart)
+	}
+	return d
+}
+
+// startClock starts the side to move's clock once both players are seated.
+// Callers hold m.mu.
+func (m *Match) startClock(now time.Time) {
+	if !m.settings.Time.clocked() || m.game.Over() || m.seats[white] == "" || m.seats[black] == "" || m.running() {
+		return
+	}
+	if pm := m.settings.Time.PerMove; pm > 0 {
+		m.clock[m.game.Turn()] = time.Duration(pm) * time.Second
+	}
+	m.turnStart = now
+	m.armTimer()
+}
+
+// stopClock charges the side to move for the time they used and stops the
+// clocks. Callers hold m.mu.
+func (m *Match) stopClock(now time.Time) {
+	if !m.running() {
+		return
+	}
+	c := int(m.game.Turn())
+	m.clock[c] = max(m.left(c, now), 0)
+	m.turnStart = time.Time{}
+	m.stopTimer()
+}
+
+func (m *Match) armTimer() {
+	m.stopTimer()
+	m.timer = time.AfterFunc(max(m.left(int(m.game.Turn()), time.Now()), 0), m.checkFlag)
+}
+
+func (m *Match) stopTimer() {
+	if m.timer != nil {
+		m.timer.Stop()
+		m.timer = nil
+	}
+}
+
+// checkFlag ends the game if the side to move is out of time.
+func (m *Match) checkFlag() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.flagged(time.Now()) {
+		m.save()
+		m.broadcast()
+	} else if m.running() {
+		m.armTimer() // woke a moment early
+	}
+}
+
+// flagged ends the game if the side to move has run out of time, and reports
+// whether it did. Callers hold m.mu.
+func (m *Match) flagged(now time.Time) bool {
+	if m.game.Over() || !m.running() || m.left(int(m.game.Turn()), now) > 0 {
+		return false
+	}
+	m.stopClock(now)
+	m.game.TimeOut()
+	return true
 }
 
 type seatState struct {
@@ -284,7 +428,7 @@ type seatState struct {
 
 // protocolVersion changes whenever the state message changes shape, so a web app
 // talking to a server from another version can say so instead of breaking.
-const protocolVersion = 6
+const protocolVersion = 7
 
 type stateMsg struct {
 	Type     string   `json:"type"`
@@ -300,6 +444,17 @@ type stateMsg struct {
 	Players map[string]seatState `json:"players"`
 	Rematch map[string]bool      `json:"rematch"`
 	Draw    map[string]bool      `json:"draw"`
+	Clock   *clockView           `json:"clock,omitempty"` // nil for No clock games
+	Rated   bool                 `json:"rated"`
+	// RatingDiff is each side's rating change, once a rated game is over and saved.
+	RatingDiff map[string]int `json:"ratingDiff,omitempty"`
+}
+
+// clockView is the clocks as of the moment the state is sent; the browser
+// counts the running one down from there.
+type clockView struct {
+	Left    map[string]int64 `json:"left"`              // milliseconds
+	Running string           `json:"running,omitempty"` // whose clock is ticking
 }
 
 type inMsg struct {
@@ -322,6 +477,8 @@ func (m *Match) join(c *client, p *player) {
 			for i := range m.seats {
 				if m.seats[i] == "" {
 					m.seat(i, p)
+					// White's clock starts as soon as an opponent sits down.
+					m.startClock(time.Now())
 					m.save()
 					break
 				}
@@ -373,17 +530,33 @@ func (m *Match) handle(c *client, msg inMsg) {
 		return
 	}
 	over, plies, round := m.game.Over(), len(m.game.History()), m.round
-	m.touched = time.Now()
+	now := time.Now()
+	m.touched = now
 
 	switch msg.Type {
 	case "move":
 		if over || m.seats[black] == "" || int(m.game.Turn()) != color {
 			break
 		}
+		// A move that arrives after the flag fell is too late.
+		if m.flagged(now) {
+			break
+		}
+		running, spent := m.running(), now.Sub(m.turnStart)
 		if _, err := m.game.PlayUCI(msg.UCI); err != nil {
 			break
 		}
 		m.draw = [2]bool{}
+		if running {
+			t := m.settings.Time
+			m.clock[color] += time.Duration(t.Inc)*time.Second - spent
+			if t.PerMove > 0 {
+				m.clock[color] = time.Duration(t.PerMove) * time.Second
+			}
+			m.turnStart = time.Time{}
+			m.stopTimer()
+		}
+		m.startClock(now)
 	case "resign":
 		if !over && len(m.game.History()) > 0 {
 			m.game.Resign(engine.Color(color))
@@ -409,7 +582,10 @@ func (m *Match) handle(c *client, msg inMsg) {
 			m.rematch = [2]bool{}
 			m.draw = [2]bool{}
 			m.round++
-			m.started = time.Now()
+			m.started = now
+			m.ratingDiff = nil
+			m.resetClock()
+			m.startClock(now)
 			m.chat = nil
 			m.sendChat(true, nil)
 		}
@@ -429,6 +605,9 @@ func (m *Match) handle(c *client, msg inMsg) {
 		}
 		m.sendChat(false, []chatLine{line})
 		return // the game didn't change
+	}
+	if m.game.Over() {
+		m.stopClock(now)
 	}
 	if len(m.game.History()) != plies || m.game.Over() != over || m.round != round {
 		m.save()
@@ -470,6 +649,20 @@ func (m *Match) broadcast() {
 		Players: map[string]seatState{},
 		Rematch: map[string]bool{"w": m.rematch[white], "b": m.rematch[black]},
 		Draw:    map[string]bool{"w": m.draw[white], "b": m.draw[black]},
+		Rated:   m.rated(),
+	}
+	if m.settings.Time.clocked() {
+		now := time.Now()
+		base.Clock = &clockView{Left: map[string]int64{}}
+		for i, name := range colorNames {
+			base.Clock.Left[name] = max(m.left(i, now), 0).Milliseconds()
+		}
+		if m.running() {
+			base.Clock.Running = m.game.Turn().String()
+		}
+	}
+	if d := m.ratingDiff; d != nil {
+		base.RatingDiff = map[string]int{"w": d[white], "b": d[black]}
 	}
 	for i, name := range colorNames {
 		base.Players[name] = seatState{Taken: m.seats[i] != "", Online: m.seats[i] != "" && m.online(i), Name: m.names[i]}

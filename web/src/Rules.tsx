@@ -1,69 +1,130 @@
 import type { ReactNode } from 'react'
+import { pieceImg } from './position'
 
-function Card({ title, children }: { title: string; children: ReactNode }) {
+/** A FEN board as 64 characters from a1 to h8, the way the server sends boards. */
+function fenBoard(fen: string) {
+  const ranks = fen.split('/').map((r) => r.replace(/\d/g, (n) => '.'.repeat(Number(n))))
+  return ranks.reverse().join('')
+}
+
+const FILES = 'abcdefgh'
+
+/** A small still board for the rules: no coordinates, no input. */
+function MiniBoard({ fen, seen, last }: { fen: string; seen?: string[]; last?: string[] }) {
+  const board = fenBoard(fen)
+  const squares = []
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 8; col++) {
+      const sq = FILES[col] + (8 - row)
+      const piece = board[(7 - row) * 8 + col]
+      const fog = seen && !seen.includes(sq)
+      const light = (col + row) % 2 === 0
+      squares.push(
+        <div
+          key={sq}
+          className="sq relative"
+          data-light={light}
+          data-fog={fog || undefined}
+          data-last={(!fog && last?.includes(sq)) || undefined}
+        >
+          {piece !== '.' && !fog && <img className="piece" src={pieceImg(piece)} alt="" draggable={false} />}
+        </div>,
+      )
+    }
+  }
   return (
-    <section className="flex flex-col gap-3 rounded-2xl p-5 shadow-[inset_0_0_0_2px_var(--color-fg)] sm:p-6">
-      <h3 className="text-xl font-bold tracking-tight">{title}</h3>
-      <div className="flex flex-col gap-2.5 text-[15px] leading-relaxed text-accent [&_strong]:font-semibold [&_strong]:text-fg">
+    <div className="board grid aspect-square w-32 grid-cols-8 grid-rows-8 overflow-hidden rounded-[3px]" aria-hidden>
+      {squares}
+    </div>
+  )
+}
+
+function Card({ art, title, children }: { art: ReactNode; title: string; children: ReactNode }) {
+  return (
+    <article className="tick flex flex-col gap-3 p-5 sm:p-6">
+      <div className="mb-1.5 flex h-32 items-center">{art}</div>
+      <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
+      <div className="flex flex-col gap-3 text-[15px] leading-relaxed text-accent [&_strong]:font-semibold [&_strong]:text-fg">
         {children}
       </div>
-    </section>
+    </article>
   )
 }
 
 /** How the game works, for the landing page. Keep in step with server/engine and server/view.go. */
 export function Rules() {
   return (
-    <section id="rules" className="mx-auto flex w-full max-w-[1180px] flex-col gap-6 px-4 pt-6 pb-16 sm:px-8">
-      <h2 className="text-[clamp(32px,6vw,48px)] leading-none font-bold tracking-tight">How it plays</h2>
+    <section id="rules" className="flex flex-col gap-6">
+      <div className="border-b border-fg pb-4">
+        <h2 className="text-[clamp(30px,5vw,44px)] leading-none font-semibold tracking-tight">How it plays</h2>
+        <p className="mt-2 text-accent">
+          Normal chess pieces and moves. What changes is what you can see, and how you win.
+        </p>
+      </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card title="Starting a match">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card
+          title="Starting a match"
+          art={
+            <div className="flex flex-col gap-1.5">
+              <div className="flex gap-1">
+                {'K7Q2XD'.split('').map((c, i) => (
+                  <span
+                    key={i}
+                    className="grid h-11 w-8 place-items-center rounded-md border-[1.5px] border-fg font-mono text-xl"
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+              <span className="font-mono text-xs text-accent">your match code</span>
+            </div>
+          }
+        >
           <p>
-            Pick the rules and press <strong>New match</strong>. You get a 6-character match ID and a link to share. The
-            creator plays White, and whoever opens the link next plays Black.
+            Pick the rules and a time control, then press <strong>New match</strong>. You get a 6-character{' '}
+            <strong>code</strong> and a link to share. You play White, and whoever opens the link next plays Black.
           </p>
           <p>
-            Refreshing or losing signal puts you back in your seat. Anyone else who opens the link{' '}
-            <strong>watches</strong> instead of playing.
-          </p>
-          <p>
-            You can offer a draw or resign at any time. After the game, a <strong>rematch</strong> starts a new one with
-            colors swapped.
+            Refreshing or losing signal puts you back in your seat. You can offer a draw or resign at any time, and a{' '}
+            <strong>rematch</strong> swaps colours.
           </p>
         </Card>
 
-        <Card title="Fog of war">
+        <Card
+          title="Fog of war"
+          art={<MiniBoard fen="8/8/8/8/3N4/8/8/8" seen={['d4', 'b3', 'b5', 'c2', 'c6', 'e2', 'e6', 'f3', 'f5']} />}
+        >
           <p>
-            You only see the squares your pieces can see. Each piece sees <strong>its own square</strong> and{' '}
-            <strong>every square it could move to</strong>, including captures. Everything else is covered.
+            You only see what your pieces see: <strong>their own squares</strong> and{' '}
+            <strong>every square they could move to</strong>, captures included. The rest is covered.
           </p>
           <p>
-            A <strong>pawn</strong> always sees the square straight ahead, even when it's blocked. It sees its diagonals
-            only when there's something to capture there.
-          </p>
-          <p>
-            You get <strong>no hints</strong> about your opponent: no highlight of their last move, a <code>?</code> for
-            their moves in the move list, and no check mark on your own moves. When the game ends, the fog lifts for
-            everyone.
+            A <strong>pawn</strong> always sees the square ahead, even when blocked, and its diagonals only when there's
+            something to take. You get no hints about the other side. The fog lifts when the game ends.
           </p>
         </Card>
 
-        <Card title="Win by: Eat the King">
+        <Card
+          title="Win by Eat the King"
+          art={
+            <div className="flex items-center gap-2.5" aria-hidden>
+              <img src={pieceImg('Q')} alt="" className="size-[72px]" />
+              <span className="text-3xl text-accent">→</span>
+              <img src={pieceImg('k')} alt="" className="size-[72px] -rotate-90 opacity-55" />
+            </div>
+          }
+        >
           <p>
-            There is <strong>no check</strong>. Kings may walk into danger, stay in danger, and castle out of, through or
-            into an attack.
+            There is <strong>no check</strong>. Kings may walk into danger, stay there, and castle through an attack.
+            You win by <strong>capturing the king</strong>.
           </p>
-          <p>
-            You win by <strong>capturing the enemy king</strong>. With fog on, this is the natural way to play, since
-            neither side can always see the threats.
-          </p>
+          <p>With fog on, it's the natural way to play, since nobody can always see the threats.</p>
         </Card>
 
-        <Card title="Win by: Checkmate">
+        <Card title="Win by Checkmate" art={<MiniBoard fen="R5k1/5ppp/8/8/8/8/5PPP/6K1" last={['a1', 'a8']} />}>
           <p>
-            Normal chess rules. You can't make a move that leaves your king in check, and you win by{' '}
-            <strong>checkmate</strong>.
+            Normal chess rules. You can't leave your king in check, and you win by <strong>checkmate</strong>.
           </p>
           <p>
             With fog on, you're told when <strong>you</strong> are in check, because it limits your moves. You're never
@@ -71,21 +132,42 @@ export function Rules() {
           </p>
         </Card>
 
-        <Card title="Draws">
+        <Card
+          title="Clocks and rating"
+          art={
+            <div className="flex flex-col gap-2">
+              <span className="flex items-baseline gap-2 rounded-md bg-fg px-3.5 py-2 font-mono text-[34px] leading-none text-bg">
+                5:00<span className="text-base opacity-70">+0</span>
+              </span>
+              <span className="font-mono text-[15px]">
+                1500 → <strong className="text-fg">1512</strong>
+              </span>
+            </div>
+          }
+        >
           <p>
-            A game is drawn by <strong>stalemate</strong>, <strong>threefold repetition</strong>, the{' '}
-            <strong>fifty-move rule</strong>, <strong>insufficient material</strong>, or when both players agree.
-            Repetition and the fifty-move rule end the game automatically.
+            Clocks run on the server, so closing the tab doesn't stop them. Run out and you lose, unless your opponent
+            can't win with what's left. <strong>Daily</strong> gives you 24 hours per move. <strong>No clock</strong>{' '}
+            waits forever.
+          </p>
+          <p>
+            Games between two signed-in players are <strong>rated</strong>, on one rating for every mode, starting at
+            1500. Guest and No clock games aren't.
           </p>
         </Card>
 
-        <Card title="Everything else">
+        <Card
+          title="Draws and the rest"
+          art={<span className="text-[60px] leading-none font-light tracking-tight">½ – ½</span>}
+        >
           <p>
-            All the usual moves work: <strong>castling</strong>, <strong>en passant</strong> and{' '}
-            <strong>promotion</strong>, where you pick the piece. The server checks every move, so the board only offers
-            moves that are legal.
+            A game is drawn by <strong>stalemate</strong>, <strong>threefold repetition</strong>, the{' '}
+            <strong>fifty-move rule</strong>, <strong>insufficient material</strong>, or when you both agree.
           </p>
-          <p>Captured pieces show next to each player, and the bar of the side to move lights up.</p>
+          <p>
+            <strong>Castling</strong>, <strong>en passant</strong> and <strong>promotion</strong> all work. The server
+            checks every move, so the board only offers legal ones.
+          </p>
         </Card>
       </div>
     </section>

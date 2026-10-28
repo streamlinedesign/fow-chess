@@ -13,9 +13,41 @@ type Settings struct {
 	Fog bool `json:"fog"`
 	// KingCapture plays without check: win by capturing the king.
 	KingCapture bool `json:"kingCapture"`
+	// Time is the clock. The zero value is no clock, which is also what games
+	// saved before clocks existed load as.
+	Time TimeControl `json:"time"`
 }
 
 func (s Settings) rules() engine.Rules { return engine.Rules{KingCapture: s.KingCapture} }
+
+// TimeControl is a clock setting: Base minutes each plus Inc seconds per move,
+// or PerMove seconds for every move (Daily). All zero means no clock.
+type TimeControl struct {
+	Base    int `json:"base"`    // seconds per player
+	Inc     int `json:"inc"`     // seconds added after each move
+	PerMove int `json:"perMove"` // seconds for each move; the clock resets every move
+}
+
+// timeControls are the presets players can pick from.
+var timeControls = []TimeControl{
+	// No clock
+	{},
+	// Bullet
+	{Base: 60}, {Base: 120, Inc: 1},
+	// Blitz
+	{Base: 180}, {Base: 180, Inc: 2}, {Base: 300}, {Base: 300, Inc: 3},
+	// Rapid
+	{Base: 600}, {Base: 600, Inc: 5}, {Base: 900, Inc: 10},
+	// Classical
+	{Base: 1800}, {Base: 1800, Inc: 20}, {Base: 5400, Inc: 30},
+	// Daily
+	{PerMove: 24 * 60 * 60},
+}
+
+func (t TimeControl) valid() bool { return slices.Contains(timeControls, t) }
+
+// clocked is false for No clock games, which wait forever and are never rated.
+func (t TimeControl) clocked() bool { return t != TimeControl{} }
 
 // boardView encodes what a viewer can see as 64 characters from a1 to h8:
 // FEN letters for pieces, '.' for an empty square, and '?' for a square the

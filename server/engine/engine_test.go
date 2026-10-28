@@ -251,3 +251,29 @@ func TestKingCapture(t *testing.T) {
 		t.Errorf("castle through attack: %v", err)
 	}
 }
+
+func TestTimeOut(t *testing.T) {
+	cases := []struct {
+		name   string
+		fen    string
+		want   Outcome
+		method Method
+	}{
+		{"white flags with black able to win", "4k3/8/8/8/8/8/4P3/4K2q w - - 0 1", BlackWins, Timeout},
+		{"black flags against a lone king", "4k3/8/8/8/8/8/8/4K3 b - - 0 1", Drawn, InsufficientMaterial},
+		{"black flags against king and knight", "4k2r/8/8/8/8/8/8/4K1N1 b - - 0 1", Drawn, TimeoutVsInsufficientMaterial},
+		{"black flags against king and pawn", "4k2r/8/8/8/8/8/4P3/4K3 b - - 0 1", WhiteWins, Timeout},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			g, err := NewGameFromFEN(c.fen)
+			if err != nil {
+				t.Fatal(err)
+			}
+			g.TimeOut()
+			if g.Outcome() != c.want || g.Method() != c.method {
+				t.Errorf("got %v by %v, want %v by %v", g.Outcome(), g.Method(), c.want, c.method)
+			}
+		})
+	}
+}

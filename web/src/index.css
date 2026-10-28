@@ -11,6 +11,10 @@
   --color-sq-dark: light-dark(#a3a38b, #6b6b58);
   --color-danger: light-dark(#c2410c, #fb923c);
   --color-fog: light-dark(#2f2f2a, #1b1b17);
+  /* Quiet fills and hairlines, from the Streamline homepage tokens. */
+  --color-muted: light-dark(rgb(5 5 5 / 0.06), rgb(255 250 189 / 0.08));
+  --color-border: light-dark(rgb(5 5 5 / 0.18), rgb(255 250 189 / 0.2));
+  --color-online: light-dark(#2f9e44, #69db7c);
 }
 
 @layer base {
@@ -201,9 +205,7 @@
 
 /* Fog: squares the viewer's pieces can't see. */
 .sq[data-fog='true'] {
-  background:
-    repeating-linear-gradient(135deg, transparent 0 6px, rgb(255 250 189 / 0.05) 6px 7px),
-    var(--color-fog);
+  background: repeating-linear-gradient(135deg, transparent 0 6px, rgb(255 250 189 / 0.05) 6px 7px), var(--color-fog);
   transition: background-color 200ms ease;
 }
 .sq[data-fog='true'] .coord {
@@ -221,7 +223,7 @@
   box-shadow: inset 0 0 0 2px var(--color-fg);
 }
 .turn-tag {
-  border-radius: 9999px;
+  border-radius: 4px;
   background: var(--color-fg);
   color: var(--color-bg);
   padding: 2px 8px;
@@ -288,18 +290,106 @@
   filter: drop-shadow(0 0 1px var(--color-fg));
 }
 
-/* Landing page replay: one board, sized to leave the settings in reach. */
-.showcase {
-  --board: min(100vw - 32px, 520px, max(300px, 100dvh - 260px));
+/* Landing page: the settings box and the replay board side by side, the same height. */
+.hero {
+  --board: min(100vw - 32px, 520px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: 'head' 'setup' 'acts' 'board' 'cap';
+  gap: 16px;
+}
+.hero-head {
+  grid-area: head;
+}
+.hero-setup {
+  grid-area: setup;
+}
+.hero-acts {
+  grid-area: acts;
+}
+.hero-board {
+  grid-area: board;
+  width: var(--board);
+  margin: 24px auto 0;
+}
+.hero-cap {
+  grid-area: cap;
   width: var(--board);
   margin-inline: auto;
 }
 @media (min-width: 1024px) {
-  .showcase {
-    --board: min(100vw - 620px, 600px, max(320px, 100dvh - 230px));
-    flex: none;
-    margin-inline: 0;
+  .hero {
+    --board: min(100vw - 620px, 520px);
+    grid-template-columns: minmax(0, 1fr) var(--board);
+    grid-template-areas: 'head head' 'setup board' 'acts cap';
+    column-gap: 56px;
   }
+  .hero-head {
+    margin-bottom: 12px;
+  }
+  .hero-board {
+    margin: 0;
+  }
+  .hero-cap {
+    margin: 0;
+  }
+}
+
+/* Top 100. */
+.lb {
+  width: 100%;
+  border-collapse: collapse;
+}
+.lb th {
+  padding: 0 8px 10px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.lb .r {
+  text-align: right;
+}
+.lb td {
+  padding: 8px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+.lb tbody tr {
+  position: relative;
+}
+.lb tbody tr:not(.gap):hover td,
+.lb tr[data-you] td {
+  background: var(--color-muted);
+}
+.lb tr[data-you] td:first-child {
+  box-shadow: inset 2px 0 0 var(--color-fg);
+}
+.lb td.rank {
+  width: 44px;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 14px;
+  color: var(--color-accent);
+}
+.lb tr[data-podium] td.rank {
+  font-weight: 600;
+  color: var(--color-fg);
+}
+.lb td.rt {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 15px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.lb tr.gap td {
+  padding: 4px;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 0.3em;
+  color: var(--color-accent);
 }
 
 /* Loading */
@@ -323,7 +413,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  border-radius: 14px;
+  border-radius: 8px;
   padding: 12px 16px;
   box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--color-fg) 22%, transparent);
   transition: background-color 150ms ease;
@@ -333,4 +423,200 @@
 }
 .game-row[data-active='true'] {
   box-shadow: inset 0 0 0 2px var(--color-fg);
+}
+
+/* Match settings: a framed box the same height as the board beside it. */
+.setup {
+  border: 1.5px solid var(--color-fg);
+  margin: 0;
+  padding: 0;
+}
+
+/* Time control groups: underlined tabs, or a 3 by 2 grid on phones. */
+.tc-tabs {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  box-shadow: inset 0 -1px 0 var(--color-border);
+}
+.tc-tabs::-webkit-scrollbar {
+  display: none;
+}
+.tc-tabs button {
+  position: relative;
+  height: 38px;
+  padding: 0 12px;
+  font-size: 14px;
+  color: var(--color-accent);
+  white-space: nowrap;
+}
+.tc-tabs button:hover,
+.tc-tabs button[aria-checked='true'] {
+  color: var(--color-fg);
+}
+.tc-tabs button[aria-checked='true'] {
+  font-weight: 650;
+}
+.tc-tabs button[aria-checked='true']::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--color-fg);
+}
+@media (max-width: 639px) {
+  .tc-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    padding: 3px;
+    border-radius: 8px;
+    background: var(--color-muted);
+    box-shadow: none;
+  }
+  .tc-tabs button {
+    height: 34px;
+    padding: 0;
+    border-radius: 5px;
+  }
+  .tc-tabs button[aria-checked='true'] {
+    background: var(--color-fg);
+    color: var(--color-bg);
+  }
+  .tc-tabs button[aria-checked='true']::after {
+    display: none;
+  }
+}
+
+/* Small square labels: Rated, Unrated, rules on a match. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  font-size: 12px;
+  font-weight: 550;
+  white-space: nowrap;
+  color: var(--color-fg);
+}
+.tag-solid {
+  background: var(--color-fg);
+  border-color: var(--color-fg);
+  color: var(--color-bg);
+}
+
+/* Corner marks, as on the Streamline homepage. Links grow them into a full frame on hover. */
+.tick {
+  --tc: var(--color-fg);
+  --h: 10px 1px;
+  --v: 1px 10px;
+  background:
+    linear-gradient(var(--tc), var(--tc)) top left,
+    linear-gradient(var(--tc), var(--tc)) top left,
+    linear-gradient(var(--tc), var(--tc)) top right,
+    linear-gradient(var(--tc), var(--tc)) top right,
+    linear-gradient(var(--tc), var(--tc)) bottom left,
+    linear-gradient(var(--tc), var(--tc)) bottom left,
+    linear-gradient(var(--tc), var(--tc)) bottom right,
+    linear-gradient(var(--tc), var(--tc)) bottom right;
+  background-size: var(--h), var(--v), var(--h), var(--v), var(--h), var(--v), var(--h), var(--v);
+  background-repeat: no-repeat;
+  transition:
+    background-size 450ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  a.tick:hover {
+    --h: calc(50% + 1px) 1px;
+    --v: 1px calc(50% + 1px);
+  }
+}
+a.tick:active {
+  transform: scale(0.985);
+}
+
+/* Clocks: the running one is filled; under 20 seconds it turns orange. */
+.clock {
+  min-width: 84px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--color-muted);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 19px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  letter-spacing: -0.02em;
+}
+.clock[data-running='true'] {
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
+.clock[data-low='true'] {
+  color: var(--color-danger);
+}
+.clock[data-running='true'][data-low='true'] {
+  background: var(--color-danger);
+  color: var(--color-bg);
+}
+
+/* Avatar menu: a dropdown, and a sheet from the bottom on phones. */
+.menu {
+  width: 264px;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-fg);
+  box-shadow: 0 12px 32px -8px rgb(5 5 5 / 0.3);
+  animation: fade-in 150ms ease-out;
+  z-index: 50;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  padding: 0 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+}
+.menu-item[data-highlighted] {
+  background: var(--color-muted);
+}
+.menu-item svg {
+  color: var(--color-accent);
+}
+@media (max-width: 639px) {
+  [data-radix-popper-content-wrapper]:has(> .menu) {
+    position: fixed !important;
+    inset: auto 0 0 0 !important;
+    transform: none !important;
+    min-width: 0 !important;
+  }
+  .menu {
+    width: auto;
+    border-radius: 18px 18px 0 0;
+    border-width: 1px 0 0;
+    padding: 8px max(8px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom))
+      max(8px, env(safe-area-inset-left));
+    animation: sheet-up 280ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+  .menu-item {
+    height: 48px;
+    font-size: 15px;
+  }
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
 }
