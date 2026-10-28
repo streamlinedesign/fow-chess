@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Board } from './Board'
 import { Captured } from './Captured'
+import { useT } from './i18n'
 import { Spinner } from './ui'
 import type { Color } from './useMatch'
 
@@ -16,13 +17,7 @@ const STEP_MS = 2400
 const END_HOLD_MS = 6000
 const noMoves: string[] = []
 const noop = () => {}
-const NAMES: Record<Color, string> = { w: 'White', b: 'Black' }
-
-const VIEWS: [View, string][] = [
-  ['turns', 'Auto'],
-  ['w', 'White'],
-  ['b', 'Black'],
-]
+const VIEWS: View[] = ['turns', 'w', 'b']
 
 /**
  * Replays Morphy's Opera Game as the players saw it under fog. By default each
@@ -38,6 +33,9 @@ export function Showcase({
   boardClassName?: string
   captionClassName?: string
 }) {
+  const t = useT()
+  const names: Record<Color, string> = { w: t.common.white, b: t.common.black }
+  const viewNames: Record<View, string> = { turns: t.showcase.auto, w: t.common.white, b: t.common.black }
   const [frames, setFrames] = useState<Frame[] | null>(null)
   const [i, setI] = useState(0)
   const [phase, setPhase] = useState<'move' | 'fog'>('move')
@@ -69,17 +67,18 @@ export function Showcase({
   const autoSide: Color = i > 0 && phase === 'move' ? mover : (f?.turn ?? 'w')
   const side: Color = view === 'turns' ? autoSide : view
   const moveNo = Math.ceil(i / 2)
+  const whose = over ? t.showcase.fogLifted : t.showcase.view(names[side])
 
   return (
     <>
       <div
         className={`pointer-events-none relative ${boardClassName}`}
         role="img"
-        aria-label={`A fog of war game replayed from each side. ${over ? 'Fog lifted' : `${NAMES[side]}'s view`}, move ${moveNo}.`}
+        aria-label={`${t.showcase.aria} ${whose}, ${t.common.move(moveNo)}.`}
       >
         {!frames && (
           <div className="absolute inset-0 z-20 grid place-items-center text-[#fffabd]">
-            <Spinner label="Loading replay" />
+            <Spinner label={t.showcase.loading} />
           </div>
         )}
         <Board
@@ -99,13 +98,19 @@ export function Showcase({
               className={`size-3.5 shrink-0 rounded-full shadow-[0_0_0_1.5px_var(--color-fg)] transition-colors ${side === 'w' ? 'bg-[#fff]' : 'bg-[#111]'}`}
               aria-hidden
             />
-            <span className="font-semibold">{over ? 'Fog lifted' : `${NAMES[side]}'s view`}</span>
+            <span className="font-semibold">{whose}</span>
             {moveNo > 0 && (
-              <span className="font-mono text-sm text-accent tabular-nums max-[359px]:hidden">move {moveNo}</span>
+              <span className="font-mono text-sm text-accent tabular-nums max-[359px]:hidden">
+                {t.common.move(moveNo)}
+              </span>
             )}
           </div>
-          <div role="radiogroup" aria-label="Whose view" className="flex shrink-0 gap-0.5 rounded-md bg-muted p-[3px]">
-            {VIEWS.map(([v, label]) => (
+          <div
+            role="radiogroup"
+            aria-label={t.showcase.whoseView}
+            className="flex shrink-0 gap-0.5 rounded-md bg-muted p-[3px]"
+          >
+            {VIEWS.map((v) => (
               <button
                 key={v}
                 role="radio"
@@ -113,7 +118,7 @@ export function Showcase({
                 onClick={() => setView(v)}
                 className="rounded px-2.5 py-1 text-xs font-semibold whitespace-nowrap transition-colors aria-checked:bg-fg aria-checked:text-bg"
               >
-                {label}
+                {viewNames[v]}
               </button>
             ))}
           </div>
@@ -123,9 +128,8 @@ export function Showcase({
           <Captured pieces={f?.captured.b ?? ''} className="ml-auto" />
         </div>
         <p className="text-sm text-accent">
-          <span className="font-semibold text-fg">The Opera Game</span>, Morphy vs. the Duke of Brunswick and Count
-          Isouard, Paris 1858, replayed with fog of war.{' '}
-          {over ? 'At checkmate the fog lifts for both sides.' : 'Each side sees only what its own pieces can reach.'}
+          <span className="font-semibold text-fg">{t.showcase.operaGame}</span>
+          {t.showcase.text} {over ? t.showcase.atMate : t.showcase.eachSide}
         </p>
       </div>
     </>

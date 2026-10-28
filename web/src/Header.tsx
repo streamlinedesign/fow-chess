@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { logout, useMe } from './auth'
 import { Avatar } from './Avatar'
 import { Bell } from './Bell'
+import { LANGS, setLang, useLang, useT } from './i18n'
 import { Icon } from './icons'
 import { useCounts } from './live'
 import { navigate } from './router'
@@ -16,6 +17,7 @@ function go(e: React.MouseEvent, href: string) {
 /** The same bar on every screen size: the name, then your rating and avatar menu, or Log in. */
 export function Header() {
   const me = useMe()
+  const t = useT()
   const here = location.pathname + location.search
   const loginHref =
     here === '/' || here.startsWith('/login') || here.startsWith('/signup')
@@ -28,7 +30,7 @@ export function Header() {
         onClick={(e) => go(e, '/')}
         className="text-[22px] font-light tracking-tight whitespace-nowrap underline decoration-1 underline-offset-[5px] sm:text-[28px]"
       >
-        Eat the King
+        {t.common.appName}
       </a>
       <div className="flex items-center gap-1.5">
         {me === undefined ? null : me ? (
@@ -36,7 +38,7 @@ export function Header() {
             <a
               href={`/u/${me.username}`}
               onClick={(e) => go(e, `/u/${me.username}`)}
-              aria-label={`Your rating, ${me.rating}`}
+              aria-label={t.header.yourRating(me.rating)}
               className="flex h-8 items-center gap-1.5 rounded-md bg-muted px-2.5 font-mono text-sm tabular-nums transition-colors hover:bg-fg/10"
             >
               <svg
@@ -66,11 +68,12 @@ export function Header() {
               onClick={(e) => go(e, '/watch')}
               className="flex h-9 items-center rounded-md px-3 text-sm font-semibold transition-colors hover:bg-muted"
             >
-              Watch
+              {t.common.watch}
             </a>
+            <LangMenu />
             <button
               onClick={toggleTheme}
-              aria-label="Toggle dark mode"
+              aria-label={t.header.toggleDark}
               className="grid size-10 place-items-center rounded-md transition-colors hover:bg-muted"
             >
               <SunIcon className="sun" />
@@ -81,7 +84,7 @@ export function Header() {
               onClick={(e) => go(e, loginHref)}
               className="flex h-9 items-center rounded-md px-3.5 text-sm font-semibold shadow-[inset_0_0_0_1.5px_var(--color-fg)] transition-colors hover:bg-fg hover:text-bg"
             >
-              Log in
+              {t.common.logIn}
             </a>
           </>
         )}
@@ -90,21 +93,78 @@ export function Header() {
   )
 }
 
-const MODES: [ThemeMode, string][] = [
-  ['light', 'Light'],
-  ['dark', 'Dark'],
-  ['system', 'System'],
-]
+const MODES: ThemeMode[] = ['light', 'dark', 'system']
+
+/** A small menu of languages for guests; signed-in players have the row in their menu. */
+function LangMenu() {
+  const t = useT()
+  const lang = useLang()
+  return (
+    <DropMenu
+      title={t.header.language}
+      trigger={
+        <button
+          aria-label={t.header.language}
+          className="flex h-9 items-center rounded-md px-2.5 font-mono text-sm transition-colors hover:bg-muted"
+        >
+          {LANGS.find((l) => l.code === lang)?.short}
+        </button>
+      }
+    >
+      {LANGS.map((l) => (
+        <MenuItem key={l.code} onSelect={() => setLang(l.code)}>
+          <span className="w-7 font-mono text-[13px] text-accent">{l.short}</span>
+          {l.name}
+          {l.code === lang && <Icon name="check" className="ml-auto" />}
+        </MenuItem>
+      ))}
+    </DropMenu>
+  )
+}
+
+/** A row of choices in the menu: the theme or the language. */
+function Seg<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string
+  value: T
+  options: [T, string][]
+  onChange: (v: T, e: React.MouseEvent) => void
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 text-sm">
+      <span>{label}</span>
+      <div role="radiogroup" aria-label={label} className="flex gap-0.5 rounded-lg bg-muted p-[3px]">
+        {options.map(([v, text]) => (
+          <button
+            key={v}
+            role="radio"
+            aria-checked={value === v}
+            onClick={(e) => onChange(v, e)}
+            className="h-7 rounded-[5px] px-2.5 text-[13px] transition-colors hover:bg-fg/10 aria-checked:bg-fg aria-checked:text-bg"
+          >
+            {text}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 function UserMenu({ username, rating }: { username: string; rating: number }) {
+  const t = useT()
+  const lang = useLang()
   const [mode, setMode] = useState(themeMode)
   const { unreadChats } = useCounts()
   return (
     <DropMenu
-      title="Your menu"
+      title={t.header.yourMenu}
       trigger={
         <button
-          aria-label="Your menu"
+          aria-label={t.header.yourMenu}
           className="rounded-full p-0.5 transition-shadow outline-none hover:shadow-[0_0_0_2px_var(--color-fg)] focus-visible:shadow-[0_0_0_2px_var(--color-fg)] data-[state=open]:shadow-[0_0_0_2px_var(--color-fg)]"
         >
           <span className="relative block">
@@ -126,15 +186,15 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
       <MenuSeparator />
       <MenuItem onSelect={() => navigate(`/u/${username}`)}>
         <Icon name="user" />
-        Profile
+        {t.common.profile}
       </MenuItem>
       <MenuItem onSelect={() => navigate('/friends')}>
         <Icon name="people" />
-        Friends
+        {t.common.friends}
       </MenuItem>
       <MenuItem onSelect={() => navigate('/messages')}>
         <Icon name="chat" />
-        Messages
+        {t.common.messages}
         {unreadChats > 0 && (
           <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-fg px-1.5 text-[11px] font-bold text-bg">
             {unreadChats}
@@ -143,32 +203,28 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
       </MenuItem>
       <MenuItem onSelect={() => navigate('/watch')}>
         <Icon name="eye" />
-        Watch
+        {t.common.watch}
       </MenuItem>
       <MenuItem onSelect={() => navigate('/settings')}>
         <Icon name="gear" />
-        Settings
+        {t.common.settings}
       </MenuItem>
       <MenuSeparator />
-      <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 text-sm">
-        <span>Theme</span>
-        <div role="radiogroup" aria-label="Theme" className="flex gap-0.5 rounded-lg bg-muted p-[3px]">
-          {MODES.map(([m, label]) => (
-            <button
-              key={m}
-              role="radio"
-              aria-checked={mode === m}
-              onClick={(e) => {
-                setThemeMode(m, e)
-                setMode(m)
-              }}
-              className="h-7 rounded-[5px] px-2.5 text-[13px] transition-colors hover:bg-fg/10 aria-checked:bg-fg aria-checked:text-bg"
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <Seg
+        label={t.header.theme}
+        value={mode}
+        options={MODES.map((m) => [m, t.header[m]])}
+        onChange={(m, e) => {
+          setThemeMode(m, e)
+          setMode(m)
+        }}
+      />
+      <Seg
+        label={t.header.language}
+        value={lang}
+        options={LANGS.map((l) => [l.code, l.short])}
+        onChange={(l) => setLang(l)}
+      />
       <MenuSeparator />
       <MenuItem
         onSelect={async () => {
@@ -177,7 +233,7 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
         }}
       >
         <Icon name="out" />
-        Log out
+        {t.common.logOut}
       </MenuItem>
     </DropMenu>
   )

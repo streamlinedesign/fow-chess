@@ -1,3 +1,5 @@
+import type { Dict } from './i18n'
+
 /** A clock setting. All zero means no clock. Must match timeControls in server/view.go. */
 export type TimeControl = {
   /** Seconds per player. */
@@ -31,17 +33,11 @@ export type Setup = '' | 'backRow' | 'battleship'
 /** The hill in King of the Hill: the four centre squares. */
 export const HILL = ['d4', 'e4', 'd5', 'e5']
 
-/** The setup modes: how many of your own rows you arrange, and whether the pawns stay put. */
-export const SETUPS: { value: Setup; label: string; hint: string; rows: number; pawnsFixed: boolean }[] = [
-  { value: '', label: 'Standard', hint: 'The usual start.', rows: 0, pawnsFixed: false },
-  { value: 'backRow', label: 'Back row', hint: 'Arrange your back row.', rows: 1, pawnsFixed: true },
-  {
-    value: 'battleship',
-    label: 'Battleship',
-    hint: 'Place every piece in your four rows.',
-    rows: 4,
-    pawnsFixed: false,
-  },
+/** The setup modes: how many of your own rows you arrange, and whether the pawns stay put. Names are in the dictionary. */
+export const SETUPS: { value: Setup; rows: number; pawnsFixed: boolean }[] = [
+  { value: '', rows: 0, pawnsFixed: false },
+  { value: 'backRow', rows: 1, pawnsFixed: true },
+  { value: 'battleship', rows: 4, pawnsFixed: false },
 ]
 
 export const setupMode = (s: Settings) => SETUPS.find((m) => m.value === (s.setup ?? '')) ?? SETUPS[0]
@@ -81,16 +77,16 @@ export function timeGroup(t: TimeControl) {
 }
 
 /** "5+0" for a clock, "24 h per move" for Daily, "No clock" otherwise. */
-export function timeLabel(t: TimeControl) {
-  if (t.perMove) return `${Math.round(t.perMove / 3600)} h per move`
-  if (!t.base) return 'No clock'
+export function timeLabel(t: TimeControl, d: Dict) {
+  if (t.perMove) return d.time.perMove(Math.round(t.perMove / 3600))
+  if (!t.base) return d.time.noClock
   return `${t.base / 60}+${t.inc}`
 }
 
 /** "Blitz 5+0", "Daily" or "No clock". */
-export function describeTime(t: TimeControl) {
+export function describeTime(t: TimeControl, d: Dict) {
   const group = timeGroup(t)
-  return group === 'Daily' || group === 'No clock' ? group : `${group} ${timeLabel(t)}`
+  return group === 'Daily' || group === 'No clock' ? d.time.groups[group] : `${d.time.groups[group]} ${timeLabel(t, d)}`
 }
 
 export function loadSettings(): Settings {
@@ -112,26 +108,26 @@ export function saveSettings(s: Settings) {
 }
 
 /** The extra rules a game has on, as short labels. */
-export function twists(s: Settings) {
+export function twists(s: Settings, d: Dict) {
   return [
-    ...(s.hill ? ['King of the Hill'] : []),
-    ...(setupMode(s).value ? [setupMode(s).label] : []),
-    ...(s.jumpKing ? ['Jump King'] : []),
-    ...(s.backPawns ? ['Backward pawns'] : []),
+    ...(s.hill ? [d.twists.hill] : []),
+    ...(setupMode(s).value ? [d.setups[setupMode(s).value].label] : []),
+    ...(s.jumpKing ? [d.twists.jump] : []),
+    ...(s.backPawns ? [d.twists.backPawns] : []),
   ]
 }
 
 /** A game's kind in a few words for a card: "Eat the King · Fog · Battleship". */
-export function modeName(s: Settings) {
-  return [s.kingCapture ? 'Eat the King' : 'Checkmate', ...(s.fog ? ['Fog'] : []), ...twists(s)].join(' · ')
+export function modeName(s: Settings, d: Dict) {
+  return [s.kingCapture ? d.panel.eat : d.panel.mate, ...(s.fog ? [d.panel.fogShort] : []), ...twists(s, d)].join(' · ')
 }
 
 /** Games saved before clocks existed have no time setting; those had no clock. */
-export function describeSettings(s: Settings) {
+export function describeSettings(s: Settings, d: Dict) {
   return [
-    s.fog ? 'Fog of war' : 'Full board',
-    s.kingCapture ? 'Eat the King' : 'Checkmate',
-    ...twists(s),
-    describeTime(s.time ?? NO_CLOCK),
+    s.fog ? d.panel.fog : d.panel.fullBoard,
+    s.kingCapture ? d.panel.eat : d.panel.mate,
+    ...twists(s, d),
+    describeTime(s.time ?? NO_CLOCK, d),
   ]
 }

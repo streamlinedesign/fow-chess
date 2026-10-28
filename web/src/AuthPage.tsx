@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { authenticate } from './auth'
+import { useT } from './i18n'
 import { navigate } from './router'
 import { Button } from './ui'
 
@@ -19,6 +20,7 @@ function Field({ label, hint, ...props }: { label: string; hint?: string } & Rea
 /** Log in or sign up with a username and password. No email, by design. */
 export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
   const signup = mode === 'signup'
+  const t = useT()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -30,7 +32,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    if (signup && password !== confirm) return setError("The passwords don't match.")
+    if (signup && password !== confirm) return setError(t.auth.mismatch)
     setBusy(true)
     const err = await authenticate(mode, username.trim(), password)
     setBusy(false)
@@ -44,15 +46,13 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
   return (
     <main className="flex flex-1 justify-center px-4 pt-6 pb-16 sm:pt-16">
       <form onSubmit={submit} className="flex w-full max-w-[380px] flex-col gap-5">
-        <h1 className="text-[40px] leading-none font-bold tracking-tight">{signup ? 'Create account' : 'Log in'}</h1>
-        <p className="text-accent">
-          {signup
-            ? 'Just a username and password. Signed-in games are saved to your profile and count toward your rating.'
-            : 'Welcome back.'}
-        </p>
+        <h1 className="text-[40px] leading-none font-bold tracking-tight">
+          {signup ? t.auth.createAccount : t.common.logIn}
+        </h1>
+        <p className="text-accent">{signup ? t.auth.signupIntro : t.auth.welcomeBack}</p>
 
         <Field
-          label="Username"
+          label={t.auth.username}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           autoComplete="username"
@@ -62,11 +62,11 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
           minLength={3}
           maxLength={20}
           pattern="[A-Za-z0-9_\-]+"
-          hint={signup ? '3 to 20 letters, numbers, - or _.' : undefined}
+          hint={signup ? t.auth.usernameHint : undefined}
           autoFocus
         />
         <Field
-          label="Password"
+          label={t.auth.password}
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -74,11 +74,11 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
           required
           minLength={signup ? 8 : undefined}
           maxLength={72}
-          hint={signup ? 'At least 8 characters.' : undefined}
+          hint={signup ? t.auth.passwordHint : undefined}
         />
         {signup && (
           <Field
-            label="Confirm password"
+            label={t.auth.confirmPassword}
             type="password"
             value={confirm}
             onChange={(e) => setConfirm(e.target.value)}
@@ -92,11 +92,11 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
         </p>
 
         <Button type="submit" variant="solid" className="h-13 text-base" loading={busy}>
-          {signup ? 'Create account' : 'Log in'}
+          {signup ? t.auth.createAccount : t.common.logIn}
         </Button>
 
         <p className="text-center text-sm text-accent">
-          {signup ? 'Already have an account? ' : 'New here? '}
+          {signup ? t.auth.haveAccount : t.auth.newHere}
           <a
             href={otherHref}
             onClick={(e) => {
@@ -105,7 +105,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'signup' }) {
             }}
             className="font-semibold text-fg underline underline-offset-4"
           >
-            {signup ? 'Log in' : 'Create an account'}
+            {signup ? t.common.logIn : t.auth.createAnAccount}
           </a>
         </p>
       </form>

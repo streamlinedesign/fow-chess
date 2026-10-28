@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useMe } from './auth'
 import { Who } from './Avatar'
+import { useT } from './i18n'
 import { Icon } from './icons'
 import { useLive } from './live'
 import { navigate } from './router'
@@ -18,6 +19,7 @@ function go(e: React.MouseEvent, href: string) {
 /** Search for players, your friends with ways to play or talk, and the requests you've sent. */
 export function FriendsPage() {
   const me = useMe()
+  const t = useT()
   const [data, setData] = useState<{ friends: UserCard[]; sent: UserCard[] } | null>(null)
   const [error, setError] = useState('')
   const [removing, setRemoving] = useState<string | null>(null)
@@ -34,7 +36,7 @@ export function FriendsPage() {
     if (e.type === 'friends' || e.type === 'presence') load()
   })
 
-  if (me === null) return <SignInFirst what="see your friends" />
+  if (me === null) return <SignInFirst what={t.friends.whatFriends} />
 
   const online = data?.friends.filter((f) => f.online).length ?? 0
 
@@ -42,8 +44,11 @@ export function FriendsPage() {
     <main className="mx-auto w-full max-w-[1184px] flex-1 px-4 pt-6 pb-16 sm:px-8">
       <div className="page-head">
         <div>
-          <h1>Friends{data && <span className="count">{data.friends.length}</span>}</h1>
-          <p>Find players by username to add a friend or offer them a match.</p>
+          <h1>
+            {t.friends.title}
+            {data && <span className="count">{data.friends.length}</span>}
+          </h1>
+          <p>{t.friends.intro}</p>
         </div>
       </div>
 
@@ -52,15 +57,15 @@ export function FriendsPage() {
 
         <section>
           <div className="mb-3.5 flex items-baseline justify-between gap-3">
-            <h2 className="text-[22px] font-semibold tracking-tight">Your friends</h2>
-            {online > 0 && <span className="text-[13px] text-accent">{online} online</span>}
+            <h2 className="text-[22px] font-semibold tracking-tight">{t.friends.yourFriends}</h2>
+            {online > 0 && <span className="text-[13px] text-accent">{t.friends.online(online)}</span>}
           </div>
           {error ? (
             <p className="text-danger">{error}</p>
           ) : !data ? (
-            <Spinner label="Loading" />
+            <Spinner label={t.common.loading} />
           ) : data.friends.length === 0 ? (
-            <p className="text-accent">No friends yet. Search for someone above, or add them from their profile.</p>
+            <p className="text-accent">{t.friends.noFriends}</p>
           ) : (
             <div className="f-list">
               {data.friends.map((f) => (
@@ -70,46 +75,46 @@ export function FriendsPage() {
                   </a>
                   <div className="f-acts">
                     <span className="hide-sm mr-2 text-[13px] text-accent">
-                      {f.online && !f.playing ? '' : presence(f)}
+                      {f.online && !f.playing ? '' : presence(f, t)}
                     </span>
                     {f.playing && (
                       <Button
                         className="squash h-9 px-3.5 text-sm"
                         onClick={() => navigate(`/m/${f.playing}`)}
-                        aria-label={`Watch ${f.username}`}
+                        aria-label={t.friends.watchX(f.username)}
                       >
                         <Icon name="eye" />
-                        <span className="txt">Watch</span>
+                        <span className="txt">{t.common.watch}</span>
                       </Button>
                     )}
                     <Button className="squash h-9 px-3.5 text-sm" onClick={() => openOffer(f.username)}>
                       <Icon name="swords" />
-                      <span className="txt">Offer a match</span>
+                      <span className="txt">{t.profile.offerMatch}</span>
                     </Button>
                     <Button
                       variant="ghost"
                       icon
                       className="size-9"
-                      aria-label={`Message ${f.username}`}
+                      aria-label={t.friends.messageX(f.username)}
                       onClick={() => navigate(`/messages/${f.username}`)}
                     >
                       <Icon name="chat" />
                     </Button>
                     <DropMenu
-                      title={`More for ${f.username}`}
+                      title={t.friends.moreFor(f.username)}
                       trigger={
-                        <Button variant="ghost" icon className="size-9" aria-label={`More for ${f.username}`}>
+                        <Button variant="ghost" icon className="size-9" aria-label={t.friends.moreFor(f.username)}>
                           <Icon name="dots" />
                         </Button>
                       }
                     >
                       <MenuItem onSelect={() => navigate(`/u/${f.username}`)}>
                         <Icon name="user" />
-                        Profile
+                        {t.common.profile}
                       </MenuItem>
                       <MenuItem className="text-danger" onSelect={() => setRemoving(f.username)}>
                         <Icon name="out" />
-                        Remove friend
+                        {t.profile.removeFriend}
                       </MenuItem>
                     </DropMenu>
                   </div>
@@ -121,7 +126,7 @@ export function FriendsPage() {
 
         {data && data.sent.length > 0 && (
           <section>
-            <h2 className="mb-3.5 text-[22px] font-semibold tracking-tight">Sent requests</h2>
+            <h2 className="mb-3.5 text-[22px] font-semibold tracking-tight">{t.friends.sentRequests}</h2>
             <div className="f-list">
               {data.sent.map((f) => (
                 <div key={f.username} className="f-row">
@@ -134,7 +139,7 @@ export function FriendsPage() {
                       className="h-9 px-3.5 text-sm"
                       onClick={() => api('DELETE', `/api/friends/${f.username}`).then(load)}
                     >
-                      Cancel
+                      {t.common.cancel}
                     </Button>
                   </div>
                 </div>
@@ -142,18 +147,18 @@ export function FriendsPage() {
             </div>
           </section>
         )}
-        <p className="-mt-6 text-[13px] text-accent">Requests sent to you show up in the bell.</p>
+        <p className="-mt-6 text-[13px] text-accent">{t.friends.requestsInBell}</p>
       </div>
 
       <Dialog
         open={!!removing}
         onOpenChange={(o) => !o && setRemoving(null)}
-        title={`Remove ${removing}?`}
-        description="You won't be friends any more, and you can't message each other. Your chat history stays."
+        title={t.friends.removeTitle(removing ?? '')}
+        description={t.friends.removeDesc}
       >
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setRemoving(null)}>
-            Keep
+            {t.friends.keep}
           </Button>
           <Button
             variant="solid"
@@ -163,7 +168,7 @@ export function FriendsPage() {
               load()
             }}
           >
-            Remove
+            {t.friends.remove}
           </Button>
         </div>
       </Dialog>
@@ -172,6 +177,7 @@ export function FriendsPage() {
 }
 
 function Search({ onChange }: { onChange: () => void }) {
+  const t = useT()
   const [q, setQ] = useState('')
   const [results, setResults] = useState<Found[] | null>(null)
   const [error, setError] = useState('')
@@ -187,8 +193,8 @@ function Search({ onChange }: { onChange: () => void }) {
       setResults(null)
       return
     }
-    const t = setTimeout(() => search(query), 200)
-    return () => clearTimeout(t)
+    const timer = setTimeout(() => search(query), 200)
+    return () => clearTimeout(timer)
   }, [q])
   // Requests answered elsewhere change the buttons here.
   useLive((e) => {
@@ -214,8 +220,8 @@ function Search({ onChange }: { onChange: () => void }) {
           className="input"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search players"
-          aria-label="Search players"
+          placeholder={t.friends.searchPlayers}
+          aria-label={t.friends.searchPlayers}
           autoComplete="off"
           spellCheck={false}
         />
@@ -223,7 +229,7 @@ function Search({ onChange }: { onChange: () => void }) {
       {error && <p className="mt-2 text-sm text-danger">{error}</p>}
       {results &&
         (results.length === 0 ? (
-          <p className="mt-3 text-accent">No players match that name.</p>
+          <p className="mt-3 text-accent">{t.friends.noPlayersMatch}</p>
         ) : (
           <div className="results">
             {results.map((r) => (
@@ -235,25 +241,25 @@ function Search({ onChange }: { onChange: () => void }) {
                   {r.friend === 'friends' ? (
                     <span className="inline-flex items-center gap-1.5 text-[13px] text-accent">
                       <Icon name="check" size={14} />
-                      Friends
+                      {t.common.friends}
                     </span>
                   ) : r.friend === 'sent' ? (
-                    <span className="text-[13px] text-accent">Request sent</span>
+                    <span className="text-[13px] text-accent">{t.profile.requestSent}</span>
                   ) : r.friend === 'received' ? (
                     <Button variant="solid" className="h-8 px-3 text-[13px]" onClick={() => add(r.username)}>
-                      Accept request
+                      {t.friends.acceptRequest}
                     </Button>
                   ) : (
                     <Button className="h-8 px-3 text-[13px]" onClick={() => add(r.username)}>
                       <Icon name="plus" />
-                      Add friend
+                      {t.profile.addFriend}
                     </Button>
                   )}
                   <Button
                     variant="ghost"
                     icon
                     className="size-8"
-                    aria-label={`Offer ${r.username} a match`}
+                    aria-label={t.friends.offerXMatch(r.username)}
                     onClick={() => openOffer(r.username)}
                   >
                     <Icon name="swords" />
@@ -269,17 +275,20 @@ function Search({ onChange }: { onChange: () => void }) {
 
 /** For pages that need an account. */
 export function SignInFirst({ what }: { what: string }) {
+  const t = useT()
   const next = `/login?next=${encodeURIComponent(location.pathname)}`
   return (
     <main className="mx-auto flex w-full max-w-[1184px] flex-1 flex-col items-start gap-5 px-4 pt-10 sm:px-8">
-      <h1 className="text-[clamp(32px,6vw,44px)] leading-none font-semibold tracking-tight">Log in to {what}</h1>
-      <p className="text-accent">Friends, messages and match offers are for signed-in players.</p>
+      <h1 className="text-[clamp(32px,6vw,44px)] leading-none font-semibold tracking-tight">
+        {t.friends.logInTo(what)}
+      </h1>
+      <p className="text-accent">{t.friends.signedInOnly}</p>
       <a
         href={next}
         onClick={(e) => go(e, next)}
         className="inline-flex h-11 items-center rounded-md bg-fg px-5 font-semibold text-bg hover:opacity-85"
       >
-        Log in
+        {t.common.logIn}
       </a>
     </main>
   )

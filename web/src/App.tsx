@@ -4,6 +4,7 @@ import { useMe } from './auth'
 import { AuthPage } from './AuthPage'
 import { ErrorBoundary } from './ErrorBoundary'
 import { Header } from './Header'
+import { dict } from './i18n'
 import { FriendsPage } from './FriendsPage'
 import { Landing } from './Landing'
 import { connectLive, useLive } from './live'
@@ -36,7 +37,7 @@ export function App() {
   useLive((e) => {
     if (e.type === 'offer' && e.matchId && e.user)
       showToast(
-        { text: `${e.user} accepted your match offer.`, action: { label: 'Play', href: `/m/${e.matchId}` } },
+        { text: dict().toast.acceptedOffer(e.user), action: { label: dict().toast.play, href: `/m/${e.matchId}` } },
         20000,
       )
   })

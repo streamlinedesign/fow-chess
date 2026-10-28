@@ -3,10 +3,12 @@ import { useMe } from './auth'
 import { Avatar, Who } from './Avatar'
 import { OfferTags, statusText } from './Bell'
 import { SignInFirst } from './FriendsPage'
+import { useT, type Dict } from './i18n'
 import { Icon } from './icons'
 import { refreshCounts, useLive } from './live'
 import { pieceImg } from './position'
-import { plural, type GameSummary } from './ProfilePage'
+import { type GameSummary } from './ProfilePage'
+import { how } from './MatchPage'
 import { navigate } from './router'
 import { DropMenu, MenuItem } from './Sheet'
 import { describeTime, NO_CLOCK } from './settings'
@@ -25,28 +27,28 @@ type Chat = {
   deletion: { mine: boolean; theirs: boolean }
 }
 
-const timeFmt = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' })
-const weekdayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'short' })
-const dateFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' })
-const dayFmt = new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
+const timeFmt = (t: Dict) => new Intl.DateTimeFormat(t.locale, { hour: '2-digit', minute: '2-digit' })
 
 /** "14:02" today, "Mon" this week, "20 Oct" before that. */
-function shortTime(ms: number) {
+function shortTime(ms: number, t: Dict) {
   const days = (Date.now() - ms) / 86400000
-  if (new Date(ms).toDateString() === new Date().toDateString()) return timeFmt.format(ms)
-  return days < 6 ? weekdayFmt.format(ms) : dateFmt.format(ms)
+  if (new Date(ms).toDateString() === new Date().toDateString()) return timeFmt(t).format(ms)
+  return days < 6
+    ? new Intl.DateTimeFormat(t.locale, { weekday: 'short' }).format(ms)
+    : new Intl.DateTimeFormat(t.locale, { day: 'numeric', month: 'short' }).format(ms)
 }
 
-function dayLabel(ms: number) {
+function dayLabel(ms: number, t: Dict) {
   const d = new Date(ms).toDateString()
-  if (d === new Date().toDateString()) return 'Today'
-  if (d === new Date(Date.now() - 86400000).toDateString()) return 'Yesterday'
-  return dayFmt.format(ms)
+  if (d === new Date().toDateString()) return t.messages.today
+  if (d === new Date(Date.now() - 86400000).toDateString()) return t.messages.yesterday
+  return new Intl.DateTimeFormat(t.locale, { weekday: 'long', day: 'numeric', month: 'long' }).format(ms)
 }
 
 /** Chats with friends: the list, and the open one beside it (or on its own on phones). */
 export function MessagesPage({ name }: { name?: string }) {
   const me = useMe()
+  const t = useT()
   const [convs, setConvs] = useState<Conversation[] | null>(null)
 
   const load = () =>
@@ -61,7 +63,7 @@ export function MessagesPage({ name }: { name?: string }) {
     if (e.type === 'message' || e.type === 'presence' || e.type === 'read') load()
   })
 
-  if (me === null) return <SignInFirst what="message your friends" />
+  if (me === null) return <SignInFirst what={t.friends.whatMessages} />
   if (!me) return null
 
   return (
@@ -69,10 +71,10 @@ export function MessagesPage({ name }: { name?: string }) {
       <div className="msgs" data-open={name ? '' : undefined}>
         <aside className="convs">
           <div className="convs-head">
-            <h1>Messages</h1>
+            <h1>{t.common.messages}</h1>
             <Button variant="ghost" className="h-8 px-3 text-[13px]" onClick={() => navigate('/friends')}>
               <Icon name="plus" />
-              New
+              {t.messages.new}
             </Button>
           </div>
           <div className="conv-list">
@@ -81,9 +83,7 @@ export function MessagesPage({ name }: { name?: string }) {
                 <Spinner />
               </div>
             ) : convs.length === 0 ? (
-              <p className="p-3 text-sm text-accent">
-                No chats yet. Message a friend from their profile or your friends list.
-              </p>
+              <p className="p-3 text-sm text-accent">{t.messages.noChats}</p>
             ) : (
               convs.map((c) => (
                 <button
@@ -97,12 +97,12 @@ export function MessagesPage({ name }: { name?: string }) {
                   <div className="min-w-0">
                     <div className="font-semibold">{c.with.username}</div>
                     <div className="prev">
-                      {c.last.from === me.username && 'You: '}
-                      {c.last.offer ? 'Match offer' : c.last.text}
+                      {c.last.from === me.username && t.chat.youPrefix}
+                      {c.last.offer ? t.messages.matchOffer : c.last.text}
                     </div>
                   </div>
                   <span className="t">
-                    {shortTime(c.last.at)}
+                    {shortTime(c.last.at, t)}
                     {c.unread > 0 && <i />}
                   </span>
                 </button>
@@ -114,7 +114,7 @@ export function MessagesPage({ name }: { name?: string }) {
           {name ? (
             <ChatView key={name.toLowerCase()} name={name} me={me.username} />
           ) : (
-            <div className="empty-chat">Pick a chat, or start one from your friends list.</div>
+            <div className="empty-chat">{t.messages.pickChat}</div>
           )}
         </section>
       </div>
@@ -123,6 +123,7 @@ export function MessagesPage({ name }: { name?: string }) {
 }
 
 function ChatView({ name, me }: { name: string; me: string }) {
+  const t = useT()
   const [chat, setChat] = useState<Chat | null>(null)
   const [error, setError] = useState('')
   const [text, setText] = useState('')
@@ -164,11 +165,11 @@ function ChatView({ name, me }: { name: string; me: string }) {
 
   const send = async (e: React.FormEvent) => {
     e.preventDefault()
-    const t = text.trim()
-    if (!t) return
+    const line = text.trim()
+    if (!line) return
     setSending(true)
     try {
-      await api('POST', `/api/messages/${encodeURIComponent(name)}`, { text: t })
+      await api('POST', `/api/messages/${encodeURIComponent(name)}`, { text: line })
       setText('')
       stick.current = true
       await load()
@@ -199,7 +200,7 @@ function ChatView({ name, me }: { name: string; me: string }) {
   if (!chat)
     return (
       <div className="empty-chat">
-        {error ? <span className="text-danger">{error}</span> : <Spinner label="Loading" />}
+        {error ? <span className="text-danger">{error}</span> : <Spinner label={t.common.loading} />}
       </div>
     )
 
@@ -214,7 +215,7 @@ function ChatView({ name, me }: { name: string; me: string }) {
           variant="ghost"
           icon
           className="back-btn size-10"
-          aria-label="Back to chats"
+          aria-label={t.messages.backToChats}
           onClick={() => navigate('/messages')}
         >
           <Icon name="back" size={20} />
@@ -227,15 +228,15 @@ function ChatView({ name, me }: { name: string; me: string }) {
           }}
           className="min-w-0 flex-1"
         >
-          <Who name={them} sub={presence(chat.with) || chat.with.rating} size={40} online={chat.with.online} />
+          <Who name={them} sub={presence(chat.with, t) || chat.with.rating} size={40} online={chat.with.online} />
         </a>
         {wins + draws + losses > 0 && (
-          <span className="chat-score" title="Your score against them">
-            <span className="lbl">Score</span>
+          <span className="chat-score" title={t.messages.scoreTitle}>
+            <span className="lbl">{t.messages.score}</span>
             <b>
               {wins}–{losses}
             </b>
-            {draws > 0 && <span>· {draws === 1 ? '1 draw' : `${draws} draws`}</span>}
+            {draws > 0 && <span>· {t.common.draws(draws)}</span>}
           </span>
         )}
         {friends && (
@@ -243,27 +244,27 @@ function ChatView({ name, me }: { name: string; me: string }) {
             variant="solid"
             icon
             className="size-9"
-            aria-label={`Offer ${them} a match`}
+            aria-label={t.friends.offerXMatch(them)}
             onClick={() => openOffer(them)}
           >
             <Icon name="swords" />
           </Button>
         )}
         <DropMenu
-          title="Chat options"
+          title={t.messages.chatOptions}
           trigger={
-            <Button variant="ghost" icon className="size-9" aria-label="Chat options">
+            <Button variant="ghost" icon className="size-9" aria-label={t.messages.chatOptions}>
               <Icon name="dots" />
             </Button>
           }
         >
           <MenuItem onSelect={() => navigate(`/u/${them}`)}>
             <Icon name="user" />
-            Profile
+            {t.common.profile}
           </MenuItem>
           <MenuItem onSelect={() => askDelete(!chat.deletion.mine)}>
             <Icon name="out" />
-            {chat.deletion.mine ? 'Keep this chat after all' : 'Ask to delete this chat'}
+            {chat.deletion.mine ? t.messages.keepChat : t.messages.askDelete}
           </MenuItem>
         </DropMenu>
       </div>
@@ -278,24 +279,24 @@ function ChatView({ name, me }: { name: string; me: string }) {
       >
         {chat.more && (
           <button className="sys underline" onClick={older}>
-            Load older messages
+            {t.messages.loadOlder}
           </button>
         )}
         <Timeline chat={chat} me={me} />
         {chat.deletion.mine && (
           <div className="sys">
-            You asked {them} to delete this chat. It goes away for both of you only when they agree.
+            {t.messages.youAskedDelete(them)}
             <Button variant="ghost" className="h-8 px-3 text-[13px]" onClick={() => askDelete(false)}>
-              Take it back
+              {t.messages.takeBack}
             </Button>
           </div>
         )}
         {chat.deletion.theirs && !chat.deletion.mine && (
           <div className="sys">
-            {them} asked to delete this chat. If you agree, it's gone for both of you.
+            {t.messages.theyAskedDelete(them)}
             <span className="flex gap-2">
               <Button variant="solid" className="h-8 px-3 text-[13px]" onClick={() => askDelete(true)}>
-                Delete for both
+                {t.messages.deleteForBoth}
               </Button>
             </span>
           </div>
@@ -304,26 +305,31 @@ function ChatView({ name, me }: { name: string; me: string }) {
 
       {friends ? (
         <form className="composer" onSubmit={send}>
-          <Button type="button" icon aria-label={`Offer ${them} a match`} onClick={() => openOffer(them)}>
+          <Button type="button" icon aria-label={t.friends.offerXMatch(them)} onClick={() => openOffer(them)}>
             <Icon name="swords" />
           </Button>
           <input
             className="input"
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={`Message ${them}`}
-            aria-label="Message"
+            placeholder={t.friends.messageX(them)}
+            aria-label={t.common.message}
             maxLength={1000}
             autoComplete="off"
           />
-          <Button variant="solid" icon type="submit" aria-label="Send" loading={sending} disabled={!text.trim()}>
+          <Button
+            variant="solid"
+            icon
+            type="submit"
+            aria-label={t.common.send}
+            loading={sending}
+            disabled={!text.trim()}
+          >
             <Icon name="send" />
           </Button>
         </form>
       ) : (
-        <p className="composer text-sm text-accent">
-          You're not friends with {them}, so you can't send messages. The chat stays here.
-        </p>
+        <p className="composer text-sm text-accent">{t.messages.notFriends(them)}</p>
       )}
       {error && <p className="px-4 pb-2 text-sm text-danger">{error}</p>}
     </>
@@ -341,6 +347,7 @@ type Item = { at: number; key: string; message?: Message; game?: GameSummary }
 
 /** Messages, offers and finished games between you, in order, with a line for each new day. */
 function Timeline({ chat, me }: { chat: Chat; me: string }) {
+  const t = useT()
   const oldest = chat.more ? (chat.messages[0]?.at ?? 0) : 0
   const items: Item[] = [
     ...chat.messages.map((m) => ({ at: m.at, key: `m${m.id}`, message: m })),
@@ -350,7 +357,7 @@ function Timeline({ chat, me }: { chat: Chat; me: string }) {
       .map((g) => ({ at: g.updatedAt, key: `g${g.matchId}${g.round}`, game: g })),
   ].sort((a, b) => a.at - b.at)
 
-  if (items.length === 0) return <div className="sys">Say hi to {chat.with.username}.</div>
+  if (items.length === 0) return <div className="sys">{t.chat.sayHi(chat.with.username)}</div>
 
   let lastDay = ''
   return (
@@ -361,7 +368,7 @@ function Timeline({ chat, me }: { chat: Chat; me: string }) {
         lastDay = day
         return (
           <Fragment key={it.key}>
-            {showDay && <div className="day">{dayLabel(it.at)}</div>}
+            {showDay && <div className="day">{dayLabel(it.at, t)}</div>}
             {it.game ? (
               <ResultCard g={it.game} them={chat.with.username} />
             ) : it.message!.offer ? (
@@ -369,7 +376,7 @@ function Timeline({ chat, me }: { chat: Chat; me: string }) {
             ) : (
               <div className={`bub ${it.message!.from === me ? 'me' : ''}`}>
                 {it.message!.text}
-                <time>{timeFmt.format(it.at)}</time>
+                <time>{timeFmt(t).format(it.at)}</time>
               </div>
             )}
           </Fragment>
@@ -380,6 +387,7 @@ function Timeline({ chat, me }: { chat: Chat; me: string }) {
 }
 
 function OfferCard({ offer, me }: { offer: Offer; me: string }) {
+  const t = useT()
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const mine = offer.from === me
@@ -396,7 +404,11 @@ function OfferCard({ offer, me }: { offer: Offer; me: string }) {
   }
   // The colour from the reader's side.
   const yours =
-    offer.color === 'random' ? 'Random' : (offer.color === 'w') === mine ? 'You play White' : 'You play Black'
+    offer.color === 'random'
+      ? t.messages.random
+      : (offer.color === 'w') === mine
+        ? t.messages.youPlayWhite
+        : t.messages.youPlayBlack
   const go = (e: React.MouseEvent) => {
     e.preventDefault()
     navigate(`/m/${offer.matchId}`)
@@ -404,24 +416,24 @@ function OfferCard({ offer, me }: { offer: Offer; me: string }) {
 
   return (
     <div className={`offer ${mine ? 'me' : ''}`}>
-      <div className="label">{mine ? 'Your match offer' : `Match offer from ${offer.from}`}</div>
+      <div className="label">{mine ? t.messages.yourOffer : t.messages.offerFrom(offer.from)}</div>
       <OfferTags offer={offer} />
       <dl>
-        <dt>Time</dt>
-        <dd>{describeTime(offer.settings.time ?? NO_CLOCK)}</dd>
-        <dt>Colour</dt>
+        <dt>{t.messages.time}</dt>
+        <dd>{describeTime(offer.settings.time ?? NO_CLOCK, t)}</dd>
+        <dt>{t.messages.colour}</dt>
         <dd>{yours}</dd>
       </dl>
       {offer.status === 'open' ? (
         <div className="acts">
           {mine ? (
             <Button variant="ghost" className="h-9 text-sm" loading={busy === 'cancel'} onClick={() => act('cancel')}>
-              Cancel offer
+              {t.messages.cancelOffer}
             </Button>
           ) : (
             <>
               <Button variant="solid" className="h-9 text-sm" loading={busy === 'accept'} onClick={() => act('accept')}>
-                Accept
+                {t.common.accept}
               </Button>
               <Button
                 variant="ghost"
@@ -429,17 +441,17 @@ function OfferCard({ offer, me }: { offer: Offer; me: string }) {
                 loading={busy === 'decline'}
                 onClick={() => act('decline')}
               >
-                Decline
+                {t.common.decline}
               </Button>
             </>
           )}
         </div>
       ) : (
         <div className="flex items-center gap-2 text-[13px] text-accent">
-          <span className="chip">{statusText(offer.status)}</span>
+          <span className="chip">{statusText(offer.status, t)}</span>
           {offer.status === 'accepted' && offer.matchId && (
             <a href={`/m/${offer.matchId}`} onClick={go} className="font-semibold text-fg underline underline-offset-2">
-              Go to the game
+              {t.messages.goToGame}
             </a>
           )}
         </div>
@@ -450,18 +462,19 @@ function OfferCard({ offer, me }: { offer: Offer; me: string }) {
 }
 
 function ResultCard({ g, them }: { g: GameSummary; them: string }) {
+  const t = useT()
   const draw = g.result === '1/2-1/2'
   const won = !draw && (g.result === '1-0') === (g.color === 'w')
   const ate = g.reason === 'capturing the king'
   const title = draw
-    ? 'Draw'
+    ? t.match.draw
     : ate
       ? won
-        ? `You ate ${them}'s king`
-        : `${them} ate your king`
+        ? t.messages.youAteKing(them)
+        : t.messages.ateYourKing(them)
       : won
-        ? `You beat ${them}`
-        : `${them} won`
+        ? t.messages.youBeat(them)
+        : t.messages.xWon(them)
   const href = `/g/${g.matchId}/${g.round}`
   const diff = g.ratingDiff
   return (
@@ -479,12 +492,12 @@ function ResultCard({ g, them }: { g: GameSummary; them: string }) {
       <div className="min-w-0 text-left">
         <h4>{title}</h4>
         <p>
-          {describeTime(g.settings.time ?? NO_CLOCK)} · {plural(Math.ceil(g.plies / 2), 'move')}
-          {!draw && !ate && ` · by ${g.reason === 'time' ? 'time' : g.reason}`}
+          {describeTime(g.settings.time ?? NO_CLOCK, t)} · {t.common.moves(Math.ceil(g.plies / 2))}
+          {!draw && !ate && ` · ${how(g.reason, t)}`}
           {diff != null && ` · ${diff > 0 ? '+' : diff < 0 ? '−' : '±'}${Math.abs(diff)}`}
         </p>
       </div>
-      <span className="text-[13px] text-accent">Replay</span>
+      <span className="text-[13px] text-accent">{t.common.replay}</span>
     </a>
   )
 }

@@ -4,6 +4,7 @@ import { Board } from './Board'
 import { Captured } from './Captured'
 import { Chat } from './Chat'
 import { Clock } from './Clock'
+import { useT, type Dict } from './i18n'
 import { Icon } from './icons'
 import { applyLocal, pieceImg } from './position'
 import { navigate } from './router'
@@ -12,28 +13,30 @@ import { SetupBoard } from './SetupBoard'
 import { Button, Dialog, Spinner, Tip } from './ui'
 import { useMatch, type Color, type MatchState } from './useMatch'
 
-const NAMES: Record<Color, string> = { w: 'White', b: 'Black' }
 const other = (c: Color): Color => (c === 'w' ? 'b' : 'w')
+const sideName = (t: Dict, c: Color) => (c === 'w' ? t.common.white : t.common.black)
 
-function resultText(s: MatchState) {
-  if (s.result === '1/2-1/2') return { title: 'Draw', detail: `By ${s.reason}.` }
+function resultText(s: MatchState, t: Dict) {
+  const h = how(s.reason, t)
+  if (s.result === '1/2-1/2') return { title: t.match.draw, detail: t.match.drawDetail(h) }
   const winner: Color = s.result === '1-0' ? 'w' : 'b'
   if (s.sniper) {
-    const title = s.you && s.you !== winner ? 'Sniped' : 'Sniper Win'
-    const detail = `${NAMES[winner]} wins ${how(s.reason)} on their first move.`
-    return { title, detail: s.rated ? `${detail} A Sniper Win counts for a quarter of a game's rating.` : detail }
+    const title = s.you && s.you !== winner ? t.match.sniped : t.match.sniperWin
+    const detail = t.match.sniperDetail(sideName(t, winner), h)
+    return { title, detail: s.rated ? `${detail} ${t.match.sniperRating}` : detail }
   }
-  const title = s.you ? (s.you === winner ? 'You win' : 'You lose') : `${NAMES[winner]} wins`
-  return { title, detail: `${NAMES[winner]} wins ${how(s.reason)}.` }
+  const title = s.you ? (s.you === winner ? t.match.youWin : t.match.youLose) : t.match.sideWins(sideName(t, winner))
+  return { title, detail: t.match.winsDetail(sideName(t, winner), h) }
 }
 
-/** "on time", or "by checkmate" and the like. */
-function how(reason?: string) {
-  return reason === 'time' ? 'on time' : `by ${reason}`
+/** "on time", or "by checkmate" and the like, in the user's language. */
+export function how(reason: string | undefined, t: Dict) {
+  return (reason && t.by[reason]) || `by ${reason}`
 }
 
 export function MatchPage({ id }: { id: string }) {
   const { state, conn, send, rtt, chat } = useMatch(id)
+  const t = useT()
   const [pending, setPending] = useState<{ uci: string; sentWith: MatchState; sentAt: number } | null>(null)
   const [promotion, setPromotion] = useState<{ from: string; to: string } | null>(null)
   const [flipped, setFlipped] = useState(false)
@@ -97,11 +100,11 @@ export function MatchPage({ id }: { id: string }) {
   // Say whose move it is in the tab title, so a backgrounded tab shows when it's your turn.
   useEffect(() => {
     if (!you || !playing) return
-    document.title = yourMove ? '● Your move · Eat the King' : 'Their move · Eat the King'
+    document.title = yourMove ? t.match.titleYourMove : t.match.titleTheirMove
     return () => {
-      document.title = 'Eat the King'
+      document.title = t.common.appName
     }
-  }, [you, playing, yourMove])
+  }, [you, playing, yourMove, t])
 
   // Haptic tick when a move lands, on phones that support it.
   const lastPly = useRef(ply)
@@ -116,36 +119,37 @@ export function MatchPage({ id }: { id: string }) {
     return (
       <main className="flex flex-1 flex-col items-start justify-center gap-6 px-4 sm:px-8">
         <h2 className="text-[clamp(42px,8vw,64px)] leading-none font-bold tracking-tight">
-          {conn === 'missing' ? 'Match not found' : 'Server out of date'}
+          {conn === 'missing' ? t.match.notFound : t.match.outdated}
         </h2>
         <p className="max-w-xl text-accent">
-          {conn === 'missing'
-            ? `The ID ${id} doesn't exist, or the server restarted.`
-            : 'The game server is a different version from this page. Stop every running copy of the server and start it again.'}
+          {conn === 'missing' ? t.match.notFoundDetail(id) : t.match.outdatedDetail}
         </p>
         <Button variant="solid" onClick={() => navigate('/')}>
-          Back home
+          {t.common.backHome}
         </Button>
       </main>
     )
   }
 
   const overKey = state ? `${state.round}:${state.ply}` : ''
-  const over = state?.status === 'over' ? resultText(state) : null
+  const over = state?.status === 'over' ? resultText(state, t) : null
 
   const status = (() => {
-    if (!state) return conn === 'failed' ? "Can't reach the game server. Retrying…" : 'Connecting…'
-    if (conn === 'failed') return "Can't reach the game server. Retrying…"
-    if (conn !== 'open') return 'Reconnecting…'
-    if (state.status === 'waiting') return 'Waiting for an opponent'
+    if (!state) return conn === 'failed' ? t.match.cantReach : t.match.connecting
+    if (conn === 'failed') return t.match.cantReach
+    if (conn !== 'open') return t.match.reconnecting
+    if (state.status === 'waiting') return t.match.waitingOpponent
     if (state.status === 'setup') {
-      if (!you || !them) return 'Players are setting up'
-      return state.setup?.ready[you] ? 'Waiting for your opponent to set up' : 'Set up your pieces'
+      if (!you || !them) return t.match.playersSettingUp
+      return state.setup?.ready[you] ? t.match.waitingTheirSetup : t.match.setUpYourPieces
     }
-    if (over) return state.result === '1/2-1/2' ? `Draw by ${state.reason}` : `${over.title} ${how(state.reason)}`
-    const check = state.check && !predicting && !state.behind ? 'Check. ' : ''
-    if (!you) return `${check}${NAMES[turn!]} to move`
-    return `${check}${turn === you ? 'Your move' : 'Their move'}`
+    if (over)
+      return state.result === '1/2-1/2'
+        ? t.match.drawStatus(how(state.reason, t))
+        : `${over.title} ${how(state.reason, t)}`
+    const check = state.check && !predicting && !state.behind ? t.match.check : ''
+    if (!you) return `${check}${t.match.sideToMove(sideName(t, turn!))}`
+    return `${check}${turn === you ? t.common.yourMove : t.common.theirMove}`
   })()
 
   const bottom = orientation
@@ -187,7 +191,7 @@ export function MatchPage({ id }: { id: string }) {
                 {state?.status === 'setup' && <SetupWait ready={state.setup?.ready} />}
                 {!state && (
                   <div className="absolute inset-0 z-20 grid place-items-center rounded-md bg-bg/60 text-lg font-semibold">
-                    <Spinner label="Joining match" />
+                    <Spinner label={t.match.joining} />
                   </div>
                 )}
               </div>
@@ -207,17 +211,19 @@ export function MatchPage({ id }: { id: string }) {
           </p>
 
           {state && (
-            <ul className="flex flex-wrap gap-1.5" aria-label="Match rules">
-              {describeSettings(state.settings).map((r) => (
+            <ul className="flex flex-wrap gap-1.5" aria-label={t.match.matchRules}>
+              {describeSettings(state.settings, t).map((r) => (
                 <li key={r} className="tag">
                   {r}
                 </li>
               ))}
-              <li className={`tag ${state.rated ? 'tag-solid' : ''}`}>{state.rated ? 'Rated' : 'Unrated'}</li>
+              <li className={`tag ${state.rated ? 'tag-solid' : ''}`}>
+                {state.rated ? t.common.rated : t.common.unrated}
+              </li>
               {state.spectators > 0 && (
                 <li className="tag flex items-center gap-1.5">
                   <Icon name="eye" size={14} />
-                  {state.spectators} watching
+                  {t.match.watching(state.spectators)}
                 </li>
               )}
             </ul>
@@ -227,47 +233,47 @@ export function MatchPage({ id }: { id: string }) {
 
           {state && you && them && state.draw[them] && playing && (
             <div className="flex items-center justify-between gap-3 rounded-lg p-3 shadow-[inset_0_0_0_1.5px_var(--color-fg)]">
-              <span>They offer a draw.</span>
+              <span>{t.match.theyOfferDraw}</span>
               <Button variant="solid" className="h-9 px-4" onClick={() => send({ type: 'draw' })}>
-                Accept
+                {t.common.accept}
               </Button>
             </div>
           )}
 
           {state?.status === 'setup' && you && them && (
             <p className="text-sm text-accent">
-              {state.setup?.ready[them] ? 'Your opponent is ready. ' : ''}
-              {setupHint(state)}
+              {state.setup?.ready[them] ? `${t.match.opponentReady} ` : ''}
+              {setupHint(state, t)}
             </p>
           )}
 
           {state && them && state.rematch[them] && state.status === 'over' && !state.rematch[you!] && (
-            <p className="font-semibold">They want a rematch.</p>
+            <p className="font-semibold">{t.match.theyWantRematch}</p>
           )}
 
           <div className="flex flex-wrap gap-2">
             {state?.status === 'over' && you ? (
               <Button variant={state.rematch[you] ? 'outline' : 'solid'} onClick={() => send({ type: 'rematch' })}>
-                {state.rematch[you] ? 'Cancel rematch' : 'Rematch'}
+                {state.rematch[you] ? t.match.cancelRematch : t.match.rematch}
               </Button>
             ) : (
               you &&
               playing && (
                 <>
                   <Button onClick={() => send({ type: 'draw' })}>
-                    {state!.draw[you] ? 'Cancel draw offer' : 'Offer draw'}
+                    {state!.draw[you] ? t.match.cancelDraw : t.match.offerDraw}
                   </Button>
                   <Button onClick={() => setConfirmResign(true)} disabled={ply === 0}>
-                    Resign
+                    {t.match.resign}
                   </Button>
                 </>
               )
             )}
-            <Tip label="Flip board">
+            <Tip label={t.match.flipBoard}>
               <Button
                 variant="ghost"
                 icon
-                aria-label="Flip board"
+                aria-label={t.match.flipBoard}
                 onClick={() => (you ? setFlipped((f) => !f) : setSide(other(side)))}
               >
                 <svg
@@ -301,19 +307,20 @@ export function MatchPage({ id }: { id: string }) {
 
           {rtt !== null && (
             <p className="font-mono text-xs text-accent tabular-nums">
-              ping {rtt} ms{moveMs !== null && ` · last move confirmed in ${moveMs} ms`}
+              {t.match.ping(rtt)}
+              {moveMs !== null && ` · ${t.match.lastMoveConfirmed(moveMs)}`}
             </p>
           )}
         </aside>
       </div>
 
-      <Dialog open={!!promotion} onOpenChange={(o) => !o && setPromotion(null)} title="Promote to">
+      <Dialog open={!!promotion} onOpenChange={(o) => !o && setPromotion(null)} title={t.match.promoteTo}>
         <div className="grid grid-cols-4 gap-2">
           {(['q', 'r', 'b', 'n'] as const).map((p) => (
             <button
               key={p}
               autoFocus={p === 'q'}
-              aria-label={{ q: 'Queen', r: 'Rook', b: 'Bishop', n: 'Knight' }[p]}
+              aria-label={{ q: t.match.queen, r: t.match.rook, b: t.match.bishop, n: t.match.knight }[p]}
               className="aspect-square rounded-lg bg-sq-light p-1 shadow-[inset_0_0_0_1.5px_var(--color-fg)] transition-transform hover:scale-105 active:scale-95"
               onClick={() => {
                 sendMove(promotion!.from + promotion!.to + p)
@@ -329,12 +336,12 @@ export function MatchPage({ id }: { id: string }) {
       <Dialog
         open={confirmResign}
         onOpenChange={setConfirmResign}
-        title="Resign?"
-        description="This ends the game and gives your opponent the win."
+        title={t.match.resignTitle}
+        description={t.match.resignDesc}
       >
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setConfirmResign(false)}>
-            Keep playing
+            {t.match.keepPlaying}
           </Button>
           <Button
             variant="solid"
@@ -343,7 +350,7 @@ export function MatchPage({ id }: { id: string }) {
               setConfirmResign(false)
             }}
           >
-            Resign
+            {t.match.resign}
           </Button>
         </div>
       </Dialog>
@@ -357,7 +364,7 @@ export function MatchPage({ id }: { id: string }) {
             {over?.detail}
             {state?.rated && you && (
               <span className="mt-3 block font-mono text-fg tabular-nums">
-                {state.ratingDiff ? `Rating ${signed(state.ratingDiff[you])}` : 'Updating your rating…'}
+                {state.ratingDiff ? t.match.rating(signed(state.ratingDiff[you])) : t.match.updatingRating}
               </span>
             )}
           </>
@@ -365,7 +372,7 @@ export function MatchPage({ id }: { id: string }) {
       >
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => setDismissedOver(overKey)}>
-            View board
+            {t.match.viewBoard}
           </Button>
           {you && (
             <Button
@@ -375,7 +382,7 @@ export function MatchPage({ id }: { id: string }) {
                 setDismissedOver(overKey)
               }}
             >
-              Rematch
+              {t.match.rematch}
             </Button>
           )}
         </div>
@@ -387,9 +394,12 @@ export function MatchPage({ id }: { id: string }) {
 type PlayerBarProps = { color: Color; state: MatchState | null; you: Color | null; active: boolean }
 
 function PlayerBar({ color, state, you, active }: PlayerBarProps) {
+  const t = useT()
   const seat = state?.players[color]
   const name = seat?.name
-  const label = !seat?.taken ? 'Waiting…' : name || (color === you ? 'You' : you ? 'Opponent' : 'Guest')
+  const label = !seat?.taken
+    ? t.match.waitingSeat
+    : name || (color === you ? t.common.you : you ? t.common.opponent : t.common.guest)
   return (
     <div className="player-bar flex h-12 items-center gap-2 rounded-lg pr-1.5 pl-3 text-[15px]" data-active={active}>
       <span
@@ -410,11 +420,11 @@ function PlayerBar({ color, state, you, active }: PlayerBarProps) {
       ) : (
         <span className="font-semibold">{label}</span>
       )}
-      {name && color === you && <span className="text-accent">(you)</span>}
-      <span className="text-accent max-sm:hidden">{NAMES[color]}</span>
-      {active && !state?.clock && <span className="turn-tag">to move</span>}
+      {name && color === you && <span className="text-accent">{t.match.youTag}</span>}
+      <span className="text-accent max-sm:hidden">{sideName(t, color)}</span>
+      {active && !state?.clock && <span className="turn-tag">{t.common.toMove}</span>}
       <span className="ml-auto flex min-w-0 items-center gap-2">
-        {seat?.taken && !seat.online && <span className="text-sm text-danger">offline</span>}
+        {seat?.taken && !seat.online && <span className="text-sm text-danger">{t.match.offline}</span>}
         <Captured pieces={state?.captured[color] ?? ''} className="text-[clamp(16px,calc(var(--board)/30),22px)]" />
         {state?.clock && (
           <Clock
@@ -432,12 +442,13 @@ function PlayerBar({ color, state, you, active }: PlayerBarProps) {
 /** A spectator picks whose side to see the game from. In a fog game that's
  * what that player saw a few moves ago, so nobody watching can help them. */
 function Spectating({ state, side, setSide }: { state: MatchState; side: Color; setSide: (c: Color) => void }) {
+  const t = useT()
   const behind = state.behind ?? 0
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex items-center gap-3 text-sm">
-        <span>See it as</span>
-        <div role="radiogroup" aria-label="See the game as" className="flex gap-0.5 rounded-lg bg-muted p-[3px]">
+        <span>{t.match.seeItAs}</span>
+        <div role="radiogroup" aria-label={t.match.seeAsAria} className="flex gap-0.5 rounded-lg bg-muted p-[3px]">
           {(['w', 'b'] as const).map((c) => (
             <button
               key={c}
@@ -446,40 +457,37 @@ function Spectating({ state, side, setSide }: { state: MatchState; side: Color; 
               onClick={() => setSide(c)}
               className="h-8 rounded-[5px] px-3 text-[13px] font-medium transition-colors hover:bg-fg/10 aria-checked:bg-fg aria-checked:text-bg"
             >
-              {NAMES[c]}
+              {sideName(t, c)}
             </button>
           ))}
         </div>
       </div>
       <p className="text-sm text-accent">
-        {behind > 0
-          ? `You see what ${NAMES[side]} saw ${behind === 1 ? 'a move' : `${behind} moves`} ago, so nothing you see can help either player.`
-          : "You're watching this match."}
+        {behind > 0 ? t.match.behindNote(sideName(t, side), behind) : t.match.watchingNote}
       </p>
     </div>
   )
 }
 
 /** What the setup rules are, for the player arranging their pieces. */
-function setupHint(s: MatchState) {
-  const rows = s.settings.setup === 'backRow' ? 'your back row; the pawns stay put' : 'your four rows'
-  const hill = s.settings.hill ? " The king can't start on the hill." : ''
-  const hidden = s.settings.fog
-    ? "Under fog you won't see their setup, and they won't see yours."
-    : "Once they're ready, their setup shows on the board."
-  return `Drag a piece to a square in ${rows}, or tap it and then the square.${hill} ${hidden} The clock starts when you're both ready.`
+function setupHint(s: MatchState, t: Dict) {
+  const rows = s.settings.setup === 'backRow' ? t.match.rowsBack : t.match.rowsFour
+  const hill = s.settings.hill ? ` ${t.match.hillNoStart}` : ''
+  const hidden = s.settings.fog ? t.match.fogHidden : t.match.noFogShown
+  return `${t.match.setupHint(rows)}${hill} ${hidden} ${t.match.clockStarts}`
 }
 
 /** Covers the board for a spectator while the players set up. */
 function SetupWait({ ready }: { ready?: Record<Color, boolean> }) {
+  const t = useT()
   return (
     <div className="absolute inset-0 z-20 grid place-items-center bg-bg/70 p-4 backdrop-blur-[3px]">
       <div className="flex w-full max-w-[320px] flex-col items-center gap-3 rounded-xl bg-bg p-6 text-center shadow-[0_0_0_1.5px_var(--color-fg)]">
-        <p className="text-lg font-semibold">The players are setting up</p>
+        <p className="text-lg font-semibold">{t.match.settingUpTitle}</p>
         <ul className="flex gap-4 text-sm text-accent">
           {(['w', 'b'] as const).map((c) => (
             <li key={c}>
-              {NAMES[c]}: {ready?.[c] ? 'ready' : 'placing pieces'}
+              {sideName(t, c)}: {ready?.[c] ? t.match.ready : t.match.placing}
             </li>
           ))}
         </ul>
@@ -494,10 +502,11 @@ function signed(n: number) {
 }
 
 function WaitingCard({ id, link }: { id: string; link: string }) {
+  const t = useT()
   return (
     <div className="absolute inset-0 z-20 grid place-items-center bg-bg/70 p-4 backdrop-blur-[3px]">
       <div className="flex w-full max-w-[320px] flex-col items-center gap-4 rounded-xl bg-bg p-6 text-center shadow-[0_0_0_1.5px_var(--color-fg)]">
-        <p className="text-accent">Send this ID to your opponent</p>
+        <p className="text-accent">{t.match.sendCode}</p>
         <p className="font-mono text-4xl font-bold tracking-[0.2em] select-all">{id}</p>
         <CopyLink link={link} wide />
       </div>
@@ -506,11 +515,12 @@ function WaitingCard({ id, link }: { id: string; link: string }) {
 }
 
 function CopyLink({ link, wide }: { link: string; wide?: boolean }) {
+  const t = useT()
   const [copied, setCopied] = useState(false)
   const share = async () => {
     try {
       if (wide && navigator.share && matchMedia('(pointer: coarse)').matches) {
-        await navigator.share({ title: 'Play chess with me', url: link })
+        await navigator.share({ title: t.match.shareTitle, url: link })
         return
       }
       if (navigator.clipboard) await navigator.clipboard.writeText(link)
@@ -522,13 +532,13 @@ function CopyLink({ link, wide }: { link: string; wide?: boolean }) {
   if (wide) {
     return (
       <Button variant="solid" className="w-full" onClick={share}>
-        {copied ? 'Copied' : 'Share link'}
+        {copied ? t.match.copied : t.match.shareLink}
       </Button>
     )
   }
   return (
-    <Tip label={copied ? 'Copied' : 'Copy match link'}>
-      <Button variant="ghost" icon aria-label="Copy match link" onClick={share}>
+    <Tip label={copied ? t.match.copied : t.match.copyLink}>
+      <Button variant="ghost" icon aria-label={t.match.copyLink} onClick={share}>
         <svg
           width="20"
           height="20"

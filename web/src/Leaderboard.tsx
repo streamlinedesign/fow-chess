@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Avatar } from './Avatar'
+import { errorText, useT } from './i18n'
 import { navigate } from './router'
 import { Button, Spinner } from './ui'
 
@@ -9,6 +10,7 @@ const SHORT = 10
 
 /** The Top 100 by rating, with your own row pinned underneath when you're further down. */
 export function Leaderboard({ me }: { me?: string }) {
+  const t = useT()
   const [data, setData] = useState<{ top: Leader[]; me: Leader | null } | null>(null)
   const [error, setError] = useState('')
   const [all, setAll] = useState(false)
@@ -20,9 +22,9 @@ export function Leaderboard({ me }: { me?: string }) {
         const body = await res.json()
         if (!live) return
         if (res.ok) setData({ top: body.top ?? [], me: body.me })
-        else setError(body.error || "Couldn't load the leaderboard.")
+        else setError(errorText(body))
       })
-      .catch(() => live && setError("Couldn't reach the server."))
+      .catch(() => live && setError(t.common.cantReach))
     return () => {
       live = false
     }
@@ -35,26 +37,24 @@ export function Leaderboard({ me }: { me?: string }) {
   return (
     <section className="flex flex-col gap-3.5">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-[22px] font-semibold tracking-tight">Top 100</h2>
-        <span className="text-[13px] text-accent">Updated after every rated game</span>
+        <h2 className="text-[22px] font-semibold tracking-tight">{t.leaderboard.title}</h2>
+        <span className="text-[13px] text-accent">{t.leaderboard.updated}</span>
       </div>
       {error ? (
         <p className="text-accent">{error}</p>
       ) : !data ? (
-        <Spinner label="Loading the leaderboard" />
+        <Spinner label={t.leaderboard.loading} />
       ) : data.top.length === 0 ? (
-        <p className="text-accent">
-          Nobody's rated yet. Play a game with a clock against someone signed in, and you'll both show up here.
-        </p>
+        <p className="text-accent">{t.leaderboard.nobodyRated}</p>
       ) : (
         <>
           <table className="lb">
             <thead>
               <tr>
                 <th>#</th>
-                <th>Player</th>
-                <th className="r max-sm:hidden">Games</th>
-                <th className="r">Rating</th>
+                <th>{t.leaderboard.player}</th>
+                <th className="r max-sm:hidden">{t.leaderboard.games}</th>
+                <th className="r">{t.leaderboard.rating}</th>
               </tr>
             </thead>
             <tbody>
@@ -73,7 +73,7 @@ export function Leaderboard({ me }: { me?: string }) {
           </table>
           {data.top.length > SHORT && (
             <Button className="h-9 self-start px-4 text-sm" onClick={() => setAll(!all)}>
-              {all ? 'Show less' : `Show all ${data.top.length}`}
+              {all ? t.leaderboard.showLess : t.leaderboard.showAll(data.top.length)}
             </Button>
           )}
         </>
@@ -83,6 +83,7 @@ export function Leaderboard({ me }: { me?: string }) {
 }
 
 function Row({ leader, you }: { leader: Leader; you: boolean }) {
+  const t = useT()
   const href = `/u/${encodeURIComponent(leader.username)}`
   return (
     // The whole row opens the profile. The name is the real link, for keyboards and screen readers.
@@ -107,7 +108,7 @@ function Row({ leader, you }: { leader: Leader; you: boolean }) {
           <Avatar size={30} />
           <span className="flex min-w-0 flex-col leading-tight">
             <span className="truncate font-semibold">{leader.username}</span>
-            {you && <span className="text-[13px] text-accent">You</span>}
+            {you && <span className="text-[13px] text-accent">{t.common.you}</span>}
           </span>
         </a>
       </td>

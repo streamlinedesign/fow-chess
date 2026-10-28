@@ -70,6 +70,20 @@ Signed-in players can be friends, message each other and offer matches. Guests k
 
 The landing page replays Morphy's Opera Game as White and Black each saw it under fog. The frames in `web/src/showcase.json` are produced by the server's own rules, and a test fails if they drift. After changing what players see, regenerate them with `cd server && go test -run Showcase -update`.
 
+## Languages
+
+The app speaks English and Croatian. It opens in the browser's language when
+we have it, and the switch (EN/HR in the top bar for guests, a row in the
+avatar menu and in Settings for players) remembers your choice on that
+device. Every string the app shows lives in `web/src/i18n/<lang>.ts`; the
+English file is the master, and TypeScript makes a missing or misspelled
+Croatian key a build error. Server errors come with a `code` that the client
+looks up in the dictionary, so they show in the user's language too.
+
+To add a language: copy `web/src/i18n/en.ts` to `<code>.ts`, translate it
+(the type `Dict` flags anything you missed), import it in `web/src/i18n/index.ts`
+and add a row to `LANGS`. Nothing else changes.
+
 ## Requirements
 
 - Go 1.24+

@@ -2,6 +2,7 @@ import * as RadioGroup from '@radix-ui/react-radio-group'
 import * as Switch from '@radix-ui/react-switch'
 import { useId, useState } from 'react'
 import type { ReactNode } from 'react'
+import { useT } from './i18n'
 import {
   clocked,
   describeTime,
@@ -32,17 +33,18 @@ export function SettingsPanel({
 }) {
   // The panel can be on screen twice (home page and Offer a match), so ids are per panel.
   const id = useId()
+  const t = useT()
   return (
     <fieldset className={`setup flex min-w-0 flex-col overflow-hidden rounded-xl ${className}`}>
-      <legend className="sr-only">Match settings</legend>
+      <legend className="sr-only">{t.panel.title}</legend>
       <div className="flex items-center justify-between gap-3 border-b border-border bg-muted px-4 py-3 text-[13px] sm:px-5">
-        <span className="shrink-0 text-sm font-semibold whitespace-nowrap">Match settings</span>
+        <span className="shrink-0 text-sm font-semibold whitespace-nowrap">{t.panel.title}</span>
         <span className="truncate text-accent">
           {[
-            value.fog ? 'Fog' : 'Full board',
-            value.kingCapture ? 'Eat the King' : 'Checkmate',
-            ...twists(value),
-            describeTime(value.time),
+            value.fog ? t.panel.fogShort : t.panel.fullBoard,
+            value.kingCapture ? t.panel.eat : t.panel.mate,
+            ...twists(value, t),
+            describeTime(value.time, t),
           ].join(' · ')}
         </span>
       </div>
@@ -50,13 +52,13 @@ export function SettingsPanel({
       <div className="flex flex-1 flex-col justify-between gap-6 p-4 sm:p-5">
         <Toggle
           big
-          label="Fog of war"
-          hint={value.fog ? 'You only see what your pieces see.' : 'The whole board, as in normal chess.'}
+          label={t.panel.fog}
+          hint={value.fog ? t.panel.fogOnHint : t.panel.fogOffHint}
           checked={value.fog}
           onChange={(fog) => onChange({ ...value, fog })}
         />
 
-        <Group id={`${id}-win`} label="Win by">
+        <Group id={`${id}-win`} label={t.panel.winBy}>
           <RadioGroup.Root
             aria-labelledby={`${id}-win`}
             value={value.kingCapture ? 'capture' : 'mate'}
@@ -64,21 +66,21 @@ export function SettingsPanel({
             className="grid grid-cols-2 gap-2.5"
           >
             {[
-              ['capture', 'Eat the King', 'No check. Take the king to win.'],
-              ['mate', 'Checkmate', 'Normal chess rules with check.'],
+              ['capture', t.panel.eat, t.panel.eatHint],
+              ['mate', t.panel.mate, t.panel.mateHint],
             ].map(([v, label, hint]) => (
               <Choice key={v} value={v} label={label} hint={hint} tall />
             ))}
           </RadioGroup.Root>
           <Toggle
-            label="King of the Hill"
-            hint="Also win by getting your king to one of the four centre squares."
+            label={t.twists.hill}
+            hint={t.panel.hillHint}
             checked={!!value.hill}
             onChange={(hill) => onChange({ ...value, hill })}
           />
         </Group>
 
-        <Group id={`${id}-setup`} label="Pieces">
+        <Group id={`${id}-setup`} label={t.panel.pieces}>
           <RadioGroup.Root
             aria-labelledby={`${id}-setup`}
             value={setupMode(value).value || 'standard'}
@@ -90,21 +92,26 @@ export function SettingsPanel({
             className="grid grid-cols-3 gap-2"
           >
             {SETUPS.map((m) => (
-              <Choice key={m.value} value={m.value || 'standard'} label={m.label} hint={m.hint} />
+              <Choice
+                key={m.value}
+                value={m.value || 'standard'}
+                label={t.setups[m.value].label}
+                hint={t.setups[m.value].hint}
+              />
             ))}
           </RadioGroup.Root>
         </Group>
 
-        <Group id={`${id}-twists`} label="Twists">
+        <Group id={`${id}-twists`} label={t.panel.twists}>
           <Toggle
-            label="Jump King"
-            hint="Your king can also jump like a knight."
+            label={t.twists.jump}
+            hint={t.panel.jumpHint}
             checked={!!value.jumpKing}
             onChange={(jumpKing) => onChange({ ...value, jumpKing })}
           />
           <Toggle
-            label="Backward pawns"
-            hint="Pawns can also step one square back, and see behind them."
+            label={t.twists.backPawns}
+            hint={t.panel.backPawnsHint}
             checked={!!value.backPawns}
             onChange={(backPawns) => onChange({ ...value, backPawns })}
           />
@@ -196,6 +203,7 @@ function TimePicker({
   signedIn: boolean
 }) {
   const id = useId()
+  const t = useT()
   // The group shown can differ from the chosen preset's group until a preset is picked.
   const [group, setGroup] = useState(() => timeGroup(value.time))
   const presets = TIME_GROUPS.find(([g]) => g === group)![1]
@@ -209,52 +217,44 @@ function TimePicker({
   return (
     <div className="flex flex-col gap-2.5">
       <span className="font-semibold" id={`${id}-time`}>
-        Time control
+        {t.panel.timeControl}
       </span>
-      <div role="radiogroup" aria-label="Time control group" className="tc-tabs">
+      <div role="radiogroup" aria-label={t.panel.timeGroup} className="tc-tabs">
         {TIME_GROUPS.map(([g]) => (
           <button key={g} type="button" role="radio" aria-checked={group === g} onClick={() => pickGroup(g)}>
-            {g}
+            {t.time.groups[g]}
           </button>
         ))}
       </div>
       <RadioGroup.Root
         aria-labelledby={`${id}-time`}
-        value={timeLabel(value.time)}
-        onValueChange={(label) => onChange({ ...value, time: presets.find((p) => timeLabel(p) === label)! })}
+        value={timeLabel(value.time, t)}
+        onValueChange={(label) => onChange({ ...value, time: presets.find((p) => timeLabel(p, t) === label)! })}
         className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap"
       >
         {presets.map((p) => (
           <RadioGroup.Item
-            key={timeLabel(p)}
-            value={timeLabel(p)}
+            key={timeLabel(p, t)}
+            value={timeLabel(p, t)}
             className="h-11 rounded-md border border-border px-3.5 font-mono text-[15px] tabular-nums transition-colors hover:border-fg data-[state=checked]:border-fg data-[state=checked]:bg-fg data-[state=checked]:text-bg max-sm:px-0 sm:min-w-[72px] [&:only-child]:col-span-4"
           >
-            {p.perMove ? '24 h per move' : clocked(p) ? timeLabel(p) : 'Unlimited'}
+            {clocked(p) ? timeLabel(p, t) : t.panel.unlimited}
           </RadioGroup.Item>
         ))}
       </RadioGroup.Root>
       <div className="mt-2">
         {!signedIn || !clocked(value.time) ? (
           <Toggle
-            label="Rated"
-            hint={
-              !clocked(value.time)
-                ? 'No clock games are never rated.'
-                : "Guest games aren't rated. Log in to play for rating."
-            }
+            label={t.common.rated}
+            hint={!clocked(value.time) ? t.panel.ratedNoClock : t.panel.ratedGuest}
             checked={false}
             disabled
             onChange={() => {}}
           />
         ) : (
           <Toggle
-            label="Rated"
-            hint={
-              value.unrated
-                ? 'Just for fun: no rating changes.'
-                : 'Counts for both ratings when your opponent is signed in too.'
-            }
+            label={t.common.rated}
+            hint={value.unrated ? t.panel.unratedOn : t.panel.ratedOn}
             checked={!value.unrated}
             onChange={(rated) => onChange({ ...value, unrated: !rated })}
           />

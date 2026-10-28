@@ -1,8 +1,10 @@
+import { useT } from './i18n'
 import { pieceImg } from './position'
 import { navigate } from './router'
 
 /** Any address the site doesn't know. */
 export function NotFound() {
+  const t = useT()
   return (
     <main className="mx-auto w-full max-w-[1184px] flex-1 px-4 pt-6 pb-16 sm:px-8">
       <section className="nf">
@@ -16,8 +18,8 @@ export function NotFound() {
         </div>
         <div>
           <div className="nf-sq">e9</div>
-          <h1>There's no such square</h1>
-          <p>The page you were looking for doesn't exist, or the link was mistyped.</p>
+          <h1>{t.notFound.title}</h1>
+          <p>{t.notFound.text}</p>
           <a
             href="/"
             onClick={(e) => {
@@ -26,7 +28,7 @@ export function NotFound() {
             }}
             className="mt-6 inline-flex h-12 items-center rounded-md bg-fg px-6 text-[17px] font-semibold text-bg hover:opacity-85"
           >
-            Back home
+            {t.common.backHome}
           </a>
         </div>
       </section>

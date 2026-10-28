@@ -1,5 +1,8 @@
+import { useT } from './i18n'
+
 /** The one default avatar everyone has: a pawn, cut off at the shoulders. */
 export function Avatar({ size = 36, online, className = '' }: { size?: number; online?: boolean; className?: string }) {
+  const t = useT()
   const dot = Math.min(Math.max(Math.round(size * 0.28), 9), 20)
   return (
     <span
@@ -18,7 +21,7 @@ export function Avatar({ size = 36, online, className = '' }: { size?: number; o
         <span
           className="absolute -right-px -bottom-px rounded-full bg-online shadow-[0_0_0_2px_var(--color-bg)]"
           style={{ width: dot, height: dot }}
-          aria-label="Online"
+          aria-label={t.common.online}
         />
       )}
     </span>

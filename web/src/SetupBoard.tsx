@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useT } from './i18n'
 import { pieceImg, squareIndex } from './position'
 import { HILL, setupMode, type Settings } from './settings'
 import { Button } from './ui'
@@ -8,7 +9,6 @@ const FILES = 'abcdefgh'
 /** Every player's pieces, as uppercase FEN letters. Must match army in server/setup.go. */
 const ARMY = 'KQRRBBNNPPPPPPPP'
 const KINDS = ['K', 'Q', 'R', 'B', 'N', 'P']
-const KIND_NAMES: Record<string, string> = { K: 'King', Q: 'Queen', R: 'Rook', B: 'Bishop', N: 'Knight', P: 'Pawn' }
 const STANDARD = 'RNBQKBNRPPPPPPPP' + '.'.repeat(32) + 'pppppppprnbqkbnr'
 const HILL_INDEXES = HILL.map(squareIndex)
 
@@ -89,6 +89,15 @@ export function SetupBoard({
   /** Shown right under the board, such as your player bar. */
   below?: ReactNode
 }) {
+  const t = useT()
+  const kindNames: Record<string, string> = {
+    K: t.match.king,
+    Q: t.match.queen,
+    R: t.match.rook,
+    B: t.match.bishop,
+    N: t.match.knight,
+    P: t.match.pawn,
+  }
   const mode = setupMode(settings)
   const [start] = useState(() => mine || remembered(mode.value, you))
   const [board, setBoard] = useState(start)
@@ -314,7 +323,7 @@ export function SetupBoard({
         ref={trayRef}
         className="tray"
         role="group"
-        aria-label={pick && 'square' in pick ? 'Tap to take the piece off the board' : 'Your pieces to place'}
+        aria-label={pick && 'square' in pick ? t.setup.tapToRemove : t.setup.yourPieces}
         data-dropping={!!pick && 'square' in pick}
         onClick={(e) => {
           // Tapping the tray itself, not a piece, takes the picked piece off the board.
@@ -327,7 +336,7 @@ export function SetupBoard({
             type="button"
             className="tray-piece"
             aria-pressed={!!pick && 'tray' in pick && pick.tray === k}
-            aria-label={`${KIND_NAMES[k]}, ${left[k]} left`}
+            aria-label={t.setup.left(kindNames[k], left[k])}
             disabled={ready || (left[k] === 0 && !(pick && 'square' in pick))}
             onClick={() => tapTray(k)}
             onPointerDown={(e) => {
@@ -343,7 +352,7 @@ export function SetupBoard({
       <div className="grid grid-cols-4 gap-1.5">
         {ready ? (
           <Button className="col-span-2" onClick={onChange}>
-            Change setup
+            {t.setup.changeSetup}
           </Button>
         ) : (
           <>
@@ -356,23 +365,23 @@ export function SetupBoard({
                 onReady(board)
               }}
             >
-              Ready
+              {t.setup.ready}
             </Button>
             <Button variant="ghost" className="px-2" onClick={() => set([...start])}>
-              Reset
+              {t.setup.reset}
             </Button>
             <Button variant="ghost" className="px-2" onClick={() => set([...ownStandard(you)])}>
-              Default
+              {t.setup.default}
             </Button>
             <Button variant="ghost" className="px-2" onClick={clear}>
-              Clear
+              {t.setup.clear}
             </Button>
           </>
         )}
       </div>
       {kingOnHill && !ready && (
         <p className="text-sm text-danger" role="alert">
-          In King of the Hill, the king can't start on the hill.
+          {t.setup.kingOnHill}
         </p>
       )}
     </div>

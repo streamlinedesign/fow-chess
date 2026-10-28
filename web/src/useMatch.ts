@@ -74,6 +74,7 @@ export function useMatch(id: string) {
   const [rtt, setRtt] = useState<number | null>(null)
   const [chat, setChat] = useState<ChatLine[]>([])
   const ws = useRef<WebSocket | null>(null)
+  const lastPong = useRef(0)
 
   useEffect(() => {
     let stopped = false
@@ -103,7 +104,10 @@ export function useMatch(id: string) {
         } else if (msg.type === 'chat') {
           // Players get the whole chat on (re)connecting and at a rematch, then each new line.
           setChat((c) => (msg.reset ? msg.lines : [...c, ...msg.lines]))
-        } else if (msg.type === 'pong') setRtt(Math.round(performance.now() - msg.t))
+        } else if (msg.type === 'pong') {
+          lastPong.current = performance.now()
+          setRtt(Math.round(performance.now() - msg.t))
+        }
       }
       sock.onclose = async () => {
         // A socket from an earlier effect run (React StrictMode mounts twice in dev)
@@ -119,12 +123,27 @@ export function useMatch(id: string) {
       }
     }
 
-    // Reconnect right away when a phone comes back to the tab.
+    // Reconnect right away when a phone comes back to the tab. A socket the
+    // phone slept on may be dead without the browser knowing yet, so ask the
+    // server for a pong and drop the socket if none comes.
+    let health: ReturnType<typeof setTimeout>
     const onVisible = () => {
-      if (document.visibilityState === 'visible' && !ws.current) {
+      if (document.visibilityState !== 'visible') return
+      const sock = ws.current
+      if (!sock) {
         clearTimeout(timer)
         retry = 0
         connect()
+      } else if (sock.readyState === WebSocket.OPEN) {
+        const before = lastPong.current
+        ping()
+        clearTimeout(health)
+        health = setTimeout(() => {
+          if (ws.current === sock && lastPong.current === before) {
+            retry = 0
+            sock.close()
+          }
+        }, 3000)
       }
     }
 
@@ -140,6 +159,7 @@ export function useMatch(id: string) {
     return () => {
       stopped = true
       clearTimeout(timer)
+      clearTimeout(health)
       clearInterval(pinger)
       document.removeEventListener('visibilitychange', onVisible)
       ws.current?.close()

@@ -2,6 +2,7 @@ import * as Switch from '@radix-ui/react-switch'
 import { useEffect, useState } from 'react'
 import { logout, refreshMe, useMe } from './auth'
 import { SignInFirst } from './FriendsPage'
+import { LANGS, setLang, useLang, useT } from './i18n'
 import { navigate } from './router'
 import { api } from './social'
 import { setThemeMode, themeMode, type ThemeMode } from './theme'
@@ -9,15 +10,13 @@ import { Button, Dialog } from './ui'
 
 type Privacy = { hideOnline: boolean; offersFrom: 'anyone' | 'friends'; requestsFrom: 'anyone' | 'nobody' }
 
-const SECTIONS = [
-  ['s-look', 'Look'],
-  ['s-account', 'Account'],
-  ['s-privacy', 'Privacy'],
-]
+const SECTIONS = ['look', 'account', 'privacy'] as const
 
 /** Your look, account and privacy. Changes save as you make them. */
 export function SettingsPage() {
   const me = useMe()
+  const t = useT()
+  const lang = useLang()
   const [privacy, setPrivacy] = useState<Privacy | null>(null)
   const [mode, setMode] = useState(themeMode)
   const [saved, setSaved] = useState('')
@@ -29,14 +28,14 @@ export function SettingsPage() {
         .catch(() => {})
   }, [me?.username])
 
-  if (me === null) return <SignInFirst what="change your settings" />
+  if (me === null) return <SignInFirst what={t.friends.whatSettings} />
   if (!me) return null
 
   const savePrivacy = async (p: Privacy) => {
     setPrivacy(p)
     try {
       setPrivacy(await api<Privacy>('PUT', '/api/settings', p))
-      setSaved('Saved')
+      setSaved(t.account.saved)
     } catch (e) {
       setSaved((e as Error).message)
     }
@@ -46,43 +45,43 @@ export function SettingsPage() {
     <main className="mx-auto w-full max-w-[1184px] flex-1 px-4 pt-6 pb-16 sm:px-8">
       <div className="page-head">
         <div>
-          <h1>Settings</h1>
-          <p>Changes save as you make them.</p>
+          <h1>{t.common.settings}</h1>
+          <p>{t.account.changesSave}</p>
         </div>
         <span className="text-[13px] text-accent" aria-live="polite">
           {saved}
         </span>
       </div>
       <div className="set-grid">
-        <nav className="set-nav" aria-label="Settings sections">
-          {SECTIONS.map(([id, label]) => (
+        <nav className="set-nav" aria-label={t.account.sections}>
+          {SECTIONS.map((id) => (
             <a
               key={id}
-              href={`#${id}`}
+              href={`#s-${id}`}
               onClick={(e) => {
                 e.preventDefault()
-                document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+                document.getElementById(`s-${id}`)?.scrollIntoView({ behavior: 'smooth' })
               }}
             >
-              {label}
+              {t.account[id]}
             </a>
           ))}
         </nav>
         <div>
           <section className="set-sec" id="s-look">
-            <h2>Look</h2>
+            <h2>{t.account.look}</h2>
             <div className="set-row">
               <div className="row-l">
-                <b>Theme</b>
-                <span>System follows your phone or computer.</span>
+                <b>{t.header.theme}</b>
+                <span>{t.account.themeHint}</span>
               </div>
               <Seg
-                label="Theme"
+                label={t.header.theme}
                 value={mode}
                 options={[
-                  ['light', 'Light'],
-                  ['dark', 'Dark'],
-                  ['system', 'System'],
+                  ['light', t.header.light],
+                  ['dark', t.header.dark],
+                  ['system', t.header.system],
                 ]}
                 onChange={(m, e) => {
                   setThemeMode(m as ThemeMode, e)
@@ -90,22 +89,34 @@ export function SettingsPage() {
                 }}
               />
             </div>
+            <div className="set-row">
+              <div className="row-l">
+                <b>{t.header.language}</b>
+                <span>{t.account.languageHint}</span>
+              </div>
+              <Seg
+                label={t.header.language}
+                value={lang}
+                options={LANGS.map((l) => [l.code, l.name])}
+                onChange={(l) => setLang(l as (typeof LANGS)[number]['code'])}
+              />
+            </div>
           </section>
 
           <section className="set-sec" id="s-account">
-            <h2>Account</h2>
+            <h2>{t.account.account}</h2>
             <div className="set-row">
               <div className="row-l">
-                <b>Username</b>
-                <span>Usernames can't be changed.</span>
+                <b>{t.auth.username}</b>
+                <span>{t.account.usernameFixed}</span>
               </div>
               <span className="font-mono text-[15px]">{me.username}</span>
             </div>
             <PasswordForm />
             <div className="set-row">
               <div className="row-l">
-                <b>Log out everywhere</b>
-                <span>Signs out every phone and computer, including this one.</span>
+                <b>{t.account.logOutEverywhere}</b>
+                <span>{t.account.logOutEverywhereHint}</span>
               </div>
               <Button
                 className="h-9 px-3.5 text-sm"
@@ -115,24 +126,20 @@ export function SettingsPage() {
                   navigate('/login')
                 }}
               >
-                Log out everywhere
+                {t.account.logOutEverywhere}
               </Button>
             </div>
             <DeleteAccount />
           </section>
 
           <section className="set-sec" id="s-privacy">
-            <h2>Privacy</h2>
+            <h2>{t.account.privacy}</h2>
             {!privacy ? null : (
               <>
                 <label className="set-row cursor-pointer">
                   <div className="row-l">
-                    <b>Show when I'm online</b>
-                    <span>
-                      {privacy.hideOnline
-                        ? "Nobody sees when you're online or when you were last here."
-                        : 'Friends and visitors see the green dot and "last seen".'}
-                    </span>
+                    <b>{t.account.showOnline}</b>
+                    <span>{privacy.hideOnline ? t.account.hiddenHint : t.account.shownHint}</span>
                   </div>
                   <Switch.Root
                     checked={!privacy.hideOnline}
@@ -144,30 +151,30 @@ export function SettingsPage() {
                 </label>
                 <div className="set-row">
                   <div className="row-l">
-                    <b>Who can offer me matches</b>
-                    <span>Anyone can still join a game you share by code.</span>
+                    <b>{t.account.whoOffers}</b>
+                    <span>{t.account.whoOffersHint}</span>
                   </div>
                   <Seg
-                    label="Who can offer me matches"
+                    label={t.account.whoOffers}
                     value={privacy.offersFrom}
                     options={[
-                      ['friends', 'Friends'],
-                      ['anyone', 'Anyone'],
+                      ['friends', t.common.friends],
+                      ['anyone', t.account.anyone],
                     ]}
                     onChange={(v) => savePrivacy({ ...privacy, offersFrom: v as Privacy['offersFrom'] })}
                   />
                 </div>
                 <div className="set-row">
                   <div className="row-l">
-                    <b>Who can send me friend requests</b>
-                    <span>Messages are always friends only.</span>
+                    <b>{t.account.whoRequests}</b>
+                    <span>{t.account.whoRequestsHint}</span>
                   </div>
                   <Seg
-                    label="Who can send me friend requests"
+                    label={t.account.whoRequests}
                     value={privacy.requestsFrom}
                     options={[
-                      ['anyone', 'Anyone'],
-                      ['nobody', 'Nobody'],
+                      ['anyone', t.account.anyone],
+                      ['nobody', t.account.nobody],
                     ]}
                     onChange={(v) => savePrivacy({ ...privacy, requestsFrom: v as Privacy['requestsFrom'] })}
                   />
@@ -204,6 +211,7 @@ function Seg({
 }
 
 function PasswordForm() {
+  const t = useT()
   const [current, setCurrent] = useState('')
   const [next, setNext] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -212,7 +220,7 @@ function PasswordForm() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (next !== confirm) return setNote({ ok: false, text: "The new passwords don't match." })
+    if (next !== confirm) return setNote({ ok: false, text: t.account.newMismatch })
     setBusy(true)
     setNote(null)
     try {
@@ -220,7 +228,7 @@ function PasswordForm() {
       setCurrent('')
       setNext('')
       setConfirm('')
-      setNote({ ok: true, text: 'Password changed. Your other devices were signed out.' })
+      setNote({ ok: true, text: t.account.passwordChanged })
     } catch (err) {
       setNote({ ok: false, text: (err as Error).message })
     }
@@ -230,11 +238,11 @@ function PasswordForm() {
   return (
     <form className="pw" onSubmit={submit}>
       <div className="row-l">
-        <b>Change password</b>
-        <span>8 to 72 characters. Your other devices get signed out.</span>
+        <b>{t.account.changePassword}</b>
+        <span>{t.account.changePasswordHint}</span>
       </div>
       <label className="field">
-        <span>Current password</span>
+        <span>{t.account.currentPassword}</span>
         <input
           className="input"
           type="password"
@@ -246,7 +254,7 @@ function PasswordForm() {
       </label>
       <div className="pw-grid">
         <label className="field">
-          <span>New password</span>
+          <span>{t.account.newPassword}</span>
           <input
             className="input"
             type="password"
@@ -259,7 +267,7 @@ function PasswordForm() {
           />
         </label>
         <label className="field">
-          <span>Confirm new password</span>
+          <span>{t.account.confirmNewPassword}</span>
           <input
             className="input"
             type="password"
@@ -277,7 +285,7 @@ function PasswordForm() {
       )}
       <div>
         <Button variant="solid" type="submit" loading={busy}>
-          Change password
+          {t.account.changePassword}
         </Button>
       </div>
     </form>
@@ -285,6 +293,7 @@ function PasswordForm() {
 }
 
 function DeleteAccount() {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -293,24 +302,16 @@ function DeleteAccount() {
   return (
     <div className="set-row">
       <div className="row-l">
-        <b>Delete account</b>
-        <span>
-          Removes your profile, rating, friends and chats. Finished games stay in your opponents' history, played by a
-          guest.
-        </span>
+        <b>{t.account.deleteAccount}</b>
+        <span>{t.account.deleteHint}</span>
       </div>
       <Button
         className="h-9 px-3.5 text-sm text-danger shadow-[inset_0_0_0_1.5px_var(--color-danger)] hover:bg-danger hover:text-bg"
         onClick={() => setOpen(true)}
       >
-        Delete account
+        {t.account.deleteAccount}
       </Button>
-      <Dialog
-        open={open}
-        onOpenChange={setOpen}
-        title="Delete your account?"
-        description="This can't be undone. Type your password to confirm."
-      >
+      <Dialog open={open} onOpenChange={setOpen} title={t.account.deleteTitle} description={t.account.deleteDesc}>
         <form
           className="flex flex-col gap-4"
           onSubmit={async (e) => {
@@ -331,8 +332,8 @@ function DeleteAccount() {
             className="input"
             type="password"
             autoComplete="current-password"
-            aria-label="Password"
-            placeholder="Password"
+            aria-label={t.auth.password}
+            placeholder={t.auth.password}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -340,10 +341,10 @@ function DeleteAccount() {
           {error && <p className="text-sm text-danger">{error}</p>}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
-              Keep it
+              {t.account.keepIt}
             </Button>
             <Button type="submit" variant="solid" className="bg-danger" loading={busy}>
-              Delete
+              {t.account.delete}
             </Button>
           </div>
         </form>

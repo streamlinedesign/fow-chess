@@ -1,3 +1,4 @@
+import { useT } from './i18n'
 import { pieceImg, squareIndex } from './position'
 import { HILL, setupMode, type Settings } from './settings'
 
@@ -20,6 +21,7 @@ export function SettingsBoard({
   boardClassName?: string
   captionClassName?: string
 }) {
+  const t = useT()
   const setup = setupMode(settings)
   const squares = []
   for (let row = 0; row < 8; row++) {
@@ -50,13 +52,13 @@ export function SettingsBoard({
   }
 
   const notes = [
-    settings.fog ? 'Fog covers everything your pieces can’t see.' : 'No fog: the whole board shows.',
-    settings.kingCapture ? 'Win by eating the king.' : 'Win by checkmate.',
-    settings.hill && 'Or get your king to a ringed centre square.',
-    setup.value === 'backRow' && 'Arrange your back row first.',
-    setup.value === 'battleship' && 'Place every piece anywhere in the ringed rows first.',
-    settings.jumpKing && 'Your king can also jump, to the dotted squares here.',
-    settings.backPawns && 'Pawns can step back, and see behind them.',
+    settings.fog ? t.settingsBoard.fogOn : t.settingsBoard.fogOff,
+    settings.kingCapture ? t.settingsBoard.eat : t.settingsBoard.mate,
+    settings.hill && t.settingsBoard.hill,
+    setup.value === 'backRow' && t.settingsBoard.backRow,
+    setup.value === 'battleship' && t.settingsBoard.battleship,
+    settings.jumpKing && t.settingsBoard.jump,
+    settings.backPawns && t.settingsBoard.backPawns,
   ].filter(Boolean)
 
   return (
@@ -64,12 +66,12 @@ export function SettingsBoard({
       <div
         className={`board setup-board grid aspect-square w-full grid-cols-8 grid-rows-8 overflow-hidden rounded-md shadow-[0_0_0_2px_var(--color-fg)] ${boardClassName}`}
         role="img"
-        aria-label={`The board at the start with these settings. ${notes.join(' ')}`}
+        aria-label={`${t.settingsBoard.aria} ${notes.join(' ')}`}
       >
         {squares}
       </div>
       <div className={`flex flex-col gap-1.5 ${captionClassName}`}>
-        <p className="text-[15px] font-semibold">Your view at the start</p>
+        <p className="text-[15px] font-semibold">{t.settingsBoard.yourView}</p>
         <p className="text-sm text-accent">{notes.join(' ')}</p>
       </div>
     </>

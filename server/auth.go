@@ -334,10 +334,54 @@ func writeJSON(w http.ResponseWriter, v any) {
 	json.NewEncoder(w).Encode(v)
 }
 
+// errorCodes names each error message, so the client can show it in the
+// user's language. The English text is sent too, as a fallback.
+var errorCodes = map[string]string{
+	"Couldn't load the profile.":                      "load_profile",
+	"No such player.":                                 "no_player",
+	"Too many attempts. Try again in a few minutes.":  "too_many",
+	"Those match settings aren't available.":          "bad_settings",
+	"Something went wrong.":                           "server",
+	"Passwords are 8 to 72 characters.":               "password_length",
+	"No such game.":                                   "no_game",
+	"Log in first.":                                   "log_in",
+	"Couldn't sign in.":                               "sign_in_failed",
+	"Couldn't load the leaderboard.":                  "load_leaderboard",
+	"Couldn't load the game.":                         "load_game",
+	"Couldn't create the account.":                    "create_account",
+	"Wrong username or password.":                     "wrong_login",
+	"Write something first.":                          "empty_message",
+	"Usernames are 3 to 20 letters, numbers, - or _.": "username_rules",
+	"Those settings aren't allowed.":                  "settings_not_allowed",
+	"This offer has already been answered.":           "offer_answered",
+	"This game is still being played.":                "game_in_progress",
+	"That's you.":                                     "thats_you",
+	"That's not your current password.":               "wrong_password",
+	"That username is taken.":                         "username_taken",
+	"That player has left.":                           "player_left",
+	"Pick white, black or random.":                    "pick_colour",
+	"Only friends can message each other.":            "friends_only",
+	"No such offer.":                                  "no_offer",
+	"Messages are up to 1000 characters.":             "message_length",
+	"Couldn't log out.":                               "log_out",
+	"Couldn't delete the account.":                    "delete_account",
+	"Couldn't change the password.":                   "change_password",
+	"Bad request.":                                    "bad_request",
+}
+
 func jsonError(w http.ResponseWriter, msg string, status int) {
+	writeError(w, status, map[string]string{"error": msg, "code": errorCodes[msg]})
+}
+
+// jsonNamedError sends an error about a player, whose name the client puts into its own text.
+func jsonNamedError(w http.ResponseWriter, msg, code, name string, status int) {
+	writeError(w, status, map[string]string{"error": msg, "code": code, "name": name})
+}
+
+func writeError(w http.ResponseWriter, status int, body map[string]string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]string{"error": msg})
+	json.NewEncoder(w).Encode(body)
 }
 
 func jsonString(v any) (string, error) {

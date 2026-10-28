@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useMe } from './auth'
 import { Avatar } from './Avatar'
+import { errorText, useT, type Dict } from './i18n'
 import { Icon } from './icons'
 import { useLive } from './live'
 import { pieceImg } from './position'
@@ -54,19 +55,14 @@ type Profile = {
   formWith?: ('W' | 'L' | 'D')[]
 }
 
-const dateFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
-const monthFmt = new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' })
-
-export function ago(ms: number) {
+export function ago(ms: number, t: Dict) {
   const s = (Date.now() - ms) / 1000
-  if (s < 60) return 'just now'
-  if (s < 3600) return `${Math.floor(s / 60)} min ago`
-  if (s < 86400) return `${Math.floor(s / 3600)} h ago`
-  if (s < 86400 * 7) return `${Math.floor(s / 86400)} d ago`
-  return dateFmt.format(ms)
+  if (s < 60) return t.profile.justNow
+  if (s < 3600) return t.profile.minAgo(Math.floor(s / 60))
+  if (s < 86400) return t.profile.hAgo(Math.floor(s / 3600))
+  if (s < 86400 * 7) return t.profile.dAgo(Math.floor(s / 86400))
+  return new Intl.DateTimeFormat(t.locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(ms)
 }
-
-export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
 export function go(e: React.MouseEvent, href: string) {
   e.preventDefault()
@@ -82,6 +78,7 @@ function result(g: GameSummary): Exclude<Filter, 'all'> {
 
 export function ProfilePage({ name }: { name: string }) {
   const me = useMe()
+  const t = useT()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [error, setError] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
@@ -91,9 +88,9 @@ export function ProfilePage({ name }: { name: string }) {
       .then(async (res) => {
         const body = await res.json()
         if (res.ok) setProfile(body)
-        else setError(body.error || "Couldn't load the profile.")
+        else setError(errorText(body))
       })
-      .catch(() => setError("Couldn't reach the server."))
+      .catch(() => setError(t.common.cantReach))
 
   useEffect(() => {
     setProfile(null)
@@ -109,7 +106,7 @@ export function ProfilePage({ name }: { name: string }) {
       <main className="flex flex-1 flex-col items-start gap-6 px-4 pt-10 sm:px-8">
         <h1 className="text-[clamp(36px,8vw,56px)] leading-none font-bold tracking-tight">{error}</h1>
         <Button variant="solid" onClick={() => navigate('/')}>
-          Back home
+          {t.common.backHome}
         </Button>
       </main>
     )
@@ -118,7 +115,7 @@ export function ProfilePage({ name }: { name: string }) {
   if (!profile) {
     return (
       <main className="grid flex-1 place-items-center">
-        <Spinner label="Loading profile" />
+        <Spinner label={t.profile.loading} />
       </main>
     )
   }
@@ -129,7 +126,7 @@ export function ProfilePage({ name }: { name: string }) {
   const yourMove = (g: GameSummary) => own && !g.waiting && g.turn === g.color
   const current = [...profile.current].sort((a, b) => Number(yourMove(b)) - Number(yourMove(a)))
   const finished = profile.finished.filter((g) => filter === 'all' || result(g) === filter)
-  const status = own && profile.hideOnline ? 'Hidden from others' : presence(profile)
+  const status = own && profile.hideOnline ? t.profile.hidden : presence(profile, t)
 
   return (
     <main className="mx-auto flex w-full max-w-[1184px] flex-col gap-12 px-4 pt-6 pb-16 sm:px-8">
@@ -142,27 +139,32 @@ export function ProfilePage({ name }: { name: string }) {
           <div className="mt-2 flex flex-wrap items-baseline gap-2.5">
             <span className="font-mono text-2xl tabular-nums">{profile.rating}</span>
             <span className="text-[13px] text-accent">
-              rating{profile.rank ? ` · #${profile.rank} on the board` : ''}
+              {t.profile.ratingLabel}
+              {profile.rank ? ` · ${t.profile.onBoard(profile.rank)}` : ''}
             </span>
           </div>
           <div className="mt-2.5 flex flex-wrap gap-4 text-[13.5px] text-accent">
             {status && (
               <span className={`status ${profile.online && !(own && profile.hideOnline) ? '' : 'off'}`}>{status}</span>
             )}
-            <span>Joined {monthFmt.format(profile.joined)}</span>
+            <span>
+              {t.profile.joined(
+                new Intl.DateTimeFormat(t.locale, { month: 'long', year: 'numeric' }).format(profile.joined),
+              )}
+            </span>
           </div>
         </div>
         <div className="prof-acts">
           {!own && profile.playing && (
             <Button onClick={() => navigate(`/m/${profile.playing}`)}>
               <Icon name="eye" />
-              Watch
+              {t.common.watch}
             </Button>
           )}
           {own ? (
             <Button onClick={() => navigate('/settings')}>
               <Icon name="gear" />
-              Settings
+              {t.common.settings}
             </Button>
           ) : me ? (
             <VisitorActions profile={profile} onChange={load} />
@@ -173,7 +175,7 @@ export function ProfilePage({ name }: { name: string }) {
       {profile.scoreWith && (
         <section className="tick score">
           <div>
-            <div className="label">You vs {profile.username}</div>
+            <div className="label">{t.profile.youVs(profile.username)}</div>
             <div className="score-big mt-2">
               <b>{profile.scoreWith.wins}</b>
               <i>–</i>
@@ -182,12 +184,12 @@ export function ProfilePage({ name }: { name: string }) {
           </div>
           <div>
             <div className="text-[13px] text-accent">
-              {plural(profile.scoreWith.wins + profile.scoreWith.draws + profile.scoreWith.losses, 'game')} ·{' '}
-              {profile.scoreWith.draws === 1 ? '1 draw' : `${profile.scoreWith.draws} draws`}
-              {profile.formWith?.length ? ` · last ${profile.formWith.length}` : ''}
+              {t.common.games(profile.scoreWith.wins + profile.scoreWith.draws + profile.scoreWith.losses)} ·{' '}
+              {t.common.draws(profile.scoreWith.draws)}
+              {profile.formWith?.length ? ` · ${t.profile.lastN(profile.formWith.length)}` : ''}
             </div>
             {profile.formWith && (
-              <div className="form-dots mt-2" aria-label="Your last results, newest first">
+              <div className="form-dots mt-2" aria-label={t.profile.formAria}>
                 {profile.formWith.map((f, i) => (
                   <span key={i} className={`fd ${f === 'W' ? 'w' : f === 'D' ? 'd' : ''}`}>
                     {f}
@@ -197,7 +199,7 @@ export function ProfilePage({ name }: { name: string }) {
             )}
           </div>
           <Button className="h-9 px-3.5 text-sm" onClick={() => navigate(`/messages/${profile.username}`)}>
-            Your chat
+            {t.profile.yourChat}
           </Button>
         </section>
       )}
@@ -205,26 +207,32 @@ export function ProfilePage({ name }: { name: string }) {
       <section className="stats">
         <div className="stat">
           <b>{played}</b>
-          <span>Played</span>
+          <span>{t.profile.played}</span>
         </div>
         <div className="stat">
           <b>{stats.wins}</b>
-          <span>Wins{stats.ateKing ? ` · ${stats.ateKing} ate the king` : ''}</span>
+          <span>
+            {t.profile.wins}
+            {stats.ateKing ? ` · ${t.profile.ateKing(stats.ateKing)}` : ''}
+          </span>
         </div>
         <div className="stat">
           <b>{stats.draws}</b>
-          <span>Draws</span>
+          <span>{t.profile.drawsLabel}</span>
         </div>
         <div className="stat">
           <b>{stats.losses}</b>
-          <span>Losses{stats.kingGotAte ? ` · ${stats.kingGotAte} king got ate` : ''}</span>
+          <span>
+            {t.profile.losses}
+            {stats.kingGotAte ? ` · ${t.profile.kingGotAte(stats.kingGotAte)}` : ''}
+          </span>
         </div>
       </section>
 
       <section>
-        <h2 className="mb-3.5 text-[22px] font-semibold tracking-tight">Current games</h2>
+        <h2 className="mb-3.5 text-[22px] font-semibold tracking-tight">{t.profile.currentGames}</h2>
         {current.length === 0 ? (
-          <p className="text-accent">No games in progress.</p>
+          <p className="text-accent">{t.profile.noCurrent}</p>
         ) : (
           <div className="cur-list">
             {current.map((g) => {
@@ -233,20 +241,20 @@ export function ProfilePage({ name }: { name: string }) {
                 <a key={`${g.matchId}-${g.round}`} href={href} onClick={(e) => go(e, href)} className="cur">
                   <span
                     className={`size-3.5 shrink-0 rounded-full shadow-[0_0_0_1.5px_var(--color-fg)] ${g.color === 'w' ? 'bg-[#fff]' : 'bg-[#111]'}`}
-                    aria-label={g.color === 'w' ? 'White' : 'Black'}
+                    aria-label={g.color === 'w' ? t.common.white : t.common.black}
                   />
                   <div className="min-w-0">
                     <div className="truncate font-semibold">
-                      {g.waiting ? 'Waiting for an opponent' : `vs ${g.opponent || 'Guest'}`}
+                      {g.waiting ? t.match.waitingOpponent : t.profile.vs(g.opponent || t.common.guest)}
                     </div>
                     <div className="sub truncate">
-                      {describeSettings(g.settings).join(' · ')} · move {Math.floor(g.plies / 2) + 1}
+                      {describeSettings(g.settings, t).join(' · ')} · {t.common.move(Math.floor(g.plies / 2) + 1)}
                     </div>
                   </div>
                   {yourMove(g) ? (
-                    <span className="turn-tag">Your move</span>
+                    <span className="turn-tag">{t.common.yourMove}</span>
                   ) : (
-                    <span className="text-sm text-accent">{ago(g.updatedAt)}</span>
+                    <span className="text-sm text-accent">{ago(g.updatedAt, t)}</span>
                   )}
                 </a>
               )
@@ -257,14 +265,14 @@ export function ProfilePage({ name }: { name: string }) {
 
       <section>
         <div className="mb-3.5 flex flex-wrap items-baseline justify-between gap-3">
-          <h2 className="text-[22px] font-semibold tracking-tight">Previous matches</h2>
-          <div className="filters" role="radiogroup" aria-label="Show">
+          <h2 className="text-[22px] font-semibold tracking-tight">{t.profile.previousMatches}</h2>
+          <div className="filters" role="radiogroup" aria-label={t.profile.show}>
             {(
               [
-                ['all', 'All'],
-                ['win', 'Wins'],
-                ['loss', 'Losses'],
-                ['draw', 'Draws'],
+                ['all', t.profile.all],
+                ['win', t.profile.wins],
+                ['loss', t.profile.losses],
+                ['draw', t.profile.drawsLabel],
               ] as [Filter, string][]
             ).map(([f, label]) => (
               <button
@@ -280,7 +288,7 @@ export function ProfilePage({ name }: { name: string }) {
           </div>
         </div>
         {finished.length === 0 ? (
-          <p className="text-accent">{profile.finished.length ? 'Nothing here.' : 'No finished games yet.'}</p>
+          <p className="text-accent">{profile.finished.length ? t.profile.nothingHere : t.profile.noFinished}</p>
         ) : (
           <div className="matches">
             {finished.map((g) => (
@@ -295,6 +303,7 @@ export function ProfilePage({ name }: { name: string }) {
 
 /** Add friend, Offer a match and Message on someone else's profile. */
 function VisitorActions({ profile, onChange }: { profile: Profile; onChange: () => void }) {
+  const t = useT()
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const name = profile.username
@@ -315,42 +324,42 @@ function VisitorActions({ profile, onChange }: { profile: Profile; onChange: () 
       {profile.canOffer && (
         <Button variant="solid" onClick={() => openOffer(name)}>
           <Icon name="swords" />
-          Offer a match
+          {t.profile.offerMatch}
         </Button>
       )}
       {profile.friend === 'friends' && (
         <Button onClick={() => navigate(`/messages/${name}`)}>
           <Icon name="chat" />
-          Message
+          {t.common.message}
         </Button>
       )}
       {profile.friend === 'friends' ? (
         <DropMenu
-          title="Friend options"
+          title={t.profile.friendOptions}
           trigger={
-            <Button variant="ghost" aria-label="Friend options">
+            <Button variant="ghost" aria-label={t.profile.friendOptions}>
               <Icon name="check" />
-              <span className="max-[720px]:hidden">Friends</span>
+              <span className="max-[720px]:hidden">{t.common.friends}</span>
             </Button>
           }
         >
           <MenuItem className="text-danger" onSelect={() => friend('DELETE')}>
             <Icon name="out" />
-            Remove friend
+            {t.profile.removeFriend}
           </MenuItem>
         </DropMenu>
       ) : profile.friend === 'sent' ? (
-        <Button variant="ghost" loading={busy} onClick={() => friend('DELETE')} title="Cancel the request">
-          Request sent
+        <Button variant="ghost" loading={busy} onClick={() => friend('DELETE')} title={t.profile.cancelRequest}>
+          {t.profile.requestSent}
         </Button>
       ) : profile.friend === 'received' ? (
         <Button variant="solid" loading={busy} onClick={() => friend('POST')}>
-          Accept friend request
+          {t.profile.acceptFriendRequest}
         </Button>
       ) : profile.canAdd ? (
         <Button loading={busy} onClick={() => friend('POST')}>
           <Icon name="plus" />
-          Add friend
+          {t.profile.addFriend}
         </Button>
       ) : null}
       {error && <p className="w-full text-right text-sm text-danger">{error}</p>}
@@ -358,36 +367,32 @@ function VisitorActions({ profile, onChange }: { profile: Profile; onChange: () 
   )
 }
 
-const HOW: { [reason: string]: string } = {
-  time: 'on time',
-  'capturing the king': 'by eating the king',
-  'reaching the hill': 'by taking the hill',
-}
-
 function MatchCard({ g, owner }: { g: GameSummary; owner: string }) {
+  const t = useT()
   const r = result(g)
   const ate = g.reason === 'capturing the king'
+  const hill = g.reason === 'reaching the hill'
   const title =
     r === 'draw'
-      ? 'Draw'
+      ? t.profile.cardDraw
       : g.sniper
         ? r === 'win'
-          ? 'Sniper Win'
-          : 'Sniped'
+          ? t.match.sniperWin
+          : t.match.sniped
         : ate
           ? r === 'win'
-            ? 'Ate the king'
-            : 'King got ate'
-          : g.reason === 'reaching the hill'
+            ? t.profile.cardAteKing
+            : t.profile.cardKingGotAte
+          : hill
             ? r === 'win'
-              ? 'Took the hill'
-              : 'Lost the hill'
+              ? t.profile.cardTookHill
+              : t.profile.cardLostHill
             : r === 'win'
-              ? 'Won'
-              : 'Lost'
-  const opponent = g.opponent || 'Guest'
-  const winner = r === 'draw' ? 'No winner' : `${r === 'win' ? owner : opponent} won`
-  const how = HOW[g.reason ?? ''] ?? `by ${g.reason}`
+              ? t.profile.cardWon
+              : t.profile.cardLost
+  const opponent = g.opponent || t.common.guest
+  const winner = r === 'draw' ? t.profile.noWinner : t.profile.won(r === 'win' ? owner : opponent)
+  const how = ate ? t.profile.howEat : hill ? t.profile.howHill : (g.reason && t.by[g.reason]) || `by ${g.reason}`
   // A win shows a light king on a filled circle; a loss, your own king toppled.
   const king = r === 'win' ? 'K' : g.color === 'w' ? 'K' : 'k'
   const href = `/g/${g.matchId}/${g.round}`
@@ -395,8 +400,8 @@ function MatchCard({ g, owner }: { g: GameSummary; owner: string }) {
   return (
     <a href={href} onClick={(e) => go(e, href)} className="tick mcard">
       <div className="type">
-        <b>{modeName(g.settings)}</b>
-        <span>{describeTime(g.settings.time ?? NO_CLOCK)}</span>
+        <b>{modeName(g.settings, t)}</b>
+        <span>{describeTime(g.settings.time ?? NO_CLOCK, t)}</span>
       </div>
       <div className="res">
         <span className={`king ${r === 'win' ? 'won' : r === 'loss' ? 'toppled' : 'draw'}`}>
@@ -405,8 +410,8 @@ function MatchCard({ g, owner }: { g: GameSummary; owner: string }) {
         <div>
           <h3>{title}</h3>
           <p className="how-won">
-            {winner} {r === 'draw' ? `by ${g.reason}` : how}
-            {g.sniper && ' on the first move'}
+            {winner} {how}
+            {g.sniper && t.profile.onFirstMove}
           </p>
         </div>
       </div>
@@ -422,9 +427,9 @@ function MatchCard({ g, owner }: { g: GameSummary; owner: string }) {
               {Math.abs(diff)}
             </span>
           ) : (
-            <span className="chip">Unrated</span>
+            <span className="chip">{t.common.unrated}</span>
           )}
-          <div className="mt-0.5 text-xs text-accent">{ago(g.updatedAt)}</div>
+          <div className="mt-0.5 text-xs text-accent">{ago(g.updatedAt, t)}</div>
         </div>
       </div>
     </a>
