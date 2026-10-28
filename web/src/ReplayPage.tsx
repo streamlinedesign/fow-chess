@@ -23,6 +23,7 @@ type Replay = {
   history: string[]
   frames: Frame[]
   ended: number
+  sniper?: boolean
 }
 
 const noMoves: string[] = []
@@ -30,7 +31,8 @@ const noop = () => {}
 
 function resultLine(r: Replay) {
   if (r.result === '1/2-1/2') return `Draw by ${r.reason}`
-  return `${r.result === '1-0' ? 'White' : 'Black'} won by ${r.reason}`
+  const won = `${r.result === '1-0' ? 'White' : 'Black'} won by ${r.reason}`
+  return r.sniper ? `Sniper Win: ${won} on the first move` : won
 }
 
 /** Steps through a finished game with the whole board visible. */

@@ -87,3 +87,13 @@ func (p glicko) rate(results []glickoResult) glicko {
 		Volatility: vol,
 	}
 }
+
+// toward moves p a fraction w of the way to q: a game that counts for less
+// than a whole one.
+func (p glicko) toward(q glicko, w float64) glicko {
+	return glicko{
+		Rating:     p.Rating + w*(q.Rating-p.Rating),
+		Deviation:  p.Deviation + w*(q.Deviation-p.Deviation),
+		Volatility: p.Volatility + w*(q.Volatility-p.Volatility),
+	}
+}

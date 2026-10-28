@@ -205,6 +205,115 @@
     --board: min(100vw - 420px, 100dvh - 190px, 760px);
   }
 }
+/* While setting up, leave room under the board for the tray and buttons. */
+.board-wrap[data-setup='true'] {
+  --board: min(100vw - 32px, 100dvh - 340px, 680px);
+}
+@media (min-width: 640px) {
+  .board-wrap[data-setup='true'] {
+    --board: min(100vw - 64px, 100dvh - 400px, 680px);
+  }
+}
+@media (min-width: 1024px) {
+  .board-wrap[data-setup='true'] {
+    --board: min(100vw - 420px, 100dvh - 400px, 760px);
+  }
+}
+
+/* Setup: the squares you may place on are ringed; the tray holds what's left to place. */
+.setup-board .sq {
+  cursor: default;
+}
+.setup-board .sq[data-zone='true'] {
+  cursor: pointer;
+}
+.setup-board .sq[data-zone='true']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 0 calc(var(--board) / 160) color-mix(in srgb, var(--color-fg) 22%, transparent);
+  pointer-events: none;
+}
+.setup-board .sq:disabled {
+  cursor: default;
+}
+
+.tray {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-radius: 10px;
+  padding: 6px;
+  background: var(--color-muted);
+  transition: box-shadow 150ms ease;
+}
+.tray[data-dropping='true'] {
+  box-shadow: inset 0 0 0 2px var(--color-fg);
+  cursor: pointer;
+}
+.tray-piece {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(44px, calc(var(--board) / 8), 64px);
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: var(--color-sq-light);
+  transition:
+    transform 120ms ease,
+    opacity 120ms ease;
+}
+.tray-piece img {
+  width: 88%;
+  height: 88%;
+  pointer-events: none;
+}
+.tray-piece span {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  min-width: 18px;
+  padding: 3px 4px;
+  border-radius: 9999px;
+  background: var(--color-fg);
+  color: var(--color-bg);
+  font: 700 11px/1 var(--font-mono, monospace);
+  text-align: center;
+}
+.tray-piece:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.tray-piece[aria-pressed='true'] {
+  box-shadow: 0 0 0 2.5px var(--color-fg);
+}
+.tray-piece:disabled {
+  opacity: 0.35;
+}
+
+/* The Jump King card's king hops when tapped. */
+.jump-king {
+  border-radius: 12px;
+  transition: transform 120ms ease;
+}
+.jump-king:active {
+  transform: scale(0.94);
+}
+.jump-king[data-hopping='true'] img {
+  animation: king-hop 520ms cubic-bezier(0.3, 0.7, 0.4, 1);
+}
+@keyframes king-hop {
+  40% {
+    transform: translateY(-38px) rotate(-8deg);
+  }
+  70% {
+    transform: translateY(0) scaleY(0.9);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jump-king[data-hopping='true'] img {
+    animation: none;
+  }
+}
 
 /* Fog: squares the viewer's pieces can't see. */
 .sq[data-fog='true'] {
@@ -975,6 +1084,10 @@ a.tick:active {
   color: var(--color-fg);
   font-weight: 600;
   font-size: 13px;
+  min-width: 0;
+}
+.mcard .type span {
+  white-space: nowrap;
 }
 .mcard .res {
   display: flex;
@@ -1676,6 +1789,10 @@ a.tick:active {
   color: var(--color-fg);
   font-weight: 600;
   font-size: 13px;
+  min-width: 0;
+}
+.wcard .type span {
+  white-space: nowrap;
 }
 .wcard .meta {
   display: flex;

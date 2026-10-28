@@ -235,9 +235,15 @@ type Match struct {
 	clients  map[*client]struct{}
 	rematch  [2]bool
 	draw     [2]bool
-	round    int
-	started  time.Time // when this round began
-	touched  time.Time
+	// setUp is whether this round's pieces are in place. In a setup mode it's
+	// false until both players have sent their arrangement; game until then is
+	// only a placeholder.
+	setUp bool
+	// placed is each player's arrangement while setting up, "" until they're ready.
+	placed  [2]string
+	round   int
+	started time.Time // when this round began
+	touched time.Time
 	// clock is each side's time left as of turnStart, when the side to move's
 	// clock started. A zero turnStart means no clock is running: there's no
 	// clock, the opponent hasn't joined yet, or the game is over.
@@ -279,6 +285,7 @@ func newMatch(store *Store, id string, settings Settings) *Match {
 	m := &Match{
 		store: store, id: id, settings: settings, game: engine.NewGameWithRules(settings.rules()),
 		clients: make(map[*client]struct{}), round: 1, started: now, touched: now,
+		setUp: settings.Setup == "",
 	}
 	m.resetClock()
 	return m
@@ -299,6 +306,8 @@ func restoreMatch(store *Store, rec *gameRecord, hooks matchHooks) (*Match, erro
 	m.hooks = hooks
 	m.round, m.started, m.turnBegan = rec.Round, rec.CreatedAt, rec.UpdatedAt
 	m.seats, m.users = rec.Seats, rec.Users
+	// Setups are kept only in memory, so a setup that didn't finish starts over.
+	m.setUp = rec.Settings.Setup == "" || rec.StartFEN != ""
 	m.names = [2]string{rec.whiteName, rec.blackName}
 	g, err := replay(rec)
 	if err != nil {
@@ -325,7 +334,10 @@ func restoreMatch(store *Store, rec *gameRecord, hooks matchHooks) (*Match, erro
 // replay plays a saved game's moves and applies a result the moves don't show
 // (a resignation or an agreed draw).
 func replay(rec *gameRecord) (*engine.Game, error) {
-	g := engine.NewGameWithRules(rec.Settings.rules())
+	g, err := engine.NewGameFromFEN(startFrom(rec.StartFEN), rec.Settings.rules())
+	if err != nil {
+		return nil, err
+	}
 	for _, uci := range strings.Fields(rec.Moves) {
 		if _, err := g.PlayUCI(uci); err != nil {
 			return nil, fmt.Errorf("move %s: %w", uci, err)
@@ -361,7 +373,7 @@ func (m *Match) save() {
 		moves.WriteString(pm.Move.UCI())
 	}
 	rec := gameRecord{
-		MatchID: m.id, Round: m.round, Settings: m.settings, Seats: m.seats, Users: m.users,
+		MatchID: m.id, Round: m.round, Settings: m.settings, Seats: m.seats, Users: m.users, StartFEN: m.startFEN(),
 		Moves: moves.String(), CreatedAt: m.started, UpdatedAt: time.Now(),
 		Clock: m.clock, TurnStart: m.turnStart, Rated: m.rated(),
 	}
@@ -388,6 +400,14 @@ func (m *Match) save() {
 	m.store.SaveGame(rec)
 }
 
+// startFEN is the start position to save: the players' setups, or "" for the usual one.
+func (m *Match) startFEN() string {
+	if m.settings.Setup == "" || !m.setUp {
+		return ""
+	}
+	return m.game.StartFEN()
+}
+
 // slowMove is how long a move in a Daily or No clock game has to take before
 // the opponent hears about it in their bell.
 const slowMove = 4 * time.Hour
@@ -412,15 +432,18 @@ func (m *Match) notifyOver() {
 		}
 		go m.hooks.notify(notification{
 			UserID: m.users[c], Kind: notifyGameOver, ActorID: m.users[1-c], MatchID: m.id, Round: m.round,
-			Data: map[string]any{"result": result, "reason": m.game.Method().String(), "kingCapture": m.settings.KingCapture},
+			Data: map[string]any{
+				"result": result, "reason": m.game.Method().String(), "kingCapture": m.settings.KingCapture,
+				"sniper": sniperWin(outcome, m.game.Method().String(), len(m.game.History())),
+			},
 		})
 	}
 }
 
 // rated is whether this game counts toward rating: two different signed-in
-// players and a clock.
+// players, a clock, and not played as unrated.
 func (m *Match) rated() bool {
-	return m.settings.Time.clocked() && m.users[white] != 0 && m.users[black] != 0 && m.users[white] != m.users[black]
+	return !m.settings.Unrated && m.settings.Time.clocked() && m.users[white] != 0 && m.users[black] != 0 && m.users[white] != m.users[black]
 }
 
 func (m *Match) running() bool { return !m.turnStart.IsZero() }
@@ -437,7 +460,7 @@ func (m *Match) left(c int, now time.Time) time.Duration {
 // startClock starts the side to move's clock once both players are seated.
 // Callers hold m.mu.
 func (m *Match) startClock(now time.Time) {
-	if !m.settings.Time.clocked() || m.game.Over() || m.seats[white] == "" || m.seats[black] == "" || m.running() {
+	if !m.settings.Time.clocked() || !m.setUp || m.game.Over() || m.seats[white] == "" || m.seats[black] == "" || m.running() {
 		return
 	}
 	if pm := m.settings.Time.PerMove; pm > 0 {
@@ -502,7 +525,7 @@ type seatState struct {
 
 // protocolVersion changes whenever the state message changes shape, so a web app
 // talking to a server from another version can say so instead of breaking.
-const protocolVersion = 8
+const protocolVersion = 9
 
 type stateMsg struct {
 	Type     string   `json:"type"`
@@ -526,6 +549,20 @@ type stateMsg struct {
 	Watching string `json:"watching,omitempty"`
 	// Spectators is how many people are watching, not counting the players.
 	Spectators int `json:"spectators"`
+	// Setup is who's ready while the players arrange their pieces.
+	Setup *setupState `json:"setup,omitempty"`
+	// Sniper marks a game won on the winner's first move; see sniperWin.
+	Sniper bool `json:"sniper,omitempty"`
+}
+
+// setupState is the setup as one viewer may know it.
+type setupState struct {
+	Ready map[string]bool `json:"ready"`
+	// Mine is the arrangement this player sent, so a reload picks it up.
+	Mine string `json:"mine,omitempty"`
+	// Theirs is the opponent's arrangement once they're ready, in games
+	// without fog. Under fog you never see it.
+	Theirs string `json:"theirs,omitempty"`
 }
 
 // clockView is the clocks as of the moment the state is sent; the browser
@@ -536,11 +573,13 @@ type clockView struct {
 }
 
 type inMsg struct {
-	Type string  `json:"type"`
-	UCI  string  `json:"uci"`
-	Text string  `json:"text"` // chat message
-	Side string  `json:"side"` // "w" or "b": the side a spectator wants to see the game as
-	T    float64 `json:"t"`    // ping timestamp, echoed back
+	Type string `json:"type"`
+	UCI  string `json:"uci"`
+	Text string `json:"text"` // chat message
+	// Board is a player's setup, 64 characters from a1 to h8; empty to take it back.
+	Board string  `json:"board"`
+	Side  string  `json:"side"` // "w" or "b": the side a spectator wants to see the game as
+	T     float64 `json:"t"`    // ping timestamp, echoed back
 }
 
 // join seats the player if a seat is free (white first); anyone else watches.
@@ -674,8 +713,19 @@ func (m *Match) handle(c *client, msg inMsg) {
 	m.touched = now
 
 	switch msg.Type {
+	case "setup":
+		if m.setUp || m.seats[black] == "" {
+			break
+		}
+		if msg.Board != "" && checkSetup(setupModes[m.settings.Setup], color, msg.Board) != nil {
+			break
+		}
+		m.placed[color] = msg.Board
+		if m.placed[white] != "" && m.placed[black] != "" {
+			m.startSetUp(now)
+		}
 	case "move":
-		if over || m.seats[black] == "" || int(m.game.Turn()) != color {
+		if over || !m.setUp || m.seats[black] == "" || int(m.game.Turn()) != color {
 			break
 		}
 		// A move that arrives after the flag fell is too late.
@@ -707,7 +757,7 @@ func (m *Match) handle(c *client, msg inMsg) {
 			m.game.Resign(engine.Color(color))
 		}
 	case "draw":
-		if over || m.seats[black] == "" {
+		if over || !m.setUp || m.seats[black] == "" {
 			break
 		}
 		m.draw[color] = !m.draw[color]
@@ -726,6 +776,7 @@ func (m *Match) handle(c *client, msg inMsg) {
 			m.names[white], m.names[black] = m.names[black], m.names[white]
 			m.rematch = [2]bool{}
 			m.draw = [2]bool{}
+			m.setUp, m.placed = m.settings.Setup == "", [2]string{}
 			m.round++
 			m.started = now
 			m.turnBegan = now
@@ -761,6 +812,21 @@ func (m *Match) handle(c *client, msg inMsg) {
 	m.broadcast()
 }
 
+// startSetUp starts the game from both players' setups. A king that starts
+// under attack is left as it is: the game is played from there. Callers hold m.mu.
+func (m *Match) startSetUp(now time.Time) {
+	g, err := engine.NewGameFromFEN(setupFEN(m.placed), m.settings.rules())
+	if err != nil {
+		log.Printf("match %s: setup: %v", m.id, err)
+		m.placed = [2]string{}
+		return
+	}
+	m.game, m.setUp, m.placed = g, true, [2]string{}
+	m.turnBegan = now
+	m.startClock(now)
+	m.save()
+}
+
 func (m *Match) chatJSON(reset bool, lines []chatLine) []byte {
 	if lines == nil {
 		lines = []chatLine{}
@@ -788,6 +854,8 @@ func (m *Match) base() stateMsg {
 		status, result, reason = "over", m.game.Outcome().String(), m.game.Method().String()
 	case m.seats[black] == "":
 		status = "waiting"
+	case !m.setUp:
+		status = "setup"
 	}
 	base := stateMsg{
 		Type: "state", Protocol: protocolVersion, ID: m.id, Round: m.round, Settings: m.settings,
@@ -811,6 +879,9 @@ func (m *Match) base() stateMsg {
 	if d := m.ratingDiff; d != nil {
 		base.RatingDiff = map[string]int{"w": d[white], "b": d[black]}
 	}
+	if status == "over" {
+		base.Sniper = sniperWin(result, reason, len(m.game.History()))
+	}
 	for i, name := range colorNames {
 		base.Players[name] = seatState{Taken: m.seats[i] != "", Online: m.seats[i] != "" && m.online(i), Name: m.names[i]}
 	}
@@ -820,6 +891,22 @@ func (m *Match) base() stateMsg {
 // view fills in a state message for a player (color 0 or 1) or for a spectator
 // (color -1) who sees the game as side. Callers hold m.mu.
 func (m *Match) view(msg stateMsg, color, side int) []byte {
+	if msg.Status == "setup" {
+		// Nothing is on the board until both players are ready.
+		msg.gameView = gameView{Board: strings.Repeat(".", 64), Turn: "w", Legal: []string{}, History: []string{}, Captured: map[string]string{"w": "", "b": ""}}
+		msg.Setup = &setupState{Ready: map[string]bool{"w": m.placed[white] != "", "b": m.placed[black] != ""}}
+		if color >= 0 {
+			msg.You = colorNames[color]
+			msg.Setup.Mine = m.placed[color]
+			if !m.settings.Fog {
+				msg.Setup.Theirs = m.placed[1-color]
+			}
+		} else {
+			msg.Watching = colorNames[side]
+		}
+		b, _ := json.Marshal(msg)
+		return b
+	}
 	if color >= 0 {
 		msg.You = colorNames[color]
 		msg.gameView = viewFor(m.game, color, msg.Status == "playing", m.settings.Fog)

@@ -22,9 +22,14 @@ export type MatchState = {
   history: string[]
   /** Pieces each side has taken, as FEN letters, most valuable first. */
   captured: Record<Color, string>
-  status: 'waiting' | 'playing' | 'over'
+  /** setup: both players are arranging their pieces, in a game with a setup mode. */
+  status: 'waiting' | 'setup' | 'playing' | 'over'
   result?: '1-0' | '0-1' | '1/2-1/2'
   reason?: string
+  /** A game won on the winner's very first move. It moves ratings a quarter as far as a whole game. */
+  sniper?: boolean
+  /** During setup: who is ready, what you placed, and the opponent's setup once they're ready in a game without fog. */
+  setup?: { ready: Record<Color, boolean>; mine?: string; theirs?: string }
   /** name is the username of a signed-in player, absent for a guest. */
   players: Record<Color, { taken: boolean; online: boolean; name?: string }>
   rematch: Record<Color, boolean>
@@ -55,11 +60,13 @@ export type Outgoing =
   | { type: 'rematch' }
   | { type: 'chat'; text: string }
   | { type: 'watch'; side: Color }
+  /** Your pieces, 64 squares from a1 to h8. Empty takes back a setup you sent. */
+  | { type: 'setup'; board: string }
 
 export type Connection = 'connecting' | 'open' | 'closed' | 'failed' | 'missing' | 'outdated'
 
 /** Must match protocolVersion in server/match.go. */
-const PROTOCOL = 8
+const PROTOCOL = 9
 
 export function useMatch(id: string) {
   const [state, setState] = useState<MatchState | null>(null)

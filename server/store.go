@@ -102,12 +102,14 @@ func (s *Store) Close() {
 
 // gameRecord is one game's row as of a moment in time.
 type gameRecord struct {
-	MatchID   string
-	Round     int
-	Settings  Settings
-	Seats     [2]string
-	Users     [2]int64 // 0 for a guest or an empty seat
-	Moves     string
+	MatchID  string
+	Round    int
+	Settings Settings
+	Seats    [2]string
+	Users    [2]int64 // 0 for a guest or an empty seat
+	Moves    string
+	// StartFEN is the starting position of a game from a setup mode; empty for the usual one.
+	StartFEN  string
 	Result    string
 	Reason    string
 	CreatedAt time.Time
@@ -123,6 +125,11 @@ type gameRecord struct {
 	blackName  string
 	// onRated, if set, is called with the rating changes once they're saved.
 	onRated func(diff [2]int)
+}
+
+// sniper is whether the game was a Sniper Win; see sniperWin.
+func (r *gameRecord) sniper() bool {
+	return sniperWin(r.Result, r.Reason, len(strings.Fields(r.Moves)))
 }
 
 // deadline is when the side to move runs out of time, or nil if no clock is running.
@@ -156,18 +163,19 @@ func (s *Store) writer() {
 		}
 		_, err := s.db.Exec(`
 			INSERT INTO games (match_id, round, settings, white, black, white_user, black_user, moves, result, reason, created_at, updated_at,
-				white_clock_ms, black_clock_ms, turn_started_at, deadline, rated)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+				white_clock_ms, black_clock_ms, turn_started_at, deadline, rated, start_fen)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 			ON CONFLICT (match_id, round) DO UPDATE SET
 				white = excluded.white, black = excluded.black,
 				white_user = excluded.white_user, black_user = excluded.black_user,
 				moves = excluded.moves, result = excluded.result, reason = excluded.reason,
 				updated_at = excluded.updated_at,
 				white_clock_ms = excluded.white_clock_ms, black_clock_ms = excluded.black_clock_ms,
-				turn_started_at = excluded.turn_started_at, deadline = excluded.deadline, rated = excluded.rated`,
+				turn_started_at = excluded.turn_started_at, deadline = excluded.deadline, rated = excluded.rated,
+				start_fen = excluded.start_fen`,
 			r.MatchID, r.Round, settings, r.Seats[white], r.Seats[black], nullID(r.Users[white]), nullID(r.Users[black]),
 			r.Moves, r.Result, r.Reason, r.CreatedAt, r.UpdatedAt,
-			r.Clock[white].Milliseconds(), r.Clock[black].Milliseconds(), turnStart, r.deadline(), r.Rated)
+			r.Clock[white].Milliseconds(), r.Clock[black].Milliseconds(), turnStart, r.deadline(), r.Rated, r.StartFEN)
 		if err != nil {
 			log.Printf("saving game %s/%d: %v", r.MatchID, r.Round, err)
 			continue
@@ -226,6 +234,12 @@ func (s *Store) rate(r gameRecord) (*[2]int, error) {
 	after := [2]glicko{
 		before[white].rate([]glickoResult{{before[black], score}}),
 		before[black].rate([]glickoResult{{before[white], 1 - score}}),
+	}
+	// A Sniper Win moves the ratings only part of the way a whole game would.
+	if r.sniper() {
+		for c := range after {
+			after[c] = before[c].toward(after[c], sniperWeight)
+		}
 	}
 	var diff [2]int
 	for c := range after {
@@ -346,7 +360,8 @@ func (s *Store) queryGames(where string, args ...any) ([]gameRecord, error) {
 	rows, err := s.db.Query(`
 		SELECT g.match_id, g.round, g.settings::text, g.white, g.black, coalesce(g.white_user, 0), coalesce(g.black_user, 0),
 			g.moves, g.result, g.reason, g.created_at, g.updated_at, coalesce(wu.username, ''), coalesce(bu.username, ''),
-			coalesce(g.white_clock_ms, 0), coalesce(g.black_clock_ms, 0), g.turn_started_at, g.rated, g.white_rating_diff, g.black_rating_diff
+			coalesce(g.white_clock_ms, 0), coalesce(g.black_clock_ms, 0), g.turn_started_at, g.rated, g.white_rating_diff, g.black_rating_diff,
+			g.start_fen
 		FROM games g
 		LEFT JOIN users wu ON wu.id = g.white_user
 		LEFT JOIN users bu ON bu.id = g.black_user
@@ -364,7 +379,7 @@ func (s *Store) queryGames(where string, args ...any) ([]gameRecord, error) {
 		var diff [2]sql.NullInt64
 		if err := rows.Scan(&r.MatchID, &r.Round, &settings, &r.Seats[white], &r.Seats[black], &r.Users[white], &r.Users[black],
 			&r.Moves, &r.Result, &r.Reason, &r.CreatedAt, &r.UpdatedAt, &r.whiteName, &r.blackName,
-			&clock[white], &clock[black], &turnStart, &r.Rated, &diff[white], &diff[black]); err != nil {
+			&clock[white], &clock[black], &turnStart, &r.Rated, &diff[white], &diff[black], &r.StartFEN); err != nil {
 			return nil, err
 		}
 		for c := range clock {

@@ -6,7 +6,7 @@ import { useLive } from './live'
 import { pieceImg } from './position'
 import { navigate } from './router'
 import { DropMenu, MenuItem } from './Sheet'
-import { describeSettings, describeTime, NO_CLOCK, type Settings } from './settings'
+import { describeSettings, describeTime, modeName, NO_CLOCK, type Settings } from './settings'
 import { api, openOffer, presence, type FriendState } from './social'
 import { Button, Spinner } from './ui'
 import type { Color } from './useMatch'
@@ -26,6 +26,8 @@ export type GameSummary = {
   rated?: boolean
   /** The owner's rating change, once the game is rated. */
   ratingDiff?: number
+  /** Won on the winner's first move; see the rules. */
+  sniper?: boolean
 }
 
 type Record = { wins: number; draws: number; losses: number; ateKing: number; kingGotAte: number }
@@ -362,7 +364,19 @@ function MatchCard({ g, owner }: { g: GameSummary; owner: string }) {
   const r = result(g)
   const ate = g.reason === 'capturing the king'
   const title =
-    r === 'draw' ? 'Draw' : ate ? (r === 'win' ? 'Ate the king' : 'King got ate') : r === 'win' ? 'Won' : 'Lost'
+    r === 'draw'
+      ? 'Draw'
+      : g.sniper
+        ? r === 'win'
+          ? 'Sniper Win'
+          : 'Sniped'
+        : ate
+          ? r === 'win'
+            ? 'Ate the king'
+            : 'King got ate'
+          : r === 'win'
+            ? 'Won'
+            : 'Lost'
   const opponent = g.opponent || 'Guest'
   const winner = r === 'draw' ? 'No winner' : `${r === 'win' ? owner : opponent} won`
   const how = HOW[g.reason ?? ''] ?? `by ${g.reason}`
@@ -373,10 +387,7 @@ function MatchCard({ g, owner }: { g: GameSummary; owner: string }) {
   return (
     <a href={href} onClick={(e) => go(e, href)} className="tick mcard">
       <div className="type">
-        <b>
-          {g.settings.kingCapture ? 'Eat the King' : 'Checkmate'}
-          {g.settings.fog ? ' · Fog' : ''}
-        </b>
+        <b>{modeName(g.settings)}</b>
         <span>{describeTime(g.settings.time ?? NO_CLOCK)}</span>
       </div>
       <div className="res">
@@ -387,6 +398,7 @@ function MatchCard({ g, owner }: { g: GameSummary; owner: string }) {
           <h3>{title}</h3>
           <p className="how-won">
             {winner} {r === 'draw' ? `by ${g.reason}` : how}
+            {g.sniper && ' on the first move'}
           </p>
         </div>
       </div>

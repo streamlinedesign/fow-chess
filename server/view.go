@@ -16,9 +16,31 @@ type Settings struct {
 	// Time is the clock. The zero value is no clock, which is also what games
 	// saved before clocks existed load as.
 	Time TimeControl `json:"time"`
+	// Setup is how the pieces start: "" for the usual position, or one of the
+	// setup modes, where each player arranges their own pieces first.
+	Setup string `json:"setup,omitempty"`
+	// JumpKing lets kings also jump like a knight.
+	JumpKing bool `json:"jumpKing,omitempty"`
+	// Unrated keeps a game that could be rated from counting.
+	Unrated bool `json:"unrated,omitempty"`
 }
 
-func (s Settings) rules() engine.Rules { return engine.Rules{KingCapture: s.KingCapture} }
+func (s Settings) rules() engine.Rules {
+	return engine.Rules{KingCapture: s.KingCapture, JumpKing: s.JumpKing}
+}
+
+func (s Settings) valid() bool {
+	_, ok := setupModes[s.Setup]
+	return s.Time.valid() && ok
+}
+
+// startFrom is the FEN a game starts from: the usual position, or the players' setups.
+func startFrom(fen string) string {
+	if fen == "" {
+		return engine.StartFEN
+	}
+	return fen
+}
 
 // TimeControl is a clock setting: Base minutes each plus Inc seconds per move,
 // or PerMove seconds for every move (Daily). All zero means no clock.
@@ -183,7 +205,7 @@ func spectatorView(g *engine.Game, rules engine.Rules, side int, fog bool) gameV
 	}
 	hist := g.History()
 	shown := max(0, len(hist)-spectatorDelay)
-	past := engine.NewGameWithRules(rules)
+	past, _ := engine.NewGameFromFEN(g.StartFEN(), rules)
 	for _, pm := range hist[:shown] {
 		past.PlayUCI(pm.Move.UCI())
 	}

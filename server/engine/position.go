@@ -22,6 +22,8 @@ type Position struct {
 	// may move into danger, and a game is won by capturing the king. This is a
 	// rule setting, not part of the FEN.
 	KingCapture bool
+	// JumpKing lets kings also jump like a knight. A rule setting too.
+	JumpKing bool
 }
 
 func StartPosition() Position {

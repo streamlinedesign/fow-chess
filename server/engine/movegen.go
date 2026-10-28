@@ -35,6 +35,13 @@ func (p *Position) Attacked(sq Square, by Color) bool {
 			return true
 		}
 	}
+	if p.JumpKing {
+		for _, d := range knightDeltas {
+			if s, ok := sq.Offset(d.df, d.dr); ok && p.Board[s] == NewPiece(by, King) {
+				return true
+			}
+		}
+	}
 	if p.slidingAttack(sq, by, rookDirs, Rook) || p.slidingAttack(sq, by, bishopDirs, Bishop) {
 		return true
 	}
@@ -95,6 +102,9 @@ func (p *Position) appendPieceMoves(moves []Move, from Square, pc Piece) []Move 
 		return p.appendSlides(moves, from, us, bishopDirs)
 	case King:
 		moves = p.appendSteps(moves, from, us, kingDeltas)
+		if p.JumpKing {
+			moves = p.appendSteps(moves, from, us, knightDeltas)
+		}
 		return p.appendCastles(moves, from, us)
 	}
 	return moves

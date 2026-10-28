@@ -8,12 +8,17 @@ Two-player online chess with fog of war. One player creates a match and shares t
 
 Rules: full legal moves including castling, en passant and promotion (with a picker), check, checkmate, stalemate, insufficient material, threefold repetition and the fifty-move rule (both end the game automatically). Players can offer a draw, resign, and rematch (colors swap). Refreshing or losing signal reconnects you to your seat. Anyone else who opens the link watches.
 
-## Fog of war and match settings
+## Game modes
 
-The creator picks the rules when making a match, for play testing:
+The creator picks the modes when making a match, and they mix freely:
 
 - **Fog of war** on or off. With fog on, each piece sees its own square and every square it could move to, captures included. A pawn always sees the square straight ahead, even when blocked, and sees its diagonals only when it can capture there. You get no hints about the opponent: no last-move highlight, `?` in the move list for their moves, and no check marks on your own moves. Spectators see one side's view, 6 moves behind (see Watching below). When the game ends, everyone sees the full board.
 - **Win by** checkmate (normal check rules) or Eat the King (win by capturing the king). In Eat the King mode there is no check: kings may walk into danger and may castle out of, through or into attack.
+- **Pieces**: Standard (the usual start), **Back row** (each player arranges their back row; pawns stay put) or **Battleship** (each player places all sixteen pieces anywhere in their own four rows). Both players set up at the same time, and the clock doesn't run until both are ready. Under fog you never see the other setup; without fog, a player's setup shows once they press Ready. Castling is allowed only for a king and rook that start on their usual squares. Setups are checked in `server/setup.go`, and a game saves the position it started from (`start_fen`) so replays and restarts work.
+- **Jump King**: the king also moves like a knight (and so attacks like one).
+- **Rated or Unrated**: a game can be rated only with two signed-in players and a clock; the creator can turn rating off.
+
+A king that starts in danger after setup is left as it is. A win on the winner's very first move (checkmate or king capture) is a **Sniper Win**: it counts, but moves both ratings only a quarter as far as a whole game (`sniperWeight` in `server/setup.go`).
 
 The rules live in `server/engine` (`Rules`, `Position.Vision`), and what each viewer receives is decided in `server/view.go`.
 
@@ -36,7 +41,7 @@ The creator picks a time control from fixed presets (`timeControls` in `server/v
 - Clocks run on the server. White's clock starts once Black sits down. The increment is added after each move.
 - When a clock runs out, that side loses on time, unless the opponent has only a king, or a king and one minor piece, which is a draw. A timer ends the game even with nobody connected, and every 30 seconds the server also checks the database for games whose deadline passed while it wasn't holding them (after a restart, for example).
 - The browser counts down locally from the last state the server sent, so the clock stays smooth between messages.
-- A game is **rated** when both players are signed in and it has a clock (Daily counts, No clock never does). Ratings use Glicko-2, starting at 1500 with one rating for every mode, and each game is its own rating period. The change is applied once, in a transaction, when the finished game is saved, and shown in the game-over dialog and on the profile.
+- A game is **rated** when both players are signed in, it has a clock (Daily counts, No clock never does), and the creator didn't make it Unrated. Ratings use Glicko-2, starting at 1500 with one rating for every mode, and each game is its own rating period. The change is applied once, in a transaction, when the finished game is saved, and shown in the game-over dialog and on the profile.
 
 ## Chat
 
@@ -150,7 +155,7 @@ Accounts and games live in Postgres, which survives redeploys; back it up with `
 
 ## Protocol
 
-- `POST /api/matches?player=<browser id>` with an optional body `{"fog":true,"kingCapture":true}` returns `{"id":"K7QF2M"}`. The creator gets white.
+- `POST /api/matches?player=<browser id>` with an optional body `{"fog":true,"kingCapture":true,"setup":"battleship","jumpKing":true,"unrated":false,"time":{...}}` (`setup` is `""`, `"backRow"` or `"battleship"`) returns `{"id":"K7QF2M"}`. The creator gets white.
 - `GET /api/matches/{id}` returns 204 if the match exists, 404 if it doesn't
 - `GET /ws/{id}?player=<browser id>`: the server sends `{"type":"state", ...}` to each viewer after every change, built for that viewer:
   - `board`: 64 characters from a1 to h8. FEN letters for pieces (uppercase is white), `.` for empty, and `?` for squares the viewer can't see (reserved for fog of war).
@@ -158,8 +163,10 @@ Accounts and games live in Postgres, which survives redeploys; back it up with `
   - `players`: `{"w":{"taken":true,"online":true,"name":"Uriel"},"b":{...}}`, where `name` is the username of a signed-in player and absent for a guest.
   - `captured`: `{"w":"qnp","b":"P"}`, the pieces each side has taken as FEN letters, most valuable first. Sent to everyone, since players know this even under fog.
   - `legal`: UCI moves the viewer may play now, sent only to the player whose turn it is.
+  - `status`: `waiting`, `setup`, `playing` or `over`. During `setup` the board is empty and `setup` is `{"ready":{"w":true,"b":false},"mine":"<your 64 squares>","theirs":"<theirs, only without fog once they're ready>"}`. A finished game won on the first move has `"sniper":true`.
   - `spectators`: how many people are watching, not counting the players. Spectators also get `watching` (`w` or `b`, the side they see the game as) and, in a fog game, `behind` (how many moves they aren't shown yet).
 - The client sends `{"type":"move","uci":"e7e8q"}`, `{"type":"draw"}`, `{"type":"resign"}`, `{"type":"rematch"}`, or `{"type":"ping","t":<ms>}`, which the server answers with `{"type":"pong","t":<same>}`. The draw and rematch messages toggle the offer.
+- During setup, players send `{"type":"setup","board":"<64 squares, a1 to h8, only their own pieces>"}` to say they're ready, or an empty `board` to take it back and change it.
 - Spectators send `{"type":"watch","side":"b"}` to see the game as the other side. Every spectator starts as White.
 - Players send `{"type":"chat","text":"gg"}`. The server sends players `{"type":"chat","reset":true,"lines":[...]}` with the whole chat when they connect and when a rematch clears it, then `{"type":"chat","lines":[{"id":3,"from":"w","text":"gg","at":<unix ms>}]}` for each new message.
 - A slow connection skips straight to the newest state instead of queueing old ones. Chat messages and pongs are never skipped.
@@ -167,13 +174,6 @@ Accounts and games live in Postgres, which survives redeploys; back it up with `
 ## Measuring sync speed
 
 The match page shows `ping` (round trip to the server) and how long the server took to confirm your last move. Run the server with `./chess -v`, or `cd server && go run . -v`, to log every action with how long it took to handle (about 0.1 ms per move).
-
-## Planned
-
-Setup modes, to be chosen in the match settings:
-- **Default pieces**: the normal starting position (what exists today).
-- **Set your back row**: each player arranges their own back-rank pieces before the game.
-- **Set all pieces**: each player places all of their pieces before the game.
 
 ## Credits
 

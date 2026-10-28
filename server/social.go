@@ -370,8 +370,8 @@ func (s *Social) routes(mux *http.ServeMux) {
 			jsonError(w, "Pick white, black or random.", http.StatusBadRequest)
 			return
 		}
-		if !body.Settings.Time.valid() {
-			jsonError(w, "That time control isn't one of the presets.", http.StatusBadRequest)
+		if !body.Settings.valid() {
+			jsonError(w, "Those match settings aren't available.", http.StatusBadRequest)
 			return
 		}
 		o, err := s.store.UserByName(body.To)

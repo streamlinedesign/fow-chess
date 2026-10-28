@@ -277,3 +277,44 @@ func TestTimeOut(t *testing.T) {
 		})
 	}
 }
+
+func TestJumpKing(t *testing.T) {
+	g, err := NewGameFromFEN("4k3/8/8/8/8/8/8/R3K3 w - - 0 1", Rules{JumpKing: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Five steps along the first rank and up, plus four knight jumps (d3, f3, c2, g2).
+	if n := kingMoves(g); n != 9 {
+		t.Errorf("jump king on e1 has %d moves, want 9", n)
+	}
+	if _, err := g.PlayUCI("e1f3"); err != nil {
+		t.Fatalf("knight jump: %v", err)
+	}
+	if g.History()[0].SAN != "Kf3" {
+		t.Errorf("SAN %q", g.History()[0].SAN)
+	}
+	// A jump king attacks the squares it can jump to, so the other king can't go there.
+	pos := g.Position()
+	if !pos.Attacked(SquareAt(4, 4), White) { // e5, a knight jump from f3
+		t.Error("e5 should be attacked by the jump king on f3")
+	}
+	if g.StartFEN() != "4k3/8/8/8/8/8/8/R3K3 w - - 0 1" {
+		t.Errorf("start %q", g.StartFEN())
+	}
+
+	// Without the rule the same king has five moves.
+	plain, _ := NewGameFromFEN("4k3/8/8/8/8/8/8/R3K3 w - - 0 1")
+	if n := kingMoves(plain); n != 5 {
+		t.Errorf("normal king on e1 has %d moves, want 5", n)
+	}
+}
+
+func kingMoves(g *Game) int {
+	n := 0
+	for _, m := range g.LegalMoves() {
+		if m.From == SquareAt(4, 0) {
+			n++
+		}
+	}
+	return n
+}

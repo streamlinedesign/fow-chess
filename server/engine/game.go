@@ -56,6 +56,7 @@ type Game struct {
 	pos     Position
 	history []PlayedMove
 	seen    map[string]int // repetition counts by position key
+	start   string         // the FEN the game started from
 	outcome Outcome
 	method  Method
 }
@@ -72,6 +73,8 @@ func NewGame() *Game {
 type Rules struct {
 	// KingCapture plays without check: win by capturing the king.
 	KingCapture bool
+	// JumpKing lets kings also jump like a knight.
+	JumpKing bool
 }
 
 func NewGameWithRules(r Rules) *Game {
@@ -85,15 +88,16 @@ func NewGameFromFEN(fen string, rules ...Rules) (*Game, error) {
 		return nil, err
 	}
 	if len(rules) > 0 {
-		pos.KingCapture = rules[0].KingCapture
+		pos.KingCapture, pos.JumpKing = rules[0].KingCapture, rules[0].JumpKing
 	}
-	g := &Game{pos: pos, seen: map[string]int{}}
+	g := &Game{pos: pos, seen: map[string]int{}, start: fen}
 	g.seen[pos.repetitionKey()] = 1
 	g.evaluate()
 	return g, nil
 }
 
 func (g *Game) Position() Position    { return g.pos }
+func (g *Game) StartFEN() string      { return g.start }
 func (g *Game) Turn() Color           { return g.pos.Turn }
 func (g *Game) History() []PlayedMove { return g.history }
 func (g *Game) Outcome() Outcome      { return g.outcome }
