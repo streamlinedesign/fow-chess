@@ -1,6 +1,6 @@
 import * as RadioGroup from '@radix-ui/react-radio-group'
 import * as Switch from '@radix-ui/react-switch'
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { clocked, describeTime, TIME_GROUPS, timeGroup, timeLabel, type Settings } from './settings'
 
 /** The rules and clock for a new match, boxed like a board of its own. */
@@ -15,6 +15,8 @@ export function SettingsPanel({
   signedIn: boolean
   className?: string
 }) {
+  // The panel can be on screen twice (home page and Offer a match), so ids are per panel.
+  const id = useId()
   return (
     <fieldset className={`setup flex min-w-0 flex-col overflow-hidden rounded-xl ${className}`}>
       <legend className="sr-only">Match settings</legend>
@@ -42,11 +44,11 @@ export function SettingsPanel({
         </label>
 
         <div className="flex flex-col gap-2.5">
-          <span className="font-semibold" id="win-by">
+          <span className="font-semibold" id={`${id}-win-by`}>
             Win by
           </span>
           <RadioGroup.Root
-            aria-labelledby="win-by"
+            aria-labelledby={`${id}-win-by`}
             value={value.kingCapture ? 'capture' : 'mate'}
             onValueChange={(v) => onChange({ ...value, kingCapture: v === 'capture' })}
             className="grid grid-cols-2 gap-2.5"
@@ -82,6 +84,7 @@ function TimePicker({
   onChange: (s: Settings) => void
   signedIn: boolean
 }) {
+  const id = useId()
   // The group shown can differ from the chosen preset's group until a preset is picked.
   const [group, setGroup] = useState(() => timeGroup(value.time))
   const presets = TIME_GROUPS.find(([g]) => g === group)![1]
@@ -94,7 +97,7 @@ function TimePicker({
 
   return (
     <div className="flex flex-col gap-2.5">
-      <span className="font-semibold" id="time-control">
+      <span className="font-semibold" id={`${id}-time`}>
         Time control
       </span>
       <div role="radiogroup" aria-label="Time control group" className="tc-tabs">
@@ -105,7 +108,7 @@ function TimePicker({
         ))}
       </div>
       <RadioGroup.Root
-        aria-labelledby="time-control"
+        aria-labelledby={`${id}-time`}
         value={timeLabel(value.time)}
         onValueChange={(label) => onChange({ ...value, time: presets.find((p) => timeLabel(p) === label)! })}
         className="grid grid-cols-4 gap-2 sm:flex sm:flex-wrap"

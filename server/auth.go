@@ -47,6 +47,9 @@ func (a *Auth) routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /api/signup", a.signup)
 	mux.HandleFunc("POST /api/login", a.login)
 	mux.HandleFunc("POST /api/logout", a.logout)
+	mux.HandleFunc("POST /api/password", a.changePassword)
+	mux.HandleFunc("POST /api/logout-everywhere", a.logoutEverywhere)
+	mux.HandleFunc("POST /api/account/delete", a.deleteAccount)
 	// A guest gets null rather than an error, since being a guest is normal.
 	mux.HandleFunc("GET /api/me", func(w http.ResponseWriter, r *http.Request) {
 		u := a.user(r)
@@ -120,7 +123,95 @@ func (a *Auth) logout(w http.ResponseWriter, r *http.Request) {
 	if c, err := r.Cookie(sessionCookie); err == nil {
 		a.store.DeleteSession(hashToken(c.Value))
 	}
+	clearSessionCookie(w)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// checkPassword is for changes to a signed-in account: it answers and returns
+// nil unless the request is signed in and password is theirs.
+func (a *Auth) checkPassword(w http.ResponseWriter, r *http.Request, password string) *User {
+	u := a.user(r)
+	if u == nil {
+		jsonError(w, "Log in first.", http.StatusUnauthorized)
+		return nil
+	}
+	key := clientIP(r)
+	if !a.limiter.allow(key) {
+		jsonError(w, "Too many attempts. Try again in a few minutes.", http.StatusTooManyRequests)
+		return nil
+	}
+	if bcrypt.CompareHashAndPassword(u.hash, []byte(password)) != nil {
+		a.limiter.fail(key)
+		jsonError(w, "That's not your current password.", http.StatusUnauthorized)
+		return nil
+	}
+	return u
+}
+
+// changePassword sets a new password and signs out every other device.
+func (a *Auth) changePassword(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Current string `json:"current"`
+		New     string `json:"new"`
+	}
+	if !readJSON(w, r, &body) {
+		return
+	}
+	u := a.checkPassword(w, r, body.Current)
+	if u == nil {
+		return
+	}
+	if len(body.New) < minPassword || len(body.New) > maxPassword {
+		jsonError(w, "Passwords are 8 to 72 characters.", http.StatusBadRequest)
+		return
+	}
+	hash, err := bcrypt.GenerateFromPassword([]byte(body.New), bcrypt.DefaultCost)
+	if err == nil {
+		err = a.store.SetPassword(u.ID, hash)
+	}
+	if err == nil {
+		err = a.store.DeleteSessions(u.ID)
+	}
+	if err != nil {
+		jsonError(w, "Couldn't change the password.", http.StatusInternalServerError)
+		return
+	}
+	a.startSession(w, r, u)
+}
+
+func clearSessionCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode})
+}
+
+// logoutEverywhere ends every session of the signed-in account, this one too.
+func (a *Auth) logoutEverywhere(w http.ResponseWriter, r *http.Request) {
+	if u := a.user(r); u != nil {
+		if err := a.store.DeleteSessions(u.ID); err != nil {
+			jsonError(w, "Couldn't log out.", http.StatusInternalServerError)
+			return
+		}
+	}
+	clearSessionCookie(w)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// deleteAccount deletes the signed-in account once its password is confirmed.
+func (a *Auth) deleteAccount(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		Password string `json:"password"`
+	}
+	if !readJSON(w, r, &body) {
+		return
+	}
+	u := a.checkPassword(w, r, body.Password)
+	if u == nil {
+		return
+	}
+	if err := a.store.DeleteUser(u.ID); err != nil {
+		jsonError(w, "Couldn't delete the account.", http.StatusInternalServerError)
+		return
+	}
+	clearSessionCookie(w)
 	w.WriteHeader(http.StatusNoContent)
 }
 

@@ -42,6 +42,17 @@ The creator picks a time control from fixed presets (`timeControls` in `server/v
 
 The two players can chat during a game. Spectators don't see it. Messages are kept only in the server's memory, never in the database: a rematch starts a fresh chat, and once a game is over and both players have left, its chat is deleted. A server restart clears every chat. Messages are capped at 500 characters, and a game keeps its last 200.
 
+## Friends, messages and the bell
+
+Signed-in players can be friends, message each other and offer matches. Guests keep the code system and none of this.
+
+- **Friends** are mutual: one sends a request, the other accepts it (from the bell, the Friends page or the profile). `/friends` has search by username, your friends with online ones first, and the requests you've sent.
+- **Messages** (`/messages`, `/messages/<name>`) are only between friends. They're kept in Postgres until both people ask to delete the chat. A chat also shows match offers as cards, finished games between you as result cards, and your score against each other. The in-game chat on the match page is separate and still kept only in memory.
+- **Match offers** come from a profile, the friends list or a chat. The sender picks the rules, the clock and their colour. Between friends the offer also shows up as a card in their chat. Accepting starts a match with both seats taken, and its clock starts once both players have it open.
+- **The bell** holds friend requests, match offers and answers to them, game results you weren't there to see, and moves in Daily or No clock games that took more than 4 hours (`slowMove` in `server/match.go`). It's a dropdown, or a sheet on phones.
+- **Live updates** go to every open tab of a signed-in player over server-sent events (`GET /api/live`, `server/live.go`). Having a tab open is what makes a player online.
+- **Settings** (`/settings`): theme, change password (which signs out other devices), log out everywhere, delete account, and privacy: hide your online status, take match offers from friends only, and turn off friend requests. A deleted account's games stay, played by a guest.
+
 ## Landing page replay
 
 The landing page replays Morphy's Opera Game as White and Black each saw it under fog. The frames in `web/src/showcase.json` are produced by the server's own rules, and a test fails if they drift. After changing what players see, regenerate them with `cd server && go test -run Showcase -update`.

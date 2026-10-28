@@ -73,15 +73,25 @@ type DialogProps = {
   description?: ReactNode
   children?: ReactNode
   dismissable?: boolean
+  /** Width and other overrides for the panel. */
+  className?: string
 }
 
-export function Dialog({ open, onOpenChange, title, description, children, dismissable = true }: DialogProps) {
+export function Dialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  children,
+  dismissable = true,
+  className = 'w-[min(92vw,380px)]',
+}: DialogProps) {
   return (
     <RadixDialog.Root open={open} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
         <RadixDialog.Overlay className="overlay fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]" />
         <RadixDialog.Content
-          className="dialog fixed top-1/2 left-1/2 z-50 w-[min(92vw,380px)] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-bg p-6 text-fg shadow-[0_0_0_1.5px_var(--color-fg),0_20px_60px_rgb(0_0_0/0.35)]"
+          className={`dialog fixed top-1/2 left-1/2 z-50 max-h-[calc(100dvh-32px)] overflow-y-auto ${className} -translate-x-1/2 -translate-y-1/2 rounded-xl bg-bg p-6 text-fg shadow-[0_0_0_1.5px_var(--color-fg),0_20px_60px_rgb(0_0_0/0.35)]`}
           onPointerDownOutside={(e) => !dismissable && e.preventDefault()}
           onEscapeKeyDown={(e) => !dismissable && e.preventDefault()}
         >
