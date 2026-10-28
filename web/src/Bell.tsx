@@ -103,6 +103,8 @@ function resultLine(n: Notification) {
       <>{who} sniped you on their first move.</>
     )
   if (reason === 'capturing the king') return result === 'won' ? <>You ate {who}'s king.</> : <>{who} ate your king.</>
+  if (reason === 'reaching the hill')
+    return result === 'won' ? <>You took the hill against {who}.</> : <>{who} took the hill.</>
   const how = reason === 'time' ? 'on time' : `by ${reason}`
   return result === 'won' ? (
     <>

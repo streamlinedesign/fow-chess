@@ -717,7 +717,7 @@ func (m *Match) handle(c *client, msg inMsg) {
 		if m.setUp || m.seats[black] == "" {
 			break
 		}
-		if msg.Board != "" && checkSetup(setupModes[m.settings.Setup], color, msg.Board) != nil {
+		if msg.Board != "" && checkSetup(setupModes[m.settings.Setup], color, msg.Board, m.settings.Hill) != nil {
 			break
 		}
 		m.placed[color] = msg.Board

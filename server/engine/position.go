@@ -24,6 +24,24 @@ type Position struct {
 	KingCapture bool
 	// JumpKing lets kings also jump like a knight. A rule setting too.
 	JumpKing bool
+	// BackPawns lets pawns also step one square straight back.
+	BackPawns bool
+	// Hill ends the game as a win for the side whose king reaches one of the
+	// four centre squares (King of the Hill).
+	Hill bool
+}
+
+// hill is the four centre squares: d4, e4, d5 and e5.
+var hill = [...]Square{27, 28, 35, 36}
+
+// OnHill reports whether sq is one of the four centre squares.
+func OnHill(sq Square) bool {
+	for _, h := range hill {
+		if h == sq {
+			return true
+		}
+	}
+	return false
 }
 
 func StartPosition() Position {

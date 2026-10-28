@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { pieceImg } from './position'
+import { HILL } from './settings'
 
 /** A FEN board as 64 characters from a1 to h8, the way the server sends boards. */
 function fenBoard(fen: string) {
@@ -10,7 +11,19 @@ function fenBoard(fen: string) {
 const FILES = 'abcdefgh'
 
 /** A small still board for the rules: no coordinates, no input. */
-function MiniBoard({ fen, seen, last, dots }: { fen: string; seen?: string[]; last?: string[]; dots?: string[] }) {
+function MiniBoard({
+  fen,
+  seen,
+  last,
+  dots,
+  hill,
+}: {
+  fen: string
+  seen?: string[]
+  last?: string[]
+  dots?: string[]
+  hill?: boolean
+}) {
   const board = fenBoard(fen)
   const squares = []
   for (let row = 0; row < 8; row++) {
@@ -27,6 +40,7 @@ function MiniBoard({ fen, seen, last, dots }: { fen: string; seen?: string[]; la
           data-fog={fog || undefined}
           data-last={(!fog && last?.includes(sq)) || undefined}
           data-target={dots?.includes(sq) ? 'move' : undefined}
+          data-hill={hill && HILL.includes(sq)}
         >
           {piece !== '.' && !fog && <img className="piece" src={pieceImg(piece)} alt="" draggable={false} />}
         </div>,
@@ -177,6 +191,21 @@ export function Rules() {
         </Card>
 
         <Card
+          kind="How you win"
+          title="King of the Hill"
+          art={<MiniBoard fen="4k3/8/8/8/3K4/8/8/8" hill last={['d4']} />}
+        >
+          <p>
+            A classic. Get your <strong>king onto one of the four centre squares</strong> and you win on the spot,
+            whatever else is going on. Checkmate or eating the king still wins too.
+          </p>
+          <p>
+            With Jump King on, the hill is only a couple of hops away. When you set up your own pieces, the king can't
+            start on it.
+          </p>
+        </Card>
+
+        <Card
           kind="Where pieces start"
           title="Standard"
           art={<MiniBoard fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" />}
@@ -227,6 +256,14 @@ export function Rules() {
               ? 'You made it to the top. Legend says there is a babe up here.'
               : 'Named after the game. Unlike that king, this one never falls all the way back down.'}
           </p>
+        </Card>
+
+        <Card kind="The pawns" title="Backward pawns" art={<MiniBoard fen="8/8/8/8/3P4/8/8/8" dots={['d5', 'd3']} />}>
+          <p>
+            Pawns can also <strong>step one square straight back</strong> onto an empty square. They still capture
+            forward only, and never promote going backwards.
+          </p>
+          <p>Under fog they see the square behind them too, even when it's taken, just as they see the one ahead.</p>
         </Card>
 
         <Card

@@ -169,6 +169,12 @@ func (p *Position) appendPawnMoves(moves []Move, from Square, us Color) []Move {
 			}
 		}
 	}
+	// A backward step never captures and never promotes.
+	if p.BackPawns {
+		if back, ok := from.Offset(0, -dir); ok && p.Board[back].IsEmpty() {
+			moves = append(moves, Move{From: from, To: back})
+		}
+	}
 
 	for _, df := range []int{-1, 1} {
 		to, ok := from.Offset(df, dir)

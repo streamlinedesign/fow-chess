@@ -52,8 +52,9 @@ func ownSetup(color int) string {
 
 // checkSetup reports whether board, 64 characters from a1 to h8, is a valid
 // arrangement of color's own pieces under mode: all sixteen, each on a square
-// the mode allows, and nothing else.
-func checkSetup(mode setupMode, color int, board string) error {
+// the mode allows, and nothing else. In King of the Hill (hill), the king
+// can't start on the hill, or the game would be over before it began.
+func checkSetup(mode setupMode, color int, board string, hill bool) error {
 	if mode.rows == 0 {
 		return errors.New("this game has no setup")
 	}
@@ -75,6 +76,8 @@ func checkSetup(mode setupMode, color int, board string) error {
 		}
 		row := ownRow(color, i)
 		switch {
+		case letter == 'K' && hill && engine.OnHill(engine.Square(i)):
+			return errors.New("the king can't start on the hill")
 		case letter == 'P' && mode.pawnsFixed:
 			if row != 1 {
 				return errors.New("pawns stay on their usual squares")
