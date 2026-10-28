@@ -275,7 +275,7 @@ func TestSlowMoveNotifies(t *testing.T) {
 	ann, ben := site.signup("ann"), site.signup("ben")
 	ann.do("POST", "/api/friends/ben", "")
 	ben.do("POST", "/api/friends/ann", "")
-	_, res := ann.do("POST", "/api/offers", `{"to":"ben","settings":{},"color":"b"}`)
+	_, res := ann.do("POST", "/api/offers", `{"to":"ben","settings":{"time":{"perMove":86400}},"color":"b"}`)
 	_, res = ben.do("POST", "/api/offers/"+jsonNumber(res["id"].(float64))+"/accept", "")
 	m := site.hub.Get(res["matchId"].(string))
 	m.mu.Lock()

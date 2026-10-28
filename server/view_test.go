@@ -166,3 +166,49 @@ func TestSpectatorsAreBehindInFog(t *testing.T) {
 		t.Errorf("finished view: %+v", v)
 	}
 }
+
+// The danger ring only uses what the player can see: a hidden attacker never
+// shows, a seen one does, and the king's unsafe squares come from seen pieces.
+func TestKingDanger(t *testing.T) {
+	sq := func(s string) engine.Square {
+		x, err := engine.ParseSquare(s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return x
+	}
+	// A rook on e8 and a bishop on b4 both attack e1, but a lone king sees only its neighbours.
+	g, err := engine.NewGameFromFEN("4r3/8/8/8/1b6/8/8/4K3 w - - 0 1", engine.Rules{KingCapture: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pos := g.Position()
+	vision := pos.Vision(engine.White)
+	if vision[sq("b4")] || vision[sq("e8")] {
+		t.Fatalf("the attackers should be hidden from a lone king")
+	}
+	if danger, unsafe := kingDanger(&pos, engine.White, &vision); danger != "" || len(unsafe) != 0 {
+		t.Errorf("under fog: danger %q unsafe %v, want nothing", danger, unsafe)
+	}
+	// Seeing everything, the king is in danger and d2 (bishop) and e2 (rook) are unsafe steps.
+	danger, unsafe := kingDanger(&pos, engine.White, nil)
+	if danger != "e1" {
+		t.Errorf("full view: danger = %q, want e1", danger)
+	}
+	if got := strings.Join(unsafe, " "); got != "d2 e2" && got != "e2 d2" {
+		t.Errorf("full view: unsafe = %v, want d2 and e2", unsafe)
+	}
+
+	// A black pawn on d2 is next to the king, so it is seen, and it attacks e1.
+	g, _ = engine.NewGameFromFEN("4k3/8/8/8/8/8/3p4/4K3 w - - 0 1", engine.Rules{KingCapture: true})
+	pos = g.Position()
+	vision = pos.Vision(engine.White)
+	if danger, unsafe := kingDanger(&pos, engine.White, &vision); danger != "e1" || len(unsafe) != 0 {
+		t.Errorf("seen pawn: danger %q unsafe %v, want e1 and none", danger, unsafe)
+	}
+	// Black's own king is in no danger, and it isn't Black's turn, so no unsafe squares either.
+	bv := pos.Vision(engine.Black)
+	if danger, unsafe := kingDanger(&pos, engine.Black, &bv); danger != "" || unsafe != nil {
+		t.Errorf("black: danger %q unsafe %v", danger, unsafe)
+	}
+}

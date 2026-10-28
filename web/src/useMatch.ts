@@ -18,6 +18,10 @@ export type MatchState = {
   legal: string[]
   last: { from: string; to: string } | null
   check?: string
+  /** Your king's square when a piece you can see attacks it. */
+  danger?: string
+  /** Squares your king could step to that a piece you can see attacks. */
+  unsafe?: string[]
   /** Moves so far in algebraic notation. */
   history: string[]
   /** Pieces each side has taken, as FEN letters, most valuable first. */
@@ -66,7 +70,7 @@ export type Outgoing =
 export type Connection = 'connecting' | 'open' | 'closed' | 'failed' | 'missing' | 'outdated'
 
 /** Must match protocolVersion in server/match.go. */
-const PROTOCOL = 9
+const PROTOCOL = 10
 
 export function useMatch(id: string) {
   const [state, setState] = useState<MatchState | null>(null)

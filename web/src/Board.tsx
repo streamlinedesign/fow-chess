@@ -13,6 +13,10 @@ type Props = {
   legal: string[]
   lastMove?: { from: string; to: string } | null
   check?: string
+  /** Your king's square while a piece you can see attacks it. */
+  danger?: string
+  /** Squares a seen piece attacks, marked when the king is picked up. */
+  unsafe?: string[]
   /** King of the Hill: mark the four centre squares. */
   hill?: boolean
   onMove: (from: string, to: string) => void
@@ -37,7 +41,17 @@ function targetsFrom(legal: string[], from: string) {
   return out
 }
 
-export const Board = memo(function Board({ board, orientation, legal, lastMove, check, hill, onMove }: Props) {
+export const Board = memo(function Board({
+  board,
+  orientation,
+  legal,
+  lastMove,
+  check,
+  danger,
+  unsafe,
+  hill,
+  onMove,
+}: Props) {
   const boardRef = useRef<HTMLDivElement>(null)
   const drag = useRef<Drag | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
@@ -47,6 +61,8 @@ export const Board = memo(function Board({ board, orientation, legal, lastMove, 
   // Drop the selection once that piece can no longer move (it moved, or the turn passed).
   const sel = selected && canMoveFrom(selected) ? selected : null
   const targets = sel ? targetsFrom(legal, sel) : new Set<string>()
+  // Only the king has unsafe squares, so they show when the king is the piece picked up.
+  const kingPicked = !!sel && pieceAt(board, sel)?.toLowerCase() === 'k'
 
   const squareFromPoint = (x: number, y: number) => {
     const rect = boardRef.current!.getBoundingClientRect()
@@ -132,6 +148,8 @@ export const Board = memo(function Board({ board, orientation, legal, lastMove, 
           data-last={!fog && (lastMove?.from === sq || lastMove?.to === sq)}
           data-selected={sel === sq}
           data-check={check === sq}
+          data-danger={danger === sq}
+          data-unsafe={kingPicked && target && !!unsafe?.includes(sq)}
           data-target={target ? (capture ? 'capture' : 'move') : undefined}
           data-fog={fog}
           data-hill={hill && HILL.includes(sq)}

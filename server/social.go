@@ -370,6 +370,7 @@ func (s *Social) routes(mux *http.ServeMux) {
 			jsonError(w, "Pick white, black or random.", http.StatusBadRequest)
 			return
 		}
+		body.Settings.normalize()
 		if !body.Settings.valid() {
 			jsonError(w, "Those match settings aren't available.", http.StatusBadRequest)
 			return

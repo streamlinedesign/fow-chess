@@ -77,10 +77,11 @@ func main() {
 		if p == nil {
 			p = &player{}
 		}
-		// Settings come as an optional JSON body; an empty body means standard
-		// chess with no clock.
+		// Settings come as an optional JSON body; an empty body means the
+		// standard start with no clock.
 		var settings Settings
 		json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&settings)
+		settings.normalize()
 		if !settings.valid() {
 			jsonError(w, "Those match settings aren't available.", http.StatusBadRequest)
 			return

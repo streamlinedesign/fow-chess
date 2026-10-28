@@ -78,7 +78,8 @@ export const hr: Dict = {
 
   landing: {
     title: 'Igraj',
-    tagline: 'Šah u kojem vidiš samo ono što vide tvoje figure.',
+    tagline: 'Šah u kojem vidiš samo ono što vide tvoje figure. Pojedi kralja i pobijedi.',
+    howToPlay: 'Kako se igra',
     codePlaceholder: 'Imaš kod? Zalijepi ga ovdje',
     codeLabel: 'Kod partije',
     join: 'Pridruži se',
@@ -86,6 +87,13 @@ export const hr: Dict = {
     yourGames: 'Tvoje partije',
     allOnProfile: 'Sve na tvom profilu',
     waiting: 'Čeka se',
+    friendsOnline: 'Prijatelji online',
+    allFriends: 'Svi prijatelji',
+    noFriendsOnline: 'Trenutačno nema prijatelja online.',
+    liveNow: 'Upravo se igra',
+    allGames: 'Sve partije',
+    nobodyLive: 'Trenutačno nitko ne igra. Pokreni partiju pa će možda netko gledati tvoju.',
+    guestPitch: 'Prijavi se da sačuvaš partije, dodaš prijatelje i igraš za rejting.',
     replayHeading: 'Magla rata, ponovno odigrana',
     replaySub: 'Slavna partija, prikazana onako kako bi je vidio svaki od igrača.',
   },
@@ -99,73 +107,54 @@ export const hr: Dict = {
     loading: 'Učitavanje snimke',
     operaGame: 'Partija u operi',
     text: ', Morphy protiv vojvode od Brunswicka i grofa Isouarda, Pariz 1858., odigrana s maglom rata.',
-    atMate: 'Kod šah-mata magla se diže za obje strane.',
+    atMate: 'Kad partija završi, magla se diže za obje strane.',
     eachSide: 'Svaka strana vidi samo ono što njezine figure dosežu.',
   },
 
   settingsBoard: {
     yourView: 'Tvoj pogled na početku',
     aria: 'Ploča na početku s ovim postavkama.',
-    fogOn: 'Magla pokriva sve što tvoje figure ne vide.',
-    fogOff: 'Bez magle: vidi se cijela ploča.',
-    eat: 'Pobjeda jedenjem kralja.',
-    mate: 'Pobjeda šah-matom.',
-    hill: 'Ili dovedi kralja na jedno od uokvirenih središnjih polja.',
+    fog: 'Magla pokriva sve što tvoje figure ne vide.',
+    standard: 'Figure počinju kao u šahu.',
     backRow: 'Prvo rasporedi svoj zadnji red.',
     battleship: 'Prvo postavi sve figure bilo gdje u uokvirenim redovima.',
-    jump: 'Tvoj kralj može i skakati, na ovdje označena polja.',
-    backPawns: 'Pješaci mogu natrag i vide iza sebe.',
   },
 
   panel: {
     title: 'Postavke partije',
-    fogShort: 'Magla',
-    fullBoard: 'Cijela ploča',
-    fog: 'Magla rata',
-    fogOnHint: 'Vidiš samo ono što vide tvoje figure.',
-    fogOffHint: 'Cijela ploča, kao u običnom šahu.',
-    winBy: 'Pobjeda',
-    eat: 'Pojedi kralja',
-    eatHint: 'Bez šaha. Uzmi kralja i pobijedi.',
-    mate: 'Šah-mat',
-    mateHint: 'Obična šahovska pravila sa šahom.',
-    hillHint: 'Pobijedi i tako da dovedeš kralja na jedno od četiri središnja polja.',
-    pieces: 'Figure',
-    twists: 'Začini',
-    jumpHint: 'Tvoj kralj može skakati i kao skakač.',
-    backPawnsHint: 'Pješaci mogu i jedno polje natrag, i vide iza sebe.',
+    mode: 'Način igre',
     timeControl: 'Kontrola vremena',
-    timeGroup: 'Vrsta kontrole vremena',
-    unlimited: 'Neograničeno',
-    ratedNoClock: 'Partije bez sata nikad nisu rangirane.',
     ratedGuest: 'Partije gostiju nisu rangirane. Prijavi se da igraš za rejting.',
     unratedOn: 'Samo za zabavu: rejting se ne mijenja.',
     ratedOn: 'Računa se u oba rejtinga kad je i protivnik prijavljen.',
   },
 
+  /** Partije spremljene prije nego što je stranica postala jedna igra još mogu imati ovo. */
+  legacy: {
+    fullBoard: 'Cijela ploča',
+    checkmate: 'Šah-mat',
+    hill: 'Kralj brda',
+    jump: 'Jump King',
+    backPawns: 'Pješaci unatrag',
+  },
+
   time: {
     groups: {
-      Bullet: 'Bullet',
       Blitz: 'Blitz',
       Rapid: 'Brzopotezni',
-      Classical: 'Klasični',
+      Tournament: 'Turnirski',
       Daily: 'Dnevni',
-      'No clock': 'Bez sata',
+      Weekly: 'Tjedni',
     },
-    perMove: (h) => `${h} h po potezu`,
+    perMoveHours: (h) => `${h} h po potezu`,
+    perMoveDays: (d) => `${d} ${slavic(d, 'dan', 'dana', 'dana')} po potezu`,
     noClock: 'Bez sata',
   },
 
   setups: {
-    '': { label: 'Standardno', hint: 'Uobičajeni početak.' },
-    backRow: { label: 'Zadnji red', hint: 'Rasporedi svoj zadnji red.' },
-    battleship: { label: 'Potapanje brodova', hint: 'Postavi sve figure u svoja četiri reda.' },
-  },
-
-  twists: {
-    hill: 'Kralj brda',
-    jump: 'Jump King',
-    backPawns: 'Pješaci unatrag',
+    '': { label: 'Standardno', hint: 'Uobičajeni početak. Nitko ne počinje u opasnosti.' },
+    backRow: { label: 'Zadnji red', hint: 'Rasporedi svoj zadnji red kako god želiš.' },
+    battleship: { label: 'Potapanje brodova', hint: 'Postavi svih šesnaest figura bilo gdje u svoja četiri reda.' },
   },
 
   match: {
@@ -186,6 +175,7 @@ export const hr: Dict = {
     draw: 'Remi',
     youWin: 'Pobjeda',
     youLose: 'Poraz',
+    kingEaten: 'Tvoj kralj je pojeden',
     sideWins: (side) => `${side} pobjeđuje`,
     sniperWin: 'Snajperska pobjeda',
     sniped: 'Snajperski poraz',
@@ -241,6 +231,7 @@ export const hr: Dict = {
     behindNote: (side, n) =>
       `Vidiš što je ${side.toLowerCase()} vidio prije ${n === 1 ? 'jednog poteza' : moves(n)}, pa ništa što vidiš ne može pomoći nijednom igraču.`,
     watchingNote: 'Gledaš ovu partiju.',
+    kingThreat: 'Tvog kralja napada figura koju vidiš.',
     titleYourMove: '● Tvoj potez · Eat the King',
     titleTheirMove: 'Protivnikov potez · Eat the King',
     ping: (ms) => `ping ${ms} ms`,
@@ -275,61 +266,43 @@ export const hr: Dict = {
   rules: {
     heading: 'Kako se igra',
     intro:
-      'Obične šahovske figure i potezi. Načini igre mijenjaju što vidiš, kako pobjeđuješ, gdje figure počinju i kako se kreće tvoj kralj. Kombiniraj ih kako god želiš.',
+      'Obične šahovske figure i potezi, s dvije promjene: vidiš samo ono što vide tvoje figure, a pobjeđuješ tako da uzmeš kralja.',
     yourMatchCode: 'tvoj kod partije',
-    makeKingJump: 'Neka kralj skoči',
-    jumpEgg: 'Nazvan po igri. Za razliku od onog kralja, ovaj nikad ne pada skroz natrag dolje.',
-    jumpTop: 'Stigao si na vrh. Legenda kaže da te gore čeka ljepotica.',
     cards: {
-      start: {
-        kind: 'Za početak',
-        title: 'Pokretanje partije',
-        p: [
-          'Odaberi načine igre i kontrolu vremena pa pritisni **Nova partija**. Dobivaš **kod** od 6 znakova i poveznicu za dijeljenje. Ti igraš bijelim, a tko god sljedeći otvori poveznicu igra crnim.',
-          'Osvježavanje stranice ili gubitak signala vraća te na tvoje mjesto. Remi možeš ponuditi ili se predati u bilo kojem trenutku, a **revanš** zamjenjuje boje.',
-        ],
-      },
       fog: {
         kind: 'Što vidiš',
         title: 'Magla rata',
         p: [
           'Vidiš samo ono što vide tvoje figure: **njihova vlastita polja** i **svako polje na koje bi mogle doći**, uključujući uzimanja. Ostalo je pokriveno.',
-          '**Pješak** uvijek vidi polje ispred sebe, čak i kad je blokiran, a dijagonale samo kad ima što uzeti. Nema nikakvih naznaka o drugoj strani. Magla se diže kad partija završi.',
+          '**Pješak** uvijek vidi polje ispred sebe, čak i kad je blokiran, a dijagonale samo kad ima što uzeti. Nema nikakvih naznaka o drugoj strani: nema isticanja zadnjeg poteza, a njihovi potezi u popisu se prikazuju kao ?. Magla se diže kad partija završi.',
         ],
       },
       eat: {
         kind: 'Kako pobjeđuješ',
         title: 'Pojedi kralja',
         p: [
-          '**Nema šaha.** Kraljevi smiju ući u opasnost, ostati u njoj i rokirati kroz napad. Pobjeđuješ tako da **uzmeš kralja**.',
-          'S maglom je to prirodan način igre, jer nitko ne vidi sve prijetnje.',
+          '**Nema šaha** ni šah-mata. Kraljevi smiju ući u opasnost, ostati u njoj i rokirati kroz napad. Pobjeđuješ tako da **uzmeš kralja**.',
+          'U magli nitko ne vidi sve prijetnje, pa kralja može uzeti figura koja se nikad nije pokazala. To je igra.',
         ],
       },
-      mate: {
-        kind: 'Kako pobjeđuješ',
-        title: 'Šah-mat',
+      danger: {
+        kind: 'Jedino upozorenje',
+        title: 'Kralj u opasnosti',
         p: [
-          'Obična šahovska pravila. Kralja ne smiješ ostaviti u šahu, a pobjeđuješ **šah-matom**.',
-          'S maglom saznaješ kad si **ti** u šahu, jer ti to ograničava poteze. Nikad ne saznaješ kad si protivniku dao šah.',
+          'Kad figura **koju vidiš** napada tvog kralja, kralj dobiva crveni prsten i stranica to kaže. Podigni kralja i označena su i polja koja pokriva viđena figura.',
+          'Koristi samo ono što je već na tvojoj ploči, pa ništa ne odaje. Figura u magli ostaje iznenađenje.',
         ],
       },
-      hill: {
-        kind: 'Kako pobjeđuješ',
-        title: 'Kralj brda',
+      start: {
+        kind: 'Za početak',
+        title: 'Pokretanje partije',
         p: [
-          'Klasik. Dovedi **kralja na jedno od četiri središnja polja** i pobjeđuješ na licu mjesta, što god se drugo događalo. Šah-mat ili jedenje kralja i dalje vrijede.',
-          'S uključenim Jump Kingom brdo je udaljeno samo par skokova. Kad sam raspoređuješ figure, kralj ne može početi na njemu.',
-        ],
-      },
-      standard: {
-        kind: 'Gdje figure počinju',
-        title: 'Standardno',
-        p: [
-          'Uobičajeni početni položaj. Nijedan kralj ne može biti u opasnosti prije prvog poteza, pa je svaka partija cijela partija.',
+          'Odaberi način igre i sat pa pritisni **Nova partija**. Dobivaš **kod** od 6 znakova i poveznicu za dijeljenje. Ti igraš bijelim, a tko god sljedeći otvori poveznicu igra crnim.',
+          'Osvježavanje stranice ili gubitak signala vraća te na tvoje mjesto. Remi možeš ponuditi ili se predati u bilo kojem trenutku, a **revanš** zamjenjuje boje.',
         ],
       },
       backRow: {
-        kind: 'Gdje figure počinju',
+        kind: 'Način igre',
         title: 'Zadnji red',
         p: [
           'Prije partije svatko **rasporedi svoj zadnji red** kako želi. Pješaci ostaju gdje su uvijek.',
@@ -337,30 +310,15 @@ export const hr: Dict = {
         ],
       },
       battleship: {
-        kind: 'Gdje figure počinju',
+        kind: 'Način igre',
         title: 'Potapanje brodova',
         p: [
           'Postavi **svih šesnaest figura bilo gdje u svoja četiri reda**, uključujući pješake. Sakrij kralja, sagradi zid ili usmjeri topa niz otvorenu liniju.',
-          'S maglom nikad ne vidiš tuđi raspored, pa su prvi potezi lov. Bez magle, raspored svake strane pokaže se kad je taj igrač spreman.',
-        ],
-      },
-      jump: {
-        kind: 'Kralj',
-        title: 'Jump King',
-        p: [
-          'Kralj i dalje ide jedno polje, a može i **skočiti kao skakač**. Tako ga je teže uhvatiti i brže stiže u borbu. Znači i da kralja može napasti kralj udaljen jedan skok skakača.',
-        ],
-      },
-      backPawns: {
-        kind: 'Pješaci',
-        title: 'Pješaci unatrag',
-        p: [
-          'Pješaci mogu i **jedno polje ravno natrag** na prazno polje. I dalje uzimaju samo prema naprijed, a unatrag se nikad ne promoviraju.',
-          'U magli vide i polje iza sebe, čak i kad je zauzeto, baš kao što vide ono ispred.',
+          'Tuđi raspored nikad ne vidiš, pa su prvi potezi lov.',
         ],
       },
       sniper: {
-        kind: 'Svaki početak koji sam rasporediš',
+        kind: 'Zadnji red i Potapanje brodova',
         title: 'Snajperska pobjeda',
         p: [
           'Kad sam raspoređuješ figure, kralj može početi u opasnosti. Ništa to ne sprječava: dio je igre. Ako pobijediš **već prvim potezom**, to je **snajperska pobjeda**.',
@@ -371,12 +329,12 @@ export const hr: Dict = {
         kind: 'Rangirano ili ne',
         title: 'Satovi i rejting',
         p: [
-          'Satovi rade na poslužitelju, pa ih zatvaranje kartice ne zaustavlja. Istekne li ti vrijeme, gubiš, osim ako protivnik s onim što mu je ostalo ne može pobijediti. **Dnevni** daje 24 sata po potezu. **Bez sata** čeka zauvijek.',
-          'Pri stvaranju partije odaberi **Rangirano** ili **Nerangirano**. Rangirana partija traži dva prijavljena igrača i sat, a svi načini igre dijele jedan rejting, koji počinje na 1500. Nerangirane partije služe za isprobavanje.',
+          'Satovi rade na poslužitelju, pa ih zatvaranje kartice ne zaustavlja. Istekne li ti vrijeme, gubiš, osim ako protivnik s onim što mu je ostalo ne može pobijediti. **Dnevni** daje 24 sata po potezu, a **Tjedni** 7 dana, iznova nakon svakog poteza.',
+          'Pri stvaranju partije odaberi **Rangirano** ili **Nerangirano**. Rangirana partija traži dva prijavljena igrača, a svi načini igre dijele jedan rejting, koji počinje na 1500. Nerangirane partije služe za isprobavanje.',
         ],
       },
       draws: {
-        kind: 'Svaki način igre',
+        kind: 'Ostalo',
         title: 'Remi i ostalo',
         p: [
           'Partija je remi **patom**, **trostrukim ponavljanjem**, **pravilom 50 poteza**, **nedovoljnim materijalom** ili kad se oboje složite.',
