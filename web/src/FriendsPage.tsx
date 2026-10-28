@@ -1,10 +1,10 @@
-import * as Menu from '@radix-ui/react-dropdown-menu'
 import { useEffect, useState } from 'react'
 import { useMe } from './auth'
 import { Who } from './Avatar'
 import { Icon } from './icons'
 import { useLive } from './live'
 import { navigate } from './router'
+import { DropMenu, MenuItem } from './Sheet'
 import { api, openOffer, presence, type FriendState, type UserCard } from './social'
 import { Button, Dialog, Spinner } from './ui'
 
@@ -95,25 +95,23 @@ export function FriendsPage() {
                     >
                       <Icon name="chat" />
                     </Button>
-                    <Menu.Root modal={false}>
-                      <Menu.Trigger asChild>
+                    <DropMenu
+                      title={`More for ${f.username}`}
+                      trigger={
                         <Button variant="ghost" icon className="size-9" aria-label={`More for ${f.username}`}>
                           <Icon name="dots" />
                         </Button>
-                      </Menu.Trigger>
-                      <Menu.Portal>
-                        <Menu.Content align="end" sideOffset={6} className="menu">
-                          <Menu.Item className="menu-item" onSelect={() => navigate(`/u/${f.username}`)}>
-                            <Icon name="user" />
-                            Profile
-                          </Menu.Item>
-                          <Menu.Item className="menu-item text-danger" onSelect={() => setRemoving(f.username)}>
-                            <Icon name="out" />
-                            Remove friend
-                          </Menu.Item>
-                        </Menu.Content>
-                      </Menu.Portal>
-                    </Menu.Root>
+                      }
+                    >
+                      <MenuItem onSelect={() => navigate(`/u/${f.username}`)}>
+                        <Icon name="user" />
+                        Profile
+                      </MenuItem>
+                      <MenuItem className="text-danger" onSelect={() => setRemoving(f.username)}>
+                        <Icon name="out" />
+                        Remove friend
+                      </MenuItem>
+                    </DropMenu>
                   </div>
                 </div>
               ))}

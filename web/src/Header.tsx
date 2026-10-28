@@ -1,4 +1,3 @@
-import * as Menu from '@radix-ui/react-dropdown-menu'
 import { useState } from 'react'
 import { logout, useMe } from './auth'
 import { Avatar } from './Avatar'
@@ -6,6 +5,7 @@ import { Bell } from './Bell'
 import { Icon } from './icons'
 import { useCounts } from './live'
 import { navigate } from './router'
+import { DropMenu, MenuItem, MenuSeparator } from './Sheet'
 import { setThemeMode, themeMode, toggleTheme, type ThemeMode } from './theme'
 
 function go(e: React.MouseEvent, href: string) {
@@ -100,87 +100,86 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
   const [mode, setMode] = useState(themeMode)
   const { unreadChats } = useCounts()
   return (
-    <Menu.Root modal={false}>
-      <Menu.Trigger
-        aria-label="Your menu"
-        className="rounded-full p-0.5 transition-shadow outline-none hover:shadow-[0_0_0_2px_var(--color-fg)] focus-visible:shadow-[0_0_0_2px_var(--color-fg)] data-[state=open]:shadow-[0_0_0_2px_var(--color-fg)]"
-      >
-        <span className="relative block">
-          <Avatar size={34} />
-          {unreadChats > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-fg shadow-[0_0_0_2px_var(--color-bg)]" />
-          )}
-        </span>
-      </Menu.Trigger>
-      <Menu.Portal>
-        <Menu.Content align="end" sideOffset={8} className="menu">
-          <div className="flex items-center gap-3 px-2.5 pt-3 pb-3.5">
-            <Avatar size={44} />
-            <div className="flex min-w-0 flex-col">
-              <span className="truncate text-[17px] font-semibold">{username}</span>
-              <span className="font-mono text-sm text-accent tabular-nums">{rating}</span>
-            </div>
-          </div>
-          <Menu.Separator className="mx-1 my-1.5 h-px bg-border" />
-          <Menu.Item className="menu-item" onSelect={() => navigate(`/u/${username}`)}>
-            <Icon name="user" />
-            Profile
-          </Menu.Item>
-          <Menu.Item className="menu-item" onSelect={() => navigate('/friends')}>
-            <Icon name="people" />
-            Friends
-          </Menu.Item>
-          <Menu.Item className="menu-item" onSelect={() => navigate('/messages')}>
-            <Icon name="chat" />
-            Messages
+    <DropMenu
+      title="Your menu"
+      trigger={
+        <button
+          aria-label="Your menu"
+          className="rounded-full p-0.5 transition-shadow outline-none hover:shadow-[0_0_0_2px_var(--color-fg)] focus-visible:shadow-[0_0_0_2px_var(--color-fg)] data-[state=open]:shadow-[0_0_0_2px_var(--color-fg)]"
+        >
+          <span className="relative block">
+            <Avatar size={34} />
             {unreadChats > 0 && (
-              <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-fg px-1.5 text-[11px] font-bold text-bg">
-                {unreadChats}
-              </span>
+              <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-fg shadow-[0_0_0_2px_var(--color-bg)]" />
             )}
-          </Menu.Item>
-          <Menu.Item className="menu-item" onSelect={() => navigate('/watch')}>
-            <Icon name="eye" />
-            Watch
-          </Menu.Item>
-          <Menu.Item className="menu-item" onSelect={() => navigate('/settings')}>
-            <Icon name="gear" />
-            Settings
-          </Menu.Item>
-          <Menu.Separator className="mx-1 my-1.5 h-px bg-border" />
-          <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 text-sm">
-            <span>Theme</span>
-            <div role="radiogroup" aria-label="Theme" className="flex gap-0.5 rounded-lg bg-muted p-[3px]">
-              {MODES.map(([m, label]) => (
-                <button
-                  key={m}
-                  role="radio"
-                  aria-checked={mode === m}
-                  onClick={(e) => {
-                    setThemeMode(m, e)
-                    setMode(m)
-                  }}
-                  className="h-7 rounded-[5px] px-2.5 text-[13px] transition-colors hover:bg-fg/10 aria-checked:bg-fg aria-checked:text-bg"
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <Menu.Separator className="mx-1 my-1.5 h-px bg-border" />
-          <Menu.Item
-            className="menu-item"
-            onSelect={async () => {
-              await logout()
-              navigate('/')
-            }}
-          >
-            <Icon name="out" />
-            Log out
-          </Menu.Item>
-        </Menu.Content>
-      </Menu.Portal>
-    </Menu.Root>
+          </span>
+        </button>
+      }
+    >
+      <div className="flex items-center gap-3 px-2.5 pt-3 pb-3.5">
+        <Avatar size={44} />
+        <div className="flex min-w-0 flex-col">
+          <span className="truncate text-[17px] font-semibold">{username}</span>
+          <span className="font-mono text-sm text-accent tabular-nums">{rating}</span>
+        </div>
+      </div>
+      <MenuSeparator />
+      <MenuItem onSelect={() => navigate(`/u/${username}`)}>
+        <Icon name="user" />
+        Profile
+      </MenuItem>
+      <MenuItem onSelect={() => navigate('/friends')}>
+        <Icon name="people" />
+        Friends
+      </MenuItem>
+      <MenuItem onSelect={() => navigate('/messages')}>
+        <Icon name="chat" />
+        Messages
+        {unreadChats > 0 && (
+          <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-fg px-1.5 text-[11px] font-bold text-bg">
+            {unreadChats}
+          </span>
+        )}
+      </MenuItem>
+      <MenuItem onSelect={() => navigate('/watch')}>
+        <Icon name="eye" />
+        Watch
+      </MenuItem>
+      <MenuItem onSelect={() => navigate('/settings')}>
+        <Icon name="gear" />
+        Settings
+      </MenuItem>
+      <MenuSeparator />
+      <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 text-sm">
+        <span>Theme</span>
+        <div role="radiogroup" aria-label="Theme" className="flex gap-0.5 rounded-lg bg-muted p-[3px]">
+          {MODES.map(([m, label]) => (
+            <button
+              key={m}
+              role="radio"
+              aria-checked={mode === m}
+              onClick={(e) => {
+                setThemeMode(m, e)
+                setMode(m)
+              }}
+              className="h-7 rounded-[5px] px-2.5 text-[13px] transition-colors hover:bg-fg/10 aria-checked:bg-fg aria-checked:text-bg"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <MenuSeparator />
+      <MenuItem
+        onSelect={async () => {
+          await logout()
+          navigate('/')
+        }}
+      >
+        <Icon name="out" />
+        Log out
+      </MenuItem>
+    </DropMenu>
   )
 }
 
