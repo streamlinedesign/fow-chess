@@ -1,4 +1,3 @@
-import * as Menu from '@radix-ui/react-dropdown-menu'
 import { useEffect, useState } from 'react'
 import { useMe } from './auth'
 import { Avatar } from './Avatar'
@@ -6,6 +5,7 @@ import { Icon } from './icons'
 import { useLive } from './live'
 import { pieceImg } from './position'
 import { navigate } from './router'
+import { DropMenu, MenuItem } from './Sheet'
 import { describeSettings, describeTime, NO_CLOCK, type Settings } from './settings'
 import { api, openOffer, presence, type FriendState } from './social'
 import { Button, Spinner } from './ui'
@@ -323,22 +323,20 @@ function VisitorActions({ profile, onChange }: { profile: Profile; onChange: () 
         </Button>
       )}
       {profile.friend === 'friends' ? (
-        <Menu.Root modal={false}>
-          <Menu.Trigger asChild>
+        <DropMenu
+          title="Friend options"
+          trigger={
             <Button variant="ghost" aria-label="Friend options">
               <Icon name="check" />
               <span className="max-[720px]:hidden">Friends</span>
             </Button>
-          </Menu.Trigger>
-          <Menu.Portal>
-            <Menu.Content align="end" sideOffset={6} className="menu">
-              <Menu.Item className="menu-item text-danger" onSelect={() => friend('DELETE')}>
-                <Icon name="out" />
-                Remove friend
-              </Menu.Item>
-            </Menu.Content>
-          </Menu.Portal>
-        </Menu.Root>
+          }
+        >
+          <MenuItem className="text-danger" onSelect={() => friend('DELETE')}>
+            <Icon name="out" />
+            Remove friend
+          </MenuItem>
+        </DropMenu>
       ) : profile.friend === 'sent' ? (
         <Button variant="ghost" loading={busy} onClick={() => friend('DELETE')} title="Cancel the request">
           Request sent

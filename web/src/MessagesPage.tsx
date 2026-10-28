@@ -1,4 +1,3 @@
-import * as Menu from '@radix-ui/react-dropdown-menu'
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useMe } from './auth'
 import { Avatar, Who } from './Avatar'
@@ -9,6 +8,7 @@ import { refreshCounts, useLive } from './live'
 import { pieceImg } from './position'
 import { plural, type GameSummary } from './ProfilePage'
 import { navigate } from './router'
+import { DropMenu, MenuItem } from './Sheet'
 import { describeTime, NO_CLOCK } from './settings'
 import { api, openOffer, presence, type FriendState, type Message, type Offer, type UserCard } from './social'
 import { Button, Spinner } from './ui'
@@ -249,25 +249,23 @@ function ChatView({ name, me }: { name: string; me: string }) {
             <Icon name="swords" />
           </Button>
         )}
-        <Menu.Root modal={false}>
-          <Menu.Trigger asChild>
+        <DropMenu
+          title="Chat options"
+          trigger={
             <Button variant="ghost" icon className="size-9" aria-label="Chat options">
               <Icon name="dots" />
             </Button>
-          </Menu.Trigger>
-          <Menu.Portal>
-            <Menu.Content align="end" sideOffset={6} className="menu">
-              <Menu.Item className="menu-item" onSelect={() => navigate(`/u/${them}`)}>
-                <Icon name="user" />
-                Profile
-              </Menu.Item>
-              <Menu.Item className="menu-item" onSelect={() => askDelete(!chat.deletion.mine)}>
-                <Icon name="out" />
-                {chat.deletion.mine ? 'Keep this chat after all' : 'Ask to delete this chat'}
-              </Menu.Item>
-            </Menu.Content>
-          </Menu.Portal>
-        </Menu.Root>
+          }
+        >
+          <MenuItem onSelect={() => navigate(`/u/${them}`)}>
+            <Icon name="user" />
+            Profile
+          </MenuItem>
+          <MenuItem onSelect={() => askDelete(!chat.deletion.mine)}>
+            <Icon name="out" />
+            {chat.deletion.mine ? 'Keep this chat after all' : 'Ask to delete this chat'}
+          </MenuItem>
+        </DropMenu>
       </div>
 
       <div

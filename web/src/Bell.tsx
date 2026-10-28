@@ -6,6 +6,7 @@ import { refreshCounts, useCounts, useLive } from './live'
 import { pieceImg } from './position'
 import { ago } from './ProfilePage'
 import { navigate } from './router'
+import { BottomDrawer, usePhone } from './Sheet'
 import { clocked, describeSettings } from './settings'
 import { api, type Notification, type Offer } from './social'
 import { Button, Spinner } from './ui'
@@ -35,31 +36,46 @@ export function Bell() {
   })
 
   const close = () => setOpen(false)
+  const phone = usePhone()
 
+  const trigger = (
+    <button className="icon-btn" aria-label={unread ? `Notifications, ${unread} new` : 'Notifications'}>
+      <Icon name="bell" size={20} />
+      {unread > 0 && <span className="badge">{unread > 9 ? '9+' : unread}</span>}
+    </button>
+  )
+  const list = (
+    <div className="bell-list">
+      {!items ? (
+        <div className="grid place-items-center p-8">
+          <Spinner label="Loading" />
+        </div>
+      ) : items.length === 0 ? (
+        <p className="px-3 pt-2 pb-6 text-sm text-accent">
+          Nothing yet. Friend requests, match offers and your results show up here.
+        </p>
+      ) : (
+        items.map((n) => <Note key={n.id} n={n} onChange={load} onGo={close} />)
+      )}
+    </div>
+  )
+
+  // On phones the bell opens as a drawer from the bottom.
+  if (phone)
+    return (
+      <BottomDrawer open={open} onOpenChange={setOpen} trigger={trigger} title="Notifications" className="bell-drawer">
+        {list}
+      </BottomDrawer>
+    )
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
-      <Popover.Trigger className="icon-btn" aria-label={unread ? `Notifications, ${unread} new` : 'Notifications'}>
-        <Icon name="bell" size={20} />
-        {unread > 0 && <span className="badge">{unread > 9 ? '9+' : unread}</span>}
-      </Popover.Trigger>
+      <Popover.Trigger asChild>{trigger}</Popover.Trigger>
       <Popover.Portal>
         <Popover.Content align="end" sideOffset={8} className="menu bell" aria-label="Notifications">
           <div className="bell-head">
             <h3>Notifications</h3>
           </div>
-          <div className="bell-list">
-            {!items ? (
-              <div className="grid place-items-center p-8">
-                <Spinner label="Loading" />
-              </div>
-            ) : items.length === 0 ? (
-              <p className="px-3 pt-2 pb-6 text-sm text-accent">
-                Nothing yet. Friend requests, match offers and your results show up here.
-              </p>
-            ) : (
-              items.map((n) => <Note key={n.id} n={n} onChange={load} onGo={close} />)
-            )}
-          </div>
+          {list}
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
