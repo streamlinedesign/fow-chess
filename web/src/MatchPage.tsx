@@ -8,6 +8,7 @@ import { Icon } from './icons'
 import { applyLocal, pieceImg } from './position'
 import { navigate } from './router'
 import { describeSettings } from './settings'
+import { SetupBoard } from './SetupBoard'
 import { Button, Dialog, Spinner, Tip } from './ui'
 import { useMatch, type Color, type MatchState } from './useMatch'
 
@@ -17,6 +18,11 @@ const other = (c: Color): Color => (c === 'w' ? 'b' : 'w')
 function resultText(s: MatchState) {
   if (s.result === '1/2-1/2') return { title: 'Draw', detail: `By ${s.reason}.` }
   const winner: Color = s.result === '1-0' ? 'w' : 'b'
+  if (s.sniper) {
+    const title = s.you && s.you !== winner ? 'Sniped' : 'Sniper Win'
+    const detail = `${NAMES[winner]} wins ${how(s.reason)} on their first move.`
+    return { title, detail: s.rated ? `${detail} A Sniper Win counts for a quarter of a game's rating.` : detail }
+  }
   const title = s.you ? (s.you === winner ? 'You win' : 'You lose') : `${NAMES[winner]} wins`
   return { title, detail: `${NAMES[winner]} wins ${how(s.reason)}.` }
 }
@@ -132,6 +138,10 @@ export function MatchPage({ id }: { id: string }) {
     if (conn === 'failed') return "Can't reach the game server. Retrying…"
     if (conn !== 'open') return 'Reconnecting…'
     if (state.status === 'waiting') return 'Waiting for an opponent'
+    if (state.status === 'setup') {
+      if (!you || !them) return 'Players are setting up'
+      return state.setup?.ready[you] ? 'Waiting for your opponent to set up' : 'Set up your pieces'
+    }
     if (over) return state.result === '1/2-1/2' ? `Draw by ${state.reason}` : `${over.title} ${how(state.reason)}`
     const check = state.check && !predicting && !state.behind ? 'Check. ' : ''
     if (!you) return `${check}${NAMES[turn!]} to move`
@@ -144,25 +154,45 @@ export function MatchPage({ id }: { id: string }) {
   return (
     <main className="flex flex-1 justify-center px-4 pb-6 sm:px-8">
       <div className="flex w-full max-w-[1100px] flex-col gap-6 lg:flex-row lg:items-start lg:justify-center">
-        <section className="board-wrap mx-auto flex flex-col gap-3 lg:mx-0">
+        <section
+          className="board-wrap mx-auto flex flex-col gap-3 lg:mx-0"
+          data-setup={state?.status === 'setup' && !!you}
+        >
           <PlayerBar color={top} state={state} you={you} active={toMove === top} />
-          <div className="board-turn relative rounded-md" data-your-move={yourMove}>
-            <Board
-              board={board}
-              orientation={orientation}
-              legal={legal}
-              lastMove={last}
-              check={predicting ? undefined : state?.check}
-              onMove={onMove}
+          {state?.status === 'setup' && you ? (
+            <SetupBoard
+              key={`${state.round}:${you}`}
+              settings={state.settings}
+              you={you}
+              ready={!!state.setup?.ready[you]}
+              mine={state.setup?.mine}
+              theirs={state.setup?.theirs}
+              onReady={(board) => send({ type: 'setup', board })}
+              onChange={() => send({ type: 'setup', board: '' })}
+              below={<PlayerBar color={you} state={state} you={you} active={false} />}
             />
-            {state?.status === 'waiting' && <WaitingCard id={id} link={link} />}
-            {!state && (
-              <div className="absolute inset-0 z-20 grid place-items-center rounded-md bg-bg/60 text-lg font-semibold">
-                <Spinner label="Joining match" />
+          ) : (
+            <>
+              <div className="board-turn relative rounded-md" data-your-move={yourMove}>
+                <Board
+                  board={board}
+                  orientation={orientation}
+                  legal={legal}
+                  lastMove={last}
+                  check={predicting ? undefined : state?.check}
+                  onMove={onMove}
+                />
+                {state?.status === 'waiting' && <WaitingCard id={id} link={link} />}
+                {state?.status === 'setup' && <SetupWait ready={state.setup?.ready} />}
+                {!state && (
+                  <div className="absolute inset-0 z-20 grid place-items-center rounded-md bg-bg/60 text-lg font-semibold">
+                    <Spinner label="Joining match" />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <PlayerBar color={bottom} state={state} you={you} active={toMove === bottom} />
+              <PlayerBar color={bottom} state={state} you={you} active={toMove === bottom} />
+            </>
+          )}
         </section>
 
         <aside className="flex w-full flex-col gap-4 lg:w-[320px] lg:pt-9">
@@ -201,6 +231,13 @@ export function MatchPage({ id }: { id: string }) {
                 Accept
               </Button>
             </div>
+          )}
+
+          {state?.status === 'setup' && you && them && (
+            <p className="text-sm text-accent">
+              {state.setup?.ready[them] ? 'Your opponent is ready. ' : ''}
+              {setupHint(state)}
+            </p>
           )}
 
           {state && them && state.rematch[them] && state.status === 'over' && !state.rematch[you!] && (
@@ -418,6 +455,33 @@ function Spectating({ state, side, setSide }: { state: MatchState; side: Color; 
           ? `You see what ${NAMES[side]} saw ${behind === 1 ? 'a move' : `${behind} moves`} ago, so nothing you see can help either player.`
           : "You're watching this match."}
       </p>
+    </div>
+  )
+}
+
+/** What the setup rules are, for the player arranging their pieces. */
+function setupHint(s: MatchState) {
+  const rows = s.settings.setup === 'backRow' ? 'your back row; the pawns stay put' : 'your four rows'
+  const hidden = s.settings.fog
+    ? "Under fog you won't see their setup, and they won't see yours."
+    : "Once they're ready, their setup shows on the board."
+  return `Tap a piece, then a square in ${rows}. ${hidden} The clock starts when you're both ready.`
+}
+
+/** Covers the board for a spectator while the players set up. */
+function SetupWait({ ready }: { ready?: Record<Color, boolean> }) {
+  return (
+    <div className="absolute inset-0 z-20 grid place-items-center bg-bg/70 p-4 backdrop-blur-[3px]">
+      <div className="flex w-full max-w-[320px] flex-col items-center gap-3 rounded-xl bg-bg p-6 text-center shadow-[0_0_0_1.5px_var(--color-fg)]">
+        <p className="text-lg font-semibold">The players are setting up</p>
+        <ul className="flex gap-4 text-sm text-accent">
+          {(['w', 'b'] as const).map((c) => (
+            <li key={c}>
+              {NAMES[c]}: {ready?.[c] ? 'ready' : 'placing pieces'}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   )
 }

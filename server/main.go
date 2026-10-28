@@ -81,8 +81,8 @@ func main() {
 		// chess with no clock.
 		var settings Settings
 		json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&settings)
-		if !settings.Time.valid() {
-			jsonError(w, "That time control isn't one of the presets.", http.StatusBadRequest)
+		if !settings.valid() {
+			jsonError(w, "Those match settings aren't available.", http.StatusBadRequest)
 			return
 		}
 		m := hub.Create(p, settings)

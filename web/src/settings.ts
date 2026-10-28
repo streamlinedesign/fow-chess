@@ -14,7 +14,30 @@ export type Settings = {
   /** No check: win by capturing the king. */
   kingCapture: boolean
   time: TimeControl
+  /** How the pieces start: the usual position, or one of the setup modes. Must match setupModes in server/setup.go. */
+  setup?: Setup
+  /** Kings can also jump like a knight. */
+  jumpKing?: boolean
+  /** Play a game that could be rated without rating it. */
+  unrated?: boolean
 }
+
+export type Setup = '' | 'backRow' | 'battleship'
+
+/** The setup modes: how many of your own rows you arrange, and whether the pawns stay put. */
+export const SETUPS: { value: Setup; label: string; hint: string; rows: number; pawnsFixed: boolean }[] = [
+  { value: '', label: 'Standard', hint: 'The usual start.', rows: 0, pawnsFixed: false },
+  { value: 'backRow', label: 'Back row', hint: 'Arrange your back row.', rows: 1, pawnsFixed: true },
+  {
+    value: 'battleship',
+    label: 'Battleship',
+    hint: 'Place every piece in your four rows.',
+    rows: 4,
+    pawnsFixed: false,
+  },
+]
+
+export const setupMode = (s: Settings) => SETUPS.find((m) => m.value === (s.setup ?? '')) ?? SETUPS[0]
 
 const tc = (base: number, inc = 0, perMove = 0): TimeControl => ({ base, inc, perMove })
 
@@ -29,7 +52,7 @@ export const TIME_GROUPS: [string, TimeControl[]][] = [
 ]
 
 export const NO_CLOCK = tc(0)
-const DEFAULTS: Settings = { fog: true, kingCapture: true, time: tc(300) }
+const DEFAULTS: Settings = { fog: true, kingCapture: true, time: tc(300), setup: '', jumpKing: false, unrated: false }
 
 export const sameTime = (a: TimeControl, b: TimeControl) =>
   a.base === b.base && a.inc === b.inc && a.perMove === b.perMove
@@ -59,6 +82,7 @@ export function loadSettings(): Settings {
     const saved = { ...DEFAULTS, ...JSON.parse(localStorage.getItem('settings') ?? '{}') }
     // Settings saved before clocks existed, or a preset that's since gone, fall back to the default.
     const known = TIME_GROUPS.some(([, presets]) => presets.some((p) => saved.time && sameTime(p, saved.time)))
+    if (!SETUPS.some((m) => m.value === saved.setup)) saved.setup = ''
     return known ? saved : { ...saved, time: DEFAULTS.time }
   } catch {
     return DEFAULTS
@@ -72,10 +96,24 @@ export function saveSettings(s: Settings) {
 }
 
 /** Games saved before clocks existed have no time setting; those had no clock. */
+/** A game's kind in a few words for a card: "Eat the King · Fog · Battleship". */
+export function modeName(s: Settings) {
+  const setup = setupMode(s)
+  return [
+    s.kingCapture ? 'Eat the King' : 'Checkmate',
+    ...(s.fog ? ['Fog'] : []),
+    ...(setup.value ? [setup.label] : []),
+    ...(s.jumpKing ? ['Jump King'] : []),
+  ].join(' · ')
+}
+
 export function describeSettings(s: Settings) {
+  const setup = setupMode(s)
   return [
     s.fog ? 'Fog of war' : 'Full board',
     s.kingCapture ? 'Eat the King' : 'Checkmate',
+    ...(setup.value ? [setup.label] : []),
+    ...(s.jumpKing ? ['Jump King'] : []),
     describeTime(s.time ?? NO_CLOCK),
   ]
 }

@@ -96,6 +96,12 @@ function resultLine(n: Notification) {
         Your game with {who} was drawn by {reason}.
       </>
     )
+  if (n.data.sniper)
+    return result === 'won' ? (
+      <>Sniper Win: you beat {who} on your first move.</>
+    ) : (
+      <>{who} sniped you on their first move.</>
+    )
   if (reason === 'capturing the king') return result === 'won' ? <>You ate {who}'s king.</> : <>{who} ate your king.</>
   const how = reason === 'time' ? 'on time' : `by ${reason}`
   return result === 'won' ? (

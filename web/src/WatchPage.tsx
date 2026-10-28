@@ -3,7 +3,7 @@ import { Avatar } from './Avatar'
 import { Icon } from './icons'
 import { pieceImg } from './position'
 import { navigate } from './router'
-import { describeTime, NO_CLOCK, type Settings } from './settings'
+import { describeTime, modeName, NO_CLOCK, type Settings } from './settings'
 import { api } from './social'
 import { Button, Spinner } from './ui'
 import type { Color } from './useMatch'
@@ -111,10 +111,7 @@ function GameCard({ g }: { g: LiveGame }) {
       aria-label={`Watch ${g.players.w.name || 'Guest'} against ${g.players.b.name || 'Guest'}`}
     >
       <div className="type">
-        <b>
-          {g.settings.kingCapture ? 'Eat the King' : 'Checkmate'}
-          {g.settings.fog ? ' · Fog' : ''}
-        </b>
+        <b>{modeName(g.settings)}</b>
         <span>{describeTime(g.settings.time ?? NO_CLOCK)}</span>
       </div>
       <MiniBoard board={g.board} />

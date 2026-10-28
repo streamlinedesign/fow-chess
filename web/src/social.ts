@@ -33,7 +33,7 @@ export type Notification = {
   offer?: Offer
   matchId?: string
   round?: number
-  data: { result?: 'won' | 'lost' | 'draw'; reason?: string; kingCapture?: boolean }
+  data: { result?: 'won' | 'lost' | 'draw'; reason?: string; kingCapture?: boolean; sniper?: boolean }
   read: boolean
   at: number
   pending?: boolean
