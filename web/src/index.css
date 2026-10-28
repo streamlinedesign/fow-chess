@@ -358,9 +358,6 @@
   border-bottom: 1px solid var(--color-border);
   vertical-align: middle;
 }
-.lb tbody tr {
-  position: relative;
-}
 .lb tbody tr:not(.gap):hover td,
 .lb tr[data-you] td {
   background: var(--color-muted);

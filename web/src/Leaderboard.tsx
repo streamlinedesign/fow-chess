@@ -85,7 +85,15 @@ export function Leaderboard({ me }: { me?: string }) {
 function Row({ leader, you }: { leader: Leader; you: boolean }) {
   const href = `/u/${encodeURIComponent(leader.username)}`
   return (
-    <tr data-podium={leader.rank <= 3 || undefined} data-you={you || undefined}>
+    // The whole row opens the profile. The name is the real link, for keyboards and screen readers.
+    <tr
+      data-podium={leader.rank <= 3 || undefined}
+      data-you={you || undefined}
+      onClick={(e) => {
+        if (!(e.target as Element).closest('a')) navigate(href)
+      }}
+      className="cursor-pointer"
+    >
       <td className="rank">{leader.rank}</td>
       <td>
         <a
@@ -94,7 +102,7 @@ function Row({ leader, you }: { leader: Leader; you: boolean }) {
             e.preventDefault()
             navigate(href)
           }}
-          className="flex min-w-0 items-center gap-2.5 after:absolute after:inset-0"
+          className="flex min-w-0 items-center gap-2.5"
         >
           <Avatar size={30} />
           <span className="flex min-w-0 flex-col leading-tight">
