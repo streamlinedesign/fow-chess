@@ -30,8 +30,77 @@ type profileResponse struct {
 	Username string        `json:"username"`
 	Rating   int           `json:"rating"`
 	Joined   int64         `json:"joined"` // unix milliseconds
+	Online   bool          `json:"online"`
+	LastSeen int64         `json:"lastSeen,omitempty"` // unix milliseconds; left out when hidden
+	Stats    record        `json:"stats"`
 	Current  []gameSummary `json:"current"`
 	Finished []gameSummary `json:"finished"`
+	// For a signed-in visitor looking at someone else: are they friends, and
+	// what can they do.
+	Friend    string  `json:"friend,omitempty"`
+	CanOffer  bool    `json:"canOffer,omitempty"`
+	CanAdd    bool    `json:"canAdd,omitempty"`
+	ScoreWith *record `json:"scoreWith,omitempty"` // the visitor's score against a friend
+	// FormWith is the visitor's last results against a friend, newest first: W, L or D.
+	FormWith []string `json:"formWith,omitempty"`
+	Rank     int      `json:"rank,omitempty"` // place on the leaderboard, once rated
+	// HideOnline is only sent to the player themselves.
+	HideOnline bool `json:"hideOnline,omitempty"`
+}
+
+// summarize describes a game from the side of the player with userID.
+func summarize(g gameRecord, userID int64) gameSummary {
+	color := white
+	if g.Users[black] == userID {
+		color = black
+	}
+	other := 1 - color
+	plies := len(strings.Fields(g.Moves))
+	return gameSummary{
+		MatchID: g.MatchID, Round: g.Round, Color: colorNames[color],
+		Opponent: [2]string{g.whiteName, g.blackName}[other], Waiting: g.Seats[other] == "",
+		Settings: g.Settings, Plies: plies, Turn: colorNames[plies%2],
+		Result: g.Result, Reason: g.Reason, Rated: g.Rated, RatingDiff: g.RatingDiff[color],
+		UpdatedAt: g.UpdatedAt.UnixMilli(),
+	}
+}
+
+// visitor fills in what a signed-in visitor can do on someone else's profile.
+func visitor(store *Store, me, them int64, resp *profileResponse) error {
+	state, err := store.Friendship(me, them)
+	if err != nil {
+		return err
+	}
+	p, err := store.Privacy(them)
+	if err != nil {
+		return err
+	}
+	resp.Friend = state
+	resp.CanOffer = state == friendsWith || p.OffersFrom == "anyone"
+	resp.CanAdd = state != notFriends || p.RequestsFrom == "anyone"
+	if state == friendsWith {
+		score, err := store.Record(me, them)
+		if err != nil {
+			return err
+		}
+		resp.ScoreWith = &score
+		games, err := store.GamesBetween(me, them, 5)
+		if err != nil {
+			return err
+		}
+		for _, g := range games {
+			s := summarize(g, me)
+			form := "D"
+			if s.Result != "1/2-1/2" {
+				form = "L"
+				if (s.Result == "1-0") == (s.Color == "w") {
+					form = "W"
+				}
+			}
+			resp.FormWith = append(resp.FormWith, form)
+		}
+	}
+	return nil
 }
 
 // replayFrame is the full board after each move of a finished game.
@@ -56,7 +125,7 @@ type replayResponse struct {
 
 const profileGames = 200
 
-func profileRoutes(mux *http.ServeMux, store *Store, auth *Auth) {
+func profileRoutes(mux *http.ServeMux, store *Store, auth *Auth, live *Live) {
 	mux.HandleFunc("GET /api/users/{name}", func(w http.ResponseWriter, r *http.Request) {
 		u, err := store.UserByName(r.PathValue("name"))
 		if err != nil {
@@ -72,24 +141,38 @@ func profileRoutes(mux *http.ServeMux, store *Store, auth *Auth) {
 			jsonError(w, "Couldn't load the profile.", http.StatusInternalServerError)
 			return
 		}
+		p, err := store.Person(u.ID)
+		if err != nil {
+			jsonError(w, "Couldn't load the profile.", http.StatusInternalServerError)
+			return
+		}
+		stats, err := store.Record(u.ID, 0)
+		if err != nil {
+			jsonError(w, "Couldn't load the profile.", http.StatusInternalServerError)
+			return
+		}
+		card := live.card(*p)
 		resp := profileResponse{
 			Username: u.Username, Rating: int(u.Rating + 0.5), Joined: u.CreatedAt.UnixMilli(),
+			Online: card.Online, LastSeen: card.LastSeen, Stats: stats,
 			Current: []gameSummary{}, Finished: []gameSummary{},
 		}
+		if rank, err := store.Rank(u.ID); err == nil && rank != nil {
+			resp.Rank = rank.Rank
+		}
+		me := auth.user(r)
+		if me != nil && me.ID == u.ID {
+			// You're here, so you're online, whatever others are shown.
+			resp.Online, resp.HideOnline = true, p.HideOnline
+		}
+		if me != nil && me.ID != u.ID {
+			if err := visitor(store, me.ID, u.ID, &resp); err != nil {
+				jsonError(w, "Couldn't load the profile.", http.StatusInternalServerError)
+				return
+			}
+		}
 		for _, g := range games {
-			color := white
-			if g.Users[black] == u.ID {
-				color = black
-			}
-			other := 1 - color
-			plies := len(strings.Fields(g.Moves))
-			s := gameSummary{
-				MatchID: g.MatchID, Round: g.Round, Color: colorNames[color],
-				Opponent: [2]string{g.whiteName, g.blackName}[other], Waiting: g.Seats[other] == "",
-				Settings: g.Settings, Plies: plies, Turn: colorNames[plies%2],
-				Result: g.Result, Reason: g.Reason, Rated: g.Rated, RatingDiff: g.RatingDiff[color],
-				UpdatedAt: g.UpdatedAt.UnixMilli(),
-			}
+			s := summarize(g, u.ID)
 			if g.Result == "" {
 				resp.Current = append(resp.Current, s)
 			} else {

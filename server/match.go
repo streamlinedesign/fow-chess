@@ -34,6 +34,8 @@ type Hub struct {
 	mu      sync.Mutex
 	matches map[string]*Match
 	store   *Store
+	// notify, if set, puts a game result or a slow move in a player's bell.
+	notify func(notification)
 }
 
 func NewHub(store *Store) *Hub {
@@ -55,11 +57,31 @@ func (h *Hub) Create(creator *player, settings Settings) *Match {
 			continue
 		}
 		m := newMatch(h.store, id, settings)
+		m.notify = h.notify
 		m.seat(white, creator)
 		m.save()
 		h.matches[id] = m
 		return m
 	}
+}
+
+// SetNotify sets where game results and slow moves go.
+func (h *Hub) SetNotify(f func(notification)) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.notify = f
+}
+
+// CreateBetween starts a match from an accepted offer, both seats taken. The
+// clock starts once both players have it open.
+func (h *Hub) CreateBetween(w, b *player, settings Settings) *Match {
+	m := h.Create(w, settings)
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.seat(black, b)
+	m.turnBegan = time.Now()
+	m.save()
+	return m
 }
 
 // Get returns a match from memory, or loads it from the store; nil if there's no such match.
@@ -73,7 +95,7 @@ func (h *Hub) Get(id string) *Match {
 	if err != nil || rec == nil {
 		return nil
 	}
-	m, err := restoreMatch(h.store, rec)
+	m, err := restoreMatch(h.store, rec, h.notify)
 	if err != nil {
 		log.Printf("restoring match %s: %v", id, err)
 		return nil
@@ -214,6 +236,11 @@ type Match struct {
 	turnStart  time.Time
 	timer      *time.Timer // ends the game when the side to move runs out
 	ratingDiff *[2]int     // set once a rated game's ratings are saved
+	// turnBegan is when the side to move got the turn, clock or not.
+	turnBegan time.Time
+	notify    func(notification)
+	// overNotified is the round whose result has gone to the players' bells.
+	overNotified int
 	// chat between the two players in this round. Kept only in memory, and
 	// cleared when the next round starts or both players leave a finished game.
 	chat   []chatLine
@@ -258,9 +285,10 @@ func (m *Match) resetClock() {
 }
 
 // restoreMatch rebuilds a match from its newest saved round by replaying the moves.
-func restoreMatch(store *Store, rec *gameRecord) (*Match, error) {
+func restoreMatch(store *Store, rec *gameRecord, notify func(notification)) (*Match, error) {
 	m := newMatch(store, rec.MatchID, rec.Settings)
-	m.round, m.started = rec.Round, rec.CreatedAt
+	m.notify = notify
+	m.round, m.started, m.turnBegan = rec.Round, rec.CreatedAt, rec.UpdatedAt
 	m.seats, m.users = rec.Seats, rec.Users
 	m.names = [2]string{rec.whiteName, rec.blackName}
 	g, err := replay(rec)
@@ -268,6 +296,9 @@ func restoreMatch(store *Store, rec *gameRecord) (*Match, error) {
 		return nil, err
 	}
 	m.game = g
+	if g.Over() {
+		m.overNotified = m.round
+	}
 	m.clock, m.turnStart = rec.Clock, rec.TurnStart
 	if d := rec.RatingDiff; d[white] != nil && d[black] != nil {
 		m.ratingDiff = &[2]int{*d[white], *d[black]}
@@ -339,8 +370,41 @@ func (m *Match) save() {
 	}
 	if m.game.Over() {
 		rec.Result, rec.Reason = m.game.Outcome().String(), m.game.Method().String()
+		if m.overNotified != m.round {
+			m.overNotified = m.round
+			m.notifyOver()
+		}
 	}
 	m.store.SaveGame(rec)
+}
+
+// slowMove is how long a move in a Daily or No clock game has to take before
+// the opponent hears about it in their bell.
+const slowMove = 4 * time.Hour
+
+// notifyOver tells signed-in players who aren't watching how their game ended.
+// Callers hold m.mu.
+func (m *Match) notifyOver() {
+	if m.notify == nil {
+		return
+	}
+	outcome := m.game.Outcome().String()
+	for c := range 2 {
+		if m.users[c] == 0 || m.online(c) {
+			continue
+		}
+		result := "draw"
+		if outcome == "1-0" || outcome == "0-1" {
+			result = "lost"
+			if (outcome == "1-0") == (c == white) {
+				result = "won"
+			}
+		}
+		go m.notify(notification{
+			UserID: m.users[c], Kind: notifyGameOver, ActorID: m.users[1-c], MatchID: m.id, Round: m.round,
+			Data: map[string]any{"result": result, "reason": m.game.Method().String(), "kingCapture": m.settings.KingCapture},
+		})
+	}
 }
 
 // rated is whether this game counts toward rating: two different signed-in
@@ -477,6 +541,7 @@ func (m *Match) join(c *client, p *player) {
 			for i := range m.seats {
 				if m.seats[i] == "" {
 					m.seat(i, p)
+					m.turnBegan = time.Now()
 					// White's clock starts as soon as an opponent sits down.
 					m.startClock(time.Now())
 					m.save()
@@ -487,6 +552,13 @@ func (m *Match) join(c *client, p *player) {
 	}
 	m.clients[c] = struct{}{}
 	m.touched = time.Now()
+	// A match from an accepted offer starts its clock once both players are here.
+	if !m.running() && m.online(white) && m.online(black) && len(m.game.History()) == 0 {
+		m.startClock(time.Now())
+		if m.running() {
+			m.save()
+		}
+	}
 	if m.colorOf(c.playerID) >= 0 {
 		c.send(m.chatJSON(true, m.chat))
 	}
@@ -547,8 +619,13 @@ func (m *Match) handle(c *client, msg inMsg) {
 			break
 		}
 		m.draw = [2]bool{}
+		t := m.settings.Time
+		if opp := 1 - color; m.notify != nil && (t.PerMove > 0 || !t.clocked()) && now.Sub(m.turnBegan) > slowMove &&
+			m.users[opp] != 0 && !m.online(opp) && !m.game.Over() {
+			go m.notify(notification{UserID: m.users[opp], Kind: notifyMove, ActorID: m.users[color], MatchID: m.id, Round: m.round})
+		}
+		m.turnBegan = now
 		if running {
-			t := m.settings.Time
 			m.clock[color] += time.Duration(t.Inc)*time.Second - spent
 			if t.PerMove > 0 {
 				m.clock[color] = time.Duration(t.PerMove) * time.Second
@@ -583,6 +660,7 @@ func (m *Match) handle(c *client, msg inMsg) {
 			m.draw = [2]bool{}
 			m.round++
 			m.started = now
+			m.turnBegan = now
 			m.ratingDiff = nil
 			m.resetClock()
 			m.startClock(now)

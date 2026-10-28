@@ -24,3 +24,26 @@ export function Avatar({ size = 36, online, className = '' }: { size?: number; o
     </span>
   )
 }
+
+/** An avatar with a name and a line under it, usually the rating. */
+export function Who({
+  name,
+  sub,
+  size = 36,
+  online,
+}: {
+  name: string
+  sub?: React.ReactNode
+  size?: number
+  online?: boolean
+}) {
+  return (
+    <span className="flex min-w-0 items-center gap-2.5">
+      <Avatar size={size} online={online} />
+      <span className="flex min-w-0 flex-col leading-tight">
+        <span className="truncate font-semibold">{name}</span>
+        {sub !== undefined && sub !== '' && <span className="truncate text-[13px] text-accent">{sub}</span>}
+      </span>
+    </span>
+  )
+}

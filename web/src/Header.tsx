@@ -2,6 +2,9 @@ import * as Menu from '@radix-ui/react-dropdown-menu'
 import { useState } from 'react'
 import { logout, useMe } from './auth'
 import { Avatar } from './Avatar'
+import { Bell } from './Bell'
+import { Icon } from './icons'
+import { useCounts } from './live'
 import { navigate } from './router'
 import { setThemeMode, themeMode, toggleTheme, type ThemeMode } from './theme'
 
@@ -53,6 +56,7 @@ export function Header() {
               </svg>
               {me.rating}
             </a>
+            <Bell />
             <UserMenu username={me.username} rating={me.rating} />
           </>
         ) : (
@@ -87,13 +91,19 @@ const MODES: [ThemeMode, string][] = [
 
 function UserMenu({ username, rating }: { username: string; rating: number }) {
   const [mode, setMode] = useState(themeMode)
+  const { unreadChats } = useCounts()
   return (
     <Menu.Root modal={false}>
       <Menu.Trigger
         aria-label="Your menu"
         className="rounded-full p-0.5 transition-shadow outline-none hover:shadow-[0_0_0_2px_var(--color-fg)] focus-visible:shadow-[0_0_0_2px_var(--color-fg)] data-[state=open]:shadow-[0_0_0_2px_var(--color-fg)]"
       >
-        <Avatar size={34} />
+        <span className="relative block">
+          <Avatar size={34} />
+          {unreadChats > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-fg shadow-[0_0_0_2px_var(--color-bg)]" />
+          )}
+        </span>
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Content align="end" sideOffset={8} className="menu">
@@ -106,11 +116,25 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
           </div>
           <Menu.Separator className="mx-1 my-1.5 h-px bg-border" />
           <Menu.Item className="menu-item" onSelect={() => navigate(`/u/${username}`)}>
-            <svg width="16" height="16" viewBox="0 0 15 15" fill="none" aria-hidden>
-              <circle cx="7.5" cy="5" r="2.5" stroke="currentColor" />
-              <path d="M2.5 13c.6-2.5 2.6-4 5-4s4.4 1.5 5 4" stroke="currentColor" strokeLinecap="round" />
-            </svg>
+            <Icon name="user" />
             Profile
+          </Menu.Item>
+          <Menu.Item className="menu-item" onSelect={() => navigate('/friends')}>
+            <Icon name="people" />
+            Friends
+          </Menu.Item>
+          <Menu.Item className="menu-item" onSelect={() => navigate('/messages')}>
+            <Icon name="chat" />
+            Messages
+            {unreadChats > 0 && (
+              <span className="ml-auto grid h-5 min-w-5 place-items-center rounded-full bg-fg px-1.5 text-[11px] font-bold text-bg">
+                {unreadChats}
+              </span>
+            )}
+          </Menu.Item>
+          <Menu.Item className="menu-item" onSelect={() => navigate('/settings')}>
+            <Icon name="gear" />
+            Settings
           </Menu.Item>
           <Menu.Separator className="mx-1 my-1.5 h-px bg-border" />
           <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 text-sm">
@@ -140,14 +164,7 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
               navigate('/')
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 15 15" fill="none" aria-hidden>
-              <path
-                d="M6 2H3.5A1.5 1.5 0 0 0 2 3.5v8A1.5 1.5 0 0 0 3.5 13H6M10 10.5l3-3-3-3M13 7.5H5.5"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <Icon name="out" />
             Log out
           </Menu.Item>
         </Menu.Content>
