@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Avatar } from './Avatar'
+import { useT } from './i18n'
 import { Icon } from './icons'
 import { pieceImg } from './position'
 import { navigate } from './router'
@@ -27,6 +28,7 @@ const REFRESH_MS = 10_000
 
 /** Games being played right now, friends' games first. */
 export function WatchPage() {
+  const t = useT()
   const [games, setGames] = useState<LiveGame[] | null>(null)
   const [error, setError] = useState('')
 
@@ -59,26 +61,29 @@ export function WatchPage() {
     <main className="mx-auto w-full max-w-[1184px] flex-1 px-4 pt-6 pb-16 sm:px-8">
       <div className="page-head">
         <div>
-          <h1>Watch{games && games.length > 0 && <span className="count">{games.length}</span>}</h1>
-          <p>Games being played right now. In fog games you see one side's view, a few moves behind the players.</p>
+          <h1>
+            {t.common.watch}
+            {games && games.length > 0 && <span className="count">{games.length}</span>}
+          </h1>
+          <p>{t.watch.intro}</p>
         </div>
       </div>
 
       {error && !games ? (
         <p className="text-danger">{error}</p>
       ) : !games ? (
-        <Spinner label="Loading" />
+        <Spinner label={t.common.loading} />
       ) : games.length === 0 ? (
         <div className="flex flex-col items-start gap-4">
-          <p className="text-accent">Nobody is playing right now. Start a match and someone might watch yours.</p>
+          <p className="text-accent">{t.watch.nobodyPlaying}</p>
           <Button variant="solid" onClick={() => navigate('/')}>
-            New match
+            {t.common.newMatch}
           </Button>
         </div>
       ) : (
         <div className="flex flex-col gap-10">
-          {friends.length > 0 && <GameList title="Friends playing" games={friends} />}
-          {others.length > 0 && <GameList title={friends.length ? 'Everyone else' : ''} games={others} />}
+          {friends.length > 0 && <GameList title={t.watch.friendsPlaying} games={friends} />}
+          {others.length > 0 && <GameList title={friends.length ? t.watch.everyoneElse : ''} games={others} />}
         </div>
       )}
     </main>
@@ -99,6 +104,7 @@ function GameList({ title, games }: { title: string; games: LiveGame[] }) {
 }
 
 function GameCard({ g }: { g: LiveGame }) {
+  const t = useT()
   const href = `/m/${g.id}`
   return (
     <a
@@ -108,11 +114,11 @@ function GameCard({ g }: { g: LiveGame }) {
         navigate(href)
       }}
       className="tick wcard"
-      aria-label={`Watch ${g.players.w.name || 'Guest'} against ${g.players.b.name || 'Guest'}`}
+      aria-label={t.watch.watchAria(g.players.w.name || t.common.guest, g.players.b.name || t.common.guest)}
     >
       <div className="type">
-        <b>{modeName(g.settings)}</b>
-        <span>{describeTime(g.settings.time ?? NO_CLOCK)}</span>
+        <b>{modeName(g.settings, t)}</b>
+        <span>{describeTime(g.settings.time ?? NO_CLOCK, t)}</span>
       </div>
       <MiniBoard board={g.board} />
       <div className="flex flex-col gap-1.5">
@@ -120,16 +126,16 @@ function GameCard({ g }: { g: LiveGame }) {
         <Seat color="w" g={g} />
       </div>
       <div className="meta">
-        <span>Move {Math.floor(g.ply / 2) + 1}</span>
+        <span>{t.common.Move(Math.floor(g.ply / 2) + 1)}</span>
         {g.spectators > 0 && (
           <span className="flex items-center gap-1">
             <Icon name="eye" size={14} />
-            {g.spectators} watching
+            {t.match.watching(g.spectators)}
           </span>
         )}
         <span className="ml-auto flex gap-1.5">
-          {g.friend && <span className="chip">Friend</span>}
-          {g.rated && <span className="chip solid">Rated</span>}
+          {g.friend && <span className="chip">{t.watch.friend}</span>}
+          {g.rated && <span className="chip solid">{t.common.rated}</span>}
         </span>
       </div>
     </a>
@@ -137,13 +143,14 @@ function GameCard({ g }: { g: LiveGame }) {
 }
 
 function Seat({ color, g }: { color: Color; g: LiveGame }) {
+  const t = useT()
   const p = g.players[color]
   return (
     <div className="flex min-w-0 items-center gap-2 text-[14.5px]">
       <Avatar size={24} />
-      <span className={`truncate ${p.name ? 'font-semibold' : 'text-accent'}`}>{p.name || 'Guest'}</span>
+      <span className={`truncate ${p.name ? 'font-semibold' : 'text-accent'}`}>{p.name || t.common.guest}</span>
       {p.rating ? <span className="font-mono text-[13px] text-accent tabular-nums">{p.rating}</span> : null}
-      {g.turn === color && <span className="turn-tag ml-auto">to move</span>}
+      {g.turn === color && <span className="turn-tag ml-auto">{t.common.toMove}</span>}
     </div>
   )
 }

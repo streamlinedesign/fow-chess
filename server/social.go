@@ -154,7 +154,7 @@ func (s *Social) routes(mux *http.ServeMux) {
 				return
 			}
 			if p.RequestsFrom == "nobody" {
-				jsonError(w, o.Username+" isn't taking friend requests.", http.StatusForbidden)
+				jsonNamedError(w, o.Username+" isn't taking friend requests.", "not_taking_requests", o.Username, http.StatusForbidden)
 				return
 			}
 		}
@@ -391,7 +391,7 @@ func (s *Social) routes(mux *http.ServeMux) {
 			return
 		}
 		if p.OffersFrom == "friends" && state != friendsWith {
-			jsonError(w, o.Username+" only takes match offers from friends.", http.StatusForbidden)
+			jsonNamedError(w, o.Username+" only takes match offers from friends.", "offers_from_friends", o.Username, http.StatusForbidden)
 			return
 		}
 		id, err := s.store.CreateOffer(me.ID, o.ID, body.Settings, body.Color)

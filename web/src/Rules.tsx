@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { rich, useT, type Dict } from './i18n'
 import { pieceImg } from './position'
 import { HILL } from './settings'
 
@@ -54,15 +55,23 @@ function MiniBoard({
   )
 }
 
-function Card({ art, kind, title, children }: { art: ReactNode; kind?: string; title: string; children: ReactNode }) {
+type CardKey = keyof Dict['rules']['cards']
+
+/** One rule card: its art here, its words in the dictionary. */
+function Card({ id, art, children }: { id: CardKey; art: ReactNode; children?: ReactNode }) {
+  const t = useT()
+  const card = t.rules.cards[id]
   return (
     <article className="tick flex flex-col gap-3 p-5 sm:p-6">
       <div className="mb-1.5 flex h-32 items-center">{art}</div>
       <div>
-        {kind && <p className="text-xs font-semibold tracking-wider text-accent uppercase">{kind}</p>}
-        <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
+        <p className="text-xs font-semibold tracking-wider text-accent uppercase">{card.kind}</p>
+        <h3 className="text-xl font-semibold tracking-tight">{card.title}</h3>
       </div>
       <div className="flex flex-col gap-3 text-[15px] leading-relaxed text-accent [&_strong]:font-semibold [&_strong]:text-fg">
+        {card.p.map((p, i) => (
+          <p key={i}>{rich(p)}</p>
+        ))}
         {children}
       </div>
     </article>
@@ -76,6 +85,7 @@ const JUMPS = ['c3', 'c4', 'c5', 'd3', 'd5', 'e3', 'e4', 'e5', 'b3', 'b5', 'c2',
 
 /** The Jump King card's art. Tap the king enough times and he reaches the top. */
 function JumpKingArt({ onTop }: { onTop: () => void }) {
+  const t = useT()
   const [hops, setHops] = useState(0)
   const [hopping, setHopping] = useState(false)
   return (
@@ -83,7 +93,7 @@ function JumpKingArt({ onTop }: { onTop: () => void }) {
       <MiniBoard fen="8/8/8/8/3K4/8/8/8" dots={JUMPS} />
       <button
         type="button"
-        aria-label="Make the king jump"
+        aria-label={t.rules.makeKingJump}
         className="jump-king"
         data-hopping={hopping}
         onAnimationEnd={() => setHopping(false)}
@@ -102,21 +112,18 @@ function JumpKingArt({ onTop }: { onTop: () => void }) {
 
 /** How the game works, for the landing page. Keep in step with server/engine and server/view.go. */
 export function Rules() {
+  const t = useT()
   const [top, setTop] = useState(false)
   return (
     <section id="rules" className="flex flex-col gap-6">
       <div className="border-b border-fg pb-4">
-        <h2 className="text-[clamp(30px,5vw,44px)] leading-none font-semibold tracking-tight">How it plays</h2>
-        <p className="mt-2 text-accent">
-          Normal chess pieces and moves. Modes change what you can see, how you win, where your pieces start, and how
-          your king moves. Mix them however you like.
-        </p>
+        <h2 className="text-[clamp(30px,5vw,44px)] leading-none font-semibold tracking-tight">{t.rules.heading}</h2>
+        <p className="mt-2 text-accent">{t.rules.intro}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card
-          kind="Getting started"
-          title="Starting a match"
+          id="start"
           art={
             <div className="flex flex-col gap-1.5">
               <div className="flex gap-1">
@@ -129,38 +136,18 @@ export function Rules() {
                   </span>
                 ))}
               </div>
-              <span className="font-mono text-xs text-accent">your match code</span>
+              <span className="font-mono text-xs text-accent">{t.rules.yourMatchCode}</span>
             </div>
           }
-        >
-          <p>
-            Pick the modes and a time control, then press <strong>New match</strong>. You get a 6-character{' '}
-            <strong>code</strong> and a link to share. You play White, and whoever opens the link next plays Black.
-          </p>
-          <p>
-            Refreshing or losing signal puts you back in your seat. You can offer a draw or resign at any time, and a{' '}
-            <strong>rematch</strong> swaps colours.
-          </p>
-        </Card>
+        />
 
         <Card
-          kind="What you see"
-          title="Fog of war"
+          id="fog"
           art={<MiniBoard fen="8/8/8/8/3N4/8/8/8" seen={['d4', 'b3', 'b5', 'c2', 'c6', 'e2', 'e6', 'f3', 'f5']} />}
-        >
-          <p>
-            You only see what your pieces see: <strong>their own squares</strong> and{' '}
-            <strong>every square they could move to</strong>, captures included. The rest is covered.
-          </p>
-          <p>
-            A <strong>pawn</strong> always sees the square ahead, even when blocked, and its diagonals only when there's
-            something to take. You get no hints about the other side. The fog lifts when the game ends.
-          </p>
-        </Card>
+        />
 
         <Card
-          kind="How you win"
-          title="Eat the King"
+          id="eat"
           art={
             <div className="flex items-center gap-2.5" aria-hidden>
               <img src={pieceImg('Q')} alt="" className="size-[72px]" />
@@ -168,119 +155,28 @@ export function Rules() {
               <img src={pieceImg('k')} alt="" className="size-[72px] -rotate-90 opacity-55" />
             </div>
           }
-        >
-          <p>
-            There is <strong>no check</strong>. Kings may walk into danger, stay there, and castle through an attack.
-            You win by <strong>capturing the king</strong>.
-          </p>
-          <p>With fog on, it's the natural way to play, since nobody can always see the threats.</p>
+        />
+
+        <Card id="mate" art={<MiniBoard fen="R5k1/5ppp/8/8/8/8/5PPP/6K1" last={['a1', 'a8']} />} />
+
+        <Card id="hill" art={<MiniBoard fen="4k3/8/8/8/3K4/8/8/8" hill last={['d4']} />} />
+
+        <Card id="standard" art={<MiniBoard fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" />} />
+
+        <Card id="backRow" art={<MiniBoard fen="8/8/8/8/8/8/PPPPPPPP/BNRKQRNB" seen={rows(2)} last={rows(1)} />} />
+
+        <Card id="battleship" art={<MiniBoard fen="8/8/8/8/1P2N2P/P1R2Q1P/1PB1PPB1/P1RK1N2" seen={rows(4)} />} />
+
+        <Card id="jump" art={<JumpKingArt onTop={() => setTop(true)} />}>
+          <p className="italic">{top ? t.rules.jumpTop : t.rules.jumpEgg}</p>
         </Card>
+
+        <Card id="backPawns" art={<MiniBoard fen="8/8/8/8/3P4/8/8/8" dots={['d5', 'd3']} />} />
+
+        <Card id="sniper" art={<MiniBoard fen="4k3/8/8/8/8/4R3/8/4K3" last={['e3', 'e8']} />} />
 
         <Card
-          kind="How you win"
-          title="Checkmate"
-          art={<MiniBoard fen="R5k1/5ppp/8/8/8/8/5PPP/6K1" last={['a1', 'a8']} />}
-        >
-          <p>
-            Normal chess rules. You can't leave your king in check, and you win by <strong>checkmate</strong>.
-          </p>
-          <p>
-            With fog on, you're told when <strong>you</strong> are in check, because it limits your moves. You're never
-            told when you've put your opponent in check.
-          </p>
-        </Card>
-
-        <Card
-          kind="How you win"
-          title="King of the Hill"
-          art={<MiniBoard fen="4k3/8/8/8/3K4/8/8/8" hill last={['d4']} />}
-        >
-          <p>
-            A classic. Get your <strong>king onto one of the four centre squares</strong> and you win on the spot,
-            whatever else is going on. Checkmate or eating the king still wins too.
-          </p>
-          <p>
-            With Jump King on, the hill is only a couple of hops away. When you set up your own pieces, the king can't
-            start on it.
-          </p>
-        </Card>
-
-        <Card
-          kind="Where pieces start"
-          title="Standard"
-          art={<MiniBoard fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" />}
-        >
-          <p>
-            The usual starting position. Neither king can be in danger before the first move, so every game is a whole
-            game.
-          </p>
-        </Card>
-
-        <Card
-          kind="Where pieces start"
-          title="Back row"
-          art={<MiniBoard fen="8/8/8/8/8/8/PPPPPPPP/BNRKQRNB" seen={rows(2)} last={rows(1)} />}
-        >
-          <p>
-            Before the game, you each <strong>arrange your back row</strong> however you like. The pawns stay where they
-            always are.
-          </p>
-          <p>
-            You set up at the same time, so nobody gets to react. Castling works only for a king and rook left on their
-            usual squares.
-          </p>
-        </Card>
-
-        <Card
-          kind="Where pieces start"
-          title="Battleship"
-          art={<MiniBoard fen="8/8/8/8/1P2N2P/P1R2Q1P/1PB1PPB1/P1RK1N2" seen={rows(4)} />}
-        >
-          <p>
-            Place <strong>all sixteen pieces anywhere in your four rows</strong>, pawns included. Hide the king, build a
-            wall, or aim a rook down an open file.
-          </p>
-          <p>
-            With fog on you never see the other setup, so the first moves are a hunt. Without fog, each side's setup
-            shows once that player is ready.
-          </p>
-        </Card>
-
-        <Card kind="The king" title="Jump King" art={<JumpKingArt onTop={() => setTop(true)} />}>
-          <p>
-            The king still steps one square, and can also <strong>jump like a knight</strong>. That makes him harder to
-            trap and quicker to reach the fight. It also means a king can be attacked by a king a knight's jump away.
-          </p>
-          <p className="italic">
-            {top
-              ? 'You made it to the top. Legend says there is a babe up here.'
-              : 'Named after the game. Unlike that king, this one never falls all the way back down.'}
-          </p>
-        </Card>
-
-        <Card kind="The pawns" title="Backward pawns" art={<MiniBoard fen="8/8/8/8/3P4/8/8/8" dots={['d5', 'd3']} />}>
-          <p>
-            Pawns can also <strong>step one square straight back</strong> onto an empty square. They still capture
-            forward only, and never promote going backwards.
-          </p>
-          <p>Under fog they see the square behind them too, even when it's taken, just as they see the one ahead.</p>
-        </Card>
-
-        <Card
-          kind="Any start you set up"
-          title="Sniper Win"
-          art={<MiniBoard fen="4k3/8/8/8/8/4R3/8/4K3" last={['e3', 'e8']} />}
-        >
-          <p>
-            When you set up your own pieces, a king can start in danger. Nothing stops that: it's part of the game. If
-            you win <strong>on your very first move</strong>, that's a <strong>Sniper Win</strong>.
-          </p>
-          <p>It still counts, but it moves both ratings only a quarter as far as a whole game.</p>
-        </Card>
-
-        <Card
-          kind="Rated or unrated"
-          title="Clocks and rating"
+          id="clocks"
           art={
             <div className="flex flex-col gap-2">
               <span className="flex items-baseline gap-2 rounded-md bg-fg px-3.5 py-2 font-mono text-[34px] leading-none text-bg">
@@ -291,33 +187,9 @@ export function Rules() {
               </span>
             </div>
           }
-        >
-          <p>
-            Clocks run on the server, so closing the tab doesn't stop them. Run out and you lose, unless your opponent
-            can't win with what's left. <strong>Daily</strong> gives you 24 hours per move. <strong>No clock</strong>{' '}
-            waits forever.
-          </p>
-          <p>
-            Choose <strong>Rated</strong> or <strong>Unrated</strong> when you create a match. A rated game needs two
-            signed-in players and a clock, and every mode shares one rating, starting at 1500. Unrated games are for
-            trying things out.
-          </p>
-        </Card>
+        />
 
-        <Card
-          kind="Every mode"
-          title="Draws and the rest"
-          art={<span className="text-[60px] leading-none font-light tracking-tight">½ – ½</span>}
-        >
-          <p>
-            A game is drawn by <strong>stalemate</strong>, <strong>threefold repetition</strong>, the{' '}
-            <strong>fifty-move rule</strong>, <strong>insufficient material</strong>, or when you both agree.
-          </p>
-          <p>
-            <strong>Castling</strong>, <strong>en passant</strong> and <strong>promotion</strong> all work. The server
-            checks every move, so the board only offers legal ones.
-          </p>
-        </Card>
+        <Card id="draws" art={<span className="text-[60px] leading-none font-light tracking-tight">½ – ½</span>} />
       </div>
     </section>
   )

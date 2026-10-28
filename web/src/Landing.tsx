@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Avatar } from './Avatar'
+import { useT } from './i18n'
 import { useMe } from './auth'
 import { Leaderboard } from './Leaderboard'
 import { playerId } from './player'
@@ -14,6 +15,7 @@ import { Button } from './ui'
 
 export function Landing() {
   const me = useMe()
+  const t = useT()
   const [code, setCode] = useState('')
   const [busy, setBusy] = useState<'create' | 'join' | null>(null)
   const [error, setError] = useState('')
@@ -29,7 +31,7 @@ export function Landing() {
       const { id } = await res.json()
       navigate(`/m/${id}`)
     } catch {
-      setError("Couldn't reach the server.")
+      setError(t.common.cantReach)
       setBusy(null)
     }
   }
@@ -43,15 +45,15 @@ export function Landing() {
     const res = await fetch(`/api/matches/${id}`).catch(() => null)
     if (res?.ok) return navigate(`/m/${id}`)
     setBusy(null)
-    setError(res ? `No match with code ${id}.` : "Couldn't reach the server.")
+    setError(res ? t.landing.noMatch(id) : t.common.cantReach)
   }
 
   return (
     <main className="mx-auto flex w-full max-w-[1184px] flex-1 flex-col gap-12 px-4 pt-6 pb-16 sm:px-8 sm:pt-8 lg:gap-16">
       <section className="hero">
         <div className="hero-head">
-          <h1 className="text-[clamp(34px,5vw,52px)] leading-none font-semibold tracking-tight">Play</h1>
-          <p className="mt-3 max-w-[44ch] text-accent">Chess where you only see what your pieces see.</p>
+          <h1 className="text-[clamp(34px,5vw,52px)] leading-none font-semibold tracking-tight">{t.landing.title}</h1>
+          <p className="mt-3 max-w-[44ch] text-accent">{t.landing.tagline}</p>
         </div>
 
         <SettingsPanel value={settings} onChange={setSettings} signedIn={!!me} className="hero-setup" />
@@ -64,14 +66,14 @@ export function Landing() {
             loading={busy === 'create'}
             disabled={!!busy}
           >
-            New match
+            {t.common.newMatch}
           </Button>
           <form onSubmit={join} className="flex gap-2">
             <input
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
-              placeholder="Have a code? Paste it here"
-              aria-label="Match code"
+              placeholder={t.landing.codePlaceholder}
+              aria-label={t.landing.codeLabel}
               maxLength={12}
               autoCapitalize="characters"
               autoComplete="off"
@@ -79,7 +81,7 @@ export function Landing() {
               className="h-12 min-w-0 flex-1 rounded-md bg-transparent px-4 font-mono text-[17px] tracking-[0.12em] uppercase shadow-[inset_0_0_0_1.5px_var(--color-border)] outline-none placeholder:font-sans placeholder:text-[15px] placeholder:tracking-normal placeholder:normal-case placeholder:text-accent hover:shadow-[inset_0_0_0_1.5px_var(--color-fg)] focus-visible:shadow-[inset_0_0_0_2px_var(--color-fg)]"
             />
             <Button type="submit" className="h-12 px-6" loading={busy === 'join'} disabled={!!busy || !code}>
-              Join
+              {t.landing.join}
             </Button>
           </form>
           {error && (
@@ -101,9 +103,9 @@ export function Landing() {
       <section className="flex flex-col gap-5" aria-labelledby="replay-heading">
         <div className="border-b border-fg pb-4">
           <h2 id="replay-heading" className="text-[clamp(30px,5vw,44px)] leading-none font-semibold tracking-tight">
-            Fog of war, replayed
+            {t.landing.replayHeading}
           </h2>
-          <p className="mt-2 text-accent">A famous game, shown the way each player would have seen it.</p>
+          <p className="mt-2 text-accent">{t.landing.replaySub}</p>
         </div>
         <div className="replay-grid grid items-start gap-5 lg:grid-cols-[minmax(0,520px)_minmax(0,1fr)] lg:gap-10">
           <Showcase boardClassName="w-full" captionClassName="w-full lg:pt-2" />
@@ -117,6 +119,7 @@ export function Landing() {
 
 /** Your games in progress, the ones waiting on you first. Hidden when there are none. */
 function YourGames({ username }: { username: string }) {
+  const t = useT()
   const [games, setGames] = useState<GameSummary[]>([])
 
   useEffect(() => {
@@ -138,9 +141,9 @@ function YourGames({ username }: { username: string }) {
   return (
     <section className="flex flex-col gap-3.5">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-[22px] font-semibold tracking-tight">Your games</h2>
+        <h2 className="text-[22px] font-semibold tracking-tight">{t.landing.yourGames}</h2>
         <a href={profile} onClick={(e) => go(e, profile)} className="text-sm font-medium text-accent hover:text-fg">
-          All on your profile
+          {t.landing.allOnProfile}
         </a>
       </div>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
@@ -155,23 +158,23 @@ function YourGames({ username }: { username: string }) {
             >
               <span className="flex items-center justify-between gap-2 text-[13px] text-accent">
                 {yours(g) ? (
-                  <span className="turn-tag">Your move</span>
+                  <span className="turn-tag">{t.common.yourMove}</span>
                 ) : (
-                  <span>{g.waiting ? 'Waiting' : 'Their move'}</span>
+                  <span>{g.waiting ? t.landing.waiting : t.common.theirMove}</span>
                 )}
-                <span>{ago(g.updatedAt)}</span>
+                <span>{ago(g.updatedAt, t)}</span>
               </span>
               <span className="flex min-w-0 items-center gap-2.5">
                 <Avatar size={36} />
                 <span className="truncate font-semibold">
-                  {g.waiting ? 'Waiting for an opponent' : g.opponent || 'Guest'}
+                  {g.waiting ? t.match.waitingOpponent : g.opponent || t.common.guest}
                 </span>
               </span>
               <span className="flex justify-between gap-2 text-[13px] text-accent">
                 <span className="truncate">
-                  {describeTime(g.settings.time ?? NO_CLOCK)} · {g.settings.kingCapture ? 'Eat the King' : 'Checkmate'}
+                  {describeTime(g.settings.time ?? NO_CLOCK, t)} · {g.settings.kingCapture ? t.panel.eat : t.panel.mate}
                 </span>
-                <span className="shrink-0">Move {Math.floor(g.plies / 2) + 1}</span>
+                <span className="shrink-0">{t.common.Move(Math.floor(g.plies / 2) + 1)}</span>
               </span>
             </a>
           )

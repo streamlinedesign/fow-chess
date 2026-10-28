@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { dict, errorText, type Dict } from './i18n'
 import type { Settings } from './settings'
 
 /** Another player in a list or a chat. */
@@ -51,25 +52,23 @@ export async function api<T = unknown>(method: string, path: string, body?: unkn
     headers: body === undefined ? undefined : { 'Content-Type': 'application/json' },
     body: body === undefined ? undefined : JSON.stringify(body),
   }).catch(() => null)
-  if (!res) throw new Error("Couldn't reach the server.")
+  if (!res) throw new Error(dict().common.cantReach)
   const data = res.status === 204 ? null : await res.json().catch(() => null)
-  if (!res.ok) throw new Error(data?.error || 'Something went wrong.')
+  if (!res.ok) throw new Error(errorText(data))
   return data as T
 }
 
-const dayFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' })
-
 /** "Online", "Last seen 40 min ago", or nothing when hidden. */
-export function presence(u: Pick<UserCard, 'online' | 'lastSeen' | 'playing'>) {
-  if (u.playing) return 'In a game'
-  if (u.online) return 'Online'
+export function presence(u: Pick<UserCard, 'online' | 'lastSeen' | 'playing'>, d: Dict) {
+  if (u.playing) return d.presence.inGame
+  if (u.online) return d.common.online
   if (!u.lastSeen) return ''
   const s = (Date.now() - u.lastSeen) / 1000
-  if (s < 60) return 'Last seen just now'
-  if (s < 3600) return `Last seen ${Math.floor(s / 60)} min ago`
-  if (s < 86400) return `Last seen ${Math.floor(s / 3600)} h ago`
-  if (s < 86400 * 7) return `Last seen ${Math.floor(s / 86400)} d ago`
-  return `Last seen ${dayFmt.format(u.lastSeen)}`
+  if (s < 60) return d.presence.lastSeenJustNow
+  if (s < 3600) return d.presence.lastSeenMin(Math.floor(s / 60))
+  if (s < 86400) return d.presence.lastSeenH(Math.floor(s / 3600))
+  if (s < 86400 * 7) return d.presence.lastSeenD(Math.floor(s / 86400))
+  return d.presence.lastSeen(new Intl.DateTimeFormat(d.locale, { day: 'numeric', month: 'short' }).format(u.lastSeen))
 }
 
 // The Offer a match dialog, opened from anywhere.

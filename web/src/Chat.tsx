@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useT } from './i18n'
 import { Button } from './ui'
 import type { ChatLine, Color } from './useMatch'
 
@@ -16,6 +17,7 @@ type ChatProps = {
 
 /** Chat between the two players. It lasts only while the game does. */
 export function Chat({ lines, you, themName, disabled, onSend }: ChatProps) {
+  const t = useT()
   const [text, setText] = useState('')
   const [inView, setInView] = useState(true)
   const [seen, setSeen] = useState(0)
@@ -42,19 +44,19 @@ export function Chat({ lines, you, themName, disabled, onSend }: ChatProps) {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault()
-    const t = text.trim()
-    if (t && onSend(t)) setText('')
+    const line = text.trim()
+    if (line && onSend(line)) setText('')
   }
 
   return (
     <section
       ref={panel}
-      aria-label="Chat"
+      aria-label={t.chat.title}
       className="flex flex-col gap-2 rounded-lg p-3 shadow-[inset_0_0_0_1.5px_var(--color-fg)]"
     >
       <h3 className="flex items-baseline justify-between gap-2 font-semibold">
-        Chat
-        <span className="text-xs font-medium text-accent">Cleared when the game ends</span>
+        {t.chat.title}
+        <span className="text-xs font-medium text-accent">{t.chat.cleared}</span>
       </h3>
 
       <ol
@@ -62,7 +64,9 @@ export function Chat({ lines, you, themName, disabled, onSend }: ChatProps) {
         aria-live="polite"
         className="flex max-h-[30dvh] min-h-16 flex-col gap-1.5 overflow-y-auto overscroll-contain text-[15px] lg:max-h-[240px]"
       >
-        {lines.length === 0 && <li className="m-auto text-sm text-accent">Say hi to {themName ?? 'your opponent'}.</li>}
+        {lines.length === 0 && (
+          <li className="m-auto text-sm text-accent">{t.chat.sayHi(themName ?? t.chat.yourOpponent)}</li>
+        )}
         {lines.map((l) => {
           const mine = l.from === you
           return (
@@ -73,9 +77,9 @@ export function Chat({ lines, you, themName, disabled, onSend }: ChatProps) {
                   ? 'self-end rounded-br-md bg-fg text-bg'
                   : 'self-start rounded-bl-md shadow-[inset_0_0_0_1.5px_var(--color-fg)]'
               }`}
-              title={new Date(l.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+              title={new Date(l.at).toLocaleTimeString(t.locale, { hour: 'numeric', minute: '2-digit' })}
             >
-              <span className="sr-only">{mine ? 'You: ' : `${themName ?? 'Opponent'}: `}</span>
+              <span className="sr-only">{mine ? t.chat.youPrefix : `${themName ?? t.common.opponent}: `}</span>
               {l.text}
             </li>
           )
@@ -87,15 +91,15 @@ export function Chat({ lines, you, themName, disabled, onSend }: ChatProps) {
           value={text}
           onChange={(e) => setText(e.target.value)}
           maxLength={MAX_LEN}
-          placeholder={disabled ? 'Reconnecting…' : 'Message'}
-          aria-label="Chat message"
+          placeholder={disabled ? t.chat.reconnecting : t.chat.message}
+          aria-label={t.chat.chatMessage}
           enterKeyHint="send"
           autoComplete="off"
           disabled={disabled}
           // 16px keeps iOS from zooming in on focus.
           className="h-11 min-w-0 flex-1 rounded-md bg-transparent px-4 text-base shadow-[inset_0_0_0_2px_color-mix(in_srgb,var(--color-fg)_35%,transparent)] outline-none placeholder:text-accent focus-visible:shadow-[inset_0_0_0_2px_var(--color-fg)] disabled:opacity-40"
         />
-        <Button type="submit" variant="solid" icon aria-label="Send" disabled={disabled || !text.trim()}>
+        <Button type="submit" variant="solid" icon aria-label={t.common.send} disabled={disabled || !text.trim()}>
           <svg
             width="20"
             height="20"
@@ -116,7 +120,7 @@ export function Chat({ lines, you, themName, disabled, onSend }: ChatProps) {
           className="chat-pill fixed bottom-[max(16px,env(safe-area-inset-bottom))] left-1/2 z-30 h-10 -translate-x-1/2 rounded-md bg-fg px-4 text-sm font-semibold text-bg shadow-[0_8px_24px_rgb(0_0_0/0.25)]"
           onClick={() => panel.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
         >
-          {unread === 1 ? '1 new message' : `${unread} new messages`}
+          {t.chat.newMessages(unread)}
         </button>
       )}
     </section>

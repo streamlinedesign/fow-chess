@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Board } from './Board'
 import { Captured } from './Captured'
+import { errorText, useT, type Dict } from './i18n'
+import { how } from './MatchPage'
 import { navigate } from './router'
 import { describeSettings, type Settings } from './settings'
 import { Button, Spinner } from './ui'
@@ -29,14 +31,15 @@ type Replay = {
 const noMoves: string[] = []
 const noop = () => {}
 
-function resultLine(r: Replay) {
-  if (r.result === '1/2-1/2') return `Draw by ${r.reason}`
-  const won = `${r.result === '1-0' ? 'White' : 'Black'} won by ${r.reason}`
-  return r.sniper ? `Sniper Win: ${won} on the first move` : won
+function resultLine(r: Replay, t: Dict) {
+  if (r.result === '1/2-1/2') return t.replay.drawBy(how(r.reason, t))
+  const won = t.replay.sideWon(r.result === '1-0' ? t.common.white : t.common.black, how(r.reason, t))
+  return r.sniper ? t.replay.sniper(won) : won
 }
 
 /** Steps through a finished game with the whole board visible. */
 export function ReplayPage({ id, round }: { id: string; round: number }) {
+  const t = useT()
   const [replay, setReplay] = useState<Replay | null>(null)
   const [error, setError] = useState('')
   const [ply, setPly] = useState(0)
@@ -49,9 +52,9 @@ export function ReplayPage({ id, round }: { id: string; round: number }) {
         if (res.ok) {
           setReplay(body)
           setPly(body.frames.length - 1)
-        } else setError(body.error || "Couldn't load the game.")
+        } else setError(errorText(body))
       })
-      .catch(() => setError("Couldn't reach the server."))
+      .catch(() => setError(t.common.cantReach))
   }, [id, round])
 
   // Arrow keys step through the moves.
@@ -73,7 +76,7 @@ export function ReplayPage({ id, round }: { id: string; round: number }) {
       <main className="flex flex-1 flex-col items-start gap-6 px-4 pt-10 sm:px-8">
         <h1 className="text-[clamp(36px,8vw,56px)] leading-none font-bold tracking-tight">{error}</h1>
         <Button variant="solid" onClick={() => navigate('/')}>
-          Back home
+          {t.common.backHome}
         </Button>
       </main>
     )
@@ -81,7 +84,7 @@ export function ReplayPage({ id, round }: { id: string; round: number }) {
   if (!replay) {
     return (
       <main className="grid flex-1 place-items-center">
-        <Spinner label="Loading game" />
+        <Spinner label={t.replay.loadingGame} />
       </main>
     )
   }
@@ -89,7 +92,6 @@ export function ReplayPage({ id, round }: { id: string; round: number }) {
   const f = replay.frames[ply]
   const last = replay.frames.length - 1
   const orientation: Color = flipped ? 'b' : 'w'
-  const name = (c: Color) => replay.players[c] || 'Guest'
   const rows = []
   for (let i = 0; i < replay.history.length; i += 2) rows.push(i)
 
@@ -105,12 +107,12 @@ export function ReplayPage({ id, round }: { id: string; round: number }) {
           onClick={(e) => (e.preventDefault(), navigate(`/u/${replay.players[c]}`))}
           className="font-semibold hover:underline"
         >
-          {name(c)}
+          {replay.players[c]}
         </a>
       ) : (
-        <span className="font-semibold">Guest</span>
+        <span className="font-semibold">{t.common.guest}</span>
       )}
-      <span className="text-accent">{c === 'w' ? 'White' : 'Black'}</span>
+      <span className="text-accent">{c === 'w' ? t.common.white : t.common.black}</span>
       <Captured pieces={f.captured[c]} className="ml-auto text-[clamp(16px,calc(var(--board)/30),22px)]" />
     </div>
   )
@@ -134,20 +136,20 @@ export function ReplayPage({ id, round }: { id: string; round: number }) {
 
         <aside className="flex w-full flex-col gap-4 lg:w-[320px] lg:pt-9">
           <div className="flex flex-col gap-1">
-            <p className="text-2xl font-bold tracking-tight">{resultLine(replay)}</p>
+            <p className="text-2xl font-bold tracking-tight">{resultLine(replay, t)}</p>
             <p className="text-sm text-accent">
-              {describeSettings(replay.settings).join(' · ')} · replayed with the fog lifted
+              {describeSettings(replay.settings, t).join(' · ')} · {t.replay.fogLifted}
             </p>
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" icon aria-label="First move" onClick={() => setPly(0)} disabled={ply === 0}>
+            <Button variant="outline" icon aria-label={t.replay.first} onClick={() => setPly(0)} disabled={ply === 0}>
               «
             </Button>
             <Button
               variant="outline"
               icon
-              aria-label="Previous move"
+              aria-label={t.replay.previous}
               onClick={() => setPly(ply - 1)}
               disabled={ply === 0}
             >
@@ -156,17 +158,23 @@ export function ReplayPage({ id, round }: { id: string; round: number }) {
             <Button
               variant="outline"
               icon
-              aria-label="Next move"
+              aria-label={t.replay.next}
               onClick={() => setPly(ply + 1)}
               disabled={ply === last}
             >
               ›
             </Button>
-            <Button variant="outline" icon aria-label="Last move" onClick={() => setPly(last)} disabled={ply === last}>
+            <Button
+              variant="outline"
+              icon
+              aria-label={t.replay.last}
+              onClick={() => setPly(last)}
+              disabled={ply === last}
+            >
               »
             </Button>
             <Button variant="ghost" onClick={() => setFlipped((v) => !v)}>
-              Flip
+              {t.replay.flip}
             </Button>
           </div>
 

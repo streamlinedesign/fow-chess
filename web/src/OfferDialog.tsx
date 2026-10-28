@@ -1,19 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Avatar } from './Avatar'
+import { useT } from './i18n'
 import { loadSettings, type Settings } from './settings'
 import { SettingsPanel } from './SettingsPanel'
 import { api, openOffer, showToast, useOfferTo, type UserCard } from './social'
 import { Button, Dialog } from './ui'
 
-const COLORS: ['w' | 'random' | 'b', string][] = [
-  ['w', 'White'],
-  ['random', 'Random'],
-  ['b', 'Black'],
-]
+const COLORS = ['w', 'random', 'b'] as const
 
 /** Offer a match: pick the rules, clock and your colour, then send. Opened with openOffer(name). */
 export function OfferDialog() {
   const to = useOfferTo()
+  const t = useT()
+  const colorNames = { w: t.common.white, random: t.messages.random, b: t.common.black }
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const [color, setColor] = useState<'w' | 'b' | 'random'>('random')
   const [them, setThem] = useState<UserCard | null>(null)
@@ -39,7 +38,7 @@ export function OfferDialog() {
     setError('')
     try {
       await api('POST', '/api/offers', { to, settings, color })
-      showToast({ text: `Match offer sent to ${to}.` })
+      showToast({ text: t.toast.offerSent(to!) })
       openOffer(null)
     } catch (e) {
       setError((e as Error).message)
@@ -51,7 +50,7 @@ export function OfferDialog() {
     <Dialog
       open={!!to}
       onOpenChange={(open) => !open && openOffer(null)}
-      title="Offer a match"
+      title={t.offer.title}
       className="w-[min(94vw,520px)]"
     >
       <div className="flex flex-col gap-5">
@@ -65,12 +64,12 @@ export function OfferDialog() {
         <SettingsPanel value={settings} onChange={setSettings} signedIn />
         <div className="flex items-center justify-between gap-3">
           <span className="font-semibold" id="offer-color">
-            Your colour
+            {t.offer.yourColour}
           </span>
           <div role="radiogroup" aria-labelledby="offer-color" className="seg">
-            {COLORS.map(([c, label]) => (
+            {COLORS.map((c) => (
               <button key={c} type="button" role="radio" aria-checked={color === c} onClick={() => setColor(c)}>
-                {label}
+                {colorNames[c]}
               </button>
             ))}
           </div>
@@ -82,10 +81,10 @@ export function OfferDialog() {
         )}
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => openOffer(null)}>
-            Cancel
+            {t.common.cancel}
           </Button>
           <Button variant="solid" onClick={send} loading={busy}>
-            Send offer
+            {t.offer.sendOffer}
           </Button>
         </div>
       </div>

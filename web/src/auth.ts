@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react'
+import { dict, errorText } from './i18n'
 
 export type Me = { username: string; rating: number }
 
@@ -35,9 +36,9 @@ export async function authenticate(kind: 'signup' | 'login', username: string, p
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password }),
   }).catch(() => null)
-  if (!res) return "Couldn't reach the server."
+  if (!res) return dict().common.cantReach
   const body = await res.json().catch(() => ({}))
-  if (!res.ok) return (body.error as string) || 'Something went wrong.'
+  if (!res.ok) return errorText(body)
   set(body)
   return null
 }
