@@ -14,6 +14,7 @@ import { NotFound } from './NotFound'
 import { OfferDialog } from './OfferDialog'
 import { ProfilePage } from './ProfilePage'
 import { ReplayPage } from './ReplayPage'
+import { RulesPage } from './RulesPage'
 import { usePath } from './router'
 import { WatchPage } from './WatchPage'
 import { SettingsPage } from './SettingsPage'
@@ -58,6 +59,8 @@ export function App() {
     <WatchPage />
   ) : path === '/settings' ? (
     <SettingsPage />
+  ) : path === '/rules' ? (
+    <RulesPage />
   ) : path === '/' ? (
     <Landing />
   ) : (

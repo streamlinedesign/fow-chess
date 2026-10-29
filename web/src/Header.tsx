@@ -64,6 +64,13 @@ export function Header() {
         ) : (
           <>
             <a
+              href="/rules"
+              onClick={(e) => go(e, '/rules')}
+              className="flex h-9 items-center rounded-md px-3 text-sm font-semibold transition-colors hover:bg-muted max-sm:hidden"
+            >
+              {t.landing.howToPlay}
+            </a>
+            <a
               href="/watch"
               onClick={(e) => go(e, '/watch')}
               className="flex h-9 items-center rounded-md px-3 text-sm font-semibold transition-colors hover:bg-muted"
@@ -204,6 +211,10 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
       <MenuItem onSelect={() => navigate('/watch')}>
         <Icon name="eye" />
         {t.common.watch}
+      </MenuItem>
+      <MenuItem onSelect={() => navigate('/rules')}>
+        <Icon name="book" />
+        {t.landing.howToPlay}
       </MenuItem>
       <MenuItem onSelect={() => navigate('/settings')}>
         <Icon name="gear" />

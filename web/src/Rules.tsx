@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { rich, useT, type Dict } from './i18n'
 import { pieceImg } from './position'
 import { HILL } from './settings'
@@ -18,12 +18,14 @@ function MiniBoard({
   last,
   dots,
   hill,
+  danger,
 }: {
   fen: string
   seen?: string[]
   last?: string[]
   dots?: string[]
   hill?: boolean
+  danger?: string
 }) {
   const board = fenBoard(fen)
   const squares = []
@@ -42,6 +44,7 @@ function MiniBoard({
           data-last={(!fog && last?.includes(sq)) || undefined}
           data-target={dots?.includes(sq) ? 'move' : undefined}
           data-hill={hill && HILL.includes(sq)}
+          data-danger={danger === sq}
         >
           {piece !== '.' && !fog && <img className="piece" src={pieceImg(piece)} alt="" draggable={false} />}
         </div>,
@@ -80,48 +83,38 @@ function Card({ id, art, children }: { id: CardKey; art: ReactNode; children?: R
 
 const rows = (n: number) => [...Array(n * 8)].map((_, i) => FILES[i % 8] + (Math.floor(i / 8) + 1))
 
-/** Squares a king on d4 reaches in Jump King: one step, or a knight's jump. */
-const JUMPS = ['c3', 'c4', 'c5', 'd3', 'd5', 'e3', 'e4', 'e5', 'b3', 'b5', 'c2', 'c6', 'e2', 'e6', 'f3', 'f5']
-
-/** The Jump King card's art. Tap the king enough times and he reaches the top. */
-function JumpKingArt({ onTop }: { onTop: () => void }) {
-  const t = useT()
-  const [hops, setHops] = useState(0)
-  const [hopping, setHopping] = useState(false)
-  return (
-    <div className="flex items-center gap-4">
-      <MiniBoard fen="8/8/8/8/3K4/8/8/8" dots={JUMPS} />
-      <button
-        type="button"
-        aria-label={t.rules.makeKingJump}
-        className="jump-king"
-        data-hopping={hopping}
-        onAnimationEnd={() => setHopping(false)}
-        onClick={() => {
-          if (hopping) return
-          setHopping(true)
-          setHops(hops + 1)
-          if (hops + 1 === 7) onTop()
-        }}
-      >
-        <img src={pieceImg('K')} alt="" draggable={false} className="size-[64px]" />
-      </button>
-    </div>
-  )
-}
-
-/** How the game works, for the landing page. Keep in step with server/engine and server/view.go. */
+/** How the game works. Keep in step with server/engine and server/view.go. */
 export function Rules() {
   const t = useT()
-  const [top, setTop] = useState(false)
   return (
     <section id="rules" className="flex flex-col gap-6">
       <div className="border-b border-fg pb-4">
-        <h2 className="text-[clamp(30px,5vw,44px)] leading-none font-semibold tracking-tight">{t.rules.heading}</h2>
+        <h1 className="text-[clamp(30px,5vw,44px)] leading-none font-semibold tracking-tight">{t.rules.heading}</h1>
         <p className="mt-2 text-accent">{t.rules.intro}</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card
+          id="fog"
+          art={<MiniBoard fen="8/8/8/8/3N4/8/8/8" seen={['d4', 'b3', 'b5', 'c2', 'c6', 'e2', 'e6', 'f3', 'f5']} />}
+        />
+
+        <Card
+          id="eat"
+          art={
+            <div className="flex items-center gap-2.5" aria-hidden>
+              <img src={pieceImg('Q')} alt="" className="size-[72px]" />
+              <span className="text-3xl text-accent">→</span>
+              <img src={pieceImg('k')} alt="" className="size-[72px] -rotate-90 opacity-55" />
+            </div>
+          }
+        />
+
+        <Card
+          id="danger"
+          art={<MiniBoard fen="8/8/8/8/8/2n5/8/4K3" seen={['e1', 'd1', 'd2', 'e2', 'f1', 'f2', 'c3']} danger="e1" />}
+        />
+
         <Card
           id="start"
           art={
@@ -141,37 +134,9 @@ export function Rules() {
           }
         />
 
-        <Card
-          id="fog"
-          art={<MiniBoard fen="8/8/8/8/3N4/8/8/8" seen={['d4', 'b3', 'b5', 'c2', 'c6', 'e2', 'e6', 'f3', 'f5']} />}
-        />
-
-        <Card
-          id="eat"
-          art={
-            <div className="flex items-center gap-2.5" aria-hidden>
-              <img src={pieceImg('Q')} alt="" className="size-[72px]" />
-              <span className="text-3xl text-accent">→</span>
-              <img src={pieceImg('k')} alt="" className="size-[72px] -rotate-90 opacity-55" />
-            </div>
-          }
-        />
-
-        <Card id="mate" art={<MiniBoard fen="R5k1/5ppp/8/8/8/8/5PPP/6K1" last={['a1', 'a8']} />} />
-
-        <Card id="hill" art={<MiniBoard fen="4k3/8/8/8/3K4/8/8/8" hill last={['d4']} />} />
-
-        <Card id="standard" art={<MiniBoard fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" />} />
-
         <Card id="backRow" art={<MiniBoard fen="8/8/8/8/8/8/PPPPPPPP/BNRKQRNB" seen={rows(2)} last={rows(1)} />} />
 
         <Card id="battleship" art={<MiniBoard fen="8/8/8/8/1P2N2P/P1R2Q1P/1PB1PPB1/P1RK1N2" seen={rows(4)} />} />
-
-        <Card id="jump" art={<JumpKingArt onTop={() => setTop(true)} />}>
-          <p className="italic">{top ? t.rules.jumpTop : t.rules.jumpEgg}</p>
-        </Card>
-
-        <Card id="backPawns" art={<MiniBoard fen="8/8/8/8/3P4/8/8/8" dots={['d5', 'd3']} />} />
 
         <Card id="sniper" art={<MiniBoard fen="4k3/8/8/8/8/4R3/8/4K3" last={['e3', 'e8']} />} />
 

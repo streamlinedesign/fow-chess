@@ -133,6 +133,15 @@ export function MatchPage({ id }: { id: string }) {
 
   const overKey = state ? `${state.round}:${state.ply}` : ''
   const over = state?.status === 'over' ? resultText(state, t) : null
+  // The fog lifts and the last move shows for a moment before the dialog covers the board,
+  // so a player sees what took their king.
+  const [showOver, setShowOver] = useState('')
+  useEffect(() => {
+    if (!over) return
+    const id = setTimeout(() => setShowOver(overKey), state!.last && state!.ply > 0 ? 1400 : 0)
+    return () => clearTimeout(id)
+  }, [over, overKey, state])
+  const danger = !!you && playing && !predicting && !!state?.danger
 
   const status = (() => {
     if (!state) return conn === 'failed' ? t.match.cantReach : t.match.connecting
@@ -146,7 +155,9 @@ export function MatchPage({ id }: { id: string }) {
     if (over)
       return state.result === '1/2-1/2'
         ? t.match.drawStatus(how(state.reason, t))
-        : `${over.title} ${how(state.reason, t)}`
+        : you && you !== (state.result === '1-0' ? 'w' : 'b') && state.reason === 'capturing the king'
+          ? t.match.kingEaten
+          : `${over.title} ${how(state.reason, t)}`
     const check = state.check && !predicting && !state.behind ? t.match.check : ''
     if (!you) return `${check}${t.match.sideToMove(sideName(t, turn!))}`
     return `${check}${turn === you ? t.common.yourMove : t.common.theirMove}`
@@ -184,6 +195,8 @@ export function MatchPage({ id }: { id: string }) {
                   legal={legal}
                   lastMove={last}
                   check={predicting ? undefined : state?.check}
+                  danger={predicting ? undefined : state?.danger}
+                  unsafe={state?.unsafe}
                   hill={state?.settings.hill}
                   onMove={onMove}
                 />
@@ -209,6 +222,12 @@ export function MatchPage({ id }: { id: string }) {
             )}
             {status}
           </p>
+          {danger && (
+            <p className="-mt-2 flex items-center gap-2 text-sm font-semibold text-danger" role="status">
+              <span className="danger-dot" aria-hidden />
+              {t.match.kingThreat}
+            </p>
+          )}
 
           {state && (
             <ul className="flex flex-wrap gap-1.5" aria-label={t.match.matchRules}>
@@ -356,7 +375,7 @@ export function MatchPage({ id }: { id: string }) {
       </Dialog>
 
       <Dialog
-        open={!!over && dismissedOver !== overKey}
+        open={!!over && showOver === overKey && dismissedOver !== overKey}
         onOpenChange={(o) => !o && setDismissedOver(overKey)}
         title={over?.title ?? ''}
         description={

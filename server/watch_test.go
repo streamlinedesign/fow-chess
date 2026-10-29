@@ -25,7 +25,7 @@ func TestWatching(t *testing.T) {
 	ben.do("POST", "/api/friends/ann", "")
 	cat.do("POST", "/api/friends/ann", "")
 	ann.do("POST", "/api/friends/cat", "")
-	_, res := ann.do("POST", "/api/offers", `{"to":"ben","settings":{"fog":true},"color":"w"}`)
+	_, res := ann.do("POST", "/api/offers", `{"to":"ben","settings":{"time":{"base":300}},"color":"w"}`)
 	_, res = ben.do("POST", "/api/offers/"+jsonNumber(res["id"].(float64))+"/accept", "")
 	id := res["matchId"].(string)
 	m := site.hub.Get(id)

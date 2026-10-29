@@ -38,6 +38,12 @@ func (s Settings) valid() bool {
 	return s.Time.valid() && ok
 }
 
+// normalize makes new settings the one game the site plays: fog of war, win
+// by eating the king. Saved games keep whatever they were played with.
+func (s *Settings) normalize() {
+	s.Fog, s.KingCapture = true, true
+}
+
 // startFrom is the FEN a game starts from: the usual position, or the players' setups.
 func startFrom(fen string) string {
 	if fen == "" {
@@ -54,23 +60,23 @@ type TimeControl struct {
 	PerMove int `json:"perMove"` // seconds for each move; the clock resets every move
 }
 
-// timeControls are the presets players can pick from.
+// timeControls are the presets players can pick from. Must match TIME_GROUPS in web/src/settings.ts.
 var timeControls = []TimeControl{
-	// No clock
-	{},
-	// Bullet
-	{Base: 60}, {Base: 120, Inc: 1},
 	// Blitz
-	{Base: 180}, {Base: 180, Inc: 2}, {Base: 300}, {Base: 300, Inc: 3},
+	{Base: 300}, {Base: 180, Inc: 2},
 	// Rapid
-	{Base: 600}, {Base: 600, Inc: 5}, {Base: 900, Inc: 10},
-	// Classical
-	{Base: 1800}, {Base: 1800, Inc: 20}, {Base: 5400, Inc: 30},
-	// Daily
-	{PerMove: 24 * 60 * 60},
+	{Base: 600},
+	// Tournament
+	{Base: 5400, Inc: 30},
+	// Daily and weekly: the clock resets after every move
+	{PerMove: 24 * 60 * 60}, {PerMove: 7 * 24 * 60 * 60},
 }
 
-func (t TimeControl) valid() bool { return slices.Contains(timeControls, t) }
+// valid is checked only when a game or an offer is created. Saved games keep
+// whatever clock they were made with, including the presets no longer offered.
+func (t TimeControl) valid() bool {
+	return slices.Contains(timeControls, t)
+}
 
 // clocked is false for No clock games, which wait forever and are never rated.
 func (t TimeControl) clocked() bool { return t != TimeControl{} }
@@ -100,13 +106,18 @@ type lastMove struct {
 
 // gameView is the part of the state message that depends on who is looking.
 type gameView struct {
-	Board   string    `json:"board"`
-	Turn    string    `json:"turn"`
-	Ply     int       `json:"ply"`
-	Legal   []string  `json:"legal"`
-	Last    *lastMove `json:"last"`
-	Check   string    `json:"check,omitempty"`
-	History []string  `json:"history"` // SAN, or "?" for moves the viewer may not know
+	Board string    `json:"board"`
+	Turn  string    `json:"turn"`
+	Ply   int       `json:"ply"`
+	Legal []string  `json:"legal"`
+	Last  *lastMove `json:"last"`
+	Check string    `json:"check,omitempty"`
+	// Danger is the player's king square when a piece they can see attacks it,
+	// and Unsafe the squares their king could step to that a seen piece attacks.
+	// Both come from the player's own view, so they give nothing away.
+	Danger  string   `json:"danger,omitempty"`
+	Unsafe  []string `json:"unsafe,omitempty"`
+	History []string `json:"history"` // SAN, or "?" for moves the viewer may not know
 	// Captured lists the pieces each side has taken, as FEN letters, most valuable first.
 	// Players know all of it even under fog: they saw what they took and see what they lost.
 	Captured map[string]string `json:"captured"`
@@ -158,6 +169,15 @@ func viewFor(g *engine.Game, viewer int, playable, fog bool) gameView {
 		}
 	}
 
+	if viewer >= 0 && !g.Over() {
+		var seen *[64]bool
+		if fog {
+			vision := pos.Vision(engine.Color(viewer))
+			seen = &vision
+		}
+		v.Danger, v.Unsafe = kingDanger(&pos, engine.Color(viewer), seen)
+	}
+
 	if !fog || g.Over() || viewer < 0 {
 		v.Board = boardView(&pos, nil)
 		for i, pm := range hist {
@@ -192,6 +212,46 @@ func viewFor(g *engine.Game, viewer int, playable, fog bool) gameView {
 		v.Check = pos.KingSquare(pos.Turn).String()
 	}
 	return v
+}
+
+// kingDanger says whether a piece the player can see attacks their king, and
+// which of the king's moves land on a square a seen piece attacks. Pieces the
+// fog hides count as blockers but never as attackers, so the answer only uses
+// what is on the player's own board. A nil seen means everything is visible.
+func kingDanger(pos *engine.Position, us engine.Color, seen *[64]bool) (danger string, unsafe []string) {
+	king := pos.KingSquare(us)
+	if king == engine.NoSquare {
+		return "", nil
+	}
+	attacks := func(p *engine.Position, target engine.Square) bool {
+		for sq := range p.Board {
+			pc := p.Board[sq]
+			if pc.IsEmpty() || pc.Color() == us || (seen != nil && !seen[sq]) {
+				continue
+			}
+			for _, m := range p.PieceMoves(engine.Square(sq)) {
+				if m.To == target {
+					return true
+				}
+			}
+		}
+		return false
+	}
+	if attacks(pos, king) {
+		danger = king.String()
+	}
+	if pos.Turn == us {
+		for _, m := range pos.LegalMoves() {
+			if m.From != king {
+				continue
+			}
+			after := pos.Apply(m)
+			if attacks(&after, m.To) {
+				unsafe = append(unsafe, m.To.String())
+			}
+		}
+	}
+	return danger, unsafe
 }
 
 // spectatorDelay is how many moves (by either side) spectators of a fog game

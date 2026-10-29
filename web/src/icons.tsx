@@ -70,6 +70,14 @@ const paths = {
     </>
   ),
   trend: <path d="M1.5 11 5.5 7l2.5 2.5L13.5 4M10 4h3.5v3.5" strokeLinecap="round" strokeLinejoin="round" />,
+  book: (
+    <>
+      <path
+        d="M2.5 2.5h3.5a1.5 1.5 0 0 1 1.5 1.5v8.5a1.5 1.5 0 0 0-1.5-1.5H2.5v-8.5ZM12.5 2.5H9a1.5 1.5 0 0 0-1.5 1.5v8.5A1.5 1.5 0 0 1 9 11h3.5V2.5Z"
+        strokeLinejoin="round"
+      />
+    </>
+  ),
 }
 
 export type IconName = keyof typeof paths | 'dots'

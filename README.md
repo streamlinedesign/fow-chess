@@ -6,21 +6,21 @@ Two-player online chess with fog of war. One player creates a match and shares t
 - **server/**: Go, with Postgres for accounts and games. It holds every live match in memory, checks each move with its own rules engine, and pushes state over WebSockets. In production it also serves the built web app from inside the binary.
 - **server/engine/**: the rules engine. Positions, FEN, move generation, legality, SAN, and game results. It has no dependencies and knows nothing about networking, so variants like fog of war build on top of it.
 
-Rules: full legal moves including castling, en passant and promotion (with a picker), check, checkmate, stalemate, insufficient material, threefold repetition and the fifty-move rule (both end the game automatically). Players can offer a draw, resign, and rematch (colors swap). Refreshing or losing signal reconnects you to your seat. Anyone else who opens the link watches.
+The site plays one game, **Eat the King**: chess with fog of war, where you win by capturing the king. Full legal moves including castling, en passant and promotion (with a picker), stalemate, insufficient material, threefold repetition and the fifty-move rule (both end the game automatically). Players can offer a draw, resign, and rematch (colors swap). Refreshing or losing signal reconnects you to your seat. Anyone else who opens the link watches.
 
-## Game modes
+## The game
 
-The creator picks the modes when making a match, and they mix freely:
+Every new match has fog of war and Eat the King on. The server forces both (`normalize` in `server/view.go`), so a client can't ask for anything else.
 
-- **Fog of war** on or off. With fog on, each piece sees its own square and every square it could move to, captures included. A pawn always sees the square straight ahead, even when blocked, and sees its diagonals only when it can capture there. You get no hints about the opponent: no last-move highlight, `?` in the move list for their moves, and no check marks on your own moves. Spectators see one side's view, 6 moves behind (see Watching below). When the game ends, everyone sees the full board.
-- **Win by** checkmate (normal check rules) or Eat the King (win by capturing the king). In Eat the King mode there is no check: kings may walk into danger and may castle out of, through or into attack.
-- **Pieces**: Standard (the usual start), **Back row** (each player arranges their back row; pawns stay put) or **Battleship** (each player places all sixteen pieces anywhere in their own four rows). Both players set up at the same time, and the clock doesn't run until both are ready. Under fog you never see the other setup; without fog, a player's setup shows once they press Ready. Castling is allowed only for a king and rook that start on their usual squares. Setups are checked in `server/setup.go`, and a game saves the position it started from (`start_fen`) so replays and restarts work.
-- **King of the Hill**: on top of checkmate or Eat the King, a king that reaches d4, e4, d5 or e5 wins at once. Two lone kings aren't a dead draw here, and in a setup mode the king can't start on the hill.
-- **Jump King**: the king also moves like a knight (and so attacks like one).
-- **Backward pawns**: pawns can also step one square straight back onto an empty square, and under fog they see the square behind them the way they see the one ahead. No captures or promotions backwards.
-- **Rated or Unrated**: a game can be rated only with two signed-in players and a clock; the creator can turn rating off.
+- **Fog of war**: each piece sees its own square and every square it could move to, captures included. A pawn always sees the square straight ahead, even when blocked, and sees its diagonals only when it can capture there. You get no hints about the opponent: no last-move highlight and `?` in the move list for their moves. Spectators see one side's view, 6 moves behind (see Watching below). When the game ends, everyone sees the full board.
+- **Eat the King**: there is no check and no checkmate. Kings may walk into danger and may castle out of, through or into attack. You win by capturing the king.
+- **King in danger**: the one warning. When a piece the player can see attacks their king, the king gets a red ring and the match page says so; while the king is picked up, the destination squares a seen piece covers are marked too. It's computed from the player's own view only (`kingDanger` in `server/view.go`): hidden pieces count as blockers, never as attackers, so it leaks nothing. The warning is sent as `danger` and `unsafe` in the game view. When the king is taken, the fog lifts and the capturing move shows for a moment before the game-over dialog.
+- **Modes** decide where the pieces start: **Standard** (the usual position), **Back row** (each player arranges their back row; pawns stay put) or **Battleship** (each player places all sixteen pieces anywhere in their own four rows). Both players set up at the same time, and the clock doesn't run until both are ready. You never see the other setup. Castling is allowed only for a king and rook that start on their usual squares. Setups are checked in `server/setup.go`, and a game saves the position it started from (`start_fen`) so replays and restarts work.
+- **Rated or Unrated**: a game can be rated only with two signed-in players; the creator can turn rating off.
 
-A king that starts in danger after setup is left as it is. A win on the winner's very first move (checkmate or king capture) is a **Sniper Win**: it counts, but moves both ratings only a quarter as far as a whole game (`sniperWeight` in `server/setup.go`).
+A king that starts in danger after setup is left as it is. A win on the winner's very first move is a **Sniper Win**: it counts, but moves both ratings only a quarter as far as a whole game (`sniperWeight` in `server/setup.go`).
+
+The engine still knows the older options (checkmate rules, no fog, King of the Hill, Jump King, backward pawns: `Rules` in `server/engine`), and games saved with them keep working and replaying. They're described with the `legacy` labels in the dictionaries, but no new game can use them.
 
 The rules live in `server/engine` (`Rules`, `Position.Vision`), and what each viewer receives is decided in `server/view.go`.
 
@@ -34,16 +34,16 @@ Everything lives in Postgres. The server connects to `DATABASE_URL` (or `-db <ur
 - Games with at least one signed-in player are kept forever. Games between two guests are deleted after 30 days.
 - A guest who signs in mid-game keeps their seat.
 - `/u/<username>` shows a player's rating, current games and finished games. Finished games can be replayed move by move at `/g/<match id>/<round>`, with the fog lifted. Games still being played can't be replayed, since that would reveal the board.
-- The home page shows your games in progress and the Top 100 (`GET /api/leaderboard`, which also returns your own rank when you're signed in).
+- The home page is the game's hub: the match settings and your view of the board, then your games in progress, friends online, a few live games and the Top 100 (`GET /api/leaderboard`, which also returns your own rank when you're signed in). Guests see a prompt to sign in instead of friends. The rules and the Opera Game replay are at `/rules`.
 
 ## Clocks and rating
 
-The creator picks a time control from fixed presets (`timeControls` in `server/view.go`, `TIME_GROUPS` in `web/src/settings.ts`, which must match): Bullet 1+0 and 2+1, Blitz 3+0, 3+2, 5+0 and 5+3, Rapid 10+0, 10+5 and 15+10, Classical 30+0, 30+20 and 90+30, Daily (24 hours per move, reset after every move), or No clock. The server refuses anything else.
+The creator picks a time control from fixed presets (`timeControls` in `server/view.go`, `TIME_GROUPS` in `web/src/settings.ts`, which must match): Blitz 5+0 and 3+2, Rapid 10+0, Tournament 90+30, Daily (24 hours per move, reset after every move) or Weekly (7 days per move). The server refuses anything else for a new game; games saved with an earlier preset, including No clock, keep their clock and still play and replay.
 
 - Clocks run on the server. White's clock starts once Black sits down. The increment is added after each move.
 - When a clock runs out, that side loses on time, unless the opponent has only a king, or a king and one minor piece, which is a draw. A timer ends the game even with nobody connected, and every 30 seconds the server also checks the database for games whose deadline passed while it wasn't holding them (after a restart, for example).
 - The browser counts down locally from the last state the server sent, so the clock stays smooth between messages.
-- A game is **rated** when both players are signed in, it has a clock (Daily counts, No clock never does), and the creator didn't make it Unrated. Ratings use Glicko-2, starting at 1500 with one rating for every mode, and each game is its own rating period. The change is applied once, in a transaction, when the finished game is saved, and shown in the game-over dialog and on the profile.
+- A game is **rated** when both players are signed in, it has a clock (every preset on offer has one), and the creator didn't make it Unrated. Ratings use Glicko-2, starting at 1500 with one rating for every mode, and each game is its own rating period. The change is applied once, in a transaction, when the finished game is saved, and shown in the game-over dialog and on the profile.
 
 ## Chat
 
@@ -56,19 +56,19 @@ Signed-in players can be friends, message each other and offer matches. Guests k
 - **Friends** are mutual: one sends a request, the other accepts it (from the bell, the Friends page or the profile). `/friends` has search by username, your friends with online ones first, and the requests you've sent.
 - **Messages** (`/messages`, `/messages/<name>`) are only between friends. They're kept in Postgres until both people ask to delete the chat. A chat also shows match offers as cards, finished games between you as result cards, and your score against each other. The in-game chat on the match page is separate and still kept only in memory.
 - **Match offers** come from a profile, the friends list or a chat. The sender picks the rules, the clock and their colour. Between friends the offer also shows up as a card in their chat. Accepting starts a match with both seats taken, and its clock starts once both players have it open.
-- **The bell** holds friend requests, match offers and answers to them, game results you weren't there to see, and moves in Daily or No clock games that took more than 4 hours (`slowMove` in `server/match.go`). It's a dropdown, or a sheet on phones.
+- **The bell** holds friend requests, match offers and answers to them, game results you weren't there to see, and moves in Daily or Weekly games that took more than 4 hours (`slowMove` in `server/match.go`). It's a dropdown, or a sheet on phones.
 - **Live updates** go to every open tab of a signed-in player over server-sent events (`GET /api/live`, `server/live.go`). Having a tab open is what makes a player online.
 - **Settings** (`/settings`): theme, change password (which signs out other devices), log out everywhere, delete account, and privacy: hide your online status, take match offers from friends only, and turn off friend requests. A deleted account's games stay, played by a guest.
 
 ## Watching
 
 - **Watch** (`/watch`, in the top bar when signed out and in the avatar menu when signed in) lists the games being played right now, with friends' games first, then the strongest players. A game is listed once both seats are taken and a player has it open; before the first move, both players need to be there. Your own games aren't listed. The list refreshes every 10 seconds.
-- **Spectators** open a match by its link like anyone else and pick whether to see it as White or Black. In a fog game still being played, they see exactly what that player saw 6 moves ago (`spectatorDelay` in `server/view.go`, counting both sides' moves), so nobody watching can tell a player what the fog hides. Clocks and whose move it is stay live. Without fog, or once the game is over, spectators see everything as it is. Players see how many people are watching.
+- **Spectators** open a match by its link like anyone else and pick whether to see it as White or Black. In a game still being played, they see exactly what that player saw 6 moves ago (`spectatorDelay` in `server/view.go`, counting both sides' moves), so nobody watching can tell a player what the fog hides. Clocks and whose move it is stay live. Once the game is over, spectators see everything as it is. Players see how many people are watching.
 - **In a game**: a friend playing right now shows as "In a game" on the Friends page, their profile and your chat, with a Watch button. Hiding your online status hides this too.
 
-## Landing page replay
+## Rules page replay
 
-The landing page replays Morphy's Opera Game as White and Black each saw it under fog. The frames in `web/src/showcase.json` are produced by the server's own rules, and a test fails if they drift. After changing what players see, regenerate them with `cd server && go test -run Showcase -update`.
+The rules page (`/rules`) replays Morphy's Opera Game as White and Black each saw it under fog. The frames in `web/src/showcase.json` are produced by the server's own rules, and a test fails if they drift. After changing what players see, regenerate them with `cd server && go test -run Showcase -update`.
 
 ## Languages
 

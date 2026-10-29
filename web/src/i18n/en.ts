@@ -78,7 +78,8 @@ export const en = {
 
   landing: {
     title: 'Play',
-    tagline: 'Chess where you only see what your pieces see.',
+    tagline: 'Chess where you only see what your pieces see. Eat the king to win.',
+    howToPlay: 'How to play',
     codePlaceholder: 'Have a code? Paste it here',
     codeLabel: 'Match code',
     join: 'Join',
@@ -86,6 +87,13 @@ export const en = {
     yourGames: 'Your games',
     allOnProfile: 'All on your profile',
     waiting: 'Waiting',
+    friendsOnline: 'Friends online',
+    allFriends: 'All friends',
+    noFriendsOnline: 'No friends online right now.',
+    liveNow: 'Live now',
+    allGames: 'All games',
+    nobodyLive: 'Nobody is playing right now. Start a match and someone might watch yours.',
+    guestPitch: 'Log in to keep your games, add friends and play for a rating.',
     replayHeading: 'Fog of war, replayed',
     replaySub: 'A famous game, shown the way each player would have seen it.',
   },
@@ -99,73 +107,54 @@ export const en = {
     loading: 'Loading replay',
     operaGame: 'The Opera Game',
     text: ', Morphy vs. the Duke of Brunswick and Count Isouard, Paris 1858, replayed with fog of war.',
-    atMate: 'At checkmate the fog lifts for both sides.',
+    atMate: 'When the game ends the fog lifts for both sides.',
     eachSide: 'Each side sees only what its own pieces can reach.',
   },
 
   settingsBoard: {
     yourView: 'Your view at the start',
     aria: 'The board at the start with these settings.',
-    fogOn: 'Fog covers everything your pieces can’t see.',
-    fogOff: 'No fog: the whole board shows.',
-    eat: 'Win by eating the king.',
-    mate: 'Win by checkmate.',
-    hill: 'Or get your king to a ringed centre square.',
+    fog: 'Fog covers everything your pieces can’t see.',
+    standard: 'The pieces start as in chess.',
     backRow: 'Arrange your back row first.',
     battleship: 'Place every piece anywhere in the ringed rows first.',
-    jump: 'Your king can also jump, to the dotted squares here.',
-    backPawns: 'Pawns can step back, and see behind them.',
   },
 
   panel: {
     title: 'Match settings',
-    fogShort: 'Fog',
-    fullBoard: 'Full board',
-    fog: 'Fog of war',
-    fogOnHint: 'You only see what your pieces see.',
-    fogOffHint: 'The whole board, as in normal chess.',
-    winBy: 'Win by',
-    eat: 'Eat the King',
-    eatHint: 'No check. Take the king to win.',
-    mate: 'Checkmate',
-    mateHint: 'Normal chess rules with check.',
-    hillHint: 'Also win by getting your king to one of the four centre squares.',
-    pieces: 'Pieces',
-    twists: 'Twists',
-    jumpHint: 'Your king can also jump like a knight.',
-    backPawnsHint: 'Pawns can also step one square back, and see behind them.',
+    mode: 'Mode',
     timeControl: 'Time control',
-    timeGroup: 'Time control group',
-    unlimited: 'Unlimited',
-    ratedNoClock: 'No clock games are never rated.',
     ratedGuest: "Guest games aren't rated. Log in to play for rating.",
     unratedOn: 'Just for fun: no rating changes.',
     ratedOn: 'Counts for both ratings when your opponent is signed in too.',
   },
 
+  /** Games saved before the site became one game can still carry these. */
+  legacy: {
+    fullBoard: 'Full board',
+    checkmate: 'Checkmate',
+    hill: 'King of the Hill',
+    jump: 'Jump King',
+    backPawns: 'Backward pawns',
+  },
+
   time: {
     groups: {
-      Bullet: 'Bullet',
       Blitz: 'Blitz',
       Rapid: 'Rapid',
-      Classical: 'Classical',
+      Tournament: 'Tournament',
       Daily: 'Daily',
-      'No clock': 'No clock',
+      Weekly: 'Weekly',
     } as Record<string, string>,
-    perMove: (h: number) => `${h} h per move`,
+    perMoveHours: (h: number) => `${h} h per move`,
+    perMoveDays: (d: number) => `${d} ${d === 1 ? 'day' : 'days'} per move`,
     noClock: 'No clock',
   },
 
   setups: {
-    '': { label: 'Standard', hint: 'The usual start.' },
-    backRow: { label: 'Back row', hint: 'Arrange your back row.' },
-    battleship: { label: 'Battleship', hint: 'Place every piece in your four rows.' },
-  },
-
-  twists: {
-    hill: 'King of the Hill',
-    jump: 'Jump King',
-    backPawns: 'Backward pawns',
+    '': { label: 'Standard', hint: 'The usual start. Nobody begins in danger.' },
+    backRow: { label: 'Back row', hint: 'Arrange your back row however you like.' },
+    battleship: { label: 'Battleship', hint: 'Place all sixteen pieces anywhere in your four rows.' },
   },
 
   match: {
@@ -186,6 +175,7 @@ export const en = {
     draw: 'Draw',
     youWin: 'You win',
     youLose: 'You lose',
+    kingEaten: 'Your king was eaten',
     sideWins: (side: string) => `${side} wins`,
     sniperWin: 'Sniper Win',
     sniped: 'Sniped',
@@ -242,6 +232,7 @@ export const en = {
     behindNote: (side: string, n: number) =>
       `You see what ${side} saw ${n === 1 ? 'a move' : `${n} moves`} ago, so nothing you see can help either player.`,
     watchingNote: "You're watching this match.",
+    kingThreat: 'Your king is under attack by a piece you can see.',
     titleYourMove: '● Your move · Eat the King',
     titleTheirMove: 'Their move · Eat the King',
     ping: (ms: number) => `ping ${ms} ms`,
@@ -276,61 +267,43 @@ export const en = {
   rules: {
     heading: 'How it plays',
     intro:
-      'Normal chess pieces and moves. Modes change what you can see, how you win, where your pieces start, and how your king moves. Mix them however you like.',
+      'Normal chess pieces and moves, with two changes: you only see what your pieces see, and you win by taking the king.',
     yourMatchCode: 'your match code',
-    makeKingJump: 'Make the king jump',
-    jumpEgg: 'Named after the game. Unlike that king, this one never falls all the way back down.',
-    jumpTop: 'You made it to the top. Legend says there is a babe up here.',
     cards: {
-      start: {
-        kind: 'Getting started',
-        title: 'Starting a match',
-        p: [
-          'Pick the modes and a time control, then press **New match**. You get a 6-character **code** and a link to share. You play White, and whoever opens the link next plays Black.',
-          'Refreshing or losing signal puts you back in your seat. You can offer a draw or resign at any time, and a **rematch** swaps colours.',
-        ],
-      },
       fog: {
         kind: 'What you see',
         title: 'Fog of war',
         p: [
           'You only see what your pieces see: **their own squares** and **every square they could move to**, captures included. The rest is covered.',
-          "A **pawn** always sees the square ahead, even when blocked, and its diagonals only when there's something to take. You get no hints about the other side. The fog lifts when the game ends.",
+          "A **pawn** always sees the square ahead, even when blocked, and its diagonals only when there's something to take. You get no hints about the other side: no last-move highlight, and their moves show as ? in the list. The fog lifts when the game ends.",
         ],
       },
       eat: {
         kind: 'How you win',
         title: 'Eat the King',
         p: [
-          'There is **no check**. Kings may walk into danger, stay there, and castle through an attack. You win by **capturing the king**.',
-          "With fog on, it's the natural way to play, since nobody can always see the threats.",
+          'There is **no check** and no checkmate. Kings may walk into danger, stay there, and castle through an attack. You win by **capturing the king**.',
+          'Under fog nobody can always see the threats, so a king can be taken by a piece that never showed. That is the game.',
         ],
       },
-      mate: {
-        kind: 'How you win',
-        title: 'Checkmate',
+      danger: {
+        kind: 'The one warning',
+        title: 'King in danger',
         p: [
-          "Normal chess rules. You can't leave your king in check, and you win by **checkmate**.",
-          "With fog on, you're told when **you** are in check, because it limits your moves. You're never told when you've put your opponent in check.",
+          'When a piece **you can see** attacks your king, the king gets a red ring and the page says so. Pick the king up and the squares a seen piece covers are marked too.',
+          'It only uses what is already on your board, so it gives nothing away. A piece in the fog stays a surprise.',
         ],
       },
-      hill: {
-        kind: 'How you win',
-        title: 'King of the Hill',
+      start: {
+        kind: 'Getting started',
+        title: 'Starting a match',
         p: [
-          'A classic. Get your **king onto one of the four centre squares** and you win on the spot, whatever else is going on. Checkmate or eating the king still wins too.',
-          "With Jump King on, the hill is only a couple of hops away. When you set up your own pieces, the king can't start on it.",
-        ],
-      },
-      standard: {
-        kind: 'Where pieces start',
-        title: 'Standard',
-        p: [
-          'The usual starting position. Neither king can be in danger before the first move, so every game is a whole game.',
+          'Pick a mode and a clock, then press **New match**. You get a 6-character **code** and a link to share. You play White, and whoever opens the link next plays Black.',
+          'Refreshing or losing signal puts you back in your seat. You can offer a draw or resign at any time, and a **rematch** swaps colours.',
         ],
       },
       backRow: {
-        kind: 'Where pieces start',
+        kind: 'Mode',
         title: 'Back row',
         p: [
           'Before the game, you each **arrange your back row** however you like. The pawns stay where they always are.',
@@ -338,30 +311,15 @@ export const en = {
         ],
       },
       battleship: {
-        kind: 'Where pieces start',
+        kind: 'Mode',
         title: 'Battleship',
         p: [
           'Place **all sixteen pieces anywhere in your four rows**, pawns included. Hide the king, build a wall, or aim a rook down an open file.',
-          "With fog on you never see the other setup, so the first moves are a hunt. Without fog, each side's setup shows once that player is ready.",
-        ],
-      },
-      jump: {
-        kind: 'The king',
-        title: 'Jump King',
-        p: [
-          "The king still steps one square, and can also **jump like a knight**. That makes him harder to trap and quicker to reach the fight. It also means a king can be attacked by a king a knight's jump away.",
-        ],
-      },
-      backPawns: {
-        kind: 'The pawns',
-        title: 'Backward pawns',
-        p: [
-          'Pawns can also **step one square straight back** onto an empty square. They still capture forward only, and never promote going backwards.',
-          "Under fog they see the square behind them too, even when it's taken, just as they see the one ahead.",
+          'You never see the other setup, so the first moves are a hunt.',
         ],
       },
       sniper: {
-        kind: 'Any start you set up',
+        kind: 'Back row and Battleship',
         title: 'Sniper Win',
         p: [
           "When you set up your own pieces, a king can start in danger. Nothing stops that: it's part of the game. If you win **on your very first move**, that's a **Sniper Win**.",
@@ -372,12 +330,12 @@ export const en = {
         kind: 'Rated or unrated',
         title: 'Clocks and rating',
         p: [
-          "Clocks run on the server, so closing the tab doesn't stop them. Run out and you lose, unless your opponent can't win with what's left. **Daily** gives you 24 hours per move. **No clock** waits forever.",
-          'Choose **Rated** or **Unrated** when you create a match. A rated game needs two signed-in players and a clock, and every mode shares one rating, starting at 1500. Unrated games are for trying things out.',
+          "Clocks run on the server, so closing the tab doesn't stop them. Run out and you lose, unless your opponent can't win with what's left. **Daily** gives you 24 hours per move and **Weekly** 7 days, reset after every move.",
+          'Choose **Rated** or **Unrated** when you create a match. A rated game needs two signed-in players, and every mode shares one rating, starting at 1500. Unrated games are for trying things out.',
         ],
       },
       draws: {
-        kind: 'Every mode',
+        kind: 'The rest',
         title: 'Draws and the rest',
         p: [
           'A game is drawn by **stalemate**, **threefold repetition**, the **fifty-move rule**, **insufficient material**, or when you both agree.',

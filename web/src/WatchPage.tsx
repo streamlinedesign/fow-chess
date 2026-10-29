@@ -9,7 +9,7 @@ import { api } from './social'
 import { Button, Spinner } from './ui'
 import type { Color } from './useMatch'
 
-type LiveGame = {
+export type LiveGame = {
   id: string
   settings: Settings
   players: Record<Color, { name?: string; rating?: number }>
@@ -103,7 +103,7 @@ function GameList({ title, games }: { title: string; games: LiveGame[] }) {
   )
 }
 
-function GameCard({ g }: { g: LiveGame }) {
+export function GameCard({ g }: { g: LiveGame }) {
   const t = useT()
   const href = `/m/${g.id}`
   return (

@@ -1894,3 +1894,53 @@ a.tick:active {
   min-height: 0;
   padding-bottom: 12px;
 }
+
+/* King in danger: a red ring on the king a seen piece attacks, and a red tint on the king's moves a seen piece covers. */
+.sq[data-danger='true'] {
+  box-shadow: inset 0 0 0 max(3px, calc(var(--board, 128px) / 110)) #ef4444;
+}
+.sq[data-unsafe='true'][data-target='move']::after {
+  background: color-mix(in srgb, #ef4444 55%, transparent);
+}
+.sq[data-unsafe='true'][data-target='capture']::after {
+  border-color: color-mix(in srgb, #ef4444 65%, transparent);
+}
+.danger-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: danger-pulse 1.2s ease-in-out infinite;
+}
+@keyframes danger-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .danger-dot {
+    animation: none;
+  }
+}
+
+/* Home page hub: what's going on, in two columns on wide screens. */
+.hub {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+}
+.hub-main,
+.hub-side {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  min-width: 0;
+}
+@media (min-width: 1024px) {
+  .hub {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    column-gap: 56px;
+    align-items: start;
+  }
+}
