@@ -58,9 +58,8 @@ export function Landing() {
     <main className="mx-auto flex w-full max-w-[1184px] flex-1 flex-col gap-12 px-4 pt-6 pb-16 sm:px-8 sm:pt-8 lg:gap-14">
       <section className="hero">
         <div className="hero-head">
-          <h1 className="text-[clamp(34px,5vw,52px)] leading-none font-semibold tracking-tight">{t.landing.title}</h1>
-          <p className="mt-3 max-w-[44ch] text-accent">
-            {t.landing.tagline}{' '}
+          <p className="text-[clamp(26px,4vw,40px)] leading-tight font-semibold tracking-tight">{t.landing.tagline}</p>
+          <p className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-accent">
             <a
               href="/rules"
               onClick={(e) => go(e, '/rules')}
@@ -68,19 +67,21 @@ export function Landing() {
             >
               {t.landing.howToPlay}
             </a>
+            <a
+              href="/mods"
+              onClick={(e) => go(e, '/mods')}
+              className="font-medium text-fg underline underline-offset-4"
+            >
+              {t.common.mods}
+            </a>
           </p>
         </div>
 
         <SettingsPanel value={settings} onChange={setSettings} signedIn={!!me} className="hero-setup" />
 
         <div className="hero-acts flex flex-col gap-3">
-          <Button
-            variant="solid"
-            className="h-13 text-[17px]"
-            onClick={create}
-            loading={busy === 'create'}
-            disabled={!!busy}
-          >
+          <FindMatch settings={settings} signedIn={!!me} busy={!!busy} />
+          <Button className="h-12 text-[16px]" onClick={create} loading={busy === 'create'} disabled={!!busy}>
             {t.common.newMatch}
           </Button>
           <form onSubmit={join} className="flex gap-2">
@@ -120,6 +121,106 @@ export function Landing() {
         </div>
       </div>
     </main>
+  )
+}
+
+/** How often the page asks whether a match was found; the server drops players who stop asking. */
+const QUEUE_POLL_MS = 3000
+
+/**
+ * Find match: wait in the server's queue for the player nearest your rating
+ * who wants the same game. Guests can't, since they have no rating.
+ */
+function FindMatch({ settings, signedIn, busy }: { settings: Settings; signedIn: boolean; busy: boolean }) {
+  const t = useT()
+  const [since, setSince] = useState<number | null>(null)
+  const [now, setNow] = useState(0)
+  const [error, setError] = useState('')
+  const waiting = since !== null
+
+  const found = (matchId: string) => {
+    setSince(null)
+    navigate(`/m/${matchId}`)
+  }
+
+  const start = async () => {
+    setError('')
+    saveSettings(settings)
+    try {
+      const b = await api<{ matchId?: string; waiting?: boolean }>('POST', '/api/queue', settings)
+      if (b.matchId) return found(b.matchId)
+      setSince(Date.now())
+    } catch (e) {
+      setError((e as Error).message)
+    }
+  }
+
+  const stop = () => {
+    setSince(null)
+    api('DELETE', '/api/queue').catch(() => {})
+  }
+
+  // While waiting: keep the seat in the queue, pick up the match, and count the seconds.
+  useEffect(() => {
+    if (!waiting) return
+    let live = true
+    const poll = () =>
+      api<{ matchId?: string; waiting?: boolean }>('GET', '/api/queue')
+        .then((b) => {
+          if (!live) return
+          if (b.matchId) found(b.matchId)
+          else if (!b.waiting) setSince(null)
+        })
+        .catch(() => {})
+    const timer = setInterval(poll, QUEUE_POLL_MS)
+    const tick = setInterval(() => setNow(Date.now()), 1000)
+    return () => {
+      live = false
+      clearInterval(timer)
+      clearInterval(tick)
+    }
+  }, [waiting])
+  useLive((e) => {
+    if (waiting && e.type === 'match' && e.matchId) found(e.matchId)
+  })
+  // Leaving the page leaves the queue.
+  useEffect(() => () => void (since !== null && api('DELETE', '/api/queue').catch(() => {})), [since])
+
+  if (!signedIn)
+    return (
+      <div className="flex flex-col gap-1.5">
+        <Button variant="solid" className="h-13 text-[17px]" disabled>
+          {t.landing.findMatch}
+        </Button>
+        <p className="text-sm text-accent">{t.landing.findGuest}</p>
+      </div>
+    )
+  if (waiting)
+    return (
+      <div className="tick flex items-center gap-3 p-3.5" role="status">
+        <span className="spinner" aria-hidden />
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="font-semibold">{t.landing.finding}</span>
+          <span className="text-sm text-accent">
+            {t.landing.findingSince(Math.max(0, Math.round(((now || since) - since) / 1000)))}
+          </span>
+        </span>
+        <Button className="h-9 px-3.5 text-sm" onClick={stop}>
+          {t.common.cancel}
+        </Button>
+      </div>
+    )
+  return (
+    <div className="flex flex-col gap-1.5">
+      <Button variant="solid" className="h-13 text-[17px]" onClick={start} disabled={busy}>
+        {t.landing.findMatch}
+      </Button>
+      {error && (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </div>
   )
 }
 

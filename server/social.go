@@ -16,6 +16,7 @@ type Social struct {
 	live  *Live
 	hub   *Hub
 	auth  *Auth
+	queue *Queue
 }
 
 // notify stores a notification for the bell and tells the player's open tabs.

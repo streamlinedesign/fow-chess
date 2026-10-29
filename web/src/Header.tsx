@@ -28,7 +28,7 @@ export function Header() {
       <a
         href="/"
         onClick={(e) => go(e, '/')}
-        className="text-[22px] font-light tracking-tight whitespace-nowrap underline decoration-1 underline-offset-[5px] sm:text-[28px]"
+        className="text-[26px] font-semibold tracking-tight whitespace-nowrap sm:text-[34px]"
       >
         {t.common.appName}
       </a>
@@ -215,6 +215,10 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
       <MenuItem onSelect={() => navigate('/rules')}>
         <Icon name="book" />
         {t.landing.howToPlay}
+      </MenuItem>
+      <MenuItem onSelect={() => navigate('/mods')}>
+        <Icon name="gear" />
+        {t.common.mods}
       </MenuItem>
       <MenuItem onSelect={() => navigate('/settings')}>
         <Icon name="gear" />

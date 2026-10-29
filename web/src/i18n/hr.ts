@@ -27,6 +27,7 @@ export const hr: Dict = {
     somethingWrong: 'Nešto je pošlo po zlu.',
     rated: 'Rangirano',
     unrated: 'Nerangirano',
+    mods: 'Modovi',
     profile: 'Profil',
     friends: 'Prijatelji',
     messages: 'Poruke',
@@ -78,8 +79,13 @@ export const hr: Dict = {
 
   landing: {
     title: 'Igraj',
-    tagline: 'Šah u kojem vidiš samo ono što vide tvoje figure. Pojedi kralja i pobijedi.',
+    tagline: 'Uhvati kralja u magli rata.',
     howToPlay: 'Kako se igra',
+    findMatch: 'Nađi partiju',
+    finding: 'Tražim partiju…',
+    findingSince: (n) => `Čekam igrača blizu tvog rejtinga, ${n} s`,
+    findGuest: 'Prijavi se da nađeš partiju.',
+    found: (name) => `Spojen si s igračem ${name}.`,
     codePlaceholder: 'Imaš kod? Zalijepi ga ovdje',
     codeLabel: 'Kod partije',
     join: 'Pridruži se',
@@ -115,6 +121,8 @@ export const hr: Dict = {
     yourView: 'Tvoj pogled na početku',
     aria: 'Ploča na početku s ovim postavkama.',
     fog: 'Magla pokriva sve što tvoje figure ne vide.',
+    fullBoard: 'Bez magle: vidi se cijela ploča.',
+    hill: 'Ili dovedi kralja na jedno od uokvirenih središnjih polja.',
     standard: 'Figure počinju kao u šahu.',
     backRow: 'Prvo rasporedi svoj zadnji red.',
     battleship: 'Prvo postavi sve figure bilo gdje u uokvirenim redovima.',
@@ -124,9 +132,28 @@ export const hr: Dict = {
     title: 'Postavke partije',
     mode: 'Način igre',
     timeControl: 'Kontrola vremena',
-    ratedGuest: 'Partije gostiju nisu rangirane. Prijavi se da igraš za rejting.',
+    ratedGuest: 'Partije gostiju nisu rangirane. Prijavi se da igraš rangirano.',
     unratedOn: 'Samo za zabavu: rejting se ne mijenja.',
     ratedOn: 'Računa se u oba rejtinga kad je i protivnik prijavljen.',
+    fog: 'Magla rata',
+    fogOnHint: 'Vidiš samo ono što vide tvoje figure.',
+    fogOffHint: 'Cijela ploča, kao u običnom šahu.',
+    winBy: 'Pobjeda',
+    eat: 'Pojedi kralja',
+    eatHint: 'Bez šaha. Uzmi kralja i pobijedi.',
+    mate: 'Šah-mat',
+    mateHint: 'Obična šahovska pravila sa šahom.',
+    hillHint: 'Pobijedi i tako da dovedeš kralja na jedno od četiri središnja polja.',
+    twists: 'Začini',
+    jumpHint: 'Tvoj kralj može skakati i kao skakač.',
+    backPawnsHint: 'Pješaci mogu i jedno polje natrag, i vide iza sebe.',
+    modsNote: 'Partije s modovima nikad nisu rangirane.',
+  },
+
+  mods: {
+    title: 'Modovi',
+    intro:
+      'Igra s otkrivenim kotačićima. Isključi maglu, igraj sa šahom, dodaj brdo ili kralja koji skače, ili makni sat. Partije s modovima su za zabavu i nikad se ne računaju u rejting.',
   },
 
   /** Partije spremljene prije nego što je stranica postala jedna igra još mogu imati ovo. */
@@ -140,8 +167,10 @@ export const hr: Dict = {
 
   time: {
     groups: {
+      Bullet: 'Bullet',
       Blitz: 'Blitz',
       Rapid: 'Brzopotezni',
+      Classical: 'Klasični',
       Tournament: 'Turnirski',
       Daily: 'Dnevni',
       Weekly: 'Tjedni',
@@ -330,7 +359,7 @@ export const hr: Dict = {
         title: 'Satovi i rejting',
         p: [
           'Satovi rade na poslužitelju, pa ih zatvaranje kartice ne zaustavlja. Istekne li ti vrijeme, gubiš, osim ako protivnik s onim što mu je ostalo ne može pobijediti. **Dnevni** daje 24 sata po potezu, a **Tjedni** 7 dana, iznova nakon svakog poteza.',
-          'Pri stvaranju partije odaberi **Rangirano** ili **Nerangirano**. Rangirana partija traži dva prijavljena igrača, a svi načini igre dijele jedan rejting, koji počinje na 1500. Nerangirane partije služe za isprobavanje.',
+          'Pri stvaranju partije odaberi **Rangirano** ili **Nerangirano**, ili pritisni **Nađi partiju** da te spojimo s igračem najbližim tvom rejtingu. Rangirana partija traži dva prijavljena igrača, a svi načini igre dijele jedan rejting, koji počinje na 1500. Nerangirane partije služe za isprobavanje.',
         ],
       },
       draws: {
@@ -584,7 +613,7 @@ export const hr: Dict = {
     updated: 'Ažurira se nakon svake rangirane partije',
     loading: 'Učitavanje ljestvice',
     nobodyRated:
-      'Još nitko nije rangiran. Odigraj partiju sa satom protiv prijavljenog igrača i oboje ćete se pojaviti ovdje.',
+      'Još nitko nije rangiran. Odigraj rangiranu partiju protiv prijavljenog igrača i oboje ćete se pojaviti ovdje.',
     player: 'Igrač',
     games: 'Partije',
     rating: 'Rejting',

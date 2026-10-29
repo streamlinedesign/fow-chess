@@ -1,13 +1,13 @@
 import { useT } from './i18n'
 import { pieceImg, squareIndex } from './position'
-import { setupMode, type Settings } from './settings'
+import { HILL, setupMode, type Settings } from './settings'
 
 const FILES = 'abcdefgh'
 const START = 'RNBQKBNRPPPPPPPP' + '.'.repeat(32) + 'pppppppprnbqkbnr'
 
 /**
  * A still board next to the match settings, showing what they mean from
- * White's seat at the start: the fog, and the rows you'd arrange.
+ * White's seat at the start: the fog, the rows you'd arrange, and the hill.
  */
 export function SettingsBoard({
   settings,
@@ -27,7 +27,7 @@ export function SettingsBoard({
       const i = squareIndex(sq)
       const rank = i >> 3
       // At the start your pieces see your own four ranks: the pawns reach rank 4.
-      const fog = rank >= 4
+      const fog = settings.fog && rank >= 4
       const piece = fog ? null : START[i] === '.' ? null : START[i]
       squares.push(
         <div
@@ -37,6 +37,7 @@ export function SettingsBoard({
           data-light={((i & 7) + rank) % 2 === 1}
           data-fog={fog}
           data-zone={setup.rows > 0 && rank < setup.rows && !(setup.pawnsFixed && rank === 1)}
+          data-hill={settings.hill && HILL.includes(sq)}
         >
           {col === 0 && <span className="coord top-[4%] left-[5%]">{sq[1]}</span>}
           {row === 7 && <span className="coord right-[5%] bottom-[4%]">{sq[0]}</span>}
@@ -47,12 +48,13 @@ export function SettingsBoard({
   }
 
   const notes = [
-    t.settingsBoard.fog,
+    settings.fog ? t.settingsBoard.fog : t.settingsBoard.fullBoard,
     setup.value === 'backRow'
       ? t.settingsBoard.backRow
       : setup.value === 'battleship'
         ? t.settingsBoard.battleship
         : t.settingsBoard.standard,
+    ...(settings.hill ? [t.settingsBoard.hill] : []),
   ]
 
   return (

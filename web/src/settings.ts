@@ -26,6 +26,8 @@ export type Settings = {
   hill?: boolean
   /** Play a game that could be rated without rating it. */
   unrated?: boolean
+  /** From the mods page: any option, any clock, never ranked. */
+  mods?: boolean
 }
 
 export type Setup = '' | 'backRow' | 'battleship'
@@ -55,6 +57,19 @@ export const TIME_GROUPS: [string, TimeControl[]][] = [
   ['Weekly', [tc(0, 0, 7 * DAY)]],
 ]
 
+/** The extra clocks a mods game can have. Must match modTimeControls in server/view.go. */
+export const MOD_TIMES: TimeControl[] = [
+  tc(0),
+  tc(60),
+  tc(120, 1),
+  tc(180),
+  tc(300, 3),
+  tc(600, 5),
+  tc(900, 10),
+  tc(1800),
+  tc(1800, 20),
+]
+
 export const NO_CLOCK = tc(0)
 const DEFAULTS: Settings = {
   fog: true,
@@ -69,12 +84,14 @@ export const sameTime = (a: TimeControl, b: TimeControl) =>
 
 export const clocked = (t: TimeControl) => !sameTime(t, NO_CLOCK)
 
-/** The group a time control belongs to, like "Blitz". Clocks no longer offered fall in a group of their own. */
+/** The group a time control belongs to, like "Blitz". */
 export function timeGroup(t: TimeControl) {
   const known = TIME_GROUPS.find(([, presets]) => presets.some((p) => sameTime(p, t)))?.[0]
   if (known) return known
   if (t.perMove) return 'Daily'
-  return clocked(t) ? 'Other' : 'No clock'
+  if (!clocked(t)) return 'No clock'
+  // The extra mods clocks, by the usual names.
+  return t.base < 180 ? 'Bullet' : t.base < 600 ? 'Blitz' : t.base < 1800 ? 'Rapid' : 'Classical'
 }
 
 /** "5+0" for a clock, "24 h per move" or "7 days per move" for a reset clock, "No clock" otherwise. */
@@ -87,32 +104,44 @@ export function timeLabel(t: TimeControl, d: Dict) {
 
 /** "Blitz 5+0", "24 h per move" or "No clock". */
 export function describeTime(t: TimeControl, d: Dict) {
-  const group = timeGroup(t)
   if (t.perMove || !clocked(t)) return timeLabel(t, d)
-  return group === 'Other' ? timeLabel(t, d) : `${d.time.groups[group]} ${timeLabel(t, d)}`
+  return `${d.time.groups[timeGroup(t)]} ${timeLabel(t, d)}`
 }
 
-export function loadSettings(): Settings {
+/** The clocks a game may have: the presets, plus the extra ones for a mods game. */
+export const clocksFor = (mods: boolean) => [
+  ...TIME_GROUPS.flatMap(([, presets]) => presets),
+  ...(mods ? MOD_TIMES : []),
+]
+
+/** The saved settings for the home page, or with mods for the mods page. Each remembers its own. */
+export function loadSettings(mods = false): Settings {
   try {
-    const saved = { ...DEFAULTS, ...JSON.parse(localStorage.getItem('settings') ?? '{}') }
+    const saved = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(mods ? 'mods' : 'settings') ?? '{}') }
     // Settings saved before clocks existed, or a preset that's since gone, fall back to the default.
-    const known = TIME_GROUPS.some(([, presets]) => presets.some((p) => saved.time && sameTime(p, saved.time)))
+    const known = clocksFor(mods).some((p) => saved.time && sameTime(p, saved.time))
     if (!SETUPS.some((m) => m.value === saved.setup)) saved.setup = ''
-    // The site plays one game now; twists saved earlier are dropped.
-    delete saved.jumpKing
-    delete saved.backPawns
-    delete saved.hill
-    saved.fog = true
-    saved.kingCapture = true
+    if (mods) {
+      saved.mods = true
+      saved.unrated = true
+    } else {
+      // The site plays one game; twists saved earlier are dropped.
+      delete saved.jumpKing
+      delete saved.backPawns
+      delete saved.hill
+      delete saved.mods
+      saved.fog = true
+      saved.kingCapture = true
+    }
     return known ? saved : { ...saved, time: DEFAULTS.time }
   } catch {
-    return DEFAULTS
+    return mods ? { ...DEFAULTS, mods: true, unrated: true } : DEFAULTS
   }
 }
 
 export function saveSettings(s: Settings) {
   try {
-    localStorage.setItem('settings', JSON.stringify(s))
+    localStorage.setItem(s.mods ? 'mods' : 'settings', JSON.stringify(s))
   } catch {}
 }
 
@@ -139,5 +168,5 @@ export function modeName(s: Settings, d: Dict) {
 
 /** The tags on a match page: what's special about it, then the clock. Games saved before clocks existed had none. */
 export function describeSettings(s: Settings, d: Dict) {
-  return [...twists(s, d), describeTime(s.time ?? NO_CLOCK, d)]
+  return [...(s.mods ? [d.common.mods] : []), ...twists(s, d), describeTime(s.time ?? NO_CLOCK, d)]
 }
