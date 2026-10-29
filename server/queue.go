@@ -168,7 +168,7 @@ func (s *Social) queueRoutes(mux *http.ServeMux) {
 		if !readJSON(w, r, &settings) {
 			return
 		}
-		settings.Mods, settings.Unrated = false, false
+		settings.Mods, settings.Unrated, settings.Bot = false, false, ""
 		settings.normalize()
 		if !settings.valid() {
 			jsonError(w, "Those match settings aren't available.", http.StatusBadRequest)
