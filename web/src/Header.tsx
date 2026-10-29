@@ -71,6 +71,13 @@ export function Header() {
               {t.landing.howToPlay}
             </a>
             <a
+              href="/tournaments"
+              onClick={(e) => go(e, '/tournaments')}
+              className="flex h-9 items-center rounded-md px-3 text-sm font-semibold transition-colors hover:bg-muted max-sm:hidden"
+            >
+              {t.common.tournaments}
+            </a>
+            <a
               href="/watch"
               onClick={(e) => go(e, '/watch')}
               className="flex h-9 items-center rounded-md px-3 text-sm font-semibold transition-colors hover:bg-muted"
@@ -89,7 +96,7 @@ export function Header() {
             <a
               href={loginHref}
               onClick={(e) => go(e, loginHref)}
-              className="flex h-9 items-center rounded-md px-3.5 text-sm font-semibold shadow-[inset_0_0_0_1.5px_var(--color-fg)] transition-colors hover:bg-fg hover:text-bg"
+              className="flex h-9 items-center rounded-md px-3.5 text-sm font-semibold whitespace-nowrap shadow-[inset_0_0_0_1.5px_var(--color-fg)] transition-colors hover:bg-fg hover:text-bg"
             >
               {t.common.logIn}
             </a>
@@ -215,6 +222,10 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
       <MenuItem onSelect={() => navigate('/rules')}>
         <Icon name="book" />
         {t.landing.howToPlay}
+      </MenuItem>
+      <MenuItem onSelect={() => navigate('/tournaments')}>
+        <Icon name="swords" />
+        {t.common.tournaments}
       </MenuItem>
       <MenuItem onSelect={() => navigate('/mods')}>
         <Icon name="gear" />

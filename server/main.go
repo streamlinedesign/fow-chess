@@ -50,13 +50,16 @@ func main() {
 	live := NewLive(store)
 	social := &Social{store: store, live: live, hub: hub, auth: auth, queue: NewQueue()}
 	live.playing = hub.Playing
-	hub.SetHooks(matchHooks{notify: social.notify, playing: live.presence})
+	tournaments := NewTournaments(store, hub, live, social.notify)
+	hub.SetHooks(matchHooks{notify: social.notify, playing: live.presence, over: tournaments.gameOver})
+	go tournaments.run()
 	mux := http.NewServeMux()
 	auth.routes(mux)
 	profileRoutes(mux, store, auth, live)
 	social.routes(mux)
 	social.watchRoutes(mux)
 	social.queueRoutes(mux)
+	social.tournamentRoutes(mux, tournaments)
 
 	// playerFor is who a request comes from: the signed-in user, else the guest
 	// ID the browser sends. Nil if there's neither.
@@ -84,6 +87,7 @@ func main() {
 		// standard start with no clock.
 		var settings Settings
 		json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&settings)
+		settings.Tournament = 0 // only the arena seats arena games
 		settings.normalize()
 		if !settings.valid() {
 			jsonError(w, "Those match settings aren't available.", http.StatusBadRequest)

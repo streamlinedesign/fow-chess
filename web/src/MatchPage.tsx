@@ -7,6 +7,7 @@ import { Clock } from './Clock'
 import { useT, type Dict } from './i18n'
 import { Icon } from './icons'
 import { applyLocal, pieceImg } from './position'
+import { go } from './ProfilePage'
 import { navigate } from './router'
 import { describeSettings } from './settings'
 import { SetupBoard } from './SetupBoard'
@@ -226,6 +227,18 @@ export function MatchPage({ id }: { id: string }) {
             <p className="-mt-2 flex items-center gap-2 text-sm font-semibold text-danger" role="status">
               <span className="danger-dot" aria-hidden />
               {t.match.kingThreat}
+            </p>
+          )}
+          {state?.settings.tournament && you && (
+            <p className="-mt-2 text-sm text-accent">
+              {t.match.arenaNext}{' '}
+              <a
+                href="/tournaments"
+                onClick={(e) => go(e, '/tournaments')}
+                className="font-medium text-fg underline underline-offset-4"
+              >
+                {t.match.backToArena}
+              </a>
             </p>
           )}
 

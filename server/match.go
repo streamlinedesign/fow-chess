@@ -45,6 +45,18 @@ type matchHooks struct {
 	// playing, if set, is told when a signed-in player starts or stops playing
 	// a game, so friends see them in a game.
 	playing func(userID int64)
+	// over, if set, is told once when a game ends.
+	over func(gameResult)
+}
+
+// gameResult is what a finished game tells the hooks.
+type gameResult struct {
+	MatchID  string
+	Round    int
+	Settings Settings
+	Users    [2]int64
+	Outcome  engine.Outcome
+	Sniper   bool
 }
 
 func NewHub(store *Store) *Hub {
@@ -407,6 +419,10 @@ func (m *Match) save() {
 			m.overNotified = m.round
 			m.notifyOver()
 			m.playingChanged()
+			if m.hooks.over != nil {
+				go m.hooks.over(gameResult{MatchID: m.id, Round: m.round, Settings: m.settings, Users: m.users,
+					Outcome: m.game.Outcome(), Sniper: sniperWin(rec.Result, rec.Reason, len(m.game.History()))})
+			}
 		}
 	}
 	m.store.SaveGame(rec)

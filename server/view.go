@@ -33,6 +33,8 @@ type Settings struct {
 	Mods bool `json:"mods,omitempty"`
 	// Bot is the computer opponent's level when one seat is a bot. Never ranked.
 	Bot string `json:"bot,omitempty"`
+	// Tournament is the arena this game is part of, if any.
+	Tournament int64 `json:"tournament,omitempty"`
 }
 
 func (s Settings) rules() engine.Rules {

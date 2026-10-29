@@ -188,8 +188,26 @@ function Note({ n, onChange, onGo }: { n: Notification; onChange: () => void; on
       )
       text = fill(t.bell.moved, who)
       break
+    case 'arena_cancelled':
+    case 'arena_result': {
+      icon = (
+        <span className="note-icon">
+          <img src={pieceImg(n.data.place === 1 ? 'Q' : 'q')} alt="" />
+        </span>
+      )
+      const kind = t.tournaments.kinds[n.data.kind ?? ''] ?? t.common.arena
+      const when = n.data.startsAt
+        ? new Intl.DateTimeFormat(t.locale, { hour: 'numeric', minute: '2-digit' }).format(n.data.startsAt)
+        : ''
+      text =
+        n.kind === 'arena_cancelled'
+          ? fill(t.bell.arenaCancelled, { kind, when, players: n.data.players, needed: n.data.needed })
+          : fill(t.bell.arenaPlace, { kind, place: n.data.place, players: n.data.players, score: n.data.score })
+      break
+    }
   }
-  const link = (n.kind === 'game_over' || n.kind === 'move') && game
+  const link =
+    ((n.kind === 'game_over' || n.kind === 'move') && game) || (n.kind.startsWith('arena_') && '/tournaments')
 
   return (
     <div className="note" data-unread={!n.read || undefined}>
