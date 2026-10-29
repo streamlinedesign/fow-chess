@@ -120,6 +120,23 @@ cd server && go test -short ./...  # skips the deep perft runs
 
 Tests that touch the database each get their own Postgres schema, dropped afterwards, so they never touch your dev data. They use `CHESS_TEST_DATABASE_URL` if set, else the same database as the server, and are skipped with a note if Postgres isn't running.
 
+## Simulating games
+
+`server/sim` plays Eat the King between bots with the real rules engine and no server, browser or database, so it can play thousands of games a second. Each bot gets only what a player would: its fogged board and its legal moves.
+
+```sh
+make simulate                                   # plays until Ctrl-C, adding every game to server/games.jsonl
+make simulate ARGS="-games 100000 -fog on"      # a set number of games, fog on only
+make simulate-summary                           # the summary of everything in games.jsonl so far
+cd server && go run ./cmd/simulate -h           # every option
+```
+
+A run cycles through every pairing of `-bots` (as White and as Black), every `-modes` (standard, backRow, battleship) and fog on and off, so the mix stays balanced however long it runs. Ctrl-C finishes the games in hand and prints the summary; running it again adds to the same file. `-mods checkmate,jumpKing,backPawns,hill` plays the Mods page rules. Back row and Battleship setups are placed at random; `-guarded` makes Battleship setups keep the king on its back two rows with every line out of it blocked, as a careful player would.
+
+Each line of `games.jsonl` is one game: the bots, mode, fog and rules, the result and how it ended, its length, whether it was a Sniper Win, which piece ate the king and whether the loser could see it, captures, material left, when the first capture and first sighting happened, how much of the board each side saw, and the start position and moves, so any game can be replayed. Game `i` of a run uses seed `-seed + i`, and the same seed always plays the same game.
+
+The bots, weakest first: `random` plays any legal move; `greedy` eats a king it can see and otherwise takes the most it can without losing more; `hunter` looks two plies ahead on what it sees plus where it last saw enemy pieces; `wary` is `hunter` that also keeps lines into its king from the fog covered. They stand in for the site's own bots, which can be added to `sim.Bots`.
+
 If a page says **Server out of date** or `make dev` says port 8080 is in use, an older copy of the server (often a previously built `./chess`) is still running. Stop it and run `make dev` again.
 
 ## Production build

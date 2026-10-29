@@ -19,3 +19,6 @@ coverage/
 *.db
 *.db-wal
 *.db-shm
+
+# Simulator output (make simulate)
+*.jsonl

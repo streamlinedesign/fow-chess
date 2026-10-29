@@ -35,6 +35,18 @@ db-reset:
 test:
 	cd server && go test ./...
 
+# Bots play Eat the King against each other and every game goes into
+# server/games.jsonl, with a summary at the end. Runs until Ctrl-C, which
+# finishes the games in hand and prints the summary; run it again to add more.
+# Pass options with ARGS, e.g. make simulate ARGS="-games 10000 -fog on".
+# See all options with: cd server && go run ./cmd/simulate -h
+simulate:
+	cd server && go run ./cmd/simulate -games 0 $(ARGS)
+
+# The summary of everything in server/games.jsonl so far.
+simulate-summary:
+	cd server && go run ./cmd/simulate -summary games.jsonl
+
 # Production: one self-contained binary at ./chess that serves the app on :8080.
 build:
 	cd web && npm ci && npm run build
@@ -49,4 +61,4 @@ build-linux:
 run: build
 	./chess
 
-.PHONY: dev migrate psql db-reset test build build-linux run
+.PHONY: dev migrate psql db-reset test simulate simulate-summary build build-linux run
