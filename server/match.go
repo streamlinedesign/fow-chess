@@ -1,6 +1,7 @@
 package main
 
 import (
+	"chess/bots"
 	"context"
 	"crypto/rand"
 	"encoding/json"
@@ -89,6 +90,7 @@ func (h *Hub) CreateBetween(w, b *player, settings Settings) *Match {
 	m.seat(black, b)
 	m.turnBegan = time.Now()
 	m.save()
+	m.pokeBot()
 	return m
 }
 
@@ -169,6 +171,10 @@ type player struct {
 }
 
 func guestPlayer(browserID string) *player { return &player{key: browserID, guest: browserID} }
+
+func botPlayer(level bots.Level) *player {
+	return &player{key: "bot:" + string(level), name: level.Name()}
+}
 
 func userPlayer(u *User, browserID string) *player {
 	return &player{key: "u:" + strconv.FormatInt(u.ID, 10), userID: u.ID, name: u.Username, guest: browserID}
@@ -256,6 +262,9 @@ type Match struct {
 	hooks     matchHooks
 	// overNotified is the round whose result has gone to the players' bells.
 	overNotified int
+	// botThinking is set while a bot's move is being worked out, so a bot
+	// is poked once per turn.
+	botThinking bool
 	// chat between the two players in this round. Kept only in memory, and
 	// cleared when the next round starts or both players leave a finished game.
 	chat   []chatLine
@@ -328,6 +337,9 @@ func restoreMatch(store *Store, rec *gameRecord, hooks matchHooks) (*Match, erro
 			m.armTimer()
 		}
 	}
+	m.mu.Lock()
+	m.pokeBot()
+	m.mu.Unlock()
 	return m, nil
 }
 
@@ -617,6 +629,7 @@ func (m *Match) join(c *client, p *player) {
 		c.send(m.chatJSON(true, m.chat))
 		m.playingChanged()
 	}
+	m.pokeBot()
 	m.broadcast()
 }
 
@@ -683,6 +696,9 @@ func (m *Match) colorOf(playerID string) int {
 }
 
 func (m *Match) online(color int) bool {
+	if color == m.botColor() {
+		return true
+	}
 	for c := range m.clients {
 		if c.playerID == m.seats[color] {
 			return true
@@ -725,33 +741,7 @@ func (m *Match) handle(c *client, msg inMsg) {
 			m.startSetUp(now)
 		}
 	case "move":
-		if over || !m.setUp || m.seats[black] == "" || int(m.game.Turn()) != color {
-			break
-		}
-		// A move that arrives after the flag fell is too late.
-		if m.flagged(now) {
-			break
-		}
-		running, spent := m.running(), now.Sub(m.turnStart)
-		if _, err := m.game.PlayUCI(msg.UCI); err != nil {
-			break
-		}
-		m.draw = [2]bool{}
-		t := m.settings.Time
-		if opp := 1 - color; m.hooks.notify != nil && (t.PerMove > 0 || !t.clocked()) && now.Sub(m.turnBegan) > slowMove &&
-			m.users[opp] != 0 && !m.online(opp) && !m.game.Over() {
-			go m.hooks.notify(notification{UserID: m.users[opp], Kind: notifyMove, ActorID: m.users[color], MatchID: m.id, Round: m.round})
-		}
-		m.turnBegan = now
-		if running {
-			m.clock[color] += time.Duration(t.Inc)*time.Second - spent
-			if t.PerMove > 0 {
-				m.clock[color] = time.Duration(t.PerMove) * time.Second
-			}
-			m.turnStart = time.Time{}
-			m.stopTimer()
-		}
-		m.startClock(now)
+		m.playMove(color, msg.UCI, now)
 	case "resign":
 		if !over && len(m.game.History()) > 0 {
 			m.game.Resign(engine.Color(color))
@@ -770,21 +760,7 @@ func (m *Match) handle(c *client, msg inMsg) {
 		}
 		m.rematch[color] = !m.rematch[color]
 		if m.rematch[white] && m.rematch[black] {
-			m.game = engine.NewGameWithRules(m.settings.rules())
-			m.seats[white], m.seats[black] = m.seats[black], m.seats[white]
-			m.users[white], m.users[black] = m.users[black], m.users[white]
-			m.names[white], m.names[black] = m.names[black], m.names[white]
-			m.rematch = [2]bool{}
-			m.draw = [2]bool{}
-			m.setUp, m.placed = m.settings.Setup == "", [2]string{}
-			m.round++
-			m.started = now
-			m.turnBegan = now
-			m.ratingDiff = nil
-			m.resetClock()
-			m.startClock(now)
-			m.chat = nil
-			m.sendChat(true, nil)
+			m.startRematch(now)
 		}
 	case "chat":
 		text := strings.TrimSpace(msg.Text)
@@ -809,7 +785,63 @@ func (m *Match) handle(c *client, msg inMsg) {
 	if len(m.game.History()) != plies || m.game.Over() != over || m.round != round {
 		m.save()
 	}
+	m.pokeBot()
 	m.broadcast()
+}
+
+// playMove plays color's move if it's their turn and the move is legal, and
+// handles the clock. Callers hold m.mu.
+func (m *Match) playMove(color int, uci string, now time.Time) bool {
+	if m.game.Over() || !m.setUp || m.seats[black] == "" || int(m.game.Turn()) != color {
+		return false
+	}
+	// A move that arrives after the flag fell is too late.
+	if m.flagged(now) {
+		return false
+	}
+	running, spent := m.running(), now.Sub(m.turnStart)
+	if _, err := m.game.PlayUCI(uci); err != nil {
+		return false
+	}
+	m.draw = [2]bool{}
+	t := m.settings.Time
+	if opp := 1 - color; m.hooks.notify != nil && (t.PerMove > 0 || !t.clocked()) && now.Sub(m.turnBegan) > slowMove &&
+		m.users[opp] != 0 && !m.online(opp) && !m.game.Over() {
+		go m.hooks.notify(notification{UserID: m.users[opp], Kind: notifyMove, ActorID: m.users[color], MatchID: m.id, Round: m.round})
+	}
+	m.turnBegan = now
+	if running {
+		m.clock[color] += time.Duration(t.Inc)*time.Second - spent
+		if t.PerMove > 0 {
+			m.clock[color] = time.Duration(t.PerMove) * time.Second
+		}
+		m.turnStart = time.Time{}
+		m.stopTimer()
+	}
+	m.startClock(now)
+	if m.game.Over() {
+		m.stopClock(now)
+	}
+	return true
+}
+
+// startRematch begins the next round with the colours swapped. Callers hold m.mu.
+func (m *Match) startRematch(now time.Time) {
+	m.game = engine.NewGameWithRules(m.settings.rules())
+	m.seats[white], m.seats[black] = m.seats[black], m.seats[white]
+	m.users[white], m.users[black] = m.users[black], m.users[white]
+	m.names[white], m.names[black] = m.names[black], m.names[white]
+	m.rematch = [2]bool{}
+	m.draw = [2]bool{}
+	m.setUp, m.placed = m.settings.Setup == "", [2]string{}
+	m.round++
+	m.started = now
+	m.turnBegan = now
+	m.ratingDiff = nil
+	m.resetClock()
+	m.startClock(now)
+	m.chat = nil
+	m.sendChat(true, nil)
 }
 
 // startSetUp starts the game from both players' setups. A king that starts
