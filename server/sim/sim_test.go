@@ -13,6 +13,9 @@ import (
 func TestPlay(t *testing.T) {
 	seed := uint64(1)
 	for name := range Bots {
+		if name == "solomon" && testing.Short() {
+			continue // about 100 ms a move
+		}
 		for _, mode := range []string{"standard", "backRow", "battleship"} {
 			for _, fog := range []bool{true, false} {
 				for _, rules := range []engine.Rules{{KingCapture: true}, {}, {KingCapture: true, Hill: true, JumpKing: true, BackPawns: true}} {

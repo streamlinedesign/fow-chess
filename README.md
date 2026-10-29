@@ -136,7 +136,7 @@ A run cycles through every pairing of `-bots` (as White and as Black), every `-m
 
 Each line of `games.jsonl` is one game: the bots, mode, fog and rules, the result and how it ended, its length, whether it was a Sniper Win, which piece ate the king and whether the loser could see it, captures, material left, when the first capture and first sighting happened, how much of the board each side saw, and the start position and moves, so any game can be replayed. Game `i` of a run uses seed `-seed + i`, and the same seed always plays the same game.
 
-The bots, weakest first: `random` plays any legal move; `greedy` eats a king it can see and otherwise takes the most it can without losing more; `hunter` looks two plies ahead on what it sees plus where it last saw enemy pieces; `wary` is `hunter` that also keeps lines into its king from the fog covered. They stand in for the site's own bots, which can be added to `sim.Bots`.
+The site's own bots play under their level names: `rex`, `vercingetorix`, `ramesses` and `solomon` (`server/bots`). The simulator adds four simpler ones of its own, weakest first: `random` plays any legal move; `greedy` eats a king it can see and otherwise takes the most it can without losing more; `hunter` looks two plies ahead on what it sees plus where it last saw enemy pieces; `wary` is `hunter` that also keeps lines into its king from the fog covered. A new bot is one entry in `sim.Bots`.
 
 If a page says **Server out of date** or `make dev` says port 8080 is in use, an older copy of the server (often a previously built `./chess`) is still running. Stop it and run `make dev` again.
 

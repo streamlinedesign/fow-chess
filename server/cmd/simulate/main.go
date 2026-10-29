@@ -31,7 +31,7 @@ import (
 func main() {
 	games := flag.Int("games", 1000, "games to play; 0 plays until Ctrl-C")
 	out := flag.String("out", "games.jsonl", "file to add games to")
-	bots := flag.String("bots", "hunter", "bots to pair up, comma-separated: "+botList())
+	bots := flag.String("bots", "ramesses,solomon", "bots to pair up, comma-separated: "+botList())
 	modes := flag.String("modes", "standard,backRow,battleship", "start modes, comma-separated")
 	guarded := flag.Bool("guarded", false, "Battleship setups keep the king walled in, as a careful player would, instead of anywhere")
 	fog := flag.String("fog", "both", "on, off or both")
