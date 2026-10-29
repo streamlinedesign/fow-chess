@@ -2,7 +2,7 @@ import { useEffect, useRef, useSyncExternalStore } from 'react'
 
 /** Something changed for the signed-in player; reload what it's about. */
 export type LiveEvent = {
-  type: 'notification' | 'message' | 'friends' | 'presence' | 'offer' | 'read'
+  type: 'notification' | 'message' | 'friends' | 'presence' | 'offer' | 'read' | 'match'
   /** Who it's about: the other side of a chat, a friend coming online, who answered an offer. */
   user?: string
   matchId?: string

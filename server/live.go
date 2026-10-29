@@ -26,7 +26,7 @@ func NewLive(store *Store) *Live {
 
 // liveEvent is one event: its type says what changed, so the page knows what to reload.
 type liveEvent struct {
-	Type string `json:"type"` // notification, message, friends, presence, offer
+	Type string `json:"type"` // notification, message, friends, presence, offer, match
 	// Who it's about, when that's someone other than the receiver.
 	User    string `json:"user,omitempty"`
 	MatchID string `json:"matchId,omitempty"`

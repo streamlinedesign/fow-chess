@@ -24,8 +24,9 @@ export const en = {
     backHome: 'Back home',
     cantReach: "Couldn't reach the server.",
     somethingWrong: 'Something went wrong.',
-    rated: 'Rated',
-    unrated: 'Unrated',
+    rated: 'Ranked',
+    unrated: 'Unranked',
+    mods: 'Mods',
     profile: 'Profile',
     friends: 'Friends',
     messages: 'Messages',
@@ -78,8 +79,13 @@ export const en = {
 
   landing: {
     title: 'Play',
-    tagline: 'Chess where you only see what your pieces see. Eat the king to win.',
+    tagline: 'Capture the king in the fog of war.',
     howToPlay: 'How to play',
+    findMatch: 'Find match',
+    finding: 'Finding a match…',
+    findingSince: (n: number) => `Waiting for a player near your rating, ${n} s`,
+    findGuest: 'Log in to find a match.',
+    found: (name: string) => `Matched with ${name}.`,
     codePlaceholder: 'Have a code? Paste it here',
     codeLabel: 'Match code',
     join: 'Join',
@@ -115,6 +121,8 @@ export const en = {
     yourView: 'Your view at the start',
     aria: 'The board at the start with these settings.',
     fog: 'Fog covers everything your pieces can’t see.',
+    fullBoard: 'No fog: the whole board is in view.',
+    hill: 'Or walk your king onto one of the ringed centre squares.',
     standard: 'The pieces start as in chess.',
     backRow: 'Arrange your back row first.',
     battleship: 'Place every piece anywhere in the ringed rows first.',
@@ -124,12 +132,31 @@ export const en = {
     title: 'Match settings',
     mode: 'Mode',
     timeControl: 'Time control',
-    ratedGuest: "Guest games aren't rated. Log in to play for rating.",
+    ratedGuest: "Guest games aren't ranked. Log in to play ranked.",
     unratedOn: 'Just for fun: no rating changes.',
     ratedOn: 'Counts for both ratings when your opponent is signed in too.',
+    fog: 'Fog of war',
+    fogOnHint: 'You see only what your pieces see.',
+    fogOffHint: 'The whole board, as in plain chess.',
+    winBy: 'Win by',
+    eat: 'Eat the King',
+    eatHint: 'No check. Take the king and win.',
+    mate: 'Checkmate',
+    mateHint: 'Plain chess rules with check.',
+    hillHint: 'Also win by walking your king onto one of the four centre squares.',
+    twists: 'Twists',
+    jumpHint: 'Your king can also jump like a knight.',
+    backPawnsHint: 'Pawns can also step one square back, and see behind them.',
+    modsNote: 'Mods games are never ranked.',
   },
 
-  /** Games saved before the site became one game can still carry these. */
+  mods: {
+    title: 'Mods',
+    intro:
+      'The game with the dials exposed. Turn the fog off, play with check, add a hill or a jumping king, or take the clock away. Mods games are for fun and never count for rating.',
+  },
+
+  /** Mods, and games saved before the site became one game. */
   legacy: {
     fullBoard: 'Full board',
     checkmate: 'Checkmate',
@@ -140,8 +167,10 @@ export const en = {
 
   time: {
     groups: {
+      Bullet: 'Bullet',
       Blitz: 'Blitz',
       Rapid: 'Rapid',
+      Classical: 'Classical',
       Tournament: 'Tournament',
       Daily: 'Daily',
       Weekly: 'Weekly',
@@ -327,11 +356,11 @@ export const en = {
         ],
       },
       clocks: {
-        kind: 'Rated or unrated',
+        kind: 'Ranked or unranked',
         title: 'Clocks and rating',
         p: [
           "Clocks run on the server, so closing the tab doesn't stop them. Run out and you lose, unless your opponent can't win with what's left. **Daily** gives you 24 hours per move and **Weekly** 7 days, reset after every move.",
-          'Choose **Rated** or **Unrated** when you create a match. A rated game needs two signed-in players, and every mode shares one rating, starting at 1500. Unrated games are for trying things out.',
+          'Choose **Ranked** or **Unranked** when you create a match, or press **Find match** to be paired with the player nearest your rating. A ranked game needs two signed-in players, and every mode shares one rating, starting at 1500. Unranked games are for trying things out.',
         ],
       },
       draws: {
@@ -581,10 +610,9 @@ export const en = {
 
   leaderboard: {
     title: 'Top 100',
-    updated: 'Updated after every rated game',
+    updated: 'Updated after every ranked game',
     loading: 'Loading the leaderboard',
-    nobodyRated:
-      "Nobody's rated yet. Play a game with a clock against someone signed in, and you'll both show up here.",
+    nobodyRated: "Nobody's ranked yet. Play a ranked game against someone signed in, and you'll both show up here.",
     player: 'Player',
     games: 'Games',
     rating: 'Rating',

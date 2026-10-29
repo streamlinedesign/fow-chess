@@ -16,11 +16,13 @@ Every new match has fog of war and Eat the King on. The server forces both (`nor
 - **Eat the King**: there is no check and no checkmate. Kings may walk into danger and may castle out of, through or into attack. You win by capturing the king.
 - **King in danger**: the one warning. When a piece the player can see attacks their king, the king gets a red ring and the match page says so; while the king is picked up, the destination squares a seen piece covers are marked too. It's computed from the player's own view only (`kingDanger` in `server/view.go`): hidden pieces count as blockers, never as attackers, so it leaks nothing. The warning is sent as `danger` and `unsafe` in the game view. When the king is taken, the fog lifts and the capturing move shows for a moment before the game-over dialog.
 - **Modes** decide where the pieces start: **Standard** (the usual position), **Back row** (each player arranges their back row; pawns stay put) or **Battleship** (each player places all sixteen pieces anywhere in their own four rows). Both players set up at the same time, and the clock doesn't run until both are ready. You never see the other setup. Castling is allowed only for a king and rook that start on their usual squares. Setups are checked in `server/setup.go`, and a game saves the position it started from (`start_fen`) so replays and restarts work.
-- **Rated or Unrated**: a game can be rated only with two signed-in players; the creator can turn rating off.
+- **Ranked or Unranked**: a game can be ranked only with two signed-in players; the creator can turn rating off.
+- **Find match** (`POST /api/queue`, `server/queue.go`): a signed-in player waits for the player nearest their rating who wants the same clock and mode. The rating window starts at 100 points and widens by 20 a second, so after half a minute anyone wanting the same game will do. The page polls `GET /api/queue` every 3 seconds, which is also what keeps a player in the queue; the pair is told over live events (`match`). Colours are random.
+- **Mods** (`/mods`): the game with every dial exposed: fog off, checkmate rules, King of the Hill, Jump King, backward pawns, and the extra clocks including No clock (`modTimeControls`). A mods game carries `mods: true`, keeps its options through `normalize`, and is never ranked.
 
 A king that starts in danger after setup is left as it is. A win on the winner's very first move is a **Sniper Win**: it counts, but moves both ratings only a quarter as far as a whole game (`sniperWeight` in `server/setup.go`).
 
-The engine still knows the older options (checkmate rules, no fog, King of the Hill, Jump King, backward pawns: `Rules` in `server/engine`), and games saved with them keep working and replaying. They're described with the `legacy` labels in the dictionaries, but no new game can use them.
+The older options (checkmate rules, no fog, King of the Hill, Jump King, backward pawns: `Rules` in `server/engine`) live on as mods, and games saved with them before the site became one game keep working and replaying. They're described with the `legacy` labels in the dictionaries.
 
 The rules live in `server/engine` (`Rules`, `Position.Vision`), and what each viewer receives is decided in `server/view.go`.
 
@@ -43,7 +45,7 @@ The creator picks a time control from fixed presets (`timeControls` in `server/v
 - Clocks run on the server. White's clock starts once Black sits down. The increment is added after each move.
 - When a clock runs out, that side loses on time, unless the opponent has only a king, or a king and one minor piece, which is a draw. A timer ends the game even with nobody connected, and every 30 seconds the server also checks the database for games whose deadline passed while it wasn't holding them (after a restart, for example).
 - The browser counts down locally from the last state the server sent, so the clock stays smooth between messages.
-- A game is **rated** when both players are signed in, it has a clock (every preset on offer has one), and the creator didn't make it Unrated. Ratings use Glicko-2, starting at 1500 with one rating for every mode, and each game is its own rating period. The change is applied once, in a transaction, when the finished game is saved, and shown in the game-over dialog and on the profile.
+- A game is **ranked** (rated) when both players are signed in, it isn't a mods game, it has a clock (every preset on offer has one), and the creator didn't make it Unrated. Ratings use Glicko-2, starting at 1500 with one rating for every mode, and each game is its own rating period. The change is applied once, in a transaction, when the finished game is saved, and shown in the game-over dialog and on the profile.
 
 ## Chat
 

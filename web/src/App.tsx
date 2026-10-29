@@ -15,7 +15,8 @@ import { OfferDialog } from './OfferDialog'
 import { ProfilePage } from './ProfilePage'
 import { ReplayPage } from './ReplayPage'
 import { RulesPage } from './RulesPage'
-import { usePath } from './router'
+import { ModsPage } from './ModsPage'
+import { navigate, usePath } from './router'
 import { WatchPage } from './WatchPage'
 import { SettingsPage } from './SettingsPage'
 import { showToast } from './social'
@@ -41,6 +42,8 @@ export function App() {
         { text: dict().toast.acceptedOffer(e.user), action: { label: dict().toast.play, href: `/m/${e.matchId}` } },
         20000,
       )
+    // Find match paired you while you were elsewhere on the site.
+    if (e.type === 'match' && e.matchId && location.pathname !== '/') navigate(`/m/${e.matchId}`)
   })
 
   const page = match ? (
@@ -61,6 +64,8 @@ export function App() {
     <SettingsPage />
   ) : path === '/rules' ? (
     <RulesPage />
+  ) : path === '/mods' ? (
+    <ModsPage />
   ) : path === '/' ? (
     <Landing />
   ) : (

@@ -27,6 +27,9 @@ type Settings struct {
 	Hill bool `json:"hill,omitempty"`
 	// Unrated keeps a game that could be rated from counting.
 	Unrated bool `json:"unrated,omitempty"`
+	// Mods is a game from the mods page: any of the options above, any clock,
+	// never ranked.
+	Mods bool `json:"mods,omitempty"`
 }
 
 func (s Settings) rules() engine.Rules {
@@ -35,13 +38,19 @@ func (s Settings) rules() engine.Rules {
 
 func (s Settings) valid() bool {
 	_, ok := setupModes[s.Setup]
-	return s.Time.valid() && ok
+	return (s.Time.valid() || (s.Mods && s.Time.modsValid())) && ok
 }
 
 // normalize makes new settings the one game the site plays: fog of war, win
-// by eating the king. Saved games keep whatever they were played with.
+// by eating the king. A mods game keeps its options but is never ranked.
+// Saved games keep whatever they were played with.
 func (s *Settings) normalize() {
+	if s.Mods {
+		s.Unrated = true
+		return
+	}
 	s.Fog, s.KingCapture = true, true
+	s.JumpKing, s.BackPawns, s.Hill = false, false, false
 }
 
 // startFrom is the FEN a game starts from: the usual position, or the players' setups.
@@ -72,10 +81,24 @@ var timeControls = []TimeControl{
 	{PerMove: 24 * 60 * 60}, {PerMove: 7 * 24 * 60 * 60},
 }
 
+// modTimeControls are the extra clocks a mods game can have, no clock among
+// them. Must match MOD_TIMES in web/src/settings.ts.
+var modTimeControls = []TimeControl{
+	{},
+	{Base: 60}, {Base: 120, Inc: 1},
+	{Base: 180}, {Base: 300, Inc: 3},
+	{Base: 600, Inc: 5}, {Base: 900, Inc: 10},
+	{Base: 1800}, {Base: 1800, Inc: 20},
+}
+
 // valid is checked only when a game or an offer is created. Saved games keep
 // whatever clock they were made with, including the presets no longer offered.
 func (t TimeControl) valid() bool {
 	return slices.Contains(timeControls, t)
+}
+
+func (t TimeControl) modsValid() bool {
+	return slices.Contains(modTimeControls, t)
 }
 
 // clocked is false for No clock games, which wait forever and are never rated.
