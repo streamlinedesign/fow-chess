@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Avatar } from './Avatar'
 import { useT } from './i18n'
+import { Page, PageHead } from './Page'
 import { Icon } from './icons'
 import { pieceImg } from './position'
 import { navigate } from './router'
@@ -58,35 +59,30 @@ export function WatchPage() {
   const others = games?.filter((g) => !g.friend) ?? []
 
   return (
-    <main className="mx-auto w-full max-w-[1184px] flex-1 px-4 pt-6 pb-16 sm:px-8">
-      <div className="page-head">
-        <div>
-          <h1>
-            {t.common.watch}
-            {games && games.length > 0 && <span className="count">{games.length}</span>}
-          </h1>
-          <p>{t.watch.intro}</p>
+    <Page>
+      <PageHead title={t.common.watch} count={games?.length} sub={t.watch.intro} />
+      <div className="home-row">
+        <div className="home-cell">
+          {error && !games ? (
+            <p className="text-danger">{error}</p>
+          ) : !games ? (
+            <Spinner label={t.common.loading} />
+          ) : games.length === 0 ? (
+            <div className="flex flex-col items-start gap-4">
+              <p className="text-accent">{t.watch.nobodyPlaying}</p>
+              <Button variant="solid" onClick={() => navigate('/')}>
+                {t.common.newMatch}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-10">
+              {friends.length > 0 && <GameList title={t.watch.friendsPlaying} games={friends} />}
+              {others.length > 0 && <GameList title={friends.length ? t.watch.everyoneElse : ''} games={others} />}
+            </div>
+          )}
         </div>
       </div>
-
-      {error && !games ? (
-        <p className="text-danger">{error}</p>
-      ) : !games ? (
-        <Spinner label={t.common.loading} />
-      ) : games.length === 0 ? (
-        <div className="flex flex-col items-start gap-4">
-          <p className="text-accent">{t.watch.nobodyPlaying}</p>
-          <Button variant="solid" onClick={() => navigate('/')}>
-            {t.common.newMatch}
-          </Button>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-10">
-          {friends.length > 0 && <GameList title={t.watch.friendsPlaying} games={friends} />}
-          {others.length > 0 && <GameList title={friends.length ? t.watch.everyoneElse : ''} games={others} />}
-        </div>
-      )}
-    </main>
+    </Page>
   )
 }
 

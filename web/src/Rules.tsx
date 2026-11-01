@@ -68,8 +68,8 @@ function Card({ id, art, children }: { id: CardKey; art: ReactNode; children?: R
     <article className="tick flex flex-col gap-3 p-5 sm:p-6">
       <div className="mb-1.5 flex h-32 items-center">{art}</div>
       <div>
-        <p className="text-xs font-semibold tracking-wider text-accent uppercase">{card.kind}</p>
         <h3 className="text-xl font-semibold tracking-tight">{card.title}</h3>
+        <p className="text-[13px] text-accent">{card.kind}</p>
       </div>
       <div className="flex flex-col gap-3 text-[15px] leading-relaxed text-accent [&_strong]:font-semibold [&_strong]:text-fg">
         {card.p.map((p, i) => (
@@ -88,11 +88,6 @@ export function Rules() {
   const t = useT()
   return (
     <section id="rules" className="flex flex-col gap-6">
-      <div className="border-b border-fg pb-4">
-        <h1 className="text-[clamp(30px,5vw,44px)] leading-none font-semibold tracking-tight">{t.rules.heading}</h1>
-        <p className="mt-2 text-accent">{t.rules.intro}</p>
-      </div>
-
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card
           id="fog"

@@ -401,11 +401,11 @@ export const en = {
         ],
       },
       clocks: {
-        kind: 'Ranked or unranked',
+        kind: 'Ranked',
         title: 'Clocks and rating',
         p: [
           "Clocks run on the server, so closing the tab doesn't stop them. Run out and you lose, unless your opponent can't win with what's left. **Daily** gives you 24 hours per move and **Weekly** 7 days, reset after every move.",
-          'Choose **Ranked** or **Unranked** when you create a match, or press **Find match** to be paired with the player nearest your rating. A ranked game needs two signed-in players, and every mode shares one rating, starting at 1500. Unranked games are for trying things out.',
+          'Every game between two signed-in players is **ranked**, and every mode shares one rating, starting at 1500. Press **Play** on the home page to be paired with the player nearest your rating. **Mods** games and games against a bot never count.',
         ],
       },
       draws: {
@@ -482,10 +482,12 @@ export const en = {
     intro: 'Find players by username to add a friend or offer them a match.',
     yourFriends: 'Your friends',
     online: (n: number) => `${n} online`,
-    noFriends: 'No friends yet. Search for someone above, or add them from their profile.',
+    noFriends: 'No friends yet. Search for someone here, or add them from their profile.',
     watchX: (name: string) => `Watch ${name}`,
     messageX: (name: string) => `Message ${name}`,
     moreFor: (name: string) => `More for ${name}`,
+    findPlayers: 'Find players',
+    noSent: 'No requests waiting.',
     sentRequests: 'Sent requests',
     requestsInBell: 'Requests sent to you show up in the bell.',
     removeTitle: (name: string) => `Remove ${name}?`,

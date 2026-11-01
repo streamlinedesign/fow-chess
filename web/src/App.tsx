@@ -7,6 +7,7 @@ import { Header } from './Header'
 import { dict } from './i18n'
 import { FriendsPage } from './FriendsPage'
 import { Landing } from './Landing'
+import { Footer } from './Page'
 import { connectLive, useLive } from './live'
 import { MatchPage } from './MatchPage'
 import { MessagesPage } from './MessagesPage'
@@ -40,7 +41,10 @@ export function App() {
   useLive((e) => {
     if (e.type === 'offer' && e.matchId && e.user)
       showToast(
-        { text: dict().toast.acceptedOffer(e.user), action: { label: dict().toast.play, href: `/m/${e.matchId}` } },
+        {
+          text: dict().toast.acceptedOffer(e.user),
+          action: { label: dict().toast.play, href: `/m/${e.matchId}` },
+        },
         20000,
       )
     // Find match or an arena paired you: go to the game, wherever you are.
@@ -80,6 +84,8 @@ export function App() {
       <div className="flex min-h-dvh flex-col">
         <Header />
         <ErrorBoundary key={path}>{page}</ErrorBoundary>
+        {/* Game pages and chats fill the screen; the rest end with the footer. */}
+        {!match && !game && !chat && <Footer />}
         <OfferDialog />
         <Toaster />
       </div>

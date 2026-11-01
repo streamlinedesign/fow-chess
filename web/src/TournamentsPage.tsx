@@ -3,6 +3,7 @@ import { Avatar } from './Avatar'
 import { useMe } from './auth'
 import { rich, useT } from './i18n'
 import { useLive } from './live'
+import { Cell, Page, PageHead } from './Page'
 import { go } from './ProfilePage'
 import { navigate } from './router'
 import { describeTime, type TimeControl } from './settings'
@@ -31,7 +32,12 @@ export type Tournament = {
   paused?: boolean
 }
 
-type Listing = { upcoming: Tournament[]; recent: Tournament[]; zone: string; minPlayers: number }
+type Listing = {
+  upcoming: Tournament[]
+  recent: Tournament[]
+  zone: string
+  minPlayers: number
+}
 
 /** "1 h 05 min", "12 min" or "40 s" until an instant. */
 export function countdown(iso: string) {
@@ -85,133 +91,140 @@ export function TournamentsPage() {
   const scheduled = data?.upcoming.filter((x) => x.status === 'scheduled') ?? []
 
   return (
-    <main className="mx-auto flex w-full max-w-[1184px] flex-1 flex-col gap-10 px-4 pt-6 pb-16 sm:px-8">
-      <div className="page-head">
-        <div>
-          <h1>{t.tournaments.title}</h1>
-          <p>{t.tournaments.intro}</p>
-        </div>
-      </div>
-
+    <Page>
+      <PageHead title={t.tournaments.title} sub={t.tournaments.intro} />
       {error && !data ? (
-        <p className="text-danger">{error}</p>
+        <Cell>
+          <p className="text-danger">{error}</p>
+        </Cell>
       ) : !data ? (
-        <Spinner label={t.common.loading} />
+        <Cell>
+          <Spinner label={t.common.loading} />
+        </Cell>
       ) : (
         <>
-          {error && <p className="text-danger">{error}</p>}
+          {error && (
+            <Cell>
+              <p className="text-danger">{error}</p>
+            </Cell>
+          )}
           {running.map((x) => (
-            <Arena key={x.id} x={x} me={me?.username} act={act} />
+            <div key={x.id} className="home-row">
+              <Arena x={x} me={me?.username} act={act} />
+            </div>
           ))}
 
-          <section className="flex flex-col gap-3.5">
-            <h2 className="text-[22px] font-semibold tracking-tight">{t.tournaments.upcoming}</h2>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {scheduled.slice(0, 4).map((x) => (
-                <article key={x.id} className="tick flex flex-col gap-3 p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg font-semibold tracking-tight">{t.tournaments.kinds[x.kind]}</h3>
-                      <p className="text-sm text-accent">
-                        {describeTime(x.time, t)} ·{' '}
-                        {t.tournaments.length(Math.round((+new Date(x.endsAt) - +new Date(x.startsAt)) / 60000))}
-                      </p>
-                    </div>
-                    <span className="turn-tag whitespace-nowrap">{t.tournaments.startsIn(countdown(x.startsAt))}</span>
-                  </div>
-                  <p className="text-sm">
-                    {t.tournaments.startsAt(
-                      new Intl.DateTimeFormat(t.locale, {
-                        weekday: 'short',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      }).format(new Date(x.startsAt)),
-                    )}
-                    {' · '}
-                    {t.tournaments.players(x.players)}
-                    {' · '}
-                    <span className="text-accent">{t.tournaments.needed(data.minPlayers)}</span>
-                  </p>
-                  {me ? (
-                    x.joined ? (
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-sm font-medium">{t.tournaments.joined}</span>
-                        <Button className="h-9 px-3.5 text-sm" onClick={() => act(x, false)}>
-                          {t.tournaments.leave}
-                        </Button>
+          <div className="home-row home-r3">
+            <Cell title={t.tournaments.upcoming} className="cross">
+              <div className="grid gap-4">
+                {scheduled.slice(0, 4).map((x) => (
+                  <article key={x.id} className="tick flex flex-col gap-3 p-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-lg font-semibold tracking-tight">{t.tournaments.kinds[x.kind]}</h3>
+                        <p className="text-sm text-accent">
+                          {describeTime(x.time, t)} ·{' '}
+                          {t.tournaments.length(Math.round((+new Date(x.endsAt) - +new Date(x.startsAt)) / 60000))}
+                        </p>
                       </div>
-                    ) : (
-                      <Button variant="solid" className="h-10 self-start px-5" onClick={() => act(x, true)}>
-                        {t.tournaments.join}
-                      </Button>
-                    )
-                  ) : (
+                      <span className="turn-tag whitespace-nowrap">
+                        {t.tournaments.startsIn(countdown(x.startsAt))}
+                      </span>
+                    </div>
                     <p className="text-sm">
-                      <a
-                        href="/login"
-                        onClick={(e) => go(e, '/login')}
-                        className="font-medium underline underline-offset-4"
-                      >
-                        {t.tournaments.joinGuest}
-                      </a>
-                    </p>
-                  )}
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <section className="flex flex-col gap-3.5">
-            <h2 className="text-[22px] font-semibold tracking-tight">{t.tournaments.recent}</h2>
-            {data.recent.length === 0 ? (
-              <p className="text-accent">{t.tournaments.noneRecent}</p>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {data.recent.map((x) => (
-                  <article key={x.id} className="tick flex flex-col gap-2 p-5">
-                    <h3 className="text-lg font-semibold tracking-tight">{t.tournaments.kinds[x.kind]}</h3>
-                    <p className="text-sm text-accent">
-                      {new Intl.DateTimeFormat(t.locale, {
-                        day: 'numeric',
-                        month: 'short',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                      }).format(new Date(x.startsAt))}
+                      {t.tournaments.startsAt(
+                        new Intl.DateTimeFormat(t.locale, {
+                          weekday: 'short',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        }).format(new Date(x.startsAt)),
+                      )}
                       {' · '}
                       {t.tournaments.players(x.players)}
+                      {' · '}
+                      <span className="text-accent">{t.tournaments.needed(data.minPlayers)}</span>
                     </p>
-                    <ol className="flex flex-col gap-1 text-[15px]">
-                      {(x.standings ?? []).slice(0, 3).map((p, i) => (
-                        <li key={p.username} className="flex items-center gap-2">
-                          <span className="w-5 font-mono text-sm text-accent">{i + 1}</span>
-                          <a
-                            href={`/u/${p.username}`}
-                            onClick={(e) => go(e, `/u/${p.username}`)}
-                            className="font-semibold hover:underline"
-                          >
-                            {p.username}
-                          </a>
-                          <span className="ml-auto font-mono text-sm tabular-nums">{p.score}</span>
-                        </li>
-                      ))}
-                    </ol>
+                    {me ? (
+                      x.joined ? (
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm font-medium">{t.tournaments.joined}</span>
+                          <Button className="h-9 px-3.5 text-sm" onClick={() => act(x, false)}>
+                            {t.tournaments.leave}
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button variant="solid" className="h-10 self-start px-5" onClick={() => act(x, true)}>
+                          {t.tournaments.join}
+                        </Button>
+                      )
+                    ) : (
+                      <p className="text-sm">
+                        <a
+                          href="/login"
+                          onClick={(e) => go(e, '/login')}
+                          className="font-medium underline underline-offset-4"
+                        >
+                          {t.tournaments.joinGuest}
+                        </a>
+                      </p>
+                    )}
                   </article>
                 ))}
               </div>
-            )}
-          </section>
+            </Cell>
+
+            <Cell title={t.tournaments.recent}>
+              {data.recent.length === 0 ? (
+                <p className="text-accent">{t.tournaments.noneRecent}</p>
+              ) : (
+                <div className="grid gap-4">
+                  {data.recent.map((x) => (
+                    <article key={x.id} className="tick flex flex-col gap-2 p-5">
+                      <h3 className="text-lg font-semibold tracking-tight">{t.tournaments.kinds[x.kind]}</h3>
+                      <p className="text-sm text-accent">
+                        {new Intl.DateTimeFormat(t.locale, {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: 'numeric',
+                          minute: '2-digit',
+                        }).format(new Date(x.startsAt))}
+                        {' · '}
+                        {t.tournaments.players(x.players)}
+                      </p>
+                      <ol className="flex flex-col gap-1 text-[15px]">
+                        {(x.standings ?? []).slice(0, 3).map((p, i) => (
+                          <li key={p.username} className="flex items-center gap-2">
+                            <span className="w-5 font-mono text-sm text-accent">{i + 1}</span>
+                            <a
+                              href={`/u/${p.username}`}
+                              onClick={(e) => go(e, `/u/${p.username}`)}
+                              className="font-semibold hover:underline"
+                            >
+                              {p.username}
+                            </a>
+                            <span className="ml-auto font-mono text-sm tabular-nums">{p.score}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </Cell>
+          </div>
         </>
       )}
 
-      <section className="flex max-w-[720px] flex-col gap-3">
-        <h2 className="text-[22px] font-semibold tracking-tight">{t.tournaments.rules.heading}</h2>
-        <div className="flex flex-col gap-2.5 text-[15px] leading-relaxed text-accent [&_strong]:font-semibold [&_strong]:text-fg">
-          {t.tournaments.rules.p.map((p, i) => (
-            <p key={i}>{rich(p)}</p>
-          ))}
-        </div>
-      </section>
-    </main>
+      <div className="home-row">
+        <Cell title={t.tournaments.rules.heading}>
+          <div className="flex max-w-[720px] flex-col gap-2.5 text-[15px] leading-relaxed text-accent [&_strong]:font-semibold [&_strong]:text-fg">
+            {t.tournaments.rules.p.map((p, i) => (
+              <p key={i}>{rich(p)}</p>
+            ))}
+          </div>
+        </Cell>
+      </div>
+    </Page>
   )
 }
 
@@ -220,13 +233,13 @@ function Arena({ x, me, act }: { x: Tournament; me?: string; act: (x: Tournament
   const t = useT()
   const mine = x.standings?.find((p) => p.username === me)
   return (
-    <section className="flex flex-col gap-4" aria-live="polite">
-      <div className="flex flex-wrap items-end justify-between gap-3 border-b border-fg pb-3">
+    <section className="home-cell flex flex-col gap-4" aria-live="polite">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold tracking-wider text-accent uppercase">{t.tournaments.running}</p>
           <h2 className="text-[clamp(26px,4vw,36px)] leading-none font-semibold tracking-tight">
             {t.tournaments.kinds[x.kind]}
           </h2>
+          <p className="mt-2 text-sm text-accent">{t.tournaments.running}</p>
         </div>
         <span className="turn-tag">{t.tournaments.endsIn(countdown(x.endsAt))}</span>
       </div>

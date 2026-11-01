@@ -35,8 +35,7 @@ import { GameCard, type LiveGame } from './WatchPage'
 
 /** Clocks split by how long a game takes: Short is Blitz and Rapid, Long the rest. */
 const SHORT_GROUPS = ['Blitz', 'Rapid']
-const presets = (long: boolean) =>
-  TIME_GROUPS.filter(([g]) => SHORT_GROUPS.includes(g) !== long).flatMap(([, p]) => p)
+const presets = (long: boolean) => TIME_GROUPS.filter(([g]) => SHORT_GROUPS.includes(g) !== long).flatMap(([, p]) => p)
 const isLong = (t: TimeControl) => !SHORT_GROUPS.includes(timeGroup(t))
 
 /**
@@ -171,7 +170,12 @@ function PlayMenu({
           <RadioGroup.Root
             aria-labelledby="home-mode"
             value={setupMode(settings).value || 'standard'}
-            onValueChange={(v) => set({ ...settings, setup: v === 'standard' ? '' : (v as Settings['setup']) })}
+            onValueChange={(v) =>
+              set({
+                ...settings,
+                setup: v === 'standard' ? '' : (v as Settings['setup']),
+              })
+            }
             className="seg"
           >
             {SETUPS.map((m) => (
@@ -209,7 +213,10 @@ function CodeGame({ settings, busy, setBusy }: { settings: Settings; busy: boole
     begin('create')
     try {
       saveSettings(settings)
-      const res = await fetch(`/api/matches?player=${playerId}`, { method: 'POST', body: JSON.stringify(settings) })
+      const res = await fetch(`/api/matches?player=${playerId}`, {
+        method: 'POST',
+        body: JSON.stringify(settings),
+      })
       if (!res.ok) throw new Error()
       const { id } = await res.json()
       navigate(`/m/${id}`)
@@ -270,14 +277,22 @@ const NOBODY_AFTER_S = 20
 /** Starts a game against a bot with the current mode and clock, and goes there. Never ranked. */
 async function playBot(settings: Settings, bot: Bot) {
   const body = { ...settings, bot }
-  const res = await fetch(`/api/matches?player=${playerId}`, { method: 'POST', body: JSON.stringify(body) })
+  const res = await fetch(`/api/matches?player=${playerId}`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
   if (!res.ok) throw new Error()
   const { id } = await res.json()
   navigate(`/m/${id}`)
 }
 
 /** Each bot's face: a piece of its strength. */
-const BOT_PIECE: Record<Bot, string> = { rex: 'P', vercingetorix: 'N', ramesses: 'K', solomon: 'Q' }
+const BOT_PIECE: Record<Bot, string> = {
+  rex: 'P',
+  vercingetorix: 'N',
+  ramesses: 'K',
+  solomon: 'Q',
+}
 
 /** The computer opponents, a row of cells. They play with the mode and clock set above. */
 function Bots({ settings }: { settings: Settings }) {
@@ -650,9 +665,7 @@ function NextArena() {
             {t.tournaments.kinds[next.kind]}
             {running ? <span className="turn-tag">{t.tournaments.running}</span> : null}
           </span>
-          <span className="home-arena-time">
-            {at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </span>
+          <span className="home-arena-time">{at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
           <span className="text-sm text-accent">
             {running ? t.tournaments.endsIn(countdown(next.endsAt)) : t.tournaments.startsIn(countdown(next.startsAt))}
             {' · '}

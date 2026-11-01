@@ -566,6 +566,21 @@
   margin: 0;
   padding: 0;
 }
+.setup.bare {
+  border: 0;
+  border-radius: 0;
+}
+.setup.bare > div:first-of-type {
+  display: none;
+}
+/* The mods board keeps up with the long list of dials beside it. */
+.mods-board {
+  position: sticky;
+  top: calc(var(--header) + 24px);
+}
+.setup.bare > div {
+  padding: 0;
+}
 
 /* Time control groups: underlined tabs, or a 3 by 2 grid on phones. */
 .tc-tabs {
@@ -934,8 +949,6 @@ a.tick:active {
   grid-template-columns: auto 1fr auto;
   gap: 24px;
   align-items: center;
-  padding-bottom: 28px;
-  border-bottom: 1px solid currentColor;
 }
 .prof-name h1 {
   font-size: clamp(32px, 6vw, 48px);
@@ -1632,7 +1645,6 @@ a.tick:active {
   grid-template-columns: auto 1fr;
   gap: 48px;
   align-items: center;
-  padding-top: 6vh;
 }
 .nf-board {
   width: 220px;
@@ -1934,7 +1946,6 @@ a.tick:active {
   --gut: 32px;
   border-top: 1px solid var(--line);
   flex: 1;
-  padding-bottom: 48px;
 }
 .home-row {
   display: grid;
@@ -1972,6 +1983,40 @@ a.tick:active {
 }
 .home-r3 {
   grid-template-columns: 1fr 1fr;
+}
+
+/* A page's head cell: title at the left, actions at the right. */
+.page-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+  flex-wrap: wrap;
+}
+.page-top .count {
+  font-size: 0.5em;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+.site-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px var(--gut, 32px) 28px;
+  border-top: 1px solid color-mix(in srgb, var(--color-fg) 22%, transparent);
+  font-size: 13px;
+}
+.site-foot a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.site-foot a:hover {
+  color: var(--color-accent);
+}
+@media (max-width: 760px) {
+  .site-foot {
+    padding-inline: 16px;
+  }
 }
 
 /* The play menu: a big title, one main action per block, blocks split by lines. */
@@ -2138,7 +2183,7 @@ a.tick:active {
   display: grid;
   /* The board fits the screen below the header, strips included, and never dwarfs the menu. */
   --demo-board: min(100%, 560px, calc(100dvh - 300px));
-  grid-template-columns: var(--demo-board) minmax(180px, 280px);
+  grid-template-columns: var(--demo-board) minmax(180px, 1fr);
   gap: 32px;
   align-items: start;
 }
@@ -2367,6 +2412,23 @@ a.tick:active {
   margin-top: auto;
 }
 
+/* Wide screens: the panel beside the board spreads into two columns, so the cell has no empty corner. */
+@media (min-width: 1600px) {
+  .demo-side {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px 32px;
+    align-content: start;
+  }
+  .demo-how {
+    padding-top: 0;
+    border-top: 0;
+  }
+  .demo-side > .flex,
+  .demo-side > p {
+    grid-column: 1 / -1;
+  }
+}
 @media (max-width: 1320px) {
   .demo {
     grid-template-columns: minmax(0, 1fr);
@@ -2389,6 +2451,9 @@ a.tick:active {
 @media (max-width: 1080px) {
   .home-hero {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .mods-board {
+    position: static;
   }
   .home-hero > .home-cell + .home-cell {
     border-left: 0;

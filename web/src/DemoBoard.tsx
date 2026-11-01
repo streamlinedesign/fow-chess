@@ -26,7 +26,10 @@ export function DemoBoard({ me }: { me?: string }) {
     setSide(s)
     setId(null)
     setFailed(false)
-    fetch(`/api/matches?player=${playerId}`, { method: 'POST', body: JSON.stringify({ demo: true, side: s }) })
+    fetch(`/api/matches?player=${playerId}`, {
+      method: 'POST',
+      body: JSON.stringify({ demo: true, side: s }),
+    })
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((b) => setId(b.id))
       .catch(() => setFailed(true))
@@ -72,7 +75,17 @@ function Live({ id, side, me, actions }: { id: string; side: Color; me?: string;
 
   if (!state)
     return (
-      <Frame me={me} you={side} board={startView(side)} legal={[]} onMove={() => {}} history={[]} status={null} thinking={false} actions={actions} />
+      <Frame
+        me={me}
+        you={side}
+        board={startView(side)}
+        legal={[]}
+        onMove={() => {}}
+        history={[]}
+        status={null}
+        thinking={false}
+        actions={actions}
+      />
     )
   const you = (state.you || 'w') as Color
   const move = (from: string, to: string) => {

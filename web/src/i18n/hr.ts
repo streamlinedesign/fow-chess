@@ -400,11 +400,11 @@ export const hr: Dict = {
         ],
       },
       clocks: {
-        kind: 'Rangirano ili ne',
+        kind: 'Rangirano',
         title: 'Satovi i rejting',
         p: [
           'Satovi rade na poslužitelju, pa ih zatvaranje kartice ne zaustavlja. Istekne li ti vrijeme, gubiš, osim ako protivnik s onim što mu je ostalo ne može pobijediti. **Dnevni** daje 24 sata po potezu, a **Tjedni** 7 dana, iznova nakon svakog poteza.',
-          'Pri stvaranju partije odaberi **Rangirano** ili **Nerangirano**, ili pritisni **Nađi partiju** da te spojimo s igračem najbližim tvom rejtingu. Rangirana partija traži dva prijavljena igrača, a svi načini igre dijele jedan rejting, koji počinje na 1500. Nerangirane partije služe za isprobavanje.',
+          'Svaka partija između dva prijavljena igrača je **rangirana**, a svi načini igre dijele jedan rejting, koji počinje na 1500. Pritisni **Igraj** na početnoj da te spojimo s igračem najbližim tvom rejtingu. Partije s **modovima** i protiv bota nikad se ne računaju.',
         ],
       },
       draws: {
@@ -481,10 +481,12 @@ export const hr: Dict = {
     intro: 'Pronađi igrače po korisničkom imenu da ih dodaš za prijatelje ili im ponudiš partiju.',
     yourFriends: 'Tvoji prijatelji',
     online: (n) => `${n} online`,
-    noFriends: 'Još nemaš prijatelja. Potraži nekoga gore ili ga dodaj s njegova profila.',
+    noFriends: 'Još nemaš prijatelja. Potraži nekoga ovdje ili ga dodaj s njegova profila.',
     watchX: (name) => `Gledaj: ${name}`,
     messageX: (name) => `Poruka: ${name}`,
     moreFor: (name) => `Više za: ${name}`,
+    findPlayers: 'Pronađi igrače',
+    noSent: 'Nema zahtjeva na čekanju.',
     sentRequests: 'Poslani zahtjevi',
     requestsInBell: 'Zahtjevi poslani tebi pojavljuju se u zvoncu.',
     removeTitle: (name) => `Ukloniti: ${name}?`,

@@ -78,7 +78,12 @@ export function SettingsPanel({
           <RadioGroup.Root
             aria-labelledby={`${id}-mode`}
             value={setupMode(value).value || 'standard'}
-            onValueChange={(v) => onChange({ ...value, setup: v === 'standard' ? '' : (v as Settings['setup']) })}
+            onValueChange={(v) =>
+              onChange({
+                ...value,
+                setup: v === 'standard' ? '' : (v as Settings['setup']),
+              })
+            }
             className="grid gap-2.5 sm:grid-cols-3"
           >
             {SETUPS.map((m) => (
@@ -130,8 +135,6 @@ export function SettingsPanel({
             ))}
           </RadioGroup.Root>
         </Group>
-
-        {mods && <p className="text-sm text-accent">{t.panel.modsNote}</p>}
       </div>
     </fieldset>
   )
