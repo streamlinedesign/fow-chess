@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useMe } from './auth'
 import { useT } from './i18n'
 import { playerId } from './player'
 import { navigate } from './router'
@@ -10,7 +9,6 @@ import { Button } from './ui'
 
 /** The game with every dial exposed. Mods games are never ranked. */
 export function ModsPage() {
-  const me = useMe()
   const t = useT()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -40,7 +38,7 @@ export function ModsPage() {
           <p className="mt-3 max-w-[60ch] text-accent">{t.mods.intro}</p>
         </div>
 
-        <SettingsPanel value={settings} onChange={setSettings} signedIn={!!me} className="hero-setup" />
+        <SettingsPanel value={settings} onChange={setSettings} className="hero-setup" />
 
         <div className="hero-acts flex flex-col gap-3">
           <Button variant="solid" className="h-13 text-[17px]" onClick={create} loading={busy} disabled={busy}>

@@ -61,7 +61,7 @@ export function OfferDialog() {
             <span className="font-mono text-sm text-accent tabular-nums">{them?.rating ?? ''}</span>
           </div>
         </div>
-        <SettingsPanel value={settings} onChange={setSettings} signedIn />
+        <SettingsPanel value={settings} onChange={setSettings} />
         <div className="flex items-center justify-between gap-3">
           <span className="font-semibold" id="offer-color">
             {t.offer.yourColour}

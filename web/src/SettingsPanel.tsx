@@ -19,17 +19,16 @@ import {
 /**
  * The mode and clock for a new match, boxed like a board of its own. Fog of
  * war and Eat the King are the game, so they aren't settings here; on the
- * mods page every dial is exposed.
+ * mods page every dial is exposed. There's no ranked switch: a game is ranked
+ * whenever both players are signed in, and a mods game never is.
  */
 export function SettingsPanel({
   value,
   onChange,
-  signedIn,
   className = '',
 }: {
   value: Settings
   onChange: (s: Settings) => void
-  signedIn: boolean
   className?: string
 }) {
   // The panel can be on screen twice (home page and Offer a match), so ids are per panel.
@@ -132,18 +131,7 @@ export function SettingsPanel({
           </RadioGroup.Root>
         </Group>
 
-        {mods ? (
-          <p className="text-sm text-accent">{t.panel.modsNote}</p>
-        ) : signedIn ? (
-          <Toggle
-            label={t.common.rated}
-            hint={value.unrated ? t.panel.unratedOn : t.panel.ratedOn}
-            checked={!value.unrated}
-            onChange={(rated) => onChange({ ...value, unrated: !rated })}
-          />
-        ) : (
-          <Toggle label={t.common.rated} hint={t.panel.ratedGuest} checked={false} disabled onChange={() => {}} />
-        )}
+        {mods && <p className="text-sm text-accent">{t.panel.modsNote}</p>}
       </div>
     </fieldset>
   )

@@ -39,7 +39,7 @@ func (m *Match) pokeBot() {
 		}
 	case !m.setUp:
 		if m.placed[c] == "" {
-			m.placed[c] = randomSetup(setupModes[m.settings.Setup], c, m.settings.Hill)
+			m.placed[c] = botSetup(setupModes[m.settings.Setup], c, m.settings.Hill)
 			if m.placed[white] != "" && m.placed[black] != "" {
 				m.startSetUp(now)
 				m.pokeBot()
@@ -77,6 +77,26 @@ func (m *Match) botDelay(c int, now time.Time) time.Duration {
 		d = min(d, m.left(c, now)/30)
 	}
 	return max(d, 50*time.Millisecond)
+}
+
+// botSetup is a bot's arrangement: random, but with its king guarded (see
+// bots.GuardedKing). In the simulations a random Battleship setup lost on the
+// very first move 42% of the time, and a guarded one less than 1%.
+func botSetup(mode setupMode, color int, hill bool) string {
+	own := func(row, file int) int {
+		if color == white {
+			return row*8 + file
+		}
+		return (7-row)*8 + file
+	}
+	for range 1000 {
+		b := randomSetup(mode, color, hill)
+		k := strings.IndexByte(b, "Kk"[color])
+		if bots.GuardedKing(b, ownRow(color, k), k%8, own) {
+			return b
+		}
+	}
+	return randomSetup(mode, color, hill)
 }
 
 // randomSetup arranges color's pieces at random within what mode allows.

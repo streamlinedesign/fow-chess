@@ -1,1 +1,32 @@
-<!doctype html><p>Web app not built yet. Run <code>make build</code>, or use <code>make dev</code> and open http://localhost:5173.</p>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#fffabd" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>Eat the King</title>
+    <style>html{color:#050505;--lightningcss-light:initial;--lightningcss-dark: ;color-scheme:light;background:#fffabd}html[data-theme=dark]{color:#fffabd;--lightningcss-light: ;--lightningcss-dark:initial;color-scheme:dark;background:#050505}.boot-spinner{border:3px solid color-mix(in srgb, currentColor 25%, transparent);border-top-color:currentColor;border-radius:50%;width:28px;height:28px;animation:.7s linear infinite boot-spin}@keyframes boot-spin{to{transform:rotate(360deg)}}</style>
+    <script>
+      // Set the theme before first paint so there is no flash, and match the browser bar to it.
+      ;(function () {
+        var t
+        try {
+          t = localStorage.getItem('theme')
+        } catch (e) {}
+        if (t !== 'dark' && t !== 'light') t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        document.documentElement.dataset.theme = t
+        document.querySelector('meta[name=theme-color]').setAttribute('content', t === 'dark' ? '#050505' : '#fffabd')
+      })()
+    </script>
+    <script type="module" crossorigin src="/assets/index-BWrgmSpI.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-8wv_knGP.css">
+  </head>
+  <body>
+    <div id="root">
+      <div style="min-height: 100dvh; display: grid; place-items: center">
+        <div class="boot-spinner" role="status" aria-label="Loading"></div>
+      </div>
+    </div>
+  </body>
+</html>

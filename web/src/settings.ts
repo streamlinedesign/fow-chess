@@ -24,7 +24,7 @@ export type Settings = {
   backPawns?: boolean
   /** King of the Hill: a king on one of the four centre squares wins. */
   hill?: boolean
-  /** Play a game that could be rated without rating it. */
+  /** Never ranked: set by the server for bot and mods games. Players can't ask for it. */
   unrated?: boolean
   /** From the mods page: any option, any clock, never ranked. */
   mods?: boolean
@@ -90,7 +90,6 @@ const DEFAULTS: Settings = {
   kingCapture: true,
   time: tc(300),
   setup: '',
-  unrated: false,
 }
 
 export const sameTime = (a: TimeControl, b: TimeControl) =>
@@ -145,6 +144,7 @@ export function loadSettings(mods = false): Settings {
       delete saved.hill
       delete saved.mods
       delete saved.bot
+      delete saved.unrated
       saved.fog = true
       saved.kingCapture = true
     }

@@ -65,6 +65,12 @@ func (l Level) depth() int {
 // the board as it sees it, with the pieces it can't see left out. It returns
 // false when there is no legal move.
 func Choose(level Level, pos engine.Position, seen *[64]bool, rng *rand.Rand) (engine.Move, bool) {
+	return choose(level, pos, seen, rng, level == Ramesses || level == Solomon)
+}
+
+// choose is Choose, with guarded saying whether the bot guards its king
+// against the fog (see exposure).
+func choose(level Level, pos engine.Position, seen *[64]bool, rng *rand.Rand, guarded bool) (engine.Move, bool) {
 	moves := pos.LegalMoves()
 	if len(moves) == 0 {
 		return engine.Move{}, false
@@ -76,7 +82,7 @@ func Choose(level Level, pos engine.Position, seen *[64]bool, rng *rand.Rand) (e
 		return moves[rng.IntN(len(moves))], true
 	}
 	known := knownBoard(pos, seen)
-	s := &search{level: level, rng: rng}
+	s := &search{level: level, rng: rng, me: pos.Turn, guarded: guarded && seen != nil}
 	// A king the bot can't see isn't missing, it's hidden: its absence from
 	// the known board must not look like a capture.
 	for _, c := range []engine.Color{engine.White, engine.Black} {
@@ -118,6 +124,10 @@ type search struct {
 	rng       *rand.Rand
 	nodes     int
 	kingKnown [2]bool
+	// me is the bot's colour, and guarded whether it scores the ways into its
+	// king from the fog.
+	me      engine.Color
+	guarded bool
 }
 
 // maxNodes caps the search below each candidate move, so a bot never takes
@@ -195,6 +205,15 @@ func (s *search) evaluate(pos engine.Position) float64 {
 			}
 		}
 		score += float64(n) * 0.02
+	}
+	if s.guarded {
+		seen := pos.Vision(s.me)
+		cost := exposureCost * float64(exposure(&pos, s.me, &seen))
+		if us == s.me {
+			score -= cost
+		} else {
+			score += cost
+		}
 	}
 	return score
 }

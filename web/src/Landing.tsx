@@ -1,36 +1,218 @@
+import * as RadioGroup from '@radix-ui/react-radio-group'
 import { useEffect, useState } from 'react'
 import { Avatar, Who } from './Avatar'
+import { useMe } from './auth'
+import { DemoBoard } from './DemoBoard'
 import { useT } from './i18n'
 import { Icon } from './icons'
-import { useMe } from './auth'
 import { Leaderboard } from './Leaderboard'
 import { useLive } from './live'
+import { pieceImg } from './position'
 import { playerId } from './player'
 import { ago, go, type GameSummary } from './ProfilePage'
 import { navigate } from './router'
-import { BOTS, describeTime, loadSettings, modeName, NO_CLOCK, saveSettings, type Bot, type Settings } from './settings'
-import { SettingsBoard } from './SettingsBoard'
-import { SettingsPanel } from './SettingsPanel'
+import {
+  BOTS,
+  describeTime,
+  loadSettings,
+  modeName,
+  NO_CLOCK,
+  sameTime,
+  saveSettings,
+  SETUPS,
+  setupMode,
+  TIME_GROUPS,
+  timeGroup,
+  timeLabel,
+  type Bot,
+  type Settings,
+  type TimeControl,
+} from './settings'
 import { api, openOffer, type UserCard } from './social'
+import { countdown, type Tournament } from './TournamentsPage'
 import { Button } from './ui'
 import { GameCard, type LiveGame } from './WatchPage'
-import { countdown, type Tournament } from './TournamentsPage'
+
+/** Clocks split by how long a game takes: Short is Blitz and Rapid, Long the rest. */
+const SHORT_GROUPS = ['Blitz', 'Rapid']
+const presets = (long: boolean) =>
+  TIME_GROUPS.filter(([g]) => SHORT_GROUPS.includes(g) !== long).flatMap(([, p]) => p)
+const isLong = (t: TimeControl) => !SHORT_GROUPS.includes(timeGroup(t))
 
 /**
- * The home page is the game's hub: start or join a match, then what's going on
- * around you. The rules and the replay live on their own page.
+ * The home page is one big board, full width, its cells split by hairlines:
+ * a game you can play at once against Ramesses II next to the play menu, then
+ * what's going on around you. Every game started here is ranked when both
+ * players are signed in; Mods have their own page and are never ranked.
  */
 export function Landing() {
   const me = useMe()
   const t = useT()
-  const [code, setCode] = useState('')
-  const [busy, setBusy] = useState<'create' | 'join' | null>(null)
-  const [error, setError] = useState('')
   const [settings, setSettings] = useState<Settings>(loadSettings)
+  const [busy, setBusy] = useState(false)
+
+  return (
+    <main className="home">
+      <div className="home-row home-hero">
+        <div className="home-cell cross">
+          <DemoBoard me={me?.username} />
+        </div>
+        <div className="home-cell home-menu">
+          <section>
+            <h1 className="home-title">{t.landing.title}</h1>
+            <p className="mt-2.5 text-[17px] text-accent">{t.home.lede}</p>
+          </section>
+          <PlayMenu settings={settings} onChange={setSettings} signedIn={!!me} busy={busy} />
+          <CodeGame settings={settings} busy={busy} setBusy={setBusy} />
+          <section>
+            <a href="/mods" onClick={(e) => go(e, '/mods')} className="home-mods">
+              <span>
+                <span className="block font-semibold">{t.common.mods}</span>
+                <span className="block text-[13px] text-accent">{t.home.modsSub}</span>
+              </span>
+              <span className="home-arrow" aria-hidden>
+                →
+              </span>
+            </a>
+          </section>
+        </div>
+      </div>
+
+      <div className="home-row home-r1">
+        <div className="home-cell cross">{me ? <YourGames username={me.username} /> : <GuestPitch />}</div>
+        <div className="home-cell cross">
+          <NextArena />
+        </div>
+        <div className="home-cell">{me ? <FriendsOnline /> : <WatchTeaser />}</div>
+      </div>
+
+      <Bots settings={settings} />
+
+      <div className="home-row home-r3">
+        <div className="home-cell cross">
+          <LiveNow />
+        </div>
+        <div className="home-cell">
+          <Leaderboard me={me?.username} />
+        </div>
+      </div>
+    </main>
+  )
+}
+
+/** Matchmaking: game length, clock and mode, then one big Play. */
+function PlayMenu({
+  settings,
+  onChange,
+  signedIn,
+  busy,
+}: {
+  settings: Settings
+  onChange: (s: Settings) => void
+  signedIn: boolean
+  busy: boolean
+}) {
+  const t = useT()
+  const long = isLong(settings.time)
+  // Each length remembers the clock picked in it while the page is open.
+  const [last, setLast] = useState<Record<'short' | 'long', TimeControl>>(() => ({
+    short: long ? presets(false)[1] : settings.time,
+    long: long ? settings.time : presets(true)[1],
+  }))
+  const set = (s: Settings) => {
+    saveSettings(s)
+    onChange(s)
+  }
+  const pickLength = (l: string) => {
+    const toLong = l === 'long'
+    if (toLong !== long) set({ ...settings, time: last[toLong ? 'long' : 'short'] })
+  }
+  const pickTime = (time: TimeControl) => {
+    setLast({ ...last, [long ? 'long' : 'short']: time })
+    set({ ...settings, time })
+  }
+  const clocks = presets(long)
+  const summary = describeTime(settings.time, t) + (signedIn ? ` · ${t.home.ranked}` : '')
+
+  return (
+    <section>
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-[22px] font-semibold tracking-tight">{t.home.findOpponent}</h2>
+      </div>
+      <div className="mt-5 flex flex-col gap-[18px]">
+        <RadioGroup.Root
+          aria-label={t.home.length}
+          value={long ? 'long' : 'short'}
+          onValueChange={pickLength}
+          className="seg seg-lg"
+        >
+          <RadioGroup.Item value="short">
+            {t.home.short}
+            <small>{t.home.shortSub}</small>
+          </RadioGroup.Item>
+          <RadioGroup.Item value="long">
+            {t.home.long}
+            <small>{t.home.longSub}</small>
+          </RadioGroup.Item>
+        </RadioGroup.Root>
+
+        <RadioGroup.Root
+          aria-label={t.panel.timeControl}
+          value={String(clocks.findIndex((p) => sameTime(p, settings.time)))}
+          onValueChange={(i) => pickTime(clocks[Number(i)])}
+          className="home-times"
+        >
+          {clocks.map((p, i) => (
+            <RadioGroup.Item key={i} value={String(i)} className="home-time">
+              <b>{p.perMove ? timeLabel(p, t).split(' ').slice(0, 2).join(' ') : timeLabel(p, t)}</b>
+              <span>{p.perMove ? t.time.groups[timeGroup(p)] : t.time.groups[timeGroup(p)]}</span>
+            </RadioGroup.Item>
+          ))}
+        </RadioGroup.Root>
+
+        <div>
+          <div id="home-mode" className="mb-2 text-sm font-semibold">
+            {t.home.mode}
+          </div>
+          <RadioGroup.Root
+            aria-labelledby="home-mode"
+            value={setupMode(settings).value || 'standard'}
+            onValueChange={(v) => set({ ...settings, setup: v === 'standard' ? '' : (v as Settings['setup']) })}
+            className="seg"
+          >
+            {SETUPS.map((m) => (
+              <RadioGroup.Item key={m.value} value={m.value || 'standard'} title={t.setups[m.value].hint}>
+                {t.setups[m.value].label}
+              </RadioGroup.Item>
+            ))}
+          </RadioGroup.Root>
+        </div>
+
+        <FindMatch settings={settings} signedIn={signedIn} busy={busy} summary={summary} />
+      </div>
+    </section>
+  )
+}
+
+/** A custom game: make a code to share, or join one. Quieter than matchmaking. */
+function CodeGame({ settings, busy, setBusy }: { settings: Settings; busy: boolean; setBusy: (b: boolean) => void }) {
+  const t = useT()
+  const [code, setCode] = useState('')
+  const [doing, setDoing] = useState<'create' | 'join' | null>(null)
+  const [error, setError] = useState('')
+  const begin = (what: 'create' | 'join') => {
+    setDoing(what)
+    setBusy(true)
+    setError('')
+  }
+  const fail = (msg: string) => {
+    setError(msg)
+    setDoing(null)
+    setBusy(false)
+  }
 
   const create = async () => {
-    setBusy('create')
-    setError('')
+    begin('create')
     try {
       saveSettings(settings)
       const res = await fetch(`/api/matches?player=${playerId}`, { method: 'POST', body: JSON.stringify(settings) })
@@ -38,8 +220,7 @@ export function Landing() {
       const { id } = await res.json()
       navigate(`/m/${id}`)
     } catch {
-      setError(t.common.cantReach)
-      setBusy(null)
+      fail(t.common.cantReach)
     }
   }
 
@@ -47,83 +228,43 @@ export function Landing() {
     e.preventDefault()
     const id = code.trim().toUpperCase()
     if (!id) return
-    setBusy('join')
-    setError('')
+    begin('join')
     const res = await fetch(`/api/matches/${id}`).catch(() => null)
     if (res?.ok) return navigate(`/m/${id}`)
-    setBusy(null)
-    setError(res ? t.landing.noMatch(id) : t.common.cantReach)
+    fail(res ? t.landing.noMatch(id) : t.common.cantReach)
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-[1184px] flex-1 flex-col gap-12 px-4 pt-6 pb-16 sm:px-8 sm:pt-8 lg:gap-14">
-      <section className="hero">
-        <div className="hero-head">
-          <p className="text-[clamp(26px,4vw,40px)] leading-tight font-semibold tracking-tight">{t.landing.tagline}</p>
-          <p className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-accent">
-            <a
-              href="/rules"
-              onClick={(e) => go(e, '/rules')}
-              className="font-medium text-fg underline underline-offset-4"
-            >
-              {t.landing.howToPlay}
-            </a>
-            <a
-              href="/mods"
-              onClick={(e) => go(e, '/mods')}
-              className="font-medium text-fg underline underline-offset-4"
-            >
-              {t.common.mods}
-            </a>
-          </p>
-        </div>
-
-        <SettingsPanel value={settings} onChange={setSettings} signedIn={!!me} className="hero-setup" />
-
-        <div className="hero-acts flex flex-col gap-3">
-          <FindMatch settings={settings} signedIn={!!me} busy={!!busy} />
-          <Button className="h-12 text-[16px]" onClick={create} loading={busy === 'create'} disabled={!!busy}>
-            {t.common.newMatch}
+    <section className="home-code">
+      <h2 className="text-lg font-semibold tracking-tight">{t.home.codeTitle}</h2>
+      <p className="mt-1 text-sm text-accent">{t.home.codeSub}</p>
+      <div className="home-code-acts">
+        <Button className="h-11 px-4" onClick={create} loading={doing === 'create'} disabled={busy}>
+          {t.home.createCode}
+        </Button>
+        <form onSubmit={join} className="flex min-w-0 gap-1.5">
+          <input
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+            placeholder={t.landing.codePlaceholder}
+            aria-label={t.landing.codeLabel}
+            maxLength={12}
+            autoCapitalize="characters"
+            autoComplete="off"
+            spellCheck={false}
+            className="code-input"
+          />
+          <Button type="submit" className="h-11 px-4" loading={doing === 'join'} disabled={busy || !code}>
+            {t.landing.join}
           </Button>
-          <form onSubmit={join} className="flex gap-2">
-            <input
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
-              placeholder={t.landing.codePlaceholder}
-              aria-label={t.landing.codeLabel}
-              maxLength={12}
-              autoCapitalize="characters"
-              autoComplete="off"
-              spellCheck={false}
-              className="h-12 min-w-0 flex-1 rounded-md bg-transparent px-4 font-mono text-[17px] tracking-[0.12em] uppercase shadow-[inset_0_0_0_1.5px_var(--color-border)] outline-none placeholder:font-sans placeholder:text-[15px] placeholder:tracking-normal placeholder:normal-case placeholder:text-accent hover:shadow-[inset_0_0_0_1.5px_var(--color-fg)] focus-visible:shadow-[inset_0_0_0_2px_var(--color-fg)]"
-            />
-            <Button type="submit" className="h-12 px-6" loading={busy === 'join'} disabled={!!busy || !code}>
-              {t.landing.join}
-            </Button>
-          </form>
-          {error && (
-            <p role="alert" className="text-danger">
-              {error}
-            </p>
-          )}
-        </div>
-
-        <SettingsBoard settings={settings} boardClassName="hero-board" captionClassName="hero-cap" />
-      </section>
-
-      <div className="hub">
-        <div className="hub-main">
-          {me && <YourGames username={me.username} />}
-          <Bots settings={settings} busy={!!busy} />
-          <LiveNow />
-        </div>
-        <div className="hub-side">
-          <NextArena />
-          {me ? <FriendsOnline /> : <GuestPitch />}
-          <Leaderboard me={me?.username} />
-        </div>
+        </form>
       </div>
-    </main>
+      {error && (
+        <p role="alert" className="mt-2 text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </section>
   )
 }
 
@@ -132,17 +273,20 @@ const QUEUE_POLL_MS = 3000
 /** How long Find match waits before suggesting a bot. */
 const NOBODY_AFTER_S = 20
 
-/** Starts a game against a bot with the current mode and clock, and goes there. */
+/** Starts a game against a bot with the current mode and clock, and goes there. Never ranked. */
 async function playBot(settings: Settings, bot: Bot) {
-  const body = { ...settings, bot, unrated: true }
+  const body = { ...settings, bot }
   const res = await fetch(`/api/matches?player=${playerId}`, { method: 'POST', body: JSON.stringify(body) })
   if (!res.ok) throw new Error()
   const { id } = await res.json()
   navigate(`/m/${id}`)
 }
 
-/** The computer opponents, as cards. They play with whatever mode and clock is set above. */
-function Bots({ settings, busy }: { settings: Settings; busy: boolean }) {
+/** Each bot's face: a piece of its strength. */
+const BOT_PIECE: Record<Bot, string> = { rex: 'P', vercingetorix: 'N', ramesses: 'K', solomon: 'Q' }
+
+/** The computer opponents, a row of cells. They play with the mode and clock set above. */
+function Bots({ settings }: { settings: Settings }) {
   const t = useT()
   const [starting, setStarting] = useState<Bot | null>(null)
   const [error, setError] = useState('')
@@ -155,39 +299,38 @@ function Bots({ settings, busy }: { settings: Settings; busy: boolean }) {
     })
   }
   return (
-    <section className="flex flex-col gap-3.5">
-      <div>
-        <h2 className="text-[22px] font-semibold tracking-tight">{t.landing.bots}</h2>
-        <p className="mt-1 text-sm text-accent">{t.landing.botsSub}</p>
-      </div>
-      <div className="bots">
-        {BOTS.map((b, i) => (
-          <button
-            key={b.level}
-            type="button"
-            className="tick bot"
-            disabled={busy || starting !== null}
-            aria-busy={starting === b.level}
-            onClick={() => start(b.level)}
-          >
-            <span className="flex items-center justify-between gap-2">
-              <span className="text-[17px] font-semibold tracking-tight">{b.name}</span>
-              <span className="strength" aria-hidden>
-                {BOTS.map((_, j) => (
-                  <i key={j} data-on={j <= i} />
-                ))}
-              </span>
+    <div className="home-row home-bots">
+      {BOTS.map((b, i) => (
+        <div key={b.level} className={`home-cell home-bot ${i < 3 ? 'cross' : ''}`}>
+          <span className="home-bot-top">
+            <span className="home-bot-face" aria-hidden>
+              <img src={pieceImg(BOT_PIECE[b.level])} alt="" />
             </span>
-            <span className="text-sm text-accent">{t.landing.botHints[b.level]}</span>
-          </button>
-        ))}
-      </div>
-      {error && (
-        <p role="alert" className="text-sm text-danger">
-          {error}
-        </p>
-      )}
-    </section>
+            <span className="strength" aria-label={`${i + 1}/4`}>
+              {BOTS.map((_, j) => (
+                <i key={j} data-on={j <= i} />
+              ))}
+            </span>
+          </span>
+          <h3>{b.name}</h3>
+          <p className="text-sm text-accent">{t.landing.botHints[b.level]}</p>
+          <Button
+            variant={b.level === 'ramesses' ? 'solid' : 'outline'}
+            className="home-bot-play h-10 px-4"
+            onClick={() => start(b.level)}
+            loading={starting === b.level}
+            disabled={starting !== null}
+          >
+            {t.home.playBot(b.name.split(' ')[0])}
+          </Button>
+          {error && starting === null && i === 0 && (
+            <p role="alert" className="text-sm text-danger">
+              {error}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
   )
 }
 
@@ -195,7 +338,17 @@ function Bots({ settings, busy }: { settings: Settings; busy: boolean }) {
  * Find match: wait in the server's queue for the player nearest your rating
  * who wants the same game. Guests can't, since they have no rating.
  */
-function FindMatch({ settings, signedIn, busy }: { settings: Settings; signedIn: boolean; busy: boolean }) {
+function FindMatch({
+  settings,
+  signedIn,
+  busy,
+  summary,
+}: {
+  settings: Settings
+  signedIn: boolean
+  busy: boolean
+  summary: string
+}) {
   const [botBusy, setBotBusy] = useState(false)
   const t = useT()
   const [since, setSince] = useState<number | null>(null)
@@ -253,11 +406,11 @@ function FindMatch({ settings, signedIn, busy }: { settings: Settings; signedIn:
 
   if (!signedIn)
     return (
-      <div className="flex flex-col gap-1.5">
-        <Button variant="solid" className="h-13 text-[17px]" disabled>
-          {t.landing.findMatch}
+      <div className="flex flex-col gap-2">
+        <Button variant="solid" className="home-play" onClick={() => navigate('/login')}>
+          {t.home.logInToPlay}
         </Button>
-        <p className="text-sm text-accent">{t.landing.findGuest}</p>
+        <p className="text-[13px] text-accent">{t.home.guestNote}</p>
       </div>
     )
   if (waiting) {
@@ -298,8 +451,8 @@ function FindMatch({ settings, signedIn, busy }: { settings: Settings; signedIn:
   }
   return (
     <div className="flex flex-col gap-1.5">
-      <Button variant="solid" className="h-13 text-[17px]" onClick={start} disabled={busy}>
-        {t.landing.findMatch}
+      <Button variant="solid" className="home-play" onClick={start} disabled={busy}>
+        {t.home.play} <small>{summary}</small>
       </Button>
       {error && (
         <p role="alert" className="text-sm text-danger">
@@ -312,7 +465,7 @@ function FindMatch({ settings, signedIn, busy }: { settings: Settings; signedIn:
 
 function Heading({ title, href, link }: { title: string; href: string; link: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3">
+    <div className="mb-[18px] flex items-baseline justify-between gap-3">
       <h2 className="text-[22px] font-semibold tracking-tight">{title}</h2>
       <a href={href} onClick={(e) => go(e, href)} className="text-sm font-medium text-accent hover:text-fg">
         {link}
@@ -321,63 +474,58 @@ function Heading({ title, href, link }: { title: string; href: string; link: str
   )
 }
 
-/** Your games in progress, the ones waiting on you first. Hidden when there are none. */
+/** Your games in progress, the ones waiting on you first. */
 function YourGames({ username }: { username: string }) {
   const t = useT()
-  const [games, setGames] = useState<GameSummary[]>([])
+  const [games, setGames] = useState<GameSummary[] | null>(null)
 
   useEffect(() => {
     let live = true
     fetch(`/api/users/${encodeURIComponent(username)}`)
       .then((res) => (res.ok ? res.json() : null))
-      .then((p) => live && p && setGames(p.current ?? []))
-      .catch(() => {})
+      .then((p) => live && setGames(p?.current ?? []))
+      .catch(() => live && setGames([]))
     return () => {
       live = false
     }
   }, [username])
 
-  if (games.length === 0) return null
   const yours = (g: GameSummary) => !g.waiting && g.turn === g.color
-  const sorted = [...games].sort((a, b) => Number(yours(b)) - Number(yours(a)))
+  const sorted = [...(games ?? [])].sort((a, b) => Number(yours(b)) - Number(yours(a)))
 
   return (
-    <section className="flex flex-col gap-3.5">
+    <section>
       <Heading title={t.landing.yourGames} href={`/u/${encodeURIComponent(username)}`} link={t.landing.allOnProfile} />
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-4">
-        {sorted.slice(0, 6).map((g) => {
-          const href = `/m/${g.matchId}`
-          return (
-            <a
-              key={`${g.matchId}-${g.round}`}
-              href={href}
-              onClick={(e) => go(e, href)}
-              className="tick flex flex-col gap-3.5 p-[18px]"
-            >
-              <span className="flex items-center justify-between gap-2 text-[13px] text-accent">
+      {games && games.length === 0 ? (
+        <p className="text-accent">{t.home.noGames}</p>
+      ) : (
+        <div className="home-list">
+          {sorted.slice(0, 4).map((g) => {
+            const href = `/m/${g.matchId}`
+            return (
+              <a key={`${g.matchId}-${g.round}`} href={href} onClick={(e) => go(e, href)} className="home-li">
+                <Avatar size={36} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-semibold">
+                    {g.waiting ? t.match.waitingOpponent : g.opponent || t.common.guest}
+                  </span>
+                  <span className="block truncate text-[13px] text-accent">
+                    {describeTime(g.settings.time ?? NO_CLOCK, t)} · {modeName(g.settings, t)} ·{' '}
+                    {t.common.Move(Math.floor(g.plies / 2) + 1)}
+                  </span>
+                </span>
                 {yours(g) ? (
                   <span className="turn-tag">{t.common.yourMove}</span>
                 ) : (
-                  <span>{g.waiting ? t.landing.waiting : t.common.theirMove}</span>
+                  <span className="shrink-0 text-[13px] text-accent">
+                    {g.waiting ? t.landing.waiting : `${t.common.theirMove} · ${ago(g.updatedAt, t)}`}
+                  </span>
                 )}
-                <span>{ago(g.updatedAt, t)}</span>
-              </span>
-              <span className="flex min-w-0 items-center gap-2.5">
-                <Avatar size={36} />
-                <span className="truncate font-semibold">
-                  {g.waiting ? t.match.waitingOpponent : g.opponent || t.common.guest}
-                </span>
-              </span>
-              <span className="flex justify-between gap-2 text-[13px] text-accent">
-                <span className="truncate">
-                  {modeName(g.settings, t)} · {describeTime(g.settings.time ?? NO_CLOCK, t)}
-                </span>
-                <span className="shrink-0">{t.common.Move(Math.floor(g.plies / 2) + 1)}</span>
-              </span>
-            </a>
-          )
-        })}
-      </div>
+              </a>
+            )
+          })}
+        </div>
+      )}
     </section>
   )
 }
@@ -409,13 +557,13 @@ function LiveNow() {
   }, [])
 
   return (
-    <section className="flex flex-col gap-3.5">
+    <section>
       <Heading title={t.landing.liveNow} href="/watch" link={t.landing.allGames} />
       {games && games.length === 0 ? (
         <p className="text-accent">{t.landing.nobodyLive}</p>
       ) : (
         <div className="wgrid">
-          {(games ?? []).slice(0, 3).map((g) => (
+          {(games ?? []).slice(0, 2).map((g) => (
             <GameCard key={g.id} g={g} />
           ))}
         </div>
@@ -442,13 +590,13 @@ function FriendsOnline() {
   })
 
   return (
-    <section className="flex flex-col gap-3.5">
+    <section>
       <Heading title={t.landing.friendsOnline} href="/friends" link={t.landing.allFriends} />
       {friends && friends.length === 0 ? (
         <p className="text-accent">{t.landing.noFriendsOnline}</p>
       ) : (
         <div className="f-list">
-          {(friends ?? []).slice(0, 6).map((f) => (
+          {(friends ?? []).slice(0, 4).map((f) => (
             <div key={f.username} className="f-row">
               <a href={`/u/${f.username}`} onClick={(e) => go(e, `/u/${f.username}`)} className="min-w-0">
                 <Who name={f.username} sub={f.rating} size={40} online />
@@ -495,23 +643,30 @@ function NextArena() {
     }
   }, [])
   const next = list?.find((x) => x.status === 'running') ?? list?.[0]
-  if (!next) return null
-  const running = next.status === 'running'
+  const running = next?.status === 'running'
+  const at = next && new Date(next.startsAt)
   return (
-    <section className="flex flex-col gap-3.5">
-      <Heading title={t.common.tournaments} href="/tournaments" link={t.tournaments.title} />
-      <a href="/tournaments" onClick={(e) => go(e, '/tournaments')} className="tick flex flex-col gap-1 p-4">
-        <span className="flex items-center justify-between gap-2">
-          <span className="font-semibold">{t.tournaments.kinds[next.kind]}</span>
-          {running ? <span className="turn-tag">{t.tournaments.running}</span> : null}
-        </span>
-        <span className="text-sm text-accent">
-          {running ? t.tournaments.endsIn(countdown(next.endsAt)) : t.tournaments.startsIn(countdown(next.startsAt))}
-          {' · '}
-          {t.tournaments.players(next.players)}
-          {next.joined ? ` · ${t.tournaments.joined.split('.')[0]}` : ''}
-        </span>
-      </a>
+    <section>
+      <Heading title={t.common.arena} href="/tournaments" link={t.tournaments.title} />
+      {list && !next ? (
+        <p className="text-accent">{t.home.noArena}</p>
+      ) : next && at ? (
+        <a href="/tournaments" onClick={(e) => go(e, '/tournaments')} className="home-arena">
+          <span className="flex items-center gap-2 text-sm text-accent">
+            {t.tournaments.kinds[next.kind]}
+            {running ? <span className="turn-tag">{t.tournaments.running}</span> : null}
+          </span>
+          <span className="home-arena-time">
+            {at.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+          <span className="text-sm text-accent">
+            {running ? t.tournaments.endsIn(countdown(next.endsAt)) : t.tournaments.startsIn(countdown(next.startsAt))}
+            {' · '}
+            {t.tournaments.players(next.players)}
+          </span>
+          <span className="home-arena-go">{next.joined ? t.tournaments.joined.split('.')[0] : t.tournaments.join}</span>
+        </a>
+      ) : null}
     </section>
   )
 }
@@ -520,8 +675,9 @@ function NextArena() {
 function GuestPitch() {
   const t = useT()
   return (
-    <section className="tick flex flex-col gap-4 p-5">
-      <p className="text-[15px] leading-relaxed">{t.landing.guestPitch}</p>
+    <section className="flex flex-col gap-4">
+      <h2 className="text-[22px] font-semibold tracking-tight">{t.home.keepGames}</h2>
+      <p className="max-w-[46ch] text-base text-accent">{t.landing.guestPitch}</p>
       <div className="flex gap-2">
         <Button variant="solid" className="h-10 px-4" onClick={() => navigate('/signup')}>
           {t.auth.createAccount}
@@ -530,6 +686,17 @@ function GuestPitch() {
           {t.common.logIn}
         </Button>
       </div>
+    </section>
+  )
+}
+
+/** For guests, where the friends would be: a way to watch. */
+function WatchTeaser() {
+  const t = useT()
+  return (
+    <section>
+      <Heading title={t.common.watch} href="/watch" link={t.landing.allGames} />
+      <p className="text-accent">{t.watch.intro}</p>
     </section>
   )
 }

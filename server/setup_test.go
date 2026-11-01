@@ -168,16 +168,25 @@ func TestSetupMatch(t *testing.T) {
 	}
 }
 
-func TestUnratedChoice(t *testing.T) {
+// There's no unrated choice: a game between two signed-in players is ranked,
+// whatever the request says, unless it's a mods or bot game.
+func TestNoUnratedChoice(t *testing.T) {
 	store := openTestStore(t, filepath.Join(t.TempDir(), "x"))
 	ann, _ := store.CreateUser("ann", []byte("x"))
 	ben, _ := store.CreateUser("ben", []byte("x"))
 	hub := NewHub(store)
-	m := hub.Create(userPlayer(ann, "a"), Settings{Time: TimeControl{Base: 300}, Unrated: true})
+	settings := Settings{Time: TimeControl{Base: 300}, Unrated: true}
+	settings.normalize()
+	m := hub.Create(userPlayer(ann, "a"), settings)
 	pb := userPlayer(ben, "b")
 	m.join(newClient(pb.key), pb)
-	if m.rated() {
-		t.Error("an unrated game would be rated")
+	if !m.rated() {
+		t.Error("asking for an unrated game kept it from being ranked")
+	}
+	mods := Settings{Time: TimeControl{Base: 300}, Mods: true}
+	mods.normalize()
+	if !mods.Unrated {
+		t.Error("a mods game could be ranked")
 	}
 }
 
