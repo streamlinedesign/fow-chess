@@ -59,20 +59,14 @@ export function Landing() {
         </div>
         <div className="home-cell home-menu">
           <section>
-            <h1 className="home-title">{t.landing.title}</h1>
-            <p className="mt-2.5 text-[17px] text-accent">{t.home.lede}</p>
+            <h1 className="home-title">{t.landing.tagline}</h1>
           </section>
           <PlayMenu settings={settings} onChange={setSettings} signedIn={!!me} busy={busy} />
           <CodeGame settings={settings} busy={busy} setBusy={setBusy} />
           <section>
             <a href="/mods" onClick={(e) => go(e, '/mods')} className="home-mods">
-              <span>
-                <span className="block font-semibold">{t.common.mods}</span>
-                <span className="block text-[13px] text-accent">{t.home.modsSub}</span>
-              </span>
-              <span className="home-arrow" aria-hidden>
-                →
-              </span>
+              <span className="home-mods-title">{t.common.mods}</span>
+              <span className="block text-[13px] text-accent">{t.home.modsSub}</span>
             </a>
           </section>
         </div>
@@ -139,7 +133,7 @@ function PlayMenu({
       <div className="flex items-baseline justify-between gap-3">
         <h2 className="text-[22px] font-semibold tracking-tight">{t.home.findOpponent}</h2>
       </div>
-      <div className="mt-5 flex flex-col gap-[18px]">
+      <div className="mt-4 flex flex-col gap-3.5">
         <RadioGroup.Root
           aria-label={t.home.length}
           value={long ? 'long' : 'short'}

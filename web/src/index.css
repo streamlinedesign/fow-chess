@@ -1981,16 +1981,16 @@ a.tick:active {
   padding: 0;
 }
 .home-menu > section {
-  padding: 28px var(--gut);
+  padding: 22px var(--gut);
 }
 .home-menu > section + section {
   border-top: 1px solid var(--line);
 }
 .home-title {
-  font-size: 56px;
-  line-height: 1;
+  font-size: clamp(28px, 2.6vw, 38px);
+  line-height: 1.1;
   font-weight: 650;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.03em;
 }
 .seg {
   display: grid;
@@ -2022,7 +2022,7 @@ a.tick:active {
     0 1px 2px rgb(0 0 0 / 0.08);
 }
 .seg-lg > button {
-  height: 50px;
+  height: 46px;
   font-size: 16px;
   line-height: 1.15;
 }
@@ -2041,7 +2041,7 @@ a.tick:active {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  height: 64px;
+  height: 58px;
   padding: 0 14px;
   border-radius: 8px;
   text-align: left;
@@ -2071,7 +2071,7 @@ a.tick:active {
   color: color-mix(in srgb, var(--color-bg) 70%, transparent);
 }
 .home-play {
-  height: 60px;
+  height: 54px;
   width: 100%;
   font-size: 19px;
   font-weight: 650;
@@ -2119,32 +2119,26 @@ a.tick:active {
   box-shadow: inset 0 0 0 2px var(--color-fg);
 }
 .home-mods {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  display: block;
 }
-.home-arrow {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 99px;
-  box-shadow: inset 0 0 0 1.5px var(--color-fg);
-  transition:
-    background-color 0.15s,
-    color 0.15s;
+.home-mods-title {
+  display: block;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--color-border);
+  transition: text-decoration-color 0.15s;
 }
-.home-mods:hover .home-arrow {
-  background: var(--color-fg);
-  color: var(--color-bg);
+.home-mods:hover .home-mods-title {
+  text-decoration-color: var(--color-fg);
 }
 
 /* The demo game: player strips around the board, moves and how the bot plays beside it. */
 .demo {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 210px;
+  /* The board fits the screen below the header, strips included, and never dwarfs the menu. */
+  --demo-board: min(100%, 560px, calc(100dvh - 300px));
+  grid-template-columns: var(--demo-board) minmax(180px, 280px);
   gap: 32px;
   align-items: start;
 }
@@ -2377,6 +2371,10 @@ a.tick:active {
   .demo {
     grid-template-columns: minmax(0, 1fr);
   }
+  .demo-main {
+    width: var(--demo-board);
+    max-width: 100%;
+  }
   .demo-side {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -2443,6 +2441,9 @@ a.tick:active {
   }
   .demo {
     gap: 16px;
+  }
+  .demo-main {
+    width: 100%;
   }
   .demo-side {
     grid-template-columns: 1fr;

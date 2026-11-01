@@ -81,6 +81,7 @@ export const en = {
 
   landing: {
     title: 'Play',
+    tagline: 'Capture the king in the fog of war.',
     howToPlay: 'How to play',
     finding: 'Finding a match…',
     findingSince: (n: number) => `Waiting for a player near your rating, ${n} s`,
@@ -110,7 +111,6 @@ export const en = {
   },
 
   home: {
-    lede: 'Chess in the fog. Take the king to win.',
     findOpponent: 'Find an opponent',
     length: 'Game length',
     short: 'Short',

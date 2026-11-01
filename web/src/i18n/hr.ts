@@ -81,6 +81,7 @@ export const hr: Dict = {
 
   landing: {
     title: 'Igraj',
+    tagline: 'Uhvati kralja u magli rata.',
     howToPlay: 'Kako se igra',
     finding: 'Tražim partiju…',
     findingSince: (n) => `Čekam igrača blizu tvog rejtinga, ${n} s`,
@@ -110,7 +111,6 @@ export const hr: Dict = {
   },
 
   home: {
-    lede: 'Šah u magli. Uzmi kralja i pobijedi.',
     findOpponent: 'Nađi protivnika',
     length: 'Trajanje partije',
     short: 'Kratke',
