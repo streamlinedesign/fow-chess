@@ -26,6 +26,8 @@ type Position struct {
 	JumpKing bool
 	// BackPawns lets pawns also step one square straight back.
 	BackPawns bool
+	// CenterVision gives the whole board to a player holding an outpost.
+	CenterVision CenterVision
 	// Hill ends the game as a win for the side whose king reaches one of the
 	// four centre squares (King of the Hill).
 	Hill bool

@@ -129,6 +129,7 @@ export function ReplayPage({ id, round }: { id: string; round: number }) {
             lastMove={f.last}
             check={f.check}
             hill={replay.settings.hill}
+            center={replay.settings.centerVision ? {} : undefined}
             onMove={noop}
           />
           {bar(orientation)}

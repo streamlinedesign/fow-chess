@@ -212,3 +212,32 @@ func TestKingDanger(t *testing.T) {
 		t.Errorf("black: danger %q unsafe %v", danger, unsafe)
 	}
 }
+
+func TestCenterVisionSetting(t *testing.T) {
+	mods := Settings{Mods: true, Fog: true, KingCapture: true, CenterVision: "pawn"}
+	if !mods.valid() {
+		t.Fatal("a mods game with centre vision should be valid")
+	}
+	if bad := (Settings{Mods: true, CenterVision: "queen"}); bad.valid() {
+		t.Error("an unknown centre vision should be refused")
+	}
+	mods.normalize()
+	if mods.CenterVision != "pawn" || mods.rules().CenterVision != engine.CenterPawn {
+		t.Errorf("a mods game keeps centre vision, got %q", mods.CenterVision)
+	}
+	plain := Settings{Time: TimeControl{Base: 300}, CenterVision: "any"}
+	plain.normalize()
+	if plain.CenterVision != "" {
+		t.Error("the ranked game never has centre vision")
+	}
+
+	// A white pawn on e5 shows White the whole board, and the view says so.
+	g, _ := engine.NewGameFromFEN("4k3/p7/8/4P3/8/8/8/4K3 b - - 0 1", mods.rules())
+	w, b := viewFor(g, white, false, true), viewFor(g, black, false, true)
+	if !w.FullVision || strings.Contains(w.Board, "?") {
+		t.Errorf("White should see everything: fullVision %v, board %s", w.FullVision, w.Board)
+	}
+	if b.FullVision || !strings.Contains(b.Board, "?") {
+		t.Errorf("Black shouldn't: fullVision %v", b.FullVision)
+	}
+}

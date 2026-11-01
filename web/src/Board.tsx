@@ -1,6 +1,6 @@
 import { memo, useRef, useState } from 'react'
 import { pieceAt, pieceImg, squareIndex } from './position'
-import { HILL } from './settings'
+import { HILL, OUTPOSTS } from './settings'
 import type { Color } from './useMatch'
 
 const FILES = 'abcdefgh'
@@ -19,6 +19,12 @@ type Props = {
   unsafe?: string[]
   /** King of the Hill: mark the four centre squares. */
   hill?: boolean
+  /**
+   * Centre vision: ring the squares that show the whole board. With you set,
+   * your two are ringed firmly (lit while you hold one) and the opponent's
+   * faintly; without it, all four the same.
+   */
+  center?: { you?: Color; live?: boolean }
   onMove: (from: string, to: string) => void
 }
 
@@ -41,6 +47,14 @@ function targetsFrom(legal: string[], from: string) {
   return out
 }
 
+function outpostKind(sq: string, center: { you?: Color; live?: boolean }) {
+  const side = (['w', 'b'] as const).find((c) => OUTPOSTS[c].includes(sq))
+  if (!side) return undefined
+  if (!center.you) return 'both'
+  if (side !== center.you) return 'theirs'
+  return center.live ? 'live' : 'yours'
+}
+
 export const Board = memo(function Board({
   board,
   orientation,
@@ -50,6 +64,7 @@ export const Board = memo(function Board({
   danger,
   unsafe,
   hill,
+  center,
   onMove,
 }: Props) {
   const boardRef = useRef<HTMLDivElement>(null)
@@ -153,6 +168,7 @@ export const Board = memo(function Board({
           data-target={target ? (capture ? 'capture' : 'move') : undefined}
           data-fog={fog}
           data-hill={hill && HILL.includes(sq)}
+          data-outpost={center ? outpostKind(sq, center) : undefined}
         >
           {col === 0 && <span className="coord top-[4%] left-[5%]">{sq[1]}</span>}
           {row === 7 && <span className="coord right-[5%] bottom-[4%]">{sq[0]}</span>}

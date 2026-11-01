@@ -199,6 +199,11 @@ export function MatchPage({ id }: { id: string }) {
                   danger={predicting ? undefined : state?.danger}
                   unsafe={state?.unsafe}
                   hill={state?.settings.hill}
+                  center={
+                    state?.settings.centerVision
+                      ? { you: you ?? undefined, live: !predicting && !!state.fullVision }
+                      : undefined
+                  }
                   onMove={onMove}
                 />
                 {state?.status === 'waiting' && <WaitingCard id={id} link={link} />}

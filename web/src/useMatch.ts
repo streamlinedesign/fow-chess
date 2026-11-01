@@ -22,6 +22,8 @@ export type MatchState = {
   danger?: string
   /** Squares your king could step to that a piece you can see attacks. */
   unsafe?: string[]
+  /** Centre vision: you hold an outpost and see the whole board. */
+  fullVision?: boolean
   /** Moves so far in algebraic notation. */
   history: string[]
   /** Pieces each side has taken, as FEN letters, most valuable first. */

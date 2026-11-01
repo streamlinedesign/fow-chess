@@ -1,6 +1,6 @@
 import { useT } from './i18n'
 import { pieceImg, squareIndex } from './position'
-import { HILL, setupMode, type Settings } from './settings'
+import { HILL, OUTPOSTS, setupMode, type Settings } from './settings'
 
 const FILES = 'abcdefgh'
 const START = 'RNBQKBNRPPPPPPPP' + '.'.repeat(32) + 'pppppppprnbqkbnr'
@@ -38,6 +38,9 @@ export function SettingsBoard({
           data-fog={fog}
           data-zone={setup.rows > 0 && rank < setup.rows && !(setup.pawnsFixed && rank === 1)}
           data-hill={settings.hill && HILL.includes(sq)}
+          data-outpost={
+            !settings.centerVision ? undefined : OUTPOSTS.w.includes(sq) ? 'yours' : OUTPOSTS.b.includes(sq) ? 'theirs' : undefined
+          }
         >
           {col === 0 && <span className="coord top-[4%] left-[5%]">{sq[1]}</span>}
           {row === 7 && <span className="coord right-[5%] bottom-[4%]">{sq[0]}</span>}
@@ -55,6 +58,7 @@ export function SettingsBoard({
         ? t.settingsBoard.battleship
         : t.settingsBoard.standard,
     ...(settings.hill ? [t.settingsBoard.hill] : []),
+    ...(settings.centerVision ? [t.settingsBoard.center] : []),
   ]
 
   return (
