@@ -349,7 +349,7 @@ export const en = {
         title: 'Fog of war',
         p: [
           'You only see what your pieces see: **their own squares** and **every square they could move to**, captures included. The rest is covered.',
-          "A **pawn** always sees the square ahead, even when blocked, and its diagonals only when there's something to take. You get no hints about the other side: no last-move highlight, and their moves show as ? in the list. The fog lifts when the game ends.",
+          "A **pawn** has its own vision: it always sees the square ahead, even when blocked, and from its starting square both squares ahead, even when it can't step there. It sees its diagonals only when there's something to take. You get no hints about the other side: no last-move highlight, and their moves show as ? in the list. The fog lifts when the game ends.",
         ],
       },
       eat: {
