@@ -8,6 +8,8 @@
 
 ## Next
 
+- Adopt the Streamline design system (typeface, tokens) in place of Geist/Tailwind defaults
+
 - Extract `server/engine` into a Go module so `chess-bots` stops carrying a copy
 - First droplet deploy: unit file and Caddy block in `deploy/`, `make deploy`
 

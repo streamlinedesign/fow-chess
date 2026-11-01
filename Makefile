@@ -28,6 +28,7 @@ dev: ## Go server on PORT, Vite on WEB_PORT (open http://localhost:4101)
 	@cd web && npm install --no-audit --no-fund --loglevel=error
 	@echo "Building server..."
 	@cd server && go build -o ../.dev-server .
+	@echo "On your phone: http://$$(hostname -I 2>/dev/null | cut -d' ' -f1 || ipconfig getifaddr en0):$(WEB_PORT)"
 	@trap 'kill 0' EXIT; ./.dev-server & srv=$$!; \
 		until curl -s -o /dev/null --max-time 1 http://127.0.0.1:$(PORT)/; do kill -0 $$srv 2>/dev/null || exit 1; sleep 0.1; done; \
 		(cd web && npm run dev -- --host) & wait -n

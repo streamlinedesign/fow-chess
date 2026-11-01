@@ -45,8 +45,10 @@ fails with "no rule".
 Each project owns a block of ten ports, listed in `PORTS.md` in the
 template repo. Nothing runs on 8080, 3000, 5173 or any tool's default.
 `make dev` reads `PORT` (and `WEB_PORT` where there is a separate dev
-server) from `.env`; `.env.example` holds the project's numbers. In
-production the service listens on `127.0.0.1:$PORT` behind Caddy.
+server) from `.env`; `.env.example` holds the project's numbers. In dev a
+server binds all interfaces (`0.0.0.0:$PORT`) so a phone on the same Wi-Fi
+can open it at `http://<computer-ip>:$PORT`; `make dev` prints that URL. In
+production it listens on `127.0.0.1:$PORT` behind Caddy.
 
 ## Secrets and config
 
@@ -79,18 +81,18 @@ it. The project dashboard reads this file.
 
 ## Style
 
-Streamline's visual language is **Blueprint Paper**
-(`streamlinedesign/blueprint-paper`): navy paper, pale ink, one monospace
-face (IBM Plex Mono), line work that shows state, cards that invert on
-hover. For anything with a UI:
+There is one Streamline design system, kept in its own repo
+(`streamlinedesign/design-system`, being built now) and published as a
+Design System artifact: tokens (colour, type, spacing, radius, line
+weights), components and the rules for using them. Until it exists, don't
+invent one per project: keep to a single typeface, a single accent, and
+flat line work, and leave a note in `TODO.md` to adopt the system.
 
-- Use the kit: `<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/streamlinedesign/blueprint-paper@<version>/dist/blueprint-paper.min.css">`,
-  pinned to a tagged version, body class `bp-sheet`. Use its tokens
-  (`--bp-paper`, `--bp-pen`, the ink ramp, `.bp-corners`) rather than new
-  colours.
-- Don't invent a second palette or a second typeface in a project. If the
-  kit lacks something, add it to blueprint-paper in its own PR and bump
-  the kit's version.
+- Once it exists: pin the kit's CSS to a tagged version and use its tokens
+  rather than new colours. If it lacks something, add it to the design
+  system in its own PR and bump the kit's version.
+- No Geist, no Inter by default: the system picks the faces, projects
+  don't.
 - Pages must work at 360px wide, in dark mode, and with keyboard only.
 - Copy is sentence case, short, no exclamation marks.
 
@@ -120,11 +122,13 @@ is Go + Postgres and holds every live match in memory; `server/engine/` is
 the dependency-free rules engine (also copied into `chess-bots`, keep them
 in step until it becomes a module).
 
-- Ports: server `4100`, Vite `4101`. Open http://localhost:4101 in dev.
+- Ports: server `4100`, Vite `4101`. Open http://localhost:4101 in dev, or
+  the phone URL `make dev` prints.
 - `make db-reset && make db-seed` gives a clean database with accounts
   `demo`, `alice`, `bob`, `carol`, `dave` (password `demo`).
 - Schema changes are a new numbered file in `server/migrations/`, never an
   edit to one that shipped. Update `seed/` in the same PR.
 - The server forces fog of war and Eat the King on every match
   (`normalize` in `server/view.go`); don't add options that bypass it.
-- `.env.example`: `PORT`, `WEB_PORT`, `DATABASE_URL`, `DROPLET`.
+- The web app currently uses Geist; swap it for the design system's face
+  when that exists (see `TODO.md`).
