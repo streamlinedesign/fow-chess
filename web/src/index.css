@@ -323,6 +323,26 @@
   box-shadow: inset 0 0 0 calc(var(--board, 400px) / 110) color-mix(in srgb, #fffabd 28%, transparent);
 }
 
+/* Centre vision: the squares that show the whole board. Yours are ringed,
+   the opponent's faintly dashed, and yours light up while you hold one. */
+.sq[data-outpost] {
+  outline-offset: calc(-1 * max(3px, calc(var(--board, 400px) / 90)));
+}
+.sq[data-outpost='yours'],
+.sq[data-outpost='both'] {
+  outline: max(2px, calc(var(--board, 400px) / 160)) solid color-mix(in srgb, var(--color-fg) 55%, transparent);
+}
+.sq[data-outpost='theirs'] {
+  outline: max(2px, calc(var(--board, 400px) / 200)) dashed color-mix(in srgb, var(--color-fg) 30%, transparent);
+}
+.sq[data-outpost][data-fog='true'] {
+  outline-color: color-mix(in srgb, #fffabd 45%, transparent);
+}
+.sq[data-outpost='live'] {
+  outline: max(3px, calc(var(--board, 400px) / 110)) solid var(--color-online);
+  box-shadow: inset 0 0 calc(var(--board, 400px) / 25) color-mix(in srgb, var(--color-online) 45%, transparent);
+}
+
 /* A tray piece being dragged onto the board. */
 .drag-ghost {
   position: fixed;

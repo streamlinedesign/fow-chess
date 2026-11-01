@@ -26,6 +26,9 @@ type Settings struct {
 	BackPawns bool `json:"backPawns,omitempty"`
 	// Hill is King of the Hill: a king on one of the four centre squares wins.
 	Hill bool `json:"hill,omitempty"`
+	// CenterVision gives the whole board to a player with a piece on the
+	// centre of the opponent's half: "pawn" counts only pawns, "any" any piece.
+	CenterVision string `json:"centerVision,omitempty"`
 	// Unrated keeps a game from counting. Players can't ask for it: every
 	// game of the one game is ranked when it can be, and normalize sets it
 	// for bot and mods games, which never are.
@@ -46,12 +49,17 @@ type Settings struct {
 const demoBot = bots.Ramesses
 
 func (s Settings) rules() engine.Rules {
-	return engine.Rules{KingCapture: s.KingCapture, JumpKing: s.JumpKing, BackPawns: s.BackPawns, Hill: s.Hill}
+	return engine.Rules{KingCapture: s.KingCapture, JumpKing: s.JumpKing, BackPawns: s.BackPawns, Hill: s.Hill,
+		CenterVision: centerVisions[s.CenterVision]}
 }
+
+// centerVisions are the CenterVision settings.
+var centerVisions = map[string]engine.CenterVision{"": engine.CenterOff, "pawn": engine.CenterPawn, "any": engine.CenterAny}
 
 func (s Settings) valid() bool {
 	_, ok := setupModes[s.Setup]
-	return (s.Time.valid() || (s.Mods && s.Time.modsValid()) || (s.Demo && !s.Time.clocked())) && ok &&
+	_, center := centerVisions[s.CenterVision]
+	return center && (s.Time.valid() || (s.Mods && s.Time.modsValid()) || (s.Demo && !s.Time.clocked())) && ok &&
 		(s.Bot == "" || bots.Level(s.Bot).Valid())
 }
 
@@ -72,7 +80,7 @@ func (s *Settings) normalize() {
 		return
 	}
 	s.Fog, s.KingCapture = true, true
-	s.JumpKing, s.BackPawns, s.Hill = false, false, false
+	s.JumpKing, s.BackPawns, s.Hill, s.CenterVision = false, false, false, ""
 }
 
 // startFrom is the FEN a game starts from: the usual position, or the players' setups.
@@ -166,6 +174,8 @@ type gameView struct {
 	// Captured lists the pieces each side has taken, as FEN letters, most valuable first.
 	// Players know all of it even under fog: they saw what they took and see what they lost.
 	Captured map[string]string `json:"captured"`
+	// FullVision is set while the viewer sees the whole board from an outpost.
+	FullVision bool `json:"fullVision,omitempty"`
 	// Behind is how many of the moves played a spectator isn't shown yet.
 	Behind int `json:"behind,omitempty"`
 }
@@ -242,6 +252,7 @@ func viewFor(g *engine.Game, viewer int, playable, fog bool) gameView {
 
 	vision := pos.Vision(engine.Color(viewer))
 	v.Board = boardView(&pos, &vision)
+	v.FullVision = pos.Outpost(engine.Color(viewer)) != engine.NoSquare
 	for i, pm := range hist {
 		if mover(i) == viewer {
 			v.History[i] = strings.TrimRight(pm.SAN, "+#")

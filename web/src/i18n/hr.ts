@@ -169,6 +169,7 @@ export const hr: Dict = {
     fog: 'Magla pokriva sve što tvoje figure ne vide.',
     fullBoard: 'Bez magle: vidi se cijela ploča.',
     hill: 'Ili dovedi kralja na jedno od uokvirenih središnjih polja.',
+    center: 'Drži jedno od uokvirenih polja u njihovoj polovici i vidjet ćeš cijelu ploču.',
     standard: 'Figure počinju kao u šahu.',
     backRow: 'Prvo rasporedi svoj zadnji red.',
     battleship: 'Prvo postavi sve figure bilo gdje u uokvirenim redovima.',
@@ -190,6 +191,10 @@ export const hr: Dict = {
     twists: 'Začini',
     jumpHint: 'Tvoj kralj može skakati i kao skakač.',
     backPawnsHint: 'Pješaci mogu i jedno polje natrag, i vide iza sebe.',
+    center: 'Pogled iz centra',
+    centerHint: 'Pješak na d5 ili e5 (d4 ili e4 za crnog) pokazuje ti cijelu ploču dok god stoji tamo.',
+    centerAny: 'Vrijedi svaka figura',
+    centerAnyHint: 'Ne samo pješaci. Puno jače: magla se diže pola partije.',
     modsNote: 'Partije s modovima nikad nisu rangirane.',
   },
 
@@ -206,6 +211,8 @@ export const hr: Dict = {
     hill: 'Kralj brda',
     jump: 'Jump King',
     backPawns: 'Pješaci unatrag',
+    centerPawn: 'Pogled iz centra',
+    centerAny: 'Pogled iz centra (svaka figura)',
   },
 
   time: {

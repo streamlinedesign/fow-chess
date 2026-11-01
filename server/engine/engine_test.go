@@ -393,3 +393,35 @@ func TestKingOfTheHill(t *testing.T) {
 		t.Error("hill squares")
 	}
 }
+
+func TestCenterVision(t *testing.T) {
+	all := "xxxxxxxx/xxxxxxxx/xxxxxxxx/xxxxxxxx/xxxxxxxx/xxxxxxxx/xxxxxxxx/xxxxxxxx"
+	// A white knight on d5, a white pawn on e4 (its own half), a black pawn on d4.
+	p, _ := ParseFEN("4k3/8/8/3N4/3pP3/8/8/4K3 w - - 0 1")
+	if got := visionString(p.Vision(White)); got == all {
+		t.Error("without the rule, White shouldn't see everything")
+	}
+	p.CenterVision = CenterAny
+	if got := visionString(p.Vision(White)); got != all {
+		t.Errorf("knight on d5, any piece: got %s", got)
+	}
+	if got := visionString(p.Vision(Black)); got != all {
+		t.Errorf("pawn on d4, any piece: Black got %s", got)
+	}
+	p.CenterVision = CenterPawn
+	if p.Outpost(White) != NoSquare {
+		t.Error("pawns only: a knight on d5 shouldn't count")
+	}
+	if p.Outpost(Black) != SquareAt(3, 3) {
+		t.Error("pawns only: the black pawn on d4 should count")
+	}
+	// The rule follows the game through moves.
+	g, _ := NewGameFromFEN("4k3/8/8/8/4P3/8/8/4K3 w - - 0 1", Rules{KingCapture: true, CenterVision: CenterPawn})
+	if _, err := g.PlayUCI("e4e5"); err != nil {
+		t.Fatal(err)
+	}
+	pos := g.Position()
+	if got := visionString(pos.Vision(White)); got != all {
+		t.Errorf("after e5, White got %s", got)
+	}
+}

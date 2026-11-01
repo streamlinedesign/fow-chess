@@ -169,6 +169,7 @@ export const en = {
     fog: 'Fog covers everything your pieces can’t see.',
     fullBoard: 'No fog: the whole board is in view.',
     hill: 'Or walk your king onto one of the ringed centre squares.',
+    center: 'Hold one of the ringed squares in their half to see the whole board.',
     standard: 'The pieces start as in chess.',
     backRow: 'Arrange your back row first.',
     battleship: 'Place every piece anywhere in the ringed rows first.',
@@ -190,6 +191,10 @@ export const en = {
     twists: 'Twists',
     jumpHint: 'Your king can also jump like a knight.',
     backPawnsHint: 'Pawns can also step one square back, and see behind them.',
+    center: 'Centre vision',
+    centerHint: 'A pawn on d5 or e5 (d4 or e4 for Black) shows you the whole board while it stays there.',
+    centerAny: 'Any piece counts',
+    centerAnyHint: 'Not just pawns. Much stronger: the fog lifts for half the game.',
     modsNote: 'Mods games are never ranked.',
   },
 
@@ -206,6 +211,8 @@ export const en = {
     hill: 'King of the Hill',
     jump: 'Jump King',
     backPawns: 'Backward pawns',
+    centerPawn: 'Centre vision',
+    centerAny: 'Centre vision (any piece)',
   },
 
   time: {

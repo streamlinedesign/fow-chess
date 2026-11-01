@@ -24,6 +24,8 @@ export type Settings = {
   backPawns?: boolean
   /** King of the Hill: a king on one of the four centre squares wins. */
   hill?: boolean
+  /** Centre vision: a piece on the centre of the opponent's half shows you the whole board. Must match centerVisions in server/view.go. */
+  centerVision?: CenterVision
   /** Never ranked: set by the server for bot and mods games. Players can't ask for it. */
   unrated?: boolean
   /** From the mods page: any option, any clock, never ranked. */
@@ -43,6 +45,11 @@ export const BOTS: { level: Bot; name: string }[] = [
   { level: 'ramesses', name: 'Ramesses II' },
   { level: 'solomon', name: 'Solomon' },
 ]
+
+export type CenterVision = '' | 'pawn' | 'any'
+
+/** The squares that give centre vision: the centre of the opponent's half. Must match engine.Outposts. */
+export const OUTPOSTS: Record<'w' | 'b', string[]> = { w: ['d5', 'e5'], b: ['d4', 'e4'] }
 
 export type Setup = '' | 'backRow' | 'battleship'
 
@@ -142,6 +149,7 @@ export function loadSettings(mods = false): Settings {
       delete saved.jumpKing
       delete saved.backPawns
       delete saved.hill
+      delete saved.centerVision
       delete saved.mods
       delete saved.bot
       delete saved.unrated
@@ -172,6 +180,7 @@ export function twists(s: Settings, d: Dict) {
     ...(s.hill ? [d.legacy.hill] : []),
     ...(s.jumpKing ? [d.legacy.jump] : []),
     ...(s.backPawns ? [d.legacy.backPawns] : []),
+    ...(s.centerVision === 'pawn' ? [d.legacy.centerPawn] : s.centerVision === 'any' ? [d.legacy.centerAny] : []),
   ]
 }
 
