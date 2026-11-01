@@ -187,11 +187,15 @@ func TestKingDanger(t *testing.T) {
 	if vision[sq("b4")] || vision[sq("e8")] {
 		t.Fatalf("the attackers should be hidden from a lone king")
 	}
-	if danger, unsafe := kingDanger(&pos, engine.White, &vision); danger != "" || len(unsafe) != 0 {
-		t.Errorf("under fog: danger %q unsafe %v, want nothing", danger, unsafe)
+	// Under fog the king is still told it's attacked, but not by what: no unsafe squares.
+	if danger, hidden, unsafe := kingDanger(&pos, engine.White, &vision); danger != "e1" || !hidden || len(unsafe) != 0 {
+		t.Errorf("under fog: danger %q hidden %v unsafe %v, want e1, hidden, none", danger, hidden, unsafe)
 	}
 	// Seeing everything, the king is in danger and d2 (bishop) and e2 (rook) are unsafe steps.
-	danger, unsafe := kingDanger(&pos, engine.White, nil)
+	danger, hidden, unsafe := kingDanger(&pos, engine.White, nil)
+	if hidden {
+		t.Error("full view: the attackers aren't hidden")
+	}
 	if danger != "e1" {
 		t.Errorf("full view: danger = %q, want e1", danger)
 	}
@@ -203,12 +207,12 @@ func TestKingDanger(t *testing.T) {
 	g, _ = engine.NewGameFromFEN("4k3/8/8/8/8/8/3p4/4K3 w - - 0 1", engine.Rules{KingCapture: true})
 	pos = g.Position()
 	vision = pos.Vision(engine.White)
-	if danger, unsafe := kingDanger(&pos, engine.White, &vision); danger != "e1" || len(unsafe) != 0 {
-		t.Errorf("seen pawn: danger %q unsafe %v, want e1 and none", danger, unsafe)
+	if danger, hidden, unsafe := kingDanger(&pos, engine.White, &vision); danger != "e1" || hidden || len(unsafe) != 0 {
+		t.Errorf("seen pawn: danger %q hidden %v unsafe %v, want e1, seen, none", danger, hidden, unsafe)
 	}
 	// Black's own king is in no danger, and it isn't Black's turn, so no unsafe squares either.
 	bv := pos.Vision(engine.Black)
-	if danger, unsafe := kingDanger(&pos, engine.Black, &bv); danger != "" || unsafe != nil {
+	if danger, _, unsafe := kingDanger(&pos, engine.Black, &bv); danger != "" || unsafe != nil {
 		t.Errorf("black: danger %q unsafe %v", danger, unsafe)
 	}
 }
@@ -225,10 +229,10 @@ func TestCenterVisionSetting(t *testing.T) {
 	if mods.CenterVision != "pawn" || mods.rules().CenterVision != engine.CenterPawn {
 		t.Errorf("a mods game keeps centre vision, got %q", mods.CenterVision)
 	}
-	plain := Settings{Time: TimeControl{Base: 300}, CenterVision: "any"}
+	plain := Settings{Time: TimeControl{Base: 300}, CenterVision: "pawn"}
 	plain.normalize()
-	if plain.CenterVision != "" {
-		t.Error("the ranked game never has centre vision")
+	if plain.CenterVision != "any" || plain.rules().CenterVision != engine.CenterAny {
+		t.Errorf("the ranked game has centre vision for any piece, got %q", plain.CenterVision)
 	}
 
 	// A white pawn on e5 shows White the whole board, and the view says so.

@@ -35,7 +35,7 @@ type showcaseFrame struct {
 // TestShowcase keeps the landing page's replay in step with the fog rules.
 // After changing what players see, run: go test -run Showcase -update
 func TestShowcase(t *testing.T) {
-	g := engine.NewGame()
+	g := engine.NewGameWithRules(engine.Rules{CenterVision: engine.CenterAny})
 	frame := func() showcaseFrame {
 		w, b := viewFor(g, white, false, true), viewFor(g, black, false, true)
 		return showcaseFrame{

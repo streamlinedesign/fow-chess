@@ -231,7 +231,7 @@ export function MatchPage({ id }: { id: string }) {
           {danger && (
             <p className="-mt-2 flex items-center gap-2 text-sm font-semibold text-danger" role="status">
               <span className="danger-dot" aria-hidden />
-              {t.match.kingThreat}
+              {state?.dangerHidden ? t.match.kingThreatHidden : t.match.kingThreat}
             </p>
           )}
           {state?.settings.tournament && you && (

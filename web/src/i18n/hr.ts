@@ -169,7 +169,7 @@ export const hr: Dict = {
     fog: 'Magla pokriva sve što tvoje figure ne vide.',
     fullBoard: 'Bez magle: vidi se cijela ploča.',
     hill: 'Ili dovedi kralja na jedno od uokvirenih središnjih polja.',
-    center: 'Drži jedno od uokvirenih polja u njihovoj polovici i vidjet ćeš cijelu ploču.',
+    center: 'Stavi bilo koju figuru na uokvireno polje u njihovoj polovici i vidjet ćeš cijelu ploču.',
     standard: 'Figure počinju kao u šahu.',
     backRow: 'Prvo rasporedi svoj zadnji red.',
     battleship: 'Prvo postavi sve figure bilo gdje u uokvirenim redovima.',
@@ -192,9 +192,7 @@ export const hr: Dict = {
     jumpHint: 'Tvoj kralj može skakati i kao skakač.',
     backPawnsHint: 'Pješaci mogu i jedno polje natrag, i vide iza sebe.',
     center: 'Pogled iz centra',
-    centerHint: 'Pješak na d5 ili e5 (d4 ili e4 za crnog) pokazuje ti cijelu ploču dok god stoji tamo.',
-    centerAny: 'Vrijedi svaka figura',
-    centerAnyHint: 'Ne samo pješaci. Puno jače: magla se diže pola partije.',
+    centerHint: 'Bilo koja figura na d5 ili e5 (d4 ili e4 za crnog) pokazuje ti cijelu ploču dok god stoji tamo. Uključeno u svakoj običnoj partiji.',
     modsNote: 'Partije s modovima nikad nisu rangirane.',
   },
 
@@ -211,8 +209,8 @@ export const hr: Dict = {
     hill: 'Kralj brda',
     jump: 'Jump King',
     backPawns: 'Pješaci unatrag',
-    centerPawn: 'Pogled iz centra',
-    centerAny: 'Pogled iz centra (svaka figura)',
+    centerPawn: 'Pogled iz centra (pješaci)',
+    noCenter: 'Bez pogleda iz centra',
   },
 
   time: {
@@ -311,6 +309,7 @@ export const hr: Dict = {
       `Vidiš što je ${side.toLowerCase()} vidio prije ${n === 1 ? 'jednog poteza' : moves(n)}, pa ništa što vidiš ne može pomoći nijednom igraču.`,
     watchingNote: 'Gledaš ovu partiju.',
     kingThreat: 'Tvog kralja napada figura koju vidiš.',
+    kingThreatHidden: 'Tvog kralja napada nešto što ne vidiš.',
     arenaNext: 'Partija u areni. Sljedeća se otvara sama kad se oslobodi protivnik.',
     backToArena: 'Natrag u arenu',
     titleYourMove: '● Tvoj potez · Eat the King',
@@ -355,6 +354,7 @@ export const hr: Dict = {
         title: 'Magla rata',
         p: [
           'Vidiš samo ono što vide tvoje figure: **njihova vlastita polja** i **svako polje na koje bi mogle doći**, uključujući uzimanja. Ostalo je pokriveno.',
+          'Dovedi **bilo koju figuru u centar njihove polovice** (d5 ili e5 kao bijeli, d4 ili e4 kao crni) i **vidiš cijelu ploču** dok god ona stoji tamo. Ta su polja uokvirena na ploči, tvoja punom a njihova isprekidanom linijom, i tvoja zasvijetle dok držiš jedno od njih.',
           '**Pješak** ima svoj pogled: uvijek vidi polje ispred sebe, čak i kad je blokiran, a s početnog polja oba polja ispred, čak i kad ne može onamo. Dijagonale vidi samo kad ima što uzeti. Nema nikakvih naznaka o drugoj strani: nema isticanja zadnjeg poteza, a njihovi potezi u popisu se prikazuju kao ?. Magla se diže kad partija završi.',
         ],
       },
@@ -370,8 +370,8 @@ export const hr: Dict = {
         kind: 'Jedino upozorenje',
         title: 'Kralj u opasnosti',
         p: [
-          'Kad figura **koju vidiš** napada tvog kralja, kralj dobiva crveni prsten i stranica to kaže. Podigni kralja i označena su i polja koja pokriva viđena figura.',
-          'Koristi samo ono što je već na tvojoj ploči, pa ništa ne odaje. Figura u magli ostaje iznenađenje.',
+          'Kad **bilo koja** figura napada tvog kralja, kralj dobiva crveni prsten i stranica to kaže, **čak i kad je napadač skriven u magli**. Saznaješ da si napadnut, ali ne i odakle.',
+          'Podigni kralja i označena su i polja koja pokriva figura koju vidiš. Te oznake koriste samo ono što je već na tvojoj ploči, pa skriveni napadač ostaje skriven.',
         ],
       },
       start: {

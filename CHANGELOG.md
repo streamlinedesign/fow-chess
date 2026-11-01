@@ -4,6 +4,9 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Centre vision is part of the game: any piece on d5/e5 (White) or d4/e4 (Black) shows its player the whole board while it stays. The squares are ringed on the board. Mods games can turn it off.
+- The king-in-danger ring now also shows when the attacker is hidden in the fog (without saying where it is).
+- Pawns on their starting rank always see both squares ahead.
 - House conventions: `CLAUDE.md`, `VERSION`, `TODO.md`, CI and auto-PR workflows.
 - Server listens on `PORT` (4100) and Vite on `WEB_PORT` (4101) instead of 8080/5173.
 - `make db-seed` loads demo accounts; `make deploy`, `make release`, `make configure-repo`.

@@ -24,7 +24,7 @@ export type Settings = {
   backPawns?: boolean
   /** King of the Hill: a king on one of the four centre squares wins. */
   hill?: boolean
-  /** Centre vision: a piece on the centre of the opponent's half shows you the whole board. Must match centerVisions in server/view.go. */
+  /** Centre vision: a piece on the centre of the opponent's half shows you the whole board. Every game has 'any'; mods games may turn it off; 'pawn' is from early demo games. Must match centerVisions in server/view.go. */
   centerVision?: CenterVision
   /** Never ranked: set by the server for bot and mods games. Players can't ask for it. */
   unrated?: boolean
@@ -97,6 +97,7 @@ const DEFAULTS: Settings = {
   kingCapture: true,
   time: tc(300),
   setup: '',
+  centerVision: 'any',
 }
 
 export const sameTime = (a: TimeControl, b: TimeControl) =>
@@ -149,7 +150,7 @@ export function loadSettings(mods = false): Settings {
       delete saved.jumpKing
       delete saved.backPawns
       delete saved.hill
-      delete saved.centerVision
+      saved.centerVision = 'any'
       delete saved.mods
       delete saved.bot
       delete saved.unrated
@@ -180,7 +181,8 @@ export function twists(s: Settings, d: Dict) {
     ...(s.hill ? [d.legacy.hill] : []),
     ...(s.jumpKing ? [d.legacy.jump] : []),
     ...(s.backPawns ? [d.legacy.backPawns] : []),
-    ...(s.centerVision === 'pawn' ? [d.legacy.centerPawn] : s.centerVision === 'any' ? [d.legacy.centerAny] : []),
+    // Centre vision for any piece is the game; mods games can turn it off, and early demo games counted only pawns.
+    ...(s.centerVision === 'pawn' ? [d.legacy.centerPawn] : s.mods && !s.centerVision ? [d.legacy.noCenter] : []),
   ]
 }
 
