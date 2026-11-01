@@ -1,12 +1,14 @@
 package main
 
 import (
+	"chess/bots"
 	"context"
 	"embed"
 	"encoding/json"
 	"flag"
 	"io/fs"
 	"log"
+	"math/rand/v2"
 	"net/http"
 	"net/url"
 	"os"
@@ -87,7 +89,18 @@ func main() {
 			jsonError(w, "Those match settings aren't available.", http.StatusBadRequest)
 			return
 		}
-		m := hub.Create(p, settings)
+		var m *Match
+		if settings.Bot != "" {
+			// Against a bot you get a random colour, so you learn both.
+			bot := botPlayer(bots.Level(settings.Bot))
+			if rand.IntN(2) == 0 {
+				m = hub.CreateBetween(p, bot, settings)
+			} else {
+				m = hub.CreateBetween(bot, p, settings)
+			}
+		} else {
+			m = hub.Create(p, settings)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]string{"id": m.id})
 	})

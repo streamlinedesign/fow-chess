@@ -8,7 +8,7 @@ import { useLive } from './live'
 import { playerId } from './player'
 import { ago, go, type GameSummary } from './ProfilePage'
 import { navigate } from './router'
-import { describeTime, loadSettings, modeName, NO_CLOCK, saveSettings, type Settings } from './settings'
+import { BOTS, describeTime, loadSettings, modeName, NO_CLOCK, saveSettings, type Bot, type Settings } from './settings'
 import { SettingsBoard } from './SettingsBoard'
 import { SettingsPanel } from './SettingsPanel'
 import { api, openOffer, type UserCard } from './social'
@@ -113,6 +113,7 @@ export function Landing() {
       <div className="hub">
         <div className="hub-main">
           {me && <YourGames username={me.username} />}
+          <Bots settings={settings} busy={!!busy} />
           <LiveNow />
         </div>
         <div className="hub-side">
@@ -126,12 +127,74 @@ export function Landing() {
 
 /** How often the page asks whether a match was found; the server drops players who stop asking. */
 const QUEUE_POLL_MS = 3000
+/** How long Find match waits before suggesting a bot. */
+const NOBODY_AFTER_S = 20
+
+/** Starts a game against a bot with the current mode and clock, and goes there. */
+async function playBot(settings: Settings, bot: Bot) {
+  const body = { ...settings, bot, unrated: true }
+  const res = await fetch(`/api/matches?player=${playerId}`, { method: 'POST', body: JSON.stringify(body) })
+  if (!res.ok) throw new Error()
+  const { id } = await res.json()
+  navigate(`/m/${id}`)
+}
+
+/** The computer opponents, as cards. They play with whatever mode and clock is set above. */
+function Bots({ settings, busy }: { settings: Settings; busy: boolean }) {
+  const t = useT()
+  const [starting, setStarting] = useState<Bot | null>(null)
+  const [error, setError] = useState('')
+  const start = (bot: Bot) => {
+    setStarting(bot)
+    setError('')
+    playBot(settings, bot).catch(() => {
+      setError(t.common.cantReach)
+      setStarting(null)
+    })
+  }
+  return (
+    <section className="flex flex-col gap-3.5">
+      <div>
+        <h2 className="text-[22px] font-semibold tracking-tight">{t.landing.bots}</h2>
+        <p className="mt-1 text-sm text-accent">{t.landing.botsSub}</p>
+      </div>
+      <div className="bots">
+        {BOTS.map((b, i) => (
+          <button
+            key={b.level}
+            type="button"
+            className="tick bot"
+            disabled={busy || starting !== null}
+            aria-busy={starting === b.level}
+            onClick={() => start(b.level)}
+          >
+            <span className="flex items-center justify-between gap-2">
+              <span className="text-[17px] font-semibold tracking-tight">{b.name}</span>
+              <span className="strength" aria-hidden>
+                {BOTS.map((_, j) => (
+                  <i key={j} data-on={j <= i} />
+                ))}
+              </span>
+            </span>
+            <span className="text-sm text-accent">{t.landing.botHints[b.level]}</span>
+          </button>
+        ))}
+      </div>
+      {error && (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </section>
+  )
+}
 
 /**
  * Find match: wait in the server's queue for the player nearest your rating
  * who wants the same game. Guests can't, since they have no rating.
  */
 function FindMatch({ settings, signedIn, busy }: { settings: Settings; signedIn: boolean; busy: boolean }) {
+  const [botBusy, setBotBusy] = useState(false)
   const t = useT()
   const [since, setSince] = useState<number | null>(null)
   const [now, setNow] = useState(0)
@@ -195,21 +258,42 @@ function FindMatch({ settings, signedIn, busy }: { settings: Settings; signedIn:
         <p className="text-sm text-accent">{t.landing.findGuest}</p>
       </div>
     )
-  if (waiting)
+  if (waiting) {
+    const secs = Math.max(0, Math.round(((now || since) - since) / 1000))
     return (
-      <div className="tick flex items-center gap-3 p-3.5" role="status">
-        <span className="spinner" aria-hidden />
-        <span className="flex min-w-0 flex-1 flex-col">
-          <span className="font-semibold">{t.landing.finding}</span>
-          <span className="text-sm text-accent">
-            {t.landing.findingSince(Math.max(0, Math.round(((now || since) - since) / 1000)))}
+      <div className="tick flex flex-col gap-3 p-3.5" role="status">
+        <div className="flex items-center gap-3">
+          <span className="spinner" aria-hidden />
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="font-semibold">{t.landing.finding}</span>
+            <span className="text-sm text-accent">{t.landing.findingSince(secs)}</span>
           </span>
-        </span>
-        <Button className="h-9 px-3.5 text-sm" onClick={stop}>
-          {t.common.cancel}
-        </Button>
+          <Button className="h-9 px-3.5 text-sm" onClick={stop}>
+            {t.common.cancel}
+          </Button>
+        </div>
+        {secs >= NOBODY_AFTER_S && (
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-accent">{t.landing.nobodyAround}</span>
+            {BOTS.slice(1, 3).map((b) => (
+              <Button
+                key={b.level}
+                className="h-8 px-3 text-sm"
+                disabled={botBusy}
+                onClick={() => {
+                  setBotBusy(true)
+                  stop()
+                  playBot(settings, b.level).catch(() => setBotBusy(false))
+                }}
+              >
+                {b.name}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
     )
+  }
   return (
     <div className="flex flex-col gap-1.5">
       <Button variant="solid" className="h-13 text-[17px]" onClick={start} disabled={busy}>

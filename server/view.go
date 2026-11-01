@@ -1,6 +1,7 @@
 package main
 
 import (
+	"chess/bots"
 	"slices"
 	"strings"
 
@@ -30,6 +31,8 @@ type Settings struct {
 	// Mods is a game from the mods page: any of the options above, any clock,
 	// never ranked.
 	Mods bool `json:"mods,omitempty"`
+	// Bot is the computer opponent's level when one seat is a bot. Never ranked.
+	Bot string `json:"bot,omitempty"`
 }
 
 func (s Settings) rules() engine.Rules {
@@ -38,13 +41,16 @@ func (s Settings) rules() engine.Rules {
 
 func (s Settings) valid() bool {
 	_, ok := setupModes[s.Setup]
-	return (s.Time.valid() || (s.Mods && s.Time.modsValid())) && ok
+	return (s.Time.valid() || (s.Mods && s.Time.modsValid())) && ok && (s.Bot == "" || bots.Level(s.Bot).Valid())
 }
 
 // normalize makes new settings the one game the site plays: fog of war, win
 // by eating the king. A mods game keeps its options but is never ranked.
 // Saved games keep whatever they were played with.
 func (s *Settings) normalize() {
+	if s.Bot != "" {
+		s.Unrated = true
+	}
 	if s.Mods {
 		s.Unrated = true
 		return

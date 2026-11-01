@@ -28,7 +28,19 @@ export type Settings = {
   unrated?: boolean
   /** From the mods page: any option, any clock, never ranked. */
   mods?: boolean
+  /** A computer opponent's level. Never ranked. Must match Levels in server/bots. */
+  bot?: Bot
 }
+
+export type Bot = 'rex' | 'vercingetorix' | 'ramesses' | 'solomon'
+
+/** The computer opponents, weakest first. Their names are the same in every language. */
+export const BOTS: { level: Bot; name: string }[] = [
+  { level: 'rex', name: 'Rex inutilis' },
+  { level: 'vercingetorix', name: 'Vercingetorix' },
+  { level: 'ramesses', name: 'Ramesses II' },
+  { level: 'solomon', name: 'Solomon' },
+]
 
 export type Setup = '' | 'backRow' | 'battleship'
 
@@ -130,6 +142,7 @@ export function loadSettings(mods = false): Settings {
       delete saved.backPawns
       delete saved.hill
       delete saved.mods
+      delete saved.bot
       saved.fog = true
       saved.kingCapture = true
     }
