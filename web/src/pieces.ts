@@ -11,7 +11,8 @@ import bB from './pieces/bB.svg'
 import bN from './pieces/bN.svg'
 import bP from './pieces/bP.svg'
 
-// Pieces by Colin M.L. Burnett (cburnett), CC BY-SA 3.0. Small enough that Vite inlines them.
+// Eat the King's own set: cream pieces with black lines, black pieces with a cream rim so they
+// still show on the dark theme's background. Small enough that Vite inlines them.
 export const pieceSrc: Record<string, string> = { wK, wQ, wR, wB, wN, wP, bK, bQ, bR, bB, bN, bP }
 
 /** The image for a FEN piece letter (uppercase is white). */

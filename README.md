@@ -206,4 +206,4 @@ The match page shows `ping` (round trip to the server) and how long the server t
 
 ## Credits
 
-Piece set "cburnett" by Colin M.L. Burnett, CC BY-SA 3.0.
+The piece set was drawn for this project and lives in `web/src/pieces/`.
