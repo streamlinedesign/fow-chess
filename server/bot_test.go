@@ -2,6 +2,7 @@ package main
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -91,6 +92,45 @@ func TestRandomSetupIsValid(t *testing.T) {
 				if err := checkSetup(mode, color, randomSetup(mode, color, true), true); err != nil {
 					t.Fatalf("%s for %d: %v", name, color, err)
 				}
+			}
+		}
+	}
+}
+
+// The demo board's game: Ramesses II, no clock, never saved, never listed.
+func TestDemoGame(t *testing.T) {
+	store := openTestStore(t, filepath.Join(t.TempDir(), "x"))
+	hub := NewHub(store)
+	settings := Settings{Demo: true, Time: TimeControl{Base: 300}, Setup: "battleship", Bot: "solomon"}
+	settings.normalize()
+	if !settings.valid() || settings.Bot != "ramesses" || settings.Time.clocked() || settings.Setup != "" || !settings.Fog || !settings.Unrated {
+		t.Fatalf("demo settings: %+v", settings)
+	}
+	ann := guestPlayer("ann-browser")
+	m := hub.CreateBetween(botPlayer(bots.Ramesses), ann, settings)
+	c := newClient(ann.key)
+	m.join(c, ann)
+	waitFor(t, m, "the bot's first move", func() bool { return len(m.game.History()) == 1 })
+	m.mu.Lock()
+	live := m.live()
+	m.mu.Unlock()
+	if live {
+		t.Error("a demo game is listed as live")
+	}
+	time.Sleep(300 * time.Millisecond) // give the store's writer a chance
+	if rec, _ := store.LatestGame(m.id); rec != nil {
+		t.Error("a demo game was saved")
+	}
+}
+
+// A bot's Battleship setup keeps its king guarded.
+func TestBotSetupGuardsTheKing(t *testing.T) {
+	for color := range 2 {
+		for range 50 {
+			b := botSetup(setupModes["battleship"], color, false)
+			k := strings.IndexByte(b, "Kk"[color])
+			if row := ownRow(color, k); row > 1 {
+				t.Fatalf("king on its own row %d: %s", row, b)
 			}
 		}
 	}

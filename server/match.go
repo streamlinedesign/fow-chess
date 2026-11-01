@@ -133,6 +133,8 @@ func (h *Hub) sweep() {
 		for id, m := range h.matches {
 			m.mu.Lock()
 			idle := len(m.clients) == 0 && time.Since(m.touched) > 2*time.Hour
+			// A demo game lives only in memory, and nobody comes back to one.
+			idle = idle || (m.settings.Demo && len(m.clients) == 0 && time.Since(m.touched) > 10*time.Minute)
 			if idle && m.timer != nil {
 				// flagExpired catches this game running out of time from now on.
 				m.timer.Stop()
@@ -387,8 +389,11 @@ func (m *Match) seat(color int, p *player) {
 	m.seats[color], m.users[color], m.names[color] = p.key, p.userID, p.name
 }
 
-// save queues this round for the store. Callers hold m.mu.
+// save queues this round for the store. A demo game is never saved. Callers hold m.mu.
 func (m *Match) save() {
+	if m.settings.Demo {
+		return
+	}
 	var moves strings.Builder
 	for i, pm := range m.game.History() {
 		if i > 0 {
@@ -666,7 +671,7 @@ func (m *Match) leave(c *client) {
 // playingChanged tells the site that whether this match's players are playing
 // may have changed. Callers hold m.mu.
 func (m *Match) playingChanged() {
-	if m.hooks.playing == nil {
+	if m.hooks.playing == nil || m.settings.Demo {
 		return
 	}
 	for _, id := range m.users {
@@ -681,7 +686,7 @@ func (m *Match) playingChanged() {
 // players, so a match from an offer isn't listed while it waits for one.
 // Callers hold m.mu.
 func (m *Match) live() bool {
-	if m.seats[white] == "" || m.seats[black] == "" || m.game.Over() {
+	if m.settings.Demo || m.seats[white] == "" || m.seats[black] == "" || m.game.Over() {
 		return false
 	}
 	if len(m.game.History()) == 0 {

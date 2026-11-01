@@ -26,7 +26,9 @@ type Settings struct {
 	BackPawns bool `json:"backPawns,omitempty"`
 	// Hill is King of the Hill: a king on one of the four centre squares wins.
 	Hill bool `json:"hill,omitempty"`
-	// Unrated keeps a game that could be rated from counting.
+	// Unrated keeps a game from counting. Players can't ask for it: every
+	// game of the one game is ranked when it can be, and normalize sets it
+	// for bot and mods games, which never are.
 	Unrated bool `json:"unrated,omitempty"`
 	// Mods is a game from the mods page: any of the options above, any clock,
 	// never ranked.
@@ -35,7 +37,13 @@ type Settings struct {
 	Bot string `json:"bot,omitempty"`
 	// Tournament is the arena this game is part of, if any.
 	Tournament int64 `json:"tournament,omitempty"`
+	// Demo is the home page's warm-up game against Ramesses II: no clock,
+	// kept only in memory, never listed or ranked.
+	Demo bool `json:"demo,omitempty"`
 }
+
+// demoBot is who the home page's demo board plays.
+const demoBot = bots.Ramesses
 
 func (s Settings) rules() engine.Rules {
 	return engine.Rules{KingCapture: s.KingCapture, JumpKing: s.JumpKing, BackPawns: s.BackPawns, Hill: s.Hill}
@@ -43,13 +51,19 @@ func (s Settings) rules() engine.Rules {
 
 func (s Settings) valid() bool {
 	_, ok := setupModes[s.Setup]
-	return (s.Time.valid() || (s.Mods && s.Time.modsValid())) && ok && (s.Bot == "" || bots.Level(s.Bot).Valid())
+	return (s.Time.valid() || (s.Mods && s.Time.modsValid()) || (s.Demo && !s.Time.clocked())) && ok &&
+		(s.Bot == "" || bots.Level(s.Bot).Valid())
 }
 
 // normalize makes new settings the one game the site plays: fog of war, win
-// by eating the king. A mods game keeps its options but is never ranked.
-// Saved games keep whatever they were played with.
+// by eating the king, ranked whenever both players are signed in. A mods game
+// keeps its options but is never ranked, and neither is a bot game. Saved
+// games keep whatever they were played with.
 func (s *Settings) normalize() {
+	s.Unrated = false
+	if s.Demo {
+		*s = Settings{Demo: true, Bot: string(demoBot)}
+	}
 	if s.Bot != "" {
 		s.Unrated = true
 	}

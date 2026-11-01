@@ -85,8 +85,13 @@ func main() {
 		}
 		// Settings come as an optional JSON body; an empty body means the
 		// standard start with no clock.
-		var settings Settings
-		json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&settings)
+		var req struct {
+			Settings
+			// Side is the demo player's colour, "w" (the default) or "b".
+			Side string `json:"side"`
+		}
+		json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&req)
+		settings := req.Settings
 		settings.Tournament = 0 // only the arena seats arena games
 		settings.normalize()
 		if !settings.valid() {
@@ -95,9 +100,12 @@ func main() {
 		}
 		var m *Match
 		if settings.Bot != "" {
-			// Against a bot you get a random colour, so you learn both.
+			// Against a bot you get a random colour, so you learn both. On the
+			// demo board you pick.
 			bot := botPlayer(bots.Level(settings.Bot))
-			if rand.IntN(2) == 0 {
+			if settings.Demo && req.Side == "b" {
+				m = hub.CreateBetween(bot, p, settings)
+			} else if settings.Demo || rand.IntN(2) == 0 {
 				m = hub.CreateBetween(p, bot, settings)
 			} else {
 				m = hub.CreateBetween(bot, p, settings)
