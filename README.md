@@ -111,7 +111,7 @@ With Postgres running:
 make dev
 ```
 
-Then open http://localhost:5173. On the first start the server creates a `chess` database and its tables, so there's nothing to set up by hand. It connects through Postgres's local socket as your own user, which is how Homebrew and Postgres.app install it. If your Postgres needs a user, password or another host, set `DATABASE_URL` instead, for example `export DATABASE_URL=postgres://chess:secret@localhost:5432/chess`.
+Then open http://localhost:4101. On the first start the server creates a `chess` database and its tables, so there's nothing to set up by hand. It connects through Postgres's local socket as your own user, which is how Homebrew and Postgres.app install it. If your Postgres needs a user, password or another host, set `DATABASE_URL` instead, for example `export DATABASE_URL=postgres://chess:secret@localhost:5432/chess`.
 
 - `make migrate` creates the database if needed and applies migrations, without starting the server.
 - `make psql` opens a SQL shell on the database.
@@ -119,7 +119,7 @@ Then open http://localhost:5173. On the first start the server creates a `chess`
 - On Linux, where Postgres only knows the `postgres` user at first, give yourself a role once: `sudo -u postgres createuser --superuser $USER`.
 - Accounts and games from the old SQLite `chess.db` aren't carried over.
 
-To play against yourself, open a second browser or a private window, since each browser gets one seat. Vite is started with `--host`, so a phone on the same Wi-Fi can open `http://<your-computer-ip>:5173`.
+To play against yourself, open a second browser or a private window, since each browser gets one seat. Vite is started with `--host`, so a phone on the same Wi-Fi can open `http://<your-computer-ip>:4101`.
 
 ## Tests
 
@@ -131,13 +131,13 @@ cd server && go test -short ./...  # skips the deep perft runs
 
 Tests that touch the database each get their own Postgres schema, dropped afterwards, so they never touch your dev data. They use `CHESS_TEST_DATABASE_URL` if set, else the same database as the server, and are skipped with a note if Postgres isn't running.
 
-If a page says **Server out of date** or `make dev` says port 8080 is in use, an older copy of the server (often a previously built `./chess`) is still running. Stop it and run `make dev` again.
+If a page says **Server out of date** or `make dev` says port 4100 is in use, an older copy of the server (often a previously built `./chess`) is still running. Stop it and run `make dev` again.
 
 ## Production build
 
 ```sh
 make build      # builds web, embeds it, writes ./chess
-DATABASE_URL=postgres://user:pass@host:5432/chess ./chess   # serves everything on :8080 (use -addr :3000 to change)
+DATABASE_URL=postgres://user:pass@host:5432/chess ./chess   # serves everything on 127.0.0.1:4100 (PORT or -addr to change)
 ```
 
 `make build-linux` also writes `chess-linux-amd64` for a droplet.
@@ -163,7 +163,7 @@ DATABASE_URL=postgres://user:pass@host:5432/chess ./chess   # serves everything 
 
    [Service]
    Environment=DATABASE_URL=postgres://chess:YOUR_PASSWORD@localhost:5432/chess
-   ExecStart=/opt/chess/chess -addr 127.0.0.1:8080
+   ExecStart=/opt/chess/chess -addr 127.0.0.1:4100
    Restart=always
    DynamicUser=yes
 
@@ -176,7 +176,7 @@ DATABASE_URL=postgres://user:pass@host:5432/chess ./chess   # serves everything 
    ```
    chess.example.com {
        encode zstd gzip
-       reverse_proxy 127.0.0.1:8080
+       reverse_proxy 127.0.0.1:4100
    }
    ```
 

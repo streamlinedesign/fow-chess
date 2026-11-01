@@ -28,7 +28,7 @@ var dist embed.FS
 var verbose = flag.Bool("v", false, "log every match action with how long it took")
 
 func main() {
-	addr := flag.String("addr", ":8080", "listen address")
+	addr := flag.String("addr", ":"+envOr("PORT", "4100"), "listen address (or set PORT); production uses -addr 127.0.0.1:4100 behind Caddy")
 	dbURL := flag.String("db", envOr("DATABASE_URL", defaultDatabaseURL), "Postgres connection URL for accounts and games (or set DATABASE_URL)")
 	migrateOnly := flag.Bool("migrate", false, "create the database if needed, apply migrations, and exit")
 	flag.Parse()

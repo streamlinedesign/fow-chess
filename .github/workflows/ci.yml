@@ -1,0 +1,33 @@
+name: ci
+
+# Runs on every push to a branch and on every pull request, so a PR opened by
+# a workflow (which can't trigger other workflows) still gets a check on its
+# commits. Branch protection on main requires the "ci" check.
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        if: hashFiles('go.mod', 'server/go.mod') != ''
+        with:
+          go-version-file: ${{ hashFiles('go.mod') != '' && 'go.mod' || 'server/go.mod' }}
+          cache: true
+      - uses: actions/setup-node@v4
+        if: hashFiles('package.json', 'web/package.json') != ''
+        with:
+          node-version: 22
+      - run: make test
+      - run: make build
