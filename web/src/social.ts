@@ -29,12 +29,32 @@ export type Offer = {
 
 export type Notification = {
   id: number
-  kind: 'friend_request' | 'friend_accepted' | 'offer' | 'offer_accepted' | 'offer_declined' | 'game_over' | 'move'
+  kind:
+    | 'friend_request'
+    | 'friend_accepted'
+    | 'offer'
+    | 'offer_accepted'
+    | 'offer_declined'
+    | 'game_over'
+    | 'move'
+    | 'arena_cancelled'
+    | 'arena_result'
   actor?: string
   offer?: Offer
   matchId?: string
   round?: number
-  data: { result?: 'won' | 'lost' | 'draw'; reason?: string; kingCapture?: boolean; sniper?: boolean }
+  data: {
+    result?: 'won' | 'lost' | 'draw'
+    reason?: string
+    kingCapture?: boolean
+    sniper?: boolean
+    kind?: string
+    place?: number
+    players?: number
+    needed?: number
+    score?: number
+    startsAt?: number
+  }
   read: boolean
   at: number
   pending?: boolean

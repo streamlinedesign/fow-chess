@@ -14,6 +14,7 @@ import { SettingsPanel } from './SettingsPanel'
 import { api, openOffer, type UserCard } from './social'
 import { Button } from './ui'
 import { GameCard, type LiveGame } from './WatchPage'
+import { countdown, type Tournament } from './TournamentsPage'
 
 /**
  * The home page is the game's hub: start or join a match, then what's going on
@@ -117,6 +118,7 @@ export function Landing() {
           <LiveNow />
         </div>
         <div className="hub-side">
+          <NextArena />
           {me ? <FriendsOnline /> : <GuestPitch />}
           <Leaderboard me={me?.username} />
         </div>
@@ -472,6 +474,44 @@ function FriendsOnline() {
           ))}
         </div>
       )}
+    </section>
+  )
+}
+
+/** The next arena, with the way in. */
+function NextArena() {
+  const t = useT()
+  const [list, setList] = useState<Tournament[] | null>(null)
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    let live = true
+    api<{ upcoming: Tournament[] }>('GET', '/api/tournaments')
+      .then((b) => live && setList(b.upcoming))
+      .catch(() => live && setList([]))
+    const timer = setInterval(() => setTick((n) => n + 1), 30_000)
+    return () => {
+      live = false
+      clearInterval(timer)
+    }
+  }, [])
+  const next = list?.find((x) => x.status === 'running') ?? list?.[0]
+  if (!next) return null
+  const running = next.status === 'running'
+  return (
+    <section className="flex flex-col gap-3.5">
+      <Heading title={t.common.tournaments} href="/tournaments" link={t.tournaments.title} />
+      <a href="/tournaments" onClick={(e) => go(e, '/tournaments')} className="tick flex flex-col gap-1 p-4">
+        <span className="flex items-center justify-between gap-2">
+          <span className="font-semibold">{t.tournaments.kinds[next.kind]}</span>
+          {running ? <span className="turn-tag">{t.tournaments.running}</span> : null}
+        </span>
+        <span className="text-sm text-accent">
+          {running ? t.tournaments.endsIn(countdown(next.endsAt)) : t.tournaments.startsIn(countdown(next.startsAt))}
+          {' · '}
+          {t.tournaments.players(next.players)}
+          {next.joined ? ` · ${t.tournaments.joined.split('.')[0]}` : ''}
+        </span>
+      </a>
     </section>
   )
 }

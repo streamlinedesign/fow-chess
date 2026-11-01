@@ -30,6 +30,8 @@ export type Settings = {
   mods?: boolean
   /** A computer opponent's level. Never ranked. Must match Levels in server/bots. */
   bot?: Bot
+  /** The arena this game is part of. */
+  tournament?: number
 }
 
 export type Bot = 'rex' | 'vercingetorix' | 'ramesses' | 'solomon'
@@ -181,5 +183,10 @@ export function modeName(s: Settings, d: Dict) {
 
 /** The tags on a match page: what's special about it, then the clock. Games saved before clocks existed had none. */
 export function describeSettings(s: Settings, d: Dict) {
-  return [...(s.mods ? [d.common.mods] : []), ...twists(s, d), describeTime(s.time ?? NO_CLOCK, d)]
+  return [
+    ...(s.tournament ? [d.common.arena] : []),
+    ...(s.mods ? [d.common.mods] : []),
+    ...twists(s, d),
+    describeTime(s.time ?? NO_CLOCK, d),
+  ]
 }

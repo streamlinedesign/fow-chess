@@ -48,6 +48,16 @@ The creator picks a time control from fixed presets (`timeControls` in `server/v
 - The browser counts down locally from the last state the server sent, so the clock stays smooth between messages.
 - A game is **ranked** (rated) when both players are signed in, it isn't a mods game, it has a clock (every preset on offer has one), and the creator didn't make it Unrated. Ratings use Glicko-2, starting at 1500 with one rating for every mode, and each game is its own rating period. The change is applied once, in a transaction, when the finished game is saved, and shown in the game-over dialog and on the profile.
 
+## Tournaments
+
+An arena every evening, Zagreb time (`arenaKinds` in `server/tournament.go`): Rapid 10+0 at 19:00 for 45 minutes and Blitz 5+0 at 20:00 for 30 minutes. The server keeps the next two days on the calendar (`tournaments` table) and ticks every 3 seconds.
+
+- Signed-in players **join** before the start or while it runs (`POST /api/tournaments/{id}/join`). At the start it needs at least 4 players (`minArenaPlayers`), or it's called off and everyone who joined hears in the bell.
+- **Pairing is automatic:** players who are in, not sitting out, not playing and online (a tab open) are paired nearest in points first, avoiding an immediate rematch when there's someone else. The game is a normal ranked match with `tournament` in its settings; both players get a live `match` event and the app opens the game wherever they are.
+- **Scoring:** 2 for a win (a Sniper Win is a win), 1 for a draw, recorded once per game in `tournament_games` and `tournament_players` through the match's `over` hook. A game that ends after the arena has finished doesn't count. Leaving a running arena sits you out; your points stay.
+- When it ends, everyone gets their place in the bell. A running arena survives a restart: it's rebuilt from the tables, games still in play included.
+- `/tournaments` shows what's coming, the running arena with its table (polled every 5 seconds), recent results and the rules; the home page shows the next arena.
+
 ## Chat
 
 The two players can chat during a game. Spectators don't see it. Messages are kept only in the server's memory, never in the database: a rematch starts a fresh chat, and once a game is over and both players have left, its chat is deleted. A server restart clears every chat. Messages are capped at 500 characters, and a game keeps its last 200.

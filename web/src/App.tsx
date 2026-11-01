@@ -16,6 +16,7 @@ import { ProfilePage } from './ProfilePage'
 import { ReplayPage } from './ReplayPage'
 import { RulesPage } from './RulesPage'
 import { ModsPage } from './ModsPage'
+import { TournamentsPage } from './TournamentsPage'
 import { navigate, usePath } from './router'
 import { WatchPage } from './WatchPage'
 import { SettingsPage } from './SettingsPage'
@@ -42,8 +43,8 @@ export function App() {
         { text: dict().toast.acceptedOffer(e.user), action: { label: dict().toast.play, href: `/m/${e.matchId}` } },
         20000,
       )
-    // Find match paired you while you were elsewhere on the site.
-    if (e.type === 'match' && e.matchId && location.pathname !== '/') navigate(`/m/${e.matchId}`)
+    // Find match or an arena paired you: go to the game, wherever you are.
+    if (e.type === 'match' && e.matchId) navigate(`/m/${e.matchId}`)
   })
 
   const page = match ? (
@@ -66,6 +67,8 @@ export function App() {
     <RulesPage />
   ) : path === '/mods' ? (
     <ModsPage />
+  ) : path === '/tournaments' ? (
+    <TournamentsPage />
   ) : path === '/' ? (
     <Landing />
   ) : (
