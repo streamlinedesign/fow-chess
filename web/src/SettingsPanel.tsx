@@ -115,16 +115,8 @@ export function SettingsPanel({
               label={t.panel.center}
               hint={t.panel.centerHint}
               checked={!!value.centerVision}
-              onChange={(on) => onChange({ ...value, centerVision: on ? 'pawn' : '' })}
+              onChange={(on) => onChange({ ...value, centerVision: on ? 'any' : '' })}
             />
-            {!!value.centerVision && (
-              <Toggle
-                label={t.panel.centerAny}
-                hint={t.panel.centerAnyHint}
-                checked={value.centerVision === 'any'}
-                onChange={(any) => onChange({ ...value, centerVision: any ? 'any' : 'pawn' })}
-              />
-            )}
           </Group>
         )}
 

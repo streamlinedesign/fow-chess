@@ -169,7 +169,7 @@ export const en = {
     fog: 'Fog covers everything your pieces can’t see.',
     fullBoard: 'No fog: the whole board is in view.',
     hill: 'Or walk your king onto one of the ringed centre squares.',
-    center: 'Hold one of the ringed squares in their half to see the whole board.',
+    center: 'Put any piece on a ringed square in their half to see the whole board.',
     standard: 'The pieces start as in chess.',
     backRow: 'Arrange your back row first.',
     battleship: 'Place every piece anywhere in the ringed rows first.',
@@ -192,9 +192,7 @@ export const en = {
     jumpHint: 'Your king can also jump like a knight.',
     backPawnsHint: 'Pawns can also step one square back, and see behind them.',
     center: 'Centre vision',
-    centerHint: 'A pawn on d5 or e5 (d4 or e4 for Black) shows you the whole board while it stays there.',
-    centerAny: 'Any piece counts',
-    centerAnyHint: 'Not just pawns. Much stronger: the fog lifts for half the game.',
+    centerHint: 'Any piece on d5 or e5 (d4 or e4 for Black) shows you the whole board while it stays there. On in every normal game.',
     modsNote: 'Mods games are never ranked.',
   },
 
@@ -211,8 +209,8 @@ export const en = {
     hill: 'King of the Hill',
     jump: 'Jump King',
     backPawns: 'Backward pawns',
-    centerPawn: 'Centre vision',
-    centerAny: 'Centre vision (any piece)',
+    centerPawn: 'Centre vision (pawns)',
+    noCenter: 'No centre vision',
   },
 
   time: {
@@ -312,6 +310,7 @@ export const en = {
       `You see what ${side} saw ${n === 1 ? 'a move' : `${n} moves`} ago, so nothing you see can help either player.`,
     watchingNote: "You're watching this match.",
     kingThreat: 'Your king is under attack by a piece you can see.',
+    kingThreatHidden: "Your king is under attack from somewhere you can't see.",
     arenaNext: 'Arena game. Your next one opens by itself when an opponent is free.',
     backToArena: 'Back to the arena',
     titleYourMove: '● Your move · Eat the King',
@@ -356,6 +355,7 @@ export const en = {
         title: 'Fog of war',
         p: [
           'You only see what your pieces see: **their own squares** and **every square they could move to**, captures included. The rest is covered.',
+          'Get **any piece onto the centre of their half** (d5 or e5 as White, d4 or e4 as Black) and you **see the whole board** for as long as it stays there. Those squares are ringed on the board, yours solid and theirs dashed, and yours light up while you hold one.',
           "A **pawn** has its own vision: it always sees the square ahead, even when blocked, and from its starting square both squares ahead, even when it can't step there. It sees its diagonals only when there's something to take. You get no hints about the other side: no last-move highlight, and their moves show as ? in the list. The fog lifts when the game ends.",
         ],
       },
@@ -371,8 +371,8 @@ export const en = {
         kind: 'The one warning',
         title: 'King in danger',
         p: [
-          'When a piece **you can see** attacks your king, the king gets a red ring and the page says so. Pick the king up and the squares a seen piece covers are marked too.',
-          'It only uses what is already on your board, so it gives nothing away. A piece in the fog stays a surprise.',
+          'When **any** piece attacks your king, the king gets a red ring and the page says so, **even when the attacker is hidden in the fog**. You learn that you are attacked, not from where.',
+          'Pick the king up and the squares a piece you can see covers are marked too. Those marks only use what is already on your board, so a hidden attacker stays hidden.',
         ],
       },
       start: {

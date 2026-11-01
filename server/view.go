@@ -63,8 +63,8 @@ func (s Settings) valid() bool {
 		(s.Bot == "" || bots.Level(s.Bot).Valid())
 }
 
-// normalize makes new settings the one game the site plays: fog of war, win
-// by eating the king, ranked whenever both players are signed in. A mods game
+// normalize makes new settings the one game the site plays: fog of war with
+// centre vision (any piece), win by eating the king, ranked whenever both players are signed in. A mods game
 // keeps its options but is never ranked, and neither is a bot game. Saved
 // games keep whatever they were played with.
 func (s *Settings) normalize() {
@@ -79,8 +79,8 @@ func (s *Settings) normalize() {
 		s.Unrated = true
 		return
 	}
-	s.Fog, s.KingCapture = true, true
-	s.JumpKing, s.BackPawns, s.Hill, s.CenterVision = false, false, false, ""
+	s.Fog, s.KingCapture, s.CenterVision = true, true, "any"
+	s.JumpKing, s.BackPawns, s.Hill = false, false, false
 }
 
 // startFrom is the FEN a game starts from: the usual position, or the players' setups.
@@ -165,12 +165,15 @@ type gameView struct {
 	Legal []string  `json:"legal"`
 	Last  *lastMove `json:"last"`
 	Check string    `json:"check,omitempty"`
-	// Danger is the player's king square when a piece they can see attacks it,
-	// and Unsafe the squares their king could step to that a seen piece attacks.
-	// Both come from the player's own view, so they give nothing away.
-	Danger  string   `json:"danger,omitempty"`
-	Unsafe  []string `json:"unsafe,omitempty"`
-	History []string `json:"history"` // SAN, or "?" for moves the viewer may not know
+	// Danger is the player's king square when any enemy piece attacks it, even
+	// one the fog hides (the player learns the king is attacked, not from
+	// where), and Unsafe the squares their king could step to that a seen
+	// piece attacks, which come from the player's own view.
+	Danger string `json:"danger,omitempty"`
+	// DangerHidden is set when the king is attacked only from the fog.
+	DangerHidden bool     `json:"dangerHidden,omitempty"`
+	Unsafe       []string `json:"unsafe,omitempty"`
+	History      []string `json:"history"` // SAN, or "?" for moves the viewer may not know
 	// Captured lists the pieces each side has taken, as FEN letters, most valuable first.
 	// Players know all of it even under fog: they saw what they took and see what they lost.
 	Captured map[string]string `json:"captured"`
@@ -230,7 +233,7 @@ func viewFor(g *engine.Game, viewer int, playable, fog bool) gameView {
 			vision := pos.Vision(engine.Color(viewer))
 			seen = &vision
 		}
-		v.Danger, v.Unsafe = kingDanger(&pos, engine.Color(viewer), seen)
+		v.Danger, v.DangerHidden, v.Unsafe = kingDanger(&pos, engine.Color(viewer), seen)
 	}
 
 	if !fog || g.Over() || viewer < 0 {
@@ -270,16 +273,18 @@ func viewFor(g *engine.Game, viewer int, playable, fog bool) gameView {
 	return v
 }
 
-// kingDanger says whether a piece the player can see attacks their king, and
-// which of the king's moves land on a square a seen piece attacks. Pieces the
-// fog hides count as blockers but never as attackers, so the answer only uses
-// what is on the player's own board. A nil seen means everything is visible.
-func kingDanger(pos *engine.Position, us engine.Color, seen *[64]bool) (danger string, unsafe []string) {
+// kingDanger says whether any enemy piece attacks the player's king, seen or
+// not (hidden is true when none of the attackers is seen), and which of the
+// king's moves land on a square a seen piece attacks. The player is told the
+// king is attacked but not from where; for the unsafe squares, pieces the fog
+// hides count as blockers but never as attackers, so those give nothing away.
+// A nil seen means everything is visible.
+func kingDanger(pos *engine.Position, us engine.Color, seen *[64]bool) (danger string, hidden bool, unsafe []string) {
 	king := pos.KingSquare(us)
 	if king == engine.NoSquare {
-		return "", nil
+		return "", false, nil
 	}
-	attacks := func(p *engine.Position, target engine.Square) bool {
+	attacks := func(p *engine.Position, target engine.Square, seen *[64]bool) bool {
 		for sq := range p.Board {
 			pc := p.Board[sq]
 			if pc.IsEmpty() || pc.Color() == us || (seen != nil && !seen[sq]) {
@@ -293,8 +298,9 @@ func kingDanger(pos *engine.Position, us engine.Color, seen *[64]bool) (danger s
 		}
 		return false
 	}
-	if attacks(pos, king) {
+	if attacks(pos, king, nil) {
 		danger = king.String()
+		hidden = !attacks(pos, king, seen)
 	}
 	if pos.Turn == us {
 		for _, m := range pos.LegalMoves() {
@@ -302,12 +308,12 @@ func kingDanger(pos *engine.Position, us engine.Color, seen *[64]bool) (danger s
 				continue
 			}
 			after := pos.Apply(m)
-			if attacks(&after, m.To) {
+			if attacks(&after, m.To, seen) {
 				unsafe = append(unsafe, m.To.String())
 			}
 		}
 	}
-	return danger, unsafe
+	return danger, hidden, unsafe
 }
 
 // spectatorDelay is how many moves (by either side) spectators of a fog game

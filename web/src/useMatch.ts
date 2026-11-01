@@ -20,6 +20,8 @@ export type MatchState = {
   check?: string
   /** Your king's square when a piece you can see attacks it. */
   danger?: string
+  /** The king is attacked only by pieces you can't see. */
+  dangerHidden?: boolean
   /** Squares your king could step to that a piece you can see attacks. */
   unsafe?: string[]
   /** Centre vision: you hold an outpost and see the whole board. */
