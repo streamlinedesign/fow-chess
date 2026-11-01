@@ -348,7 +348,7 @@ export const hr: Dict = {
         title: 'Magla rata',
         p: [
           'Vidiš samo ono što vide tvoje figure: **njihova vlastita polja** i **svako polje na koje bi mogle doći**, uključujući uzimanja. Ostalo je pokriveno.',
-          '**Pješak** uvijek vidi polje ispred sebe, čak i kad je blokiran, a dijagonale samo kad ima što uzeti. Nema nikakvih naznaka o drugoj strani: nema isticanja zadnjeg poteza, a njihovi potezi u popisu se prikazuju kao ?. Magla se diže kad partija završi.',
+          '**Pješak** ima svoj pogled: uvijek vidi polje ispred sebe, čak i kad je blokiran, a s početnog polja oba polja ispred, čak i kad ne može onamo. Dijagonale vidi samo kad ima što uzeti. Nema nikakvih naznaka o drugoj strani: nema isticanja zadnjeg poteza, a njihovi potezi u popisu se prikazuju kao ?. Magla se diže kad partija završi.',
         ],
       },
       eat: {

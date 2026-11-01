@@ -145,9 +145,9 @@ func (p *Position) appendSlides(moves []Move, from Square, us Color, dirs []delt
 
 func (p *Position) appendPawnMoves(moves []Move, from Square, us Color) []Move {
 	dir := pawnDir(us)
-	lastRank, startRank := 7, 1
+	lastRank, startRank := 7, pawnStartRank(us)
 	if us == Black {
-		lastRank, startRank = 0, 6
+		lastRank = 0
 	}
 
 	add := func(m Move) {
@@ -276,4 +276,12 @@ func (p *Position) FindMove(uci string) (Move, bool) {
 		}
 	}
 	return Move{}, false
+}
+
+// pawnStartRank is the rank c's pawns start on and may step two from.
+func pawnStartRank(c Color) int {
+	if c == White {
+		return 1
+	}
+	return 6
 }

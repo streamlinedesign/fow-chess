@@ -199,6 +199,11 @@ func TestVision(t *testing.T) {
 		// Blocked pawn still sees ahead; diagonals only with a capture; rook sees up to and including blockers.
 		{"pawn and rook", "4k3/8/8/3p4/3P4/8/8/R3K3 w - - 0 1", White,
 			"x......./x......./x......./x..x..../x..x..../x......./x..xxx../xxxxxx.."},
+		// On its starting rank a pawn sees two squares ahead, even past a blocker.
+		{"blocked pawn on its start rank", "4k3/8/8/8/8/3n4/3P4/4K3 w - - 0 1", White,
+			"......../......../......../......../...x..../...x..../...xxx../...xxx.."},
+		{"black pawn on its start rank", "4k3/3p4/3N4/8/8/8/8/4K3 b - - 0 1", Black,
+			"...xxx../...xxx../...x..../...x..../......../......../......../........"},
 		{"pawn capture", "4k3/8/8/2p5/3P4/8/8/4K3 w - - 0 1", White,
 			"......../......../......../..xx..../...x..../......../...xxx../...xxx.."},
 		// The en passant square only counts for the side that may capture onto it.
