@@ -34,15 +34,22 @@ jobs:
           if [ -z "$n" ]; then
             title=$(git log -1 --pretty=%s)
             body=$(git log --reverse --pretty='- %s' origin/main..HEAD 2>/dev/null || git log -1 --pretty='- %s')
-            gh pr create --base main --head "$branch" --title "$title" --body "$body"
+            # Fails when the repo doesn't let Actions open PRs (make configure-repo
+            # turns that on). Say so instead of failing the branch's checks.
+            if ! gh pr create --base main --head "$branch" --title "$title" --body "$body"; then
+              echo "::warning::Couldn't open a PR for $branch: allow GitHub Actions to create pull requests (make configure-repo), or open it by hand."
+            fi
             n=$(gh pr list --head "$branch" --base main --state open --json number --jq '.[0].number')
           fi
           echo "pr=$n" >> "$GITHUB_ENV"
       - name: Arm auto-merge unless held
         run: |
+          if [ -z "$pr" ]; then echo "no PR to arm"; exit 0; fi
           if gh pr view "$pr" --json labels --jq '.labels[].name' | grep -qx hold; then
             echo "held"; exit 0; fi
-          gh pr merge "$pr" --auto --squash --delete-branch
+          if ! gh pr merge "$pr" --auto --squash --delete-branch; then
+            echo "::warning::Couldn't arm auto-merge on #$pr: allow auto-merge and protect main (make configure-repo), or merge it by hand."
+          fi
 
   hold:
     if: github.event_name == 'pull_request' && github.event.label.name == 'hold'
