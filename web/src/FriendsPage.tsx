@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useMe } from './auth'
 import { Who } from './Avatar'
 import { useT } from './i18n'
+import { Cell, Page, PageHead } from './Page'
 import { Icon } from './icons'
 import { useLive } from './live'
 import { navigate } from './router'
@@ -20,7 +21,10 @@ function go(e: React.MouseEvent, href: string) {
 export function FriendsPage() {
   const me = useMe()
   const t = useT()
-  const [data, setData] = useState<{ friends: UserCard[]; sent: UserCard[] } | null>(null)
+  const [data, setData] = useState<{
+    friends: UserCard[]
+    sent: UserCard[]
+  } | null>(null)
   const [error, setError] = useState('')
   const [removing, setRemoving] = useState<string | null>(null)
 
@@ -41,25 +45,14 @@ export function FriendsPage() {
   const online = data?.friends.filter((f) => f.online).length ?? 0
 
   return (
-    <main className="mx-auto w-full max-w-[1184px] flex-1 px-4 pt-6 pb-16 sm:px-8">
-      <div className="page-head">
-        <div>
-          <h1>
-            {t.friends.title}
-            {data && <span className="count">{data.friends.length}</span>}
-          </h1>
-          <p>{t.friends.intro}</p>
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-10">
-        <Search onChange={load} />
-
-        <section>
-          <div className="mb-3.5 flex items-baseline justify-between gap-3">
-            <h2 className="text-[22px] font-semibold tracking-tight">{t.friends.yourFriends}</h2>
-            {online > 0 && <span className="text-[13px] text-accent">{t.friends.online(online)}</span>}
-          </div>
+    <Page>
+      <PageHead title={t.friends.title} count={data?.friends.length} sub={t.friends.intro} />
+      <div className="home-row home-r1">
+        <Cell
+          className="cross"
+          title={t.friends.yourFriends}
+          right={online > 0 && <span className="text-[13px] text-accent">{t.friends.online(online)}</span>}
+        >
           {error ? (
             <p className="text-danger">{error}</p>
           ) : !data ? (
@@ -122,11 +115,12 @@ export function FriendsPage() {
               ))}
             </div>
           )}
-        </section>
-
-        {data && data.sent.length > 0 && (
-          <section>
-            <h2 className="mb-3.5 text-[22px] font-semibold tracking-tight">{t.friends.sentRequests}</h2>
+        </Cell>
+        <Cell className="cross" title={t.friends.findPlayers}>
+          <Search onChange={load} />
+        </Cell>
+        <Cell title={t.friends.sentRequests}>
+          {data && data.sent.length > 0 ? (
             <div className="f-list">
               {data.sent.map((f) => (
                 <div key={f.username} className="f-row">
@@ -145,9 +139,11 @@ export function FriendsPage() {
                 </div>
               ))}
             </div>
-          </section>
-        )}
-        <p className="-mt-6 text-[13px] text-accent">{t.friends.requestsInBell}</p>
+          ) : (
+            <p className="text-accent">{t.friends.noSent}</p>
+          )}
+          <p className="mt-4 text-[13px] text-accent">{t.friends.requestsInBell}</p>
+        </Cell>
       </div>
 
       <Dialog
@@ -172,7 +168,7 @@ export function FriendsPage() {
           </Button>
         </div>
       </Dialog>
-    </main>
+    </Page>
   )
 }
 

@@ -5,6 +5,7 @@ import { errorText, useT, type Dict } from './i18n'
 import { Icon } from './icons'
 import { useLive } from './live'
 import { pieceImg } from './position'
+import { Page } from './Page'
 import { navigate } from './router'
 import { DropMenu, MenuItem } from './Sheet'
 import { describeSettings, describeTime, modeName, NO_CLOCK, type Settings } from './settings'
@@ -31,7 +32,13 @@ export type GameSummary = {
   sniper?: boolean
 }
 
-type Record = { wins: number; draws: number; losses: number; ateKing: number; kingGotAte: number }
+type Record = {
+  wins: number
+  draws: number
+  losses: number
+  ateKing: number
+  kingGotAte: number
+}
 
 type Profile = {
   username: string
@@ -61,7 +68,11 @@ export function ago(ms: number, t: Dict) {
   if (s < 3600) return t.profile.minAgo(Math.floor(s / 60))
   if (s < 86400) return t.profile.hAgo(Math.floor(s / 3600))
   if (s < 86400 * 7) return t.profile.dAgo(Math.floor(s / 86400))
-  return new Intl.DateTimeFormat(t.locale, { day: 'numeric', month: 'short', year: 'numeric' }).format(ms)
+  return new Intl.DateTimeFormat(t.locale, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(ms)
 }
 
 export function go(e: React.MouseEvent, href: string) {
@@ -129,98 +140,106 @@ export function ProfilePage({ name }: { name: string }) {
   const status = own && profile.hideOnline ? t.profile.hidden : presence(profile, t)
 
   return (
-    <main className="mx-auto flex w-full max-w-[1184px] flex-col gap-12 px-4 pt-6 pb-16 sm:px-8">
-      <section className="prof-head">
-        <Avatar size={112} online={profile.online} className="max-[720px]:!size-[72px]" />
-        <div className="min-w-0">
-          <h1 className="text-[clamp(32px,6vw,48px)] leading-none font-semibold tracking-tight break-all">
-            {profile.username}
-          </h1>
-          <div className="mt-2 flex flex-wrap items-baseline gap-2.5">
-            <span className="font-mono text-2xl tabular-nums">{profile.rating}</span>
-            <span className="text-[13px] text-accent">
-              {t.profile.ratingLabel}
-              {profile.rank ? ` · ${t.profile.onBoard(profile.rank)}` : ''}
-            </span>
-          </div>
-          <div className="mt-2.5 flex flex-wrap gap-4 text-[13.5px] text-accent">
-            {status && (
-              <span className={`status ${profile.online && !(own && profile.hideOnline) ? '' : 'off'}`}>{status}</span>
-            )}
-            <span>
-              {t.profile.joined(
-                new Intl.DateTimeFormat(t.locale, { month: 'long', year: 'numeric' }).format(profile.joined),
+    <Page>
+      <div className="home-row">
+        <section className="home-cell prof-head">
+          <Avatar size={112} online={profile.online} className="max-[720px]:!size-[72px]" />
+          <div className="min-w-0">
+            <h1 className="text-[clamp(32px,6vw,48px)] leading-none font-semibold tracking-tight break-all">
+              {profile.username}
+            </h1>
+            <div className="mt-2 flex flex-wrap items-baseline gap-2.5">
+              <span className="font-mono text-2xl tabular-nums">{profile.rating}</span>
+              <span className="text-[13px] text-accent">
+                {t.profile.ratingLabel}
+                {profile.rank ? ` · ${t.profile.onBoard(profile.rank)}` : ''}
+              </span>
+            </div>
+            <div className="mt-2.5 flex flex-wrap gap-4 text-[13.5px] text-accent">
+              {status && (
+                <span className={`status ${profile.online && !(own && profile.hideOnline) ? '' : 'off'}`}>
+                  {status}
+                </span>
               )}
-            </span>
-          </div>
-        </div>
-        <div className="prof-acts">
-          {!own && profile.playing && (
-            <Button onClick={() => navigate(`/m/${profile.playing}`)}>
-              <Icon name="eye" />
-              {t.common.watch}
-            </Button>
-          )}
-          {own ? (
-            <Button onClick={() => navigate('/settings')}>
-              <Icon name="gear" />
-              {t.common.settings}
-            </Button>
-          ) : me ? (
-            <VisitorActions profile={profile} onChange={load} />
-          ) : null}
-        </div>
-      </section>
-
-      {profile.scoreWith && (
-        <section className="tick score">
-          <div>
-            <div className="label">{t.profile.youVs(profile.username)}</div>
-            <div className="score-big mt-2">
-              <b>{profile.scoreWith.wins}</b>
-              <i>–</i>
-              <b>{profile.scoreWith.losses}</b>
+              <span>
+                {t.profile.joined(
+                  new Intl.DateTimeFormat(t.locale, {
+                    month: 'long',
+                    year: 'numeric',
+                  }).format(profile.joined),
+                )}
+              </span>
             </div>
           </div>
-          <div>
-            <div className="text-[13px] text-accent">
-              {t.common.games(profile.scoreWith.wins + profile.scoreWith.draws + profile.scoreWith.losses)} ·{' '}
-              {t.common.draws(profile.scoreWith.draws)}
-              {profile.formWith?.length ? ` · ${t.profile.lastN(profile.formWith.length)}` : ''}
-            </div>
-            {profile.formWith && (
-              <div className="form-dots mt-2" aria-label={t.profile.formAria}>
-                {profile.formWith.map((f, i) => (
-                  <span key={i} className={`fd ${f === 'W' ? 'w' : f === 'D' ? 'd' : ''}`}>
-                    {f}
-                  </span>
-                ))}
-              </div>
+          <div className="prof-acts">
+            {!own && profile.playing && (
+              <Button onClick={() => navigate(`/m/${profile.playing}`)}>
+                <Icon name="eye" />
+                {t.common.watch}
+              </Button>
             )}
+            {own ? (
+              <Button onClick={() => navigate('/settings')}>
+                <Icon name="gear" />
+                {t.common.settings}
+              </Button>
+            ) : me ? (
+              <VisitorActions profile={profile} onChange={load} />
+            ) : null}
           </div>
-          <Button className="h-9 px-3.5 text-sm" onClick={() => navigate(`/messages/${profile.username}`)}>
-            {t.profile.yourChat}
-          </Button>
         </section>
+      </div>
+      {profile.scoreWith && (
+        <div className="home-row">
+          <section className="home-cell score">
+            <div>
+              <div className="label">{t.profile.youVs(profile.username)}</div>
+              <div className="score-big mt-2">
+                <b>{profile.scoreWith.wins}</b>
+                <i>–</i>
+                <b>{profile.scoreWith.losses}</b>
+              </div>
+            </div>
+            <div>
+              <div className="text-[13px] text-accent">
+                {t.common.games(profile.scoreWith.wins + profile.scoreWith.draws + profile.scoreWith.losses)} ·{' '}
+                {t.common.draws(profile.scoreWith.draws)}
+                {profile.formWith?.length ? ` · ${t.profile.lastN(profile.formWith.length)}` : ''}
+              </div>
+              {profile.formWith && (
+                <div className="form-dots mt-2" aria-label={t.profile.formAria}>
+                  {profile.formWith.map((f, i) => (
+                    <span key={i} className={`fd ${f === 'W' ? 'w' : f === 'D' ? 'd' : ''}`}>
+                      {f}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            <Button className="h-9 px-3.5 text-sm" onClick={() => navigate(`/messages/${profile.username}`)}>
+              {t.profile.yourChat}
+            </Button>
+          </section>
+        </div>
       )}
 
-      <section className="stats">
-        <div className="stat">
+      <section className="home-row home-bots stats">
+        <div className="home-cell stat cross">
           <b>{played}</b>
           <span>{t.profile.played}</span>
         </div>
-        <div className="stat">
+        <div className="home-cell stat cross">
           <b>{stats.wins}</b>
           <span>
             {t.profile.wins}
             {stats.ateKing ? ` · ${t.profile.ateKing(stats.ateKing)}` : ''}
           </span>
         </div>
-        <div className="stat">
+        <div className="home-cell stat cross">
           <b>{stats.draws}</b>
           <span>{t.profile.drawsLabel}</span>
         </div>
-        <div className="stat">
+        <div className="home-cell stat">
           <b>{stats.losses}</b>
           <span>
             {t.profile.losses}
@@ -229,75 +248,79 @@ export function ProfilePage({ name }: { name: string }) {
         </div>
       </section>
 
-      <section>
-        <h2 className="mb-3.5 text-[22px] font-semibold tracking-tight">{t.profile.currentGames}</h2>
-        {current.length === 0 ? (
-          <p className="text-accent">{t.profile.noCurrent}</p>
-        ) : (
-          <div className="cur-list">
-            {current.map((g) => {
-              const href = `/m/${g.matchId}`
-              return (
-                <a key={`${g.matchId}-${g.round}`} href={href} onClick={(e) => go(e, href)} className="cur">
-                  <span
-                    className={`size-3.5 shrink-0 rounded-full shadow-[0_0_0_1.5px_var(--color-fg)] ${g.color === 'w' ? 'bg-[#fff]' : 'bg-[#111]'}`}
-                    aria-label={g.color === 'w' ? t.common.white : t.common.black}
-                  />
-                  <div className="min-w-0">
-                    <div className="truncate font-semibold">
-                      {g.waiting ? t.match.waitingOpponent : t.profile.vs(g.opponent || t.common.guest)}
+      <div className="home-row">
+        <section className="home-cell">
+          <h2 className="mb-[18px] text-[22px] font-semibold tracking-tight">{t.profile.currentGames}</h2>
+          {current.length === 0 ? (
+            <p className="text-accent">{t.profile.noCurrent}</p>
+          ) : (
+            <div className="cur-list">
+              {current.map((g) => {
+                const href = `/m/${g.matchId}`
+                return (
+                  <a key={`${g.matchId}-${g.round}`} href={href} onClick={(e) => go(e, href)} className="cur">
+                    <span
+                      className={`size-3.5 shrink-0 rounded-full shadow-[0_0_0_1.5px_var(--color-fg)] ${g.color === 'w' ? 'bg-[#fff]' : 'bg-[#111]'}`}
+                      aria-label={g.color === 'w' ? t.common.white : t.common.black}
+                    />
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold">
+                        {g.waiting ? t.match.waitingOpponent : t.profile.vs(g.opponent || t.common.guest)}
+                      </div>
+                      <div className="sub truncate">
+                        {describeSettings(g.settings, t).join(' · ')} · {t.common.move(Math.floor(g.plies / 2) + 1)}
+                      </div>
                     </div>
-                    <div className="sub truncate">
-                      {describeSettings(g.settings, t).join(' · ')} · {t.common.move(Math.floor(g.plies / 2) + 1)}
-                    </div>
-                  </div>
-                  {yourMove(g) ? (
-                    <span className="turn-tag">{t.common.yourMove}</span>
-                  ) : (
-                    <span className="text-sm text-accent">{ago(g.updatedAt, t)}</span>
-                  )}
-                </a>
-              )
-            })}
-          </div>
-        )}
-      </section>
+                    {yourMove(g) ? (
+                      <span className="turn-tag">{t.common.yourMove}</span>
+                    ) : (
+                      <span className="text-sm text-accent">{ago(g.updatedAt, t)}</span>
+                    )}
+                  </a>
+                )
+              })}
+            </div>
+          )}
+        </section>
+      </div>
 
-      <section>
-        <div className="mb-3.5 flex flex-wrap items-baseline justify-between gap-3">
-          <h2 className="text-[22px] font-semibold tracking-tight">{t.profile.previousMatches}</h2>
-          <div className="filters" role="radiogroup" aria-label={t.profile.show}>
-            {(
-              [
-                ['all', t.profile.all],
-                ['win', t.profile.wins],
-                ['loss', t.profile.losses],
-                ['draw', t.profile.drawsLabel],
-              ] as [Filter, string][]
-            ).map(([f, label]) => (
-              <button
-                key={f}
-                role="radio"
-                aria-checked={filter === f}
-                aria-pressed={filter === f}
-                onClick={() => setFilter(f)}
-              >
-                {label}
-              </button>
-            ))}
+      <div className="home-row">
+        <section className="home-cell">
+          <div className="mb-[18px] flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="text-[22px] font-semibold tracking-tight">{t.profile.previousMatches}</h2>
+            <div className="filters" role="radiogroup" aria-label={t.profile.show}>
+              {(
+                [
+                  ['all', t.profile.all],
+                  ['win', t.profile.wins],
+                  ['loss', t.profile.losses],
+                  ['draw', t.profile.drawsLabel],
+                ] as [Filter, string][]
+              ).map(([f, label]) => (
+                <button
+                  key={f}
+                  role="radio"
+                  aria-checked={filter === f}
+                  aria-pressed={filter === f}
+                  onClick={() => setFilter(f)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        {finished.length === 0 ? (
-          <p className="text-accent">{profile.finished.length ? t.profile.nothingHere : t.profile.noFinished}</p>
-        ) : (
-          <div className="matches">
-            {finished.map((g) => (
-              <MatchCard key={`${g.matchId}-${g.round}`} g={g} owner={profile.username} />
-            ))}
-          </div>
-        )}
-      </section>
-    </main>
+          {finished.length === 0 ? (
+            <p className="text-accent">{profile.finished.length ? t.profile.nothingHere : t.profile.noFinished}</p>
+          ) : (
+            <div className="matches">
+              {finished.map((g) => (
+                <MatchCard key={`${g.matchId}-${g.round}`} g={g} owner={profile.username} />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+    </Page>
   )
 }
 

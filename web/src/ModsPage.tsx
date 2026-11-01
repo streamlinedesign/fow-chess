@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useT } from './i18n'
+import { Page } from './Page'
 import { playerId } from './player'
 import { navigate } from './router'
 import { loadSettings, saveSettings, type Settings } from './settings'
@@ -7,7 +8,7 @@ import { SettingsBoard } from './SettingsBoard'
 import { SettingsPanel } from './SettingsPanel'
 import { Button } from './ui'
 
-/** The game with every dial exposed. Mods games are never ranked. */
+/** The game with every dial exposed, laid out like the home page: the board at the left, the dials at the right. Mods games are never ranked. */
 export function ModsPage() {
   const t = useT()
   const [busy, setBusy] = useState(false)
@@ -20,7 +21,10 @@ export function ModsPage() {
     try {
       saveSettings(settings)
       const body = { ...settings, mods: true, unrated: true }
-      const res = await fetch(`/api/matches?player=${playerId}`, { method: 'POST', body: JSON.stringify(body) })
+      const res = await fetch(`/api/matches?player=${playerId}`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      })
       if (!res.ok) throw new Error()
       const { id } = await res.json()
       navigate(`/m/${id}`)
@@ -31,28 +35,35 @@ export function ModsPage() {
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-[1184px] flex-1 flex-col gap-12 px-4 pt-6 pb-16 sm:px-8 sm:pt-8">
-      <section className="hero">
-        <div className="hero-head">
-          <h1 className="text-[clamp(34px,5vw,52px)] leading-none font-semibold tracking-tight">{t.mods.title}</h1>
-          <p className="mt-3 max-w-[60ch] text-accent">{t.mods.intro}</p>
+    <Page>
+      <div className="home-row home-hero">
+        <div className="home-cell cross">
+          <div className="demo mods-board">
+            <div className="demo-main">
+              <SettingsBoard settings={settings} boardClassName="w-full" captionClassName="mt-1 max-[760px]:px-4" />
+            </div>
+          </div>
         </div>
-
-        <SettingsPanel value={settings} onChange={setSettings} className="hero-setup" />
-
-        <div className="hero-acts flex flex-col gap-3">
-          <Button variant="solid" className="h-13 text-[17px]" onClick={create} loading={busy} disabled={busy}>
-            {t.common.newMatch}
-          </Button>
-          {error && (
-            <p role="alert" className="text-danger">
-              {error}
-            </p>
-          )}
+        <div className="home-cell home-menu">
+          <section>
+            <h1 className="home-title">{t.mods.title}</h1>
+            <p className="mt-2.5 text-[15px] text-accent">{t.mods.intro}</p>
+          </section>
+          <section>
+            <SettingsPanel value={settings} onChange={setSettings} className="bare" />
+          </section>
+          <section className="flex flex-col gap-3">
+            <Button variant="solid" className="home-play" onClick={create} loading={busy} disabled={busy}>
+              {t.common.newMatch} <small>{t.panel.modsNote}</small>
+            </Button>
+            {error && (
+              <p role="alert" className="text-danger">
+                {error}
+              </p>
+            )}
+          </section>
         </div>
-
-        <SettingsBoard settings={settings} boardClassName="hero-board" captionClassName="hero-cap" />
-      </section>
-    </main>
+      </div>
+    </Page>
   )
 }
