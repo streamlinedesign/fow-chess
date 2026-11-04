@@ -241,3 +241,26 @@ func TestHillAndBackPawnsMatch(t *testing.T) {
 		t.Fatalf("the pawn didn't step back: %d plies", n)
 	}
 }
+
+func TestJesterPawnsMatch(t *testing.T) {
+	store := openTestStore(t, filepath.Join(t.TempDir(), "x"))
+	hub := NewHub(store)
+	m := hub.Create(guestPlayer("g1"), Settings{Fog: true, KingCapture: true, JesterPawns: true, Mods: true})
+	cw, cb := newClient("g1"), newClient("g2")
+	m.join(cw, guestPlayer("g1"))
+	m.join(cb, guestPlayer("g2"))
+	m.handle(cw, inMsg{Type: "move", UCI: "e2e4"})
+	m.handle(cb, inMsg{Type: "move", UCI: "d7d5"})
+	m.handle(cw, inMsg{Type: "move", UCI: "e4f4"})
+	m.handle(cb, inMsg{Type: "move", UCI: "d5d6"})
+	m.handle(cw, inMsg{Type: "move", UCI: "f4e5"})
+	if n := len(m.game.History()); n != 5 {
+		t.Fatalf("the jester pawn didn't step: %d plies", n)
+	}
+	// A normal game drops the mod.
+	s := Settings{JesterPawns: true}
+	s.normalize()
+	if s.JesterPawns {
+		t.Error("normalize kept jester pawns in a ranked game")
+	}
+}

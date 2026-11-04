@@ -25,6 +25,8 @@ type Props = {
    * faintly; without it, all four the same.
    */
   center?: { you?: Color; live?: boolean }
+  /** Jester pawns: draw the pawns as jesters. */
+  jester?: boolean
   onMove: (from: string, to: string) => void
 }
 
@@ -65,6 +67,7 @@ export const Board = memo(function Board({
   unsafe,
   hill,
   center,
+  jester,
   onMove,
 }: Props) {
   const boardRef = useRef<HTMLDivElement>(null)
@@ -172,7 +175,7 @@ export const Board = memo(function Board({
         >
           {col === 0 && <span className="coord top-[4%] left-[5%]">{sq[1]}</span>}
           {row === 7 && <span className="coord right-[5%] bottom-[4%]">{sq[0]}</span>}
-          {piece && <img className="piece" src={pieceImg(piece)} alt={piece} draggable={false} />}
+          {piece && <img className="piece" src={pieceImg(piece, jester)} alt={piece} draggable={false} />}
         </div>,
       )
     }

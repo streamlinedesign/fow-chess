@@ -199,6 +199,7 @@ export function MatchPage({ id }: { id: string }) {
                   danger={predicting ? undefined : state?.danger}
                   unsafe={state?.unsafe}
                   hill={state?.settings.hill}
+                  jester={state?.settings.jesterPawns}
                   center={
                     state?.settings.centerVision
                       ? { you: you ?? undefined, live: !predicting && !!state.fullVision }
@@ -462,7 +463,10 @@ function PlayerBar({ color, state, you, active }: PlayerBarProps) {
       {active && !state?.clock && <span className="turn-tag">{t.common.toMove}</span>}
       <span className="ml-auto flex min-w-0 items-center gap-2">
         {seat?.taken && !seat.online && <span className="text-sm text-danger">{t.match.offline}</span>}
-        <Captured pieces={state?.captured[color] ?? ''} className="text-[clamp(16px,calc(var(--board)/30),22px)]" />
+        <Captured
+          pieces={state?.captured[color] ?? ''}
+          jester={state?.settings.jesterPawns}
+          className="text-[clamp(16px,calc(var(--board)/30),22px)]" />
         {state?.clock && (
           <Clock
             left={state.clock.left[color]}

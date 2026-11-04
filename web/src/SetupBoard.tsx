@@ -218,7 +218,7 @@ export function SetupBoard({
       if ('tray' in d.source) {
         if (!d.ghost) {
           d.ghost = document.createElement('img')
-          d.ghost.src = pieceImg(letter(d.source.tray))
+          d.ghost.src = pieceImg(letter(d.source.tray), settings.jesterPawns)
           d.ghost.className = 'drag-ghost'
           d.ghost.style.width = `${boardRef.current!.getBoundingClientRect().width / 8}px`
           document.body.append(d.ghost)
@@ -302,7 +302,7 @@ export function SetupBoard({
         >
           {col === 0 && <span className="coord top-[4%] left-[5%]">{sq[1]}</span>}
           {row === 7 && <span className="coord right-[5%] bottom-[4%]">{sq[0]}</span>}
-          {piece && <img className="piece" src={pieceImg(piece)} alt="" draggable={false} />}
+          {piece && <img className="piece" src={pieceImg(piece, settings.jesterPawns)} alt="" draggable={false} />}
         </button>,
       )
     }
@@ -343,7 +343,7 @@ export function SetupBoard({
               if (left[k] > 0) startDrag(e, { tray: k })
             }}
           >
-            <img src={pieceImg(letter(k))} alt="" draggable={false} />
+            <img src={pieceImg(letter(k), settings.jesterPawns)} alt="" draggable={false} />
             <span>{left[k]}</span>
           </button>
         ))}

@@ -19,6 +19,7 @@ function MiniBoard({
   dots,
   hill,
   danger,
+  jester,
 }: {
   fen: string
   seen?: string[]
@@ -26,6 +27,7 @@ function MiniBoard({
   dots?: string[]
   hill?: boolean
   danger?: string
+  jester?: boolean
 }) {
   const board = fenBoard(fen)
   const squares = []
@@ -42,11 +44,11 @@ function MiniBoard({
           data-light={light}
           data-fog={fog || undefined}
           data-last={(!fog && last?.includes(sq)) || undefined}
-          data-target={dots?.includes(sq) ? 'move' : undefined}
+          data-target={dots?.includes(sq) ? (piece === '.' ? 'move' : 'capture') : undefined}
           data-hill={hill && HILL.includes(sq)}
           data-danger={danger === sq}
         >
-          {piece !== '.' && !fog && <img className="piece" src={pieceImg(piece)} alt="" draggable={false} />}
+          {piece !== '.' && !fog && <img className="piece" src={pieceImg(piece, jester)} alt="" draggable={false} />}
         </div>,
       )
     }
@@ -132,6 +134,17 @@ export function Rules() {
         <Card id="backRow" art={<MiniBoard fen="8/8/8/8/8/8/PPPPPPPP/BNRKQRNB" seen={rows(2)} last={rows(1)} />} />
 
         <Card id="battleship" art={<MiniBoard fen="8/8/8/8/1P2N2P/P1R2Q1P/1PB1PPB1/P1RK1N2" seen={rows(4)} />} />
+
+        <Card
+          id="jester"
+          art={
+            <MiniBoard
+              fen="8/8/8/3n4/4P3/8/8/8"
+              jester
+              dots={['d3', 'e3', 'f3', 'd4', 'f4', 'd5', 'e5', 'f5']}
+            />
+          }
+        />
 
         <Card id="sniper" art={<MiniBoard fen="4k3/8/8/8/8/4R3/8/4K3" last={['e3', 'e8']} />} />
 

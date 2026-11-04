@@ -22,6 +22,8 @@ export type Settings = {
   jumpKing?: boolean
   /** Pawns can also step one square straight back, and see behind them. */
   backPawns?: boolean
+  /** Pawns can also step and take one square in any direction, like a king. */
+  jesterPawns?: boolean
   /** King of the Hill: a king on one of the four centre squares wins. */
   hill?: boolean
   /** Centre vision: a piece on the centre of the opponent's half shows you the whole board. Every game has 'any'; mods games may turn it off; 'pawn' is from early demo games. Must match centerVisions in server/view.go. */
@@ -149,6 +151,7 @@ export function loadSettings(mods = false): Settings {
       // The site plays one game; twists saved earlier are dropped.
       delete saved.jumpKing
       delete saved.backPawns
+      delete saved.jesterPawns
       delete saved.hill
       saved.centerVision = 'any'
       delete saved.mods
@@ -181,6 +184,7 @@ export function twists(s: Settings, d: Dict) {
     ...(s.hill ? [d.legacy.hill] : []),
     ...(s.jumpKing ? [d.legacy.jump] : []),
     ...(s.backPawns ? [d.legacy.backPawns] : []),
+    ...(s.jesterPawns ? [d.legacy.jesterPawns] : []),
     // Centre vision for any piece is the game; mods games can turn it off, and early demo games counted only pawns.
     ...(s.centerVision === 'pawn' ? [d.legacy.centerPawn] : s.mods && !s.centerVision ? [d.legacy.noCenter] : []),
   ]

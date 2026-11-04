@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"slices"
 	"strings"
 	"testing"
 )
@@ -423,5 +424,80 @@ func TestCenterVision(t *testing.T) {
 	pos := g.Position()
 	if got := visionString(pos.Vision(White)); got != all {
 		t.Errorf("after e5, White got %s", got)
+	}
+}
+
+func TestJesterPawns(t *testing.T) {
+	pawnMoves := func(g *Game, from Square) []string {
+		var out []string
+		for _, m := range g.LegalMoves() {
+			if m.From == from {
+				out = append(out, m.UCI())
+			}
+		}
+		slices.Sort(out)
+		return out
+	}
+	// From its starting square a jester pawn steps anywhere around it and still has the double step.
+	g, err := NewGameFromFEN("4k3/8/8/8/8/8/4P3/4K3 w - - 0 1", Rules{JesterPawns: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := strings.Join(pawnMoves(g, SquareAt(4, 1)), " "); got != "e2d1 e2d2 e2d3 e2e3 e2e4 e2f1 e2f2 e2f3" {
+		t.Errorf("from e2: %s", got)
+	}
+	// In the open it takes like a king, straight ahead and backward included, but never its own.
+	g, _ = NewGameFromFEN("4k3/8/8/3rn3/3pPN2/4b3/8/4K3 w - - 0 1", Rules{JesterPawns: true})
+	if got := strings.Join(pawnMoves(g, SquareAt(4, 3)), " "); got != "e4d3 e4d4 e4d5 e4e3 e4e5 e4f3 e4f5" {
+		t.Errorf("from e4: %s", got)
+	}
+	for _, m := range g.LegalMoves() {
+		if m.UCI() == "e4e5" && !m.Is(FlagCapture) {
+			t.Error("e4xe5 should be a capture")
+		}
+	}
+	// It attacks every square around it, so a king next to it is in check.
+	p, _ := ParseFEN("8/8/8/8/3kP3/8/8/4K3 b - - 0 1")
+	if p.InCheck() {
+		t.Error("a plain pawn beside the king gave check")
+	}
+	p.JesterPawns = true
+	if !p.InCheck() {
+		t.Error("a jester pawn beside the king should give check")
+	}
+	// Reaching the last rank by any step promotes, and en passant still works.
+	g, _ = NewGameFromFEN("4k3/1P6/8/8/8/8/8/4K3 w - - 0 1", Rules{JesterPawns: true, KingCapture: true})
+	if _, err := g.PlayUCI("b7a8n"); err != nil {
+		t.Fatalf("promote on a diagonal step: %v", err)
+	}
+	if san := g.History()[0].SAN; san != "ba8=N" {
+		t.Errorf("SAN %q, want ba8=N", san)
+	}
+	g, _ = NewGameFromFEN("4k3/3p4/8/4P3/8/8/8/4K3 b - - 0 1", Rules{JesterPawns: true})
+	g.PlayUCI("d7d5")
+	if _, err := g.PlayUCI("e5d6"); err != nil || g.History()[1].Captured.Kind() != Pawn {
+		t.Errorf("en passant: %v", err)
+	}
+	// Sideways and backward steps are written with the file they left, and a
+	// square two pawns could reach names the pawn.
+	g, _ = NewGameFromFEN("4k3/8/8/8/3P4/8/4P3/4K3 w - - 0 1", Rules{JesterPawns: true})
+	for _, c := range []struct{ uci, san string }{{"d4e4", "de4"}, {"e8d8", "Kd8"}, {"e2e3", "2e3"}} {
+		if _, err := g.PlayUCI(c.uci); err != nil {
+			t.Fatalf("%s: %v", c.uci, err)
+		}
+		if san := g.History()[len(g.History())-1].SAN; san != c.san {
+			t.Errorf("%s: SAN %q, want %q", c.uci, san, c.san)
+		}
+	}
+	// Jester pawns see every square around them.
+	p, _ = ParseFEN("4k3/8/8/8/3P4/8/8/K7 w - - 0 1")
+	p.JesterPawns = true
+	if got := visionString(p.Vision(White)); got != "......../......../......../..xxx.../..xxx.../..xxx.../xx....../xx......" {
+		t.Errorf("vision\n got %s", got)
+	}
+	// Without the rule a pawn still can't step sideways.
+	plain, _ := NewGameFromFEN("4k3/8/8/8/8/8/4P3/4K3 w - - 0 1")
+	if _, err := plain.PlayUCI("e2d2"); err == nil {
+		t.Error("a normal pawn stepped sideways")
 	}
 }

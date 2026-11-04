@@ -170,6 +170,7 @@ export const hr: Dict = {
     fullBoard: 'Bez magle: vidi se cijela ploča.',
     hill: 'Ili dovedi kralja na jedno od uokvirenih središnjih polja.',
     center: 'Stavi bilo koju figuru na uokvireno polje u njihovoj polovici i vidjet ćeš cijelu ploču.',
+    jester: 'Pješaci su lakrdijaši: kreću se i uzimaju jedno polje u bilo kojem smjeru, kao kralj.',
     standard: 'Figure počinju kao u šahu.',
     backRow: 'Prvo rasporedi svoj zadnji red.',
     battleship: 'Prvo postavi sve figure bilo gdje u uokvirenim redovima.',
@@ -191,6 +192,7 @@ export const hr: Dict = {
     twists: 'Začini',
     jumpHint: 'Tvoj kralj može skakati i kao skakač.',
     backPawnsHint: 'Pješaci mogu i jedno polje natrag, i vide iza sebe.',
+    jesterPawnsHint: 'Pješaci se kreću i uzimaju i jedno polje u bilo kojem smjeru, kao kralj. Zadržavaju dvostruki prvi korak, en passant i promociju.',
     center: 'Pogled iz centra',
     centerHint: 'Bilo koja figura na d5 ili e5 (d4 ili e4 za crnog) pokazuje ti cijelu ploču dok god stoji tamo. Uključeno u svakoj običnoj partiji.',
     modsNote: 'Partije s modovima nikad nisu rangirane.',
@@ -209,6 +211,7 @@ export const hr: Dict = {
     hill: 'Kralj brda',
     jump: 'Jump King',
     backPawns: 'Pješaci unatrag',
+    jesterPawns: 'Pješaci lakrdijaši',
     centerPawn: 'Pogled iz centra (pješaci)',
     noCenter: 'Bez pogleda iz centra',
   },
@@ -404,6 +407,14 @@ export const hr: Dict = {
         p: [
           'Kad sam raspoređuješ figure, kralj može početi u opasnosti. Ništa to ne sprječava: dio je igre. Ako pobijediš **već prvim potezom**, to je **snajperska pobjeda**.',
           'I dalje se računa, ali oba rejtinga pomiče samo četvrtinu onoga što bi cijela partija.',
+        ],
+      },
+      jester: {
+        kind: 'Mod',
+        title: 'Pješaci lakrdijaši',
+        p: [
+          'Na stranici **modova** pješaci mogu postati lakrdijaši. Lakrdijaš se **kreće jedno polje u bilo kojem smjeru, kao kralj**, i **uzima na svakom od tih polja**, ravno naprijed i unatrag također.',
+          'Ostalo je i dalje pješak: **dvostruki korak** s početnog polja, **en passant** i **promocija** na zadnjem redu. Vidi sva polja oko sebe, a lakrdijaš do kralja ga napada.',
         ],
       },
       clocks: {

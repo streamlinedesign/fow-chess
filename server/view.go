@@ -24,6 +24,8 @@ type Settings struct {
 	JumpKing bool `json:"jumpKing,omitempty"`
 	// BackPawns lets pawns also step one square straight back, and see behind them.
 	BackPawns bool `json:"backPawns,omitempty"`
+	// JesterPawns lets pawns also step and take one square in any direction, like a king.
+	JesterPawns bool `json:"jesterPawns,omitempty"`
 	// Hill is King of the Hill: a king on one of the four centre squares wins.
 	Hill bool `json:"hill,omitempty"`
 	// CenterVision gives the whole board to a player with a piece on the
@@ -50,7 +52,7 @@ const demoBot = bots.Ramesses
 
 func (s Settings) rules() engine.Rules {
 	return engine.Rules{KingCapture: s.KingCapture, JumpKing: s.JumpKing, BackPawns: s.BackPawns, Hill: s.Hill,
-		CenterVision: centerVisions[s.CenterVision]}
+		CenterVision: centerVisions[s.CenterVision], JesterPawns: s.JesterPawns}
 }
 
 // centerVisions are the CenterVision settings.
@@ -80,7 +82,7 @@ func (s *Settings) normalize() {
 		return
 	}
 	s.Fog, s.KingCapture, s.CenterVision = true, true, "any"
-	s.JumpKing, s.BackPawns, s.Hill = false, false, false
+	s.JumpKing, s.BackPawns, s.JesterPawns, s.Hill = false, false, false, false
 }
 
 // startFrom is the FEN a game starts from: the usual position, or the players' setups.
