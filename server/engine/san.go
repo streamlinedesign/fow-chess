@@ -16,9 +16,26 @@ func (p *Position) SAN(m Move) string {
 			b.WriteString("O-O-O")
 		}
 	case pc.Kind() == Pawn:
-		if m.Is(FlagCapture) {
-			b.WriteByte('a' + byte(m.From.File()))
+		// Plain pawns never need more than the file of a capture. Pawns that
+		// step back or sideways can reach a square from more than one side.
+		d := ""
+		if p.JesterPawns || p.BackPawns {
+			d = p.disambiguation(m, pc)
+		}
+		file := string('a' + byte(m.From.File()))
+		switch {
+		case m.Is(FlagCapture):
+			b.WriteString(file)
+			if d != "" && d != file {
+				// Another pawn on the same file can take there too.
+				b.WriteByte('1' + byte(m.From.Rank()))
+			}
 			b.WriteByte('x')
+		case d != "":
+			b.WriteString(d)
+		case m.From.File() != m.To.File():
+			// A jester pawn's step off its file names the file it left, like a capture.
+			b.WriteString(file)
 		}
 		b.WriteString(m.To.String())
 		if m.Promo != NoKind {

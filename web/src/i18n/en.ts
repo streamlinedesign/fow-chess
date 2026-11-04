@@ -170,6 +170,7 @@ export const en = {
     fullBoard: 'No fog: the whole board is in view.',
     hill: 'Or walk your king onto one of the ringed centre squares.',
     center: 'Put any piece on a ringed square in their half to see the whole board.',
+    jester: 'Pawns are jesters: they step and take one square any way, like a king.',
     standard: 'The pieces start as in chess.',
     backRow: 'Arrange your back row first.',
     battleship: 'Place every piece anywhere in the ringed rows first.',
@@ -191,6 +192,7 @@ export const en = {
     twists: 'Twists',
     jumpHint: 'Your king can also jump like a knight.',
     backPawnsHint: 'Pawns can also step one square back, and see behind them.',
+    jesterPawnsHint: 'Pawns also step and take one square any way, like a king. They keep the double first step, en passant and promotion.',
     center: 'Centre vision',
     centerHint: 'Any piece on d5 or e5 (d4 or e4 for Black) shows you the whole board while it stays there. On in every normal game.',
     modsNote: 'Mods games are never ranked.',
@@ -209,6 +211,7 @@ export const en = {
     hill: 'King of the Hill',
     jump: 'Jump King',
     backPawns: 'Backward pawns',
+    jesterPawns: 'Jester pawns',
     centerPawn: 'Centre vision (pawns)',
     noCenter: 'No centre vision',
   },
@@ -405,6 +408,14 @@ export const en = {
         p: [
           "When you set up your own pieces, a king can start in danger. Nothing stops that: it's part of the game. If you win **on your very first move**, that's a **Sniper Win**.",
           'It still counts, but it moves both ratings only a quarter as far as a whole game.',
+        ],
+      },
+      jester: {
+        kind: 'Mod',
+        title: 'Jester pawns',
+        p: [
+          'On the **mods** page, pawns can become jesters. A jester **steps one square any way, like a king**, and **takes on any of those squares**, straight ahead and backward included.',
+          'The rest is still a pawn: the **double step** from its starting square, **en passant**, and **promotion** on the last rank. It sees every square around it, and a jester next to a king attacks it.',
         ],
       },
       clocks: {

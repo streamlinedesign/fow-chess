@@ -78,6 +78,8 @@ type Rules struct {
 	JumpKing bool
 	// BackPawns lets pawns also step one square straight back.
 	BackPawns bool
+	// JesterPawns lets pawns also step one square in any direction, like a king.
+	JesterPawns bool
 	// Hill is King of the Hill: a king on one of the four centre squares wins.
 	Hill bool
 	// CenterVision gives the whole board to a player holding an outpost (see
@@ -98,7 +100,7 @@ func NewGameFromFEN(fen string, rules ...Rules) (*Game, error) {
 	if len(rules) > 0 {
 		r := rules[0]
 		pos.KingCapture, pos.JumpKing, pos.BackPawns, pos.Hill = r.KingCapture, r.JumpKing, r.BackPawns, r.Hill
-		pos.CenterVision = r.CenterVision
+		pos.CenterVision, pos.JesterPawns = r.CenterVision, r.JesterPawns
 	}
 	g := &Game{pos: pos, seen: map[string]int{}, start: fen}
 	g.seen[pos.repetitionKey()] = 1

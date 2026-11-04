@@ -25,6 +25,14 @@ func (p *Position) Attacked(sq Square, by Color) bool {
 			return true
 		}
 	}
+	// A jester pawn attacks every square around it, like a king.
+	if p.JesterPawns {
+		for _, d := range kingDeltas {
+			if s, ok := sq.Offset(d.df, d.dr); ok && p.Board[s] == NewPiece(by, Pawn) {
+				return true
+			}
+		}
+	}
 	for _, d := range knightDeltas {
 		if s, ok := sq.Offset(d.df, d.dr); ok && p.Board[s] == NewPiece(by, Knight) {
 			return true
@@ -161,18 +169,18 @@ func (p *Position) appendPawnMoves(moves []Move, from Square, us Color) []Move {
 		moves = append(moves, m)
 	}
 
-	if one, ok := from.Offset(0, dir); ok && p.Board[one].IsEmpty() {
-		add(Move{From: from, To: one})
-		if from.Rank() == startRank {
-			if two, _ := one.Offset(0, dir); p.Board[two].IsEmpty() {
-				moves = append(moves, Move{From: from, To: two, Flags: FlagDoublePush})
+	if one, ok := from.Offset(0, dir); ok {
+		switch target := p.Board[one]; {
+		case target.IsEmpty():
+			add(Move{From: from, To: one})
+			if from.Rank() == startRank {
+				if two, _ := one.Offset(0, dir); p.Board[two].IsEmpty() {
+					moves = append(moves, Move{From: from, To: two, Flags: FlagDoublePush})
+				}
 			}
-		}
-	}
-	// A backward step never captures and never promotes.
-	if p.BackPawns {
-		if back, ok := from.Offset(0, -dir); ok && p.Board[back].IsEmpty() {
-			moves = append(moves, Move{From: from, To: back})
+		case p.JesterPawns && target.Color() != us:
+			// A jester pawn takes like a king, straight ahead too.
+			add(Move{From: from, To: one, Flags: FlagCapture})
 		}
 	}
 
@@ -185,6 +193,20 @@ func (p *Position) appendPawnMoves(moves []Move, from Square, us Color) []Move {
 			add(Move{From: from, To: to, Flags: FlagCapture})
 		} else if to == p.EP && us == p.Turn && target.IsEmpty() {
 			moves = append(moves, Move{From: from, To: to, Flags: FlagCapture | FlagEnPassant})
+		} else if p.JesterPawns && target.IsEmpty() {
+			add(Move{From: from, To: to})
+		}
+	}
+
+	// A jester pawn also steps sideways and back, like a king, and takes there
+	// too. These steps never reach the last rank, so they never promote.
+	if p.JesterPawns {
+		return p.appendSteps(moves, from, us, []delta{{-1, 0}, {1, 0}, {-1, -dir}, {0, -dir}, {1, -dir}})
+	}
+	// A backward step never captures and never promotes.
+	if p.BackPawns {
+		if back, ok := from.Offset(0, -dir); ok && p.Board[back].IsEmpty() {
+			moves = append(moves, Move{From: from, To: back})
 		}
 	}
 	return moves

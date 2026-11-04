@@ -112,6 +112,12 @@ export function SettingsPanel({
               onChange={(backPawns) => onChange({ ...value, backPawns })}
             />
             <Toggle
+              label={t.legacy.jesterPawns}
+              hint={t.panel.jesterPawnsHint}
+              checked={!!value.jesterPawns}
+              onChange={(jesterPawns) => onChange({ ...value, jesterPawns })}
+            />
+            <Toggle
               label={t.panel.center}
               hint={t.panel.centerHint}
               checked={!!value.centerVision}

@@ -6,7 +6,8 @@ package engine
 // square straight ahead, even when blocked, and on its starting rank the square
 // after that too, even when it couldn't step there. It sees its diagonals only
 // when it can capture there. When pawns can step back, they see the square
-// straight behind them the same way.
+// straight behind them the same way. Jester pawns step and take in every
+// direction, so they see every square around them.
 //
 // With CenterVision, a player holding an outpost sees the whole board.
 func (p *Position) Vision(c Color) [64]bool {

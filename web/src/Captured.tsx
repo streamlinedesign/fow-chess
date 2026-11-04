@@ -2,7 +2,16 @@ import { useT } from './i18n'
 import { pieceImg } from './position'
 
 /** The pieces one side has taken, as FEN letters (most valuable first), drawn as overlapping icons. */
-export function Captured({ pieces, className = '' }: { pieces: string; className?: string }) {
+export function Captured({
+  pieces,
+  jester,
+  className = '',
+}: {
+  pieces: string
+  /** Jester pawns: draw the pawns as jesters. */
+  jester?: boolean
+  className?: string
+}) {
   const t = useT()
   if (!pieces) return null
   const groups: string[][] = []
@@ -18,7 +27,7 @@ export function Captured({ pieces, className = '' }: { pieces: string; className
           {g.map((p, j) => (
             <img
               key={j}
-              src={pieceImg(p)}
+              src={pieceImg(p, jester)}
               alt={p}
               draggable={false}
               className="captured-piece size-[1.15em] first:ml-0 -ml-[0.6em]"
