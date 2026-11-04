@@ -9,7 +9,7 @@
 ## Next
 
 - Copy the jester pawns engine change into `chess-bots` (or extract the engine module first)
-- Review the jester pawn artwork (draft, `web/src/pieces/wJ.svg`, `bJ.svg`)
+- Review the mod artwork: jester pawn (`wJ`/`bJ`) and jump king (`wX`/`bX`) in `web/src/pieces/`
 - Adopt the Streamline design system (typeface, tokens) in place of Geist/Tailwind defaults
 
 - Extract `server/engine` into a Go module so `chess-bots` stops carrying a copy

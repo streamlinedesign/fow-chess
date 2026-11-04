@@ -44,7 +44,7 @@ export function SettingsBoard({
         >
           {col === 0 && <span className="coord top-[4%] left-[5%]">{sq[1]}</span>}
           {row === 7 && <span className="coord right-[5%] bottom-[4%]">{sq[0]}</span>}
-          {piece && <img className="piece" src={pieceImg(piece, settings.jesterPawns)} alt="" draggable={false} />}
+          {piece && <img className="piece" src={pieceImg(piece, settings)} alt="" draggable={false} />}
         </div>,
       )
     }

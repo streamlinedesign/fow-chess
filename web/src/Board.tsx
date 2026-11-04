@@ -1,5 +1,5 @@
 import { memo, useRef, useState } from 'react'
-import { pieceAt, pieceImg, squareIndex } from './position'
+import { pieceAt, pieceImg, squareIndex, type Look } from './position'
 import { HILL, OUTPOSTS } from './settings'
 import type { Color } from './useMatch'
 
@@ -25,8 +25,8 @@ type Props = {
    * faintly; without it, all four the same.
    */
   center?: { you?: Color; live?: boolean }
-  /** Jester pawns: draw the pawns as jesters. */
-  jester?: boolean
+  /** The mods that change how pieces are drawn. */
+  look?: Look
   onMove: (from: string, to: string) => void
 }
 
@@ -67,7 +67,7 @@ export const Board = memo(function Board({
   unsafe,
   hill,
   center,
-  jester,
+  look,
   onMove,
 }: Props) {
   const boardRef = useRef<HTMLDivElement>(null)
@@ -175,7 +175,7 @@ export const Board = memo(function Board({
         >
           {col === 0 && <span className="coord top-[4%] left-[5%]">{sq[1]}</span>}
           {row === 7 && <span className="coord right-[5%] bottom-[4%]">{sq[0]}</span>}
-          {piece && <img className="piece" src={pieceImg(piece, jester)} alt={piece} draggable={false} />}
+          {piece && <img className="piece" src={pieceImg(piece, look)} alt={piece} draggable={false} />}
         </div>,
       )
     }

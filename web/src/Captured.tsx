@@ -1,15 +1,15 @@
 import { useT } from './i18n'
-import { pieceImg } from './position'
+import { pieceImg, type Look } from './position'
 
 /** The pieces one side has taken, as FEN letters (most valuable first), drawn as overlapping icons. */
 export function Captured({
   pieces,
-  jester,
+  look,
   className = '',
 }: {
   pieces: string
-  /** Jester pawns: draw the pawns as jesters. */
-  jester?: boolean
+  /** The mods that change how pieces are drawn. */
+  look?: Look
   className?: string
 }) {
   const t = useT()
@@ -27,7 +27,7 @@ export function Captured({
           {g.map((p, j) => (
             <img
               key={j}
-              src={pieceImg(p, jester)}
+              src={pieceImg(p, look)}
               alt={p}
               draggable={false}
               className="captured-piece size-[1.15em] first:ml-0 -ml-[0.6em]"

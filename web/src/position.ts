@@ -11,7 +11,7 @@ export function pieceAt(board: string, sq: string): string | null {
   return c === '.' || c === '?' || c === undefined ? null : c
 }
 
-export { pieceImg } from './pieces'
+export { pieceImg, type Look } from './pieces'
 
 /**
  * Plays a move on the board for display only, so our own move shows instantly
