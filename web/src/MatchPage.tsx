@@ -199,7 +199,7 @@ export function MatchPage({ id }: { id: string }) {
                   danger={predicting ? undefined : state?.danger}
                   unsafe={state?.unsafe}
                   hill={state?.settings.hill}
-                  jester={state?.settings.jesterPawns}
+                  look={state?.settings}
                   center={
                     state?.settings.centerVision
                       ? { you: you ?? undefined, live: !predicting && !!state.fullVision }
@@ -465,7 +465,7 @@ function PlayerBar({ color, state, you, active }: PlayerBarProps) {
         {seat?.taken && !seat.online && <span className="text-sm text-danger">{t.match.offline}</span>}
         <Captured
           pieces={state?.captured[color] ?? ''}
-          jester={state?.settings.jesterPawns}
+          look={state?.settings}
           className="text-[clamp(16px,calc(var(--board)/30),22px)]" />
         {state?.clock && (
           <Clock

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { rich, useT, type Dict } from './i18n'
-import { pieceImg } from './position'
+import { pieceImg, type Look } from './position'
 import { HILL } from './settings'
 
 /** A FEN board as 64 characters from a1 to h8, the way the server sends boards. */
@@ -19,7 +19,7 @@ function MiniBoard({
   dots,
   hill,
   danger,
-  jester,
+  look,
 }: {
   fen: string
   seen?: string[]
@@ -27,7 +27,7 @@ function MiniBoard({
   dots?: string[]
   hill?: boolean
   danger?: string
-  jester?: boolean
+  look?: Look
 }) {
   const board = fenBoard(fen)
   const squares = []
@@ -48,7 +48,7 @@ function MiniBoard({
           data-hill={hill && HILL.includes(sq)}
           data-danger={danger === sq}
         >
-          {piece !== '.' && !fog && <img className="piece" src={pieceImg(piece, jester)} alt="" draggable={false} />}
+          {piece !== '.' && !fog && <img className="piece" src={pieceImg(piece, look)} alt="" draggable={false} />}
         </div>,
       )
     }
@@ -140,7 +140,7 @@ export function Rules() {
           art={
             <MiniBoard
               fen="8/8/8/3n4/4P3/8/8/8"
-              jester
+              look={{ jesterPawns: true }}
               dots={['d3', 'e3', 'f3', 'd4', 'f4', 'd5', 'e5', 'f5']}
             />
           }

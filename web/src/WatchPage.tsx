@@ -3,7 +3,7 @@ import { Avatar } from './Avatar'
 import { useT } from './i18n'
 import { Page, PageHead } from './Page'
 import { Icon } from './icons'
-import { pieceImg } from './position'
+import { pieceImg, type Look } from './position'
 import { navigate } from './router'
 import { describeTime, modeName, NO_CLOCK, type Settings } from './settings'
 import { api } from './social'
@@ -116,7 +116,7 @@ export function GameCard({ g }: { g: LiveGame }) {
         <b>{modeName(g.settings, t)}</b>
         <span>{describeTime(g.settings.time ?? NO_CLOCK, t)}</span>
       </div>
-      <MiniBoard board={g.board} jester={g.settings.jesterPawns} />
+      <MiniBoard board={g.board} look={g.settings} />
       <div className="flex flex-col gap-1.5">
         <Seat color="b" g={g} />
         <Seat color="w" g={g} />
@@ -152,14 +152,14 @@ function Seat({ color, g }: { color: Color; g: LiveGame }) {
 }
 
 /** A small board from White's side, with fog where that view has it. */
-export function MiniBoard({ board, jester }: { board: string; jester?: boolean }) {
+export function MiniBoard({ board, look }: { board: string; look?: Look }) {
   const squares = []
   for (let row = 7; row >= 0; row--) {
     for (let col = 0; col < 8; col++) {
       const c = board[row * 8 + col]
       squares.push(
         <span key={row * 8 + col} className="sq" data-light={(row + col) % 2 === 1} data-fog={c === '?'}>
-          {c !== '.' && c !== '?' && <img className="piece" src={pieceImg(c, jester)} alt="" draggable={false} />}
+          {c !== '.' && c !== '?' && <img className="piece" src={pieceImg(c, look)} alt="" draggable={false} />}
         </span>,
       )
     }
