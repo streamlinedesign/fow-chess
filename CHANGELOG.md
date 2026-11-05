@@ -4,6 +4,8 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Four players: Back row and Battleship layouts. Everyone arranges their own three rows at the same time without seeing anyone else's, and the clock starts once all four are ready. Bots shuffle their back row.
+- Four players: Sync Move. Everyone sends a move each round without seeing the others', then all the moves happen at once. Pieces leave their squares first and captures come last, so a piece that moves away dodges, two pieces can swap squares, and pieces that land on the same square knock each other out. You can change your move until the round is played. All clocks run at once; yours stops when you send.
 - Mods page: Current setup is part of the Mods section, without a box. The clock picker is the home page's: Short or Long (or No clock on the mods page), then three presets. The extra Bullet, Blitz, Rapid and Classical mods clocks are no longer offered.
 - Mods page: what the settings mean is in a Current setup card above the settings, not under the board.
 - Bot faces: Rex inutilis is a jester pawn, Ramesses II a prince, Solomon a king.

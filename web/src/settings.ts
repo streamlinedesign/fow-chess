@@ -28,6 +28,8 @@ export type Settings = {
   hill?: boolean
   /** Centre vision: a piece on the centre of the opponent's half shows you the whole board. Every game has 'any'; mods games may turn it off; 'pawn' is from early demo games. Must match centerVisions in server/view.go. */
   centerVision?: CenterVision
+  /** Four players only: Sync Move, everyone moves at once each round. */
+  sync?: boolean
   /** Never ranked: set by the server for bot and mods games. Players can't ask for it. */
   unrated?: boolean
   /** From the mods page: any option, any clock, never ranked. */
@@ -154,6 +156,7 @@ export function loadSettings(mods = false): Settings {
       delete saved.backPawns
       delete saved.jesterPawns
       delete saved.hill
+      delete saved.sync
       saved.centerVision = 'any'
       delete saved.mods
       delete saved.bot

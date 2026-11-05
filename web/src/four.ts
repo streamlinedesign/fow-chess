@@ -48,6 +48,20 @@ export function cellFor(x: number, y: number, seat: Seat) {
   }
 }
 
+/** seat's square at file f (0 to 7, from that player's left) and rank r (0 is their back row). Must match cell in server/four. */
+export function ownCell(seat: Seat, f: number, r: number): [number, number] {
+  switch (seat) {
+    case 'r':
+      return [3 + f, r]
+    case 'b':
+      return [r, 10 - f]
+    case 'g':
+      return [10 - f, SIZE - 1 - r]
+    case 'v':
+      return [SIZE - 1 - r, 3 + f]
+  }
+}
+
 /** The seats in the order they sit round the board for the viewer: bottom, left, top, right. */
 export function aroundFrom(seat: Seat): Seat[] {
   const i = SEATS.indexOf(seat)

@@ -2,7 +2,7 @@ import * as RadioGroup from '@radix-ui/react-radio-group'
 import * as Switch from '@radix-ui/react-switch'
 import { useId, useState } from 'react'
 import type { ReactNode } from 'react'
-import { useT } from './i18n'
+import { useT, type Dict } from './i18n'
 import {
   clocked,
   describeTime,
@@ -34,7 +34,7 @@ export function SettingsPanel({
   value: Settings
   onChange: (s: Settings) => void
   className?: string
-  /** A four-player game: always Eat the King, no setup modes. */
+  /** A four-player game: always Eat the King, and Sync Move is on offer. */
   four?: boolean
   /** Offers the choice of two or four players (the mods page). */
   onFour?: (four: boolean) => void
@@ -49,7 +49,7 @@ export function SettingsPanel({
       <div className="flex items-center justify-between gap-3 border-b border-border bg-muted px-4 py-3 text-[13px] sm:px-5">
         <span className="shrink-0 text-sm font-semibold whitespace-nowrap">{mods ? t.common.mods : t.panel.title}</span>
         <span className="truncate text-accent">
-          {[four ? t.four.four : modeName(value, t), describeTime(value.time, t)].join(' · ')}
+          {[four ? fourName(value, t) : modeName(value, t), describeTime(value.time, t)].join(' · ')}
         </span>
       </div>
 
@@ -102,35 +102,41 @@ export function SettingsPanel({
             </>
           )}
 
-          {!four && (
-            <Group id={`${id}-mode`} label={t.panel.mode}>
-              <RadioGroup.Root
-                aria-labelledby={`${id}-mode`}
-                value={setupMode(value).value || 'standard'}
-                onValueChange={(v) =>
-                  onChange({
-                    ...value,
-                    setup: v === 'standard' ? '' : (v as Settings['setup']),
-                  })
-                }
-                className="grid gap-2.5 @md:grid-cols-3"
-              >
-                {SETUPS.map((m) => (
-                  <Choice
-                    key={m.value}
-                    value={m.value || 'standard'}
-                    label={t.setups[m.value].label}
-                    hint={t.setups[m.value].hint}
-                  />
-                ))}
-              </RadioGroup.Root>
-            </Group>
-          )}
+          <Group id={`${id}-mode`} label={t.panel.mode}>
+            <RadioGroup.Root
+              aria-labelledby={`${id}-mode`}
+              value={setupMode(value).value || 'standard'}
+              onValueChange={(v) =>
+                onChange({
+                  ...value,
+                  setup: v === 'standard' ? '' : (v as Settings['setup']),
+                })
+              }
+              className="grid gap-2.5 @md:grid-cols-3"
+            >
+              {SETUPS.map((m) => (
+                <Choice
+                  key={m.value}
+                  value={m.value || 'standard'}
+                  label={t.setups[m.value].label}
+                  hint={four && m.value === 'battleship' ? t.four.battleshipHint : t.setups[m.value].hint}
+                />
+              ))}
+            </RadioGroup.Root>
+          </Group>
         </div>
 
         <div className="@container flex min-w-0 flex-col gap-6">
           {mods && (
             <Group id={`${id}-twists`} label={t.panel.twists}>
+              {four && (
+                <Toggle
+                  label={t.four.sync}
+                  hint={t.four.syncHint}
+                  checked={!!value.sync}
+                  onChange={(sync) => onChange({ ...value, sync })}
+                />
+              )}
               <Toggle
                 label={t.legacy.jump}
                 hint={t.panel.jumpHint}
@@ -170,6 +176,12 @@ export function SettingsPanel({
       </div>
     </fieldset>
   )
+}
+
+/** A four-player game's name: Four players, and its setup and Sync Move when they're on. */
+export function fourName(s: Settings, t: Dict) {
+  const setup = setupMode(s).value
+  return [t.four.four, ...(setup ? [t.setups[setup].label] : []), ...(s.sync ? [t.four.sync] : [])].join(' · ')
 }
 
 /** Clocks split by how long a game takes, the same way as on the home page: Short is Blitz and Rapid, Long the rest. */

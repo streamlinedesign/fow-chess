@@ -5,9 +5,9 @@ import { useT } from './i18n'
 import { Page } from './Page'
 import { playerId } from './player'
 import { navigate } from './router'
-import { describeTime, loadSettings, modeName, saveSettings, type Settings } from './settings'
+import { describeTime, loadSettings, modeName, saveSettings, setupMode, type Settings } from './settings'
 import { SettingsBoard, setupNotes } from './SettingsBoard'
-import { SettingsPanel } from './SettingsPanel'
+import { fourName, SettingsPanel } from './SettingsPanel'
 import { Button } from './ui'
 
 /** The game with every dial exposed, laid out like the home page: the board at the left, the dials at the right. Mods games are never ranked. */
@@ -36,7 +36,7 @@ export function ModsPage() {
     try {
       saveSettings(settings)
       if (four) {
-        const { fog, time, jumpKing, backPawns, jesterPawns, hill, centerVision } = settings
+        const { fog, time, jumpKing, backPawns, jesterPawns, hill, centerVision, setup, sync } = settings
         const body = {
           fog,
           time,
@@ -45,6 +45,8 @@ export function ModsPage() {
           jesterPawns,
           hill,
           centerVision,
+          setup,
+          sync,
         }
         const res = await fetch(`/api/four?player=${playerId}`, {
           method: 'POST',
@@ -55,7 +57,8 @@ export function ModsPage() {
         navigate(`/f/${id}`)
         return
       }
-      const body = { ...settings, mods: true, unrated: true }
+      const { sync: _, ...two } = settings
+      const body = { ...two, mods: true, unrated: true }
       const res = await fetch(`/api/matches?player=${playerId}`, {
         method: 'POST',
         body: JSON.stringify(body),
@@ -94,7 +97,7 @@ export function ModsPage() {
           </section>
           <section className="flex flex-col gap-2.5">
             <p className="home-summary">
-              <b>{four ? t.four.four : modeName(settings, t)}</b> · {describeTime(settings.time, t)}
+              <b>{four ? fourName(settings, t) : modeName(settings, t)}</b> · {describeTime(settings.time, t)}
               <span className="block">{t.panel.modsNote}</span>
             </p>
             <Button variant="solid" className="home-play" onClick={create} loading={busy} disabled={busy}>
@@ -115,12 +118,20 @@ export function ModsPage() {
 /** What the board beside it shows, in words: the game picked and what each setting means at the start. */
 function CurrentSetup({ settings, four }: { settings: Settings; four: boolean }) {
   const t = useT()
-  const notes = four ? [t.four.preview, ...(settings.fog ? [t.four.previewFog] : [])] : setupNotes(settings, t)
+  const setup = setupMode(settings).value
+  const notes = four
+    ? [
+        t.four.preview,
+        ...(settings.fog ? [t.four.previewFog] : []),
+        ...(setup ? [setup === 'backRow' ? t.four.previewBackRow : t.four.previewBattleship] : []),
+        ...(settings.sync ? [t.four.previewSync] : []),
+      ]
+    : setupNotes(settings, t)
   return (
     <div className="setup-now">
       <h2 className="text-lg font-semibold tracking-tight">{t.mods.currentSetup}</h2>
       <p className="mt-0.5 text-sm font-medium">
-        {four ? t.four.four : modeName(settings, t)} · {describeTime(settings.time, t)}
+        {four ? fourName(settings, t) : modeName(settings, t)} · {describeTime(settings.time, t)}
       </p>
       <ul className="setup-notes">
         {notes.map((n) => (
