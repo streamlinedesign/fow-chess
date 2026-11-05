@@ -1,9 +1,10 @@
 import * as Switch from '@radix-ui/react-switch'
 import { useEffect, useState } from 'react'
 import { logout, refreshMe, useMe } from './auth'
-import { SignInFirst } from './FriendsPage'
+import { go } from './ProfilePage'
 import { LANGS, setLang, useLang, useT } from './i18n'
 import { Page, PageHead } from './Page'
+import { PiecesSettings } from './PiecesSettings'
 import { navigate } from './router'
 import { api } from './social'
 import { setThemeMode, themeMode, type ThemeMode } from './theme'
@@ -15,9 +16,9 @@ type Privacy = {
   requestsFrom: 'anyone' | 'nobody'
 }
 
-const SECTIONS = ['look', 'account', 'privacy'] as const
+const SECTIONS = ['look', 'pieces', 'account', 'privacy'] as const
 
-/** Your look, account and privacy. Changes save as you make them. */
+/** Your look, pieces, account and privacy. Changes save as you make them. Guests get the first two. */
 export function SettingsPage() {
   const me = useMe()
   const t = useT()
@@ -33,8 +34,14 @@ export function SettingsPage() {
         .catch(() => {})
   }, [me?.username])
 
-  if (me === null) return <SignInFirst what={t.friends.whatSettings} />
-  if (!me) return null
+  // A link to a section, like the home board's Pieces, scrolls to it.
+  const ready = me !== undefined
+  useEffect(() => {
+    if (ready && location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView()
+  }, [ready])
+
+  if (me === undefined) return null
+  const sections = me ? SECTIONS : SECTIONS.slice(0, 2)
 
   const savePrivacy = async (p: Privacy) => {
     setPrivacy(p)
@@ -60,7 +67,7 @@ export function SettingsPage() {
       <div className="home-row">
         <div className="home-cell set-grid">
           <nav className="set-nav" aria-label={t.account.sections}>
-            {SECTIONS.map((id) => (
+            {sections.map((id) => (
               <a
                 key={id}
                 href={`#s-${id}`}
@@ -69,7 +76,7 @@ export function SettingsPage() {
                   document.getElementById(`s-${id}`)?.scrollIntoView({ behavior: 'smooth' })
                 }}
               >
-                {t.account[id]}
+                {id === 'pieces' ? t.pieces.link : t.account[id]}
               </a>
             ))}
           </nav>
@@ -109,95 +116,112 @@ export function SettingsPage() {
               </div>
             </section>
 
-            <section className="set-sec" id="s-account">
-              <h2>{t.account.account}</h2>
-              <div className="set-row">
-                <div className="row-l">
-                  <b>{t.auth.username}</b>
-                  <span>{t.account.usernameFixed}</span>
-                </div>
-                <span className="font-mono text-[15px]">{me.username}</span>
-              </div>
-              <PasswordForm />
-              <div className="set-row">
-                <div className="row-l">
-                  <b>{t.account.logOutEverywhere}</b>
-                  <span>{t.account.logOutEverywhereHint}</span>
-                </div>
-                <Button
-                  className="h-9 px-3.5 text-sm"
-                  onClick={async () => {
-                    await api('POST', '/api/logout-everywhere').catch(() => {})
-                    await refreshMe()
-                    navigate('/login')
-                  }}
-                >
-                  {t.account.logOutEverywhere}
-                </Button>
-              </div>
-              <DeleteAccount />
+            <section className="set-sec" id="s-pieces">
+              <h2>{t.pieces.section}</h2>
+              <PiecesSettings signedIn={!!me} />
             </section>
 
-            <section className="set-sec" id="s-privacy">
-              <h2>{t.account.privacy}</h2>
-              {!privacy ? null : (
-                <>
-                  <label className="set-row cursor-pointer">
+            {!me ? (
+              <section className="set-sec">
+                <p className="pt-2 text-accent">
+                  <a href="/login?next=/settings" onClick={(e) => go(e, '/login?next=/settings')} className="underline">
+                    {t.pieces.guestNote}
+                  </a>
+                </p>
+              </section>
+            ) : (
+              <>
+                <section className="set-sec" id="s-account">
+                  <h2>{t.account.account}</h2>
+                  <div className="set-row">
                     <div className="row-l">
-                      <b>{t.account.showOnline}</b>
-                      <span>{privacy.hideOnline ? t.account.hiddenHint : t.account.shownHint}</span>
+                      <b>{t.auth.username}</b>
+                      <span>{t.account.usernameFixed}</span>
                     </div>
-                    <Switch.Root
-                      checked={!privacy.hideOnline}
-                      onCheckedChange={(on) => savePrivacy({ ...privacy, hideOnline: !on })}
-                      className="sl-switch"
+                    <span className="font-mono text-[15px]">{me.username}</span>
+                  </div>
+                  <PasswordForm />
+                  <div className="set-row">
+                    <div className="row-l">
+                      <b>{t.account.logOutEverywhere}</b>
+                      <span>{t.account.logOutEverywhereHint}</span>
+                    </div>
+                    <Button
+                      className="h-9 px-3.5 text-sm"
+                      onClick={async () => {
+                        await api('POST', '/api/logout-everywhere').catch(() => {})
+                        await refreshMe()
+                        navigate('/login')
+                      }}
                     >
-                      <span className="sl-switch-track" />
-                    </Switch.Root>
-                  </label>
-                  <div className="set-row">
-                    <div className="row-l">
-                      <b>{t.account.whoOffers}</b>
-                      <span>{t.account.whoOffersHint}</span>
-                    </div>
-                    <Seg
-                      label={t.account.whoOffers}
-                      value={privacy.offersFrom}
-                      options={[
-                        ['friends', t.common.friends],
-                        ['anyone', t.account.anyone],
-                      ]}
-                      onChange={(v) =>
-                        savePrivacy({
-                          ...privacy,
-                          offersFrom: v as Privacy['offersFrom'],
-                        })
-                      }
-                    />
+                      {t.account.logOutEverywhere}
+                    </Button>
                   </div>
-                  <div className="set-row">
-                    <div className="row-l">
-                      <b>{t.account.whoRequests}</b>
-                      <span>{t.account.whoRequestsHint}</span>
-                    </div>
-                    <Seg
-                      label={t.account.whoRequests}
-                      value={privacy.requestsFrom}
-                      options={[
-                        ['anyone', t.account.anyone],
-                        ['nobody', t.account.nobody],
-                      ]}
-                      onChange={(v) =>
-                        savePrivacy({
-                          ...privacy,
-                          requestsFrom: v as Privacy['requestsFrom'],
-                        })
-                      }
-                    />
-                  </div>
-                </>
-              )}
-            </section>
+                  <DeleteAccount />
+                </section>
+
+                <section className="set-sec" id="s-privacy">
+                  <h2>{t.account.privacy}</h2>
+                  {!privacy ? null : (
+                    <>
+                      <label className="set-row cursor-pointer">
+                        <div className="row-l">
+                          <b>{t.account.showOnline}</b>
+                          <span>{privacy.hideOnline ? t.account.hiddenHint : t.account.shownHint}</span>
+                        </div>
+                        <Switch.Root
+                          checked={!privacy.hideOnline}
+                          onCheckedChange={(on) => savePrivacy({ ...privacy, hideOnline: !on })}
+                          className="sl-switch"
+                        >
+                          <span className="sl-switch-track" />
+                        </Switch.Root>
+                      </label>
+                      <div className="set-row">
+                        <div className="row-l">
+                          <b>{t.account.whoOffers}</b>
+                          <span>{t.account.whoOffersHint}</span>
+                        </div>
+                        <Seg
+                          label={t.account.whoOffers}
+                          value={privacy.offersFrom}
+                          options={[
+                            ['friends', t.common.friends],
+                            ['anyone', t.account.anyone],
+                          ]}
+                          onChange={(v) =>
+                            savePrivacy({
+                              ...privacy,
+                              offersFrom: v as Privacy['offersFrom'],
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="set-row">
+                        <div className="row-l">
+                          <b>{t.account.whoRequests}</b>
+                          <span>{t.account.whoRequestsHint}</span>
+                        </div>
+                        <Seg
+                          label={t.account.whoRequests}
+                          value={privacy.requestsFrom}
+                          options={[
+                            ['anyone', t.account.anyone],
+                            ['nobody', t.account.nobody],
+                          ]}
+                          onChange={(v) =>
+                            savePrivacy({
+                              ...privacy,
+                              requestsFrom: v as Privacy['requestsFrom'],
+                            })
+                          }
+                        />
+                      </div>
+                    </>
+                  )}
+                </section>
+              </>
+            )}
           </div>
         </div>
       </div>

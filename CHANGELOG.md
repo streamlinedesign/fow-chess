@@ -4,6 +4,9 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Your pieces: Settings has a Pieces and avatar section, for guests too. Pick a set for your own pieces and one for your opponent's (classic, cream, ink, red, blue, green, violet, and the four colours with black lines), and the side you play on the home board and against bots. Signed-in players keep them on the account; guests in the browser. The home board has a Pieces link.
+- Avatars: the pawn stays the default, and every piece of every one-colour set can be your avatar. Others see it next to your name in lists, profiles, the bell and Watch.
+- Black-lined versions of the red, blue, green and violet sets.
 - Bots play with their own coloured sets, on the home board and in bot games: Solomon red, Vercingetorix green, Rex inutilis violet, Ramesses II cream. Against Ramesses as Black, your White pieces are drawn black so the two sides differ.
 - Home page board: pawns that reach the last rank ask what to become (queen, rook, bishop or knight) instead of always turning into a queen, and the centre vision squares are ringed and light up as in a real game.
 - Bot faces have their own colours: Solomon red, Vercingetorix green, Rex inutilis violet, Ramesses II cream.

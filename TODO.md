@@ -19,6 +19,9 @@
 
 ## Later
 
+- Piece sets: themed sets (galaxy and others) go in `web/src/sets.ts` and `pieceSets` in `server/prefs.go`
+- Side preference for games shared by code (the creator always plays White for now)
+
 - chess-bots: copy `server/engine` (Sync Move, jester pawns and more are missing there)
 - Four-player: drag pieces in the setup (taps only for now); bots that think about Sync Move rounds (they play as if in turns, and bot-only games can go on for a very long time)
 - Four-player: show these games on profiles, Watch and the bell; rematch and draw offers; a stronger bot

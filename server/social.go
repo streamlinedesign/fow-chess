@@ -70,6 +70,7 @@ const (
 )
 
 func (s *Social) routes(mux *http.ServeMux) {
+	s.prefRoutes(mux)
 	mux.HandleFunc("GET /api/live", func(w http.ResponseWriter, r *http.Request) {
 		if me := s.signedIn(w, r); me != nil {
 			s.live.serve(w, r, me)

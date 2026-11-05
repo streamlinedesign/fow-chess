@@ -8,6 +8,7 @@ import { Icon } from './icons'
 import { Leaderboard } from './Leaderboard'
 import { useLive } from './live'
 import { playerId } from './player'
+import { getPrefs } from './prefs'
 import { ago, go, type GameSummary } from './ProfilePage'
 import { navigate } from './router'
 import {
@@ -275,7 +276,7 @@ const NOBODY_AFTER_S = 20
 
 /** Starts a game against a bot with the current mode and clock, and goes there. Never ranked. */
 async function playBot(settings: Settings, bot: Bot) {
-  const body = { ...settings, bot }
+  const body = { ...settings, bot, side: getPrefs().side }
   const res = await fetch(`/api/matches?player=${playerId}`, {
     method: 'POST',
     body: JSON.stringify(body),
@@ -511,7 +512,7 @@ function YourGames({ username }: { username: string }) {
             const href = `/m/${g.matchId}`
             return (
               <a key={`${g.matchId}-${g.round}`} href={href} onClick={(e) => go(e, href)} className="home-li">
-                <Avatar size={36} />
+                <Avatar size={36} name={g.waiting ? undefined : g.opponent || undefined} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">
                     {g.waiting ? t.match.waitingOpponent : g.opponent || t.common.guest}

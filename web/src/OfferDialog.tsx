@@ -55,7 +55,7 @@ export function OfferDialog() {
     >
       <div className="flex flex-col gap-5">
         <div className="flex items-center gap-3">
-          <Avatar size={40} online={them?.online} />
+          <Avatar size={40} online={them?.online} name={to ?? undefined} />
           <div className="flex min-w-0 flex-col leading-tight">
             <span className="truncate font-semibold">{to}</span>
             <span className="font-mono text-sm text-accent tabular-nums">{them?.rating ?? ''}</span>

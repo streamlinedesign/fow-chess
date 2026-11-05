@@ -2,8 +2,11 @@ import * as RadioGroup from '@radix-ui/react-radio-group'
 import { useCallback, useEffect, useState } from 'react'
 import { Board } from './Board'
 import { useT } from './i18n'
-import { applyLocal, pieceImg } from './position'
+import { applyLocal } from './position'
 import { playerId } from './player'
+import { getPrefs, usePieces, usePrefs } from './prefs'
+import { navigate } from './router'
+import { avatarImg } from './sets'
 import { PromotionDialog } from './Promotion'
 import { BOT_FACE, BOTS, gameLook, type Bot } from './settings'
 import { botSide, useMatch, type Color, type MatchState } from './useMatch'
@@ -32,7 +35,7 @@ function savedBot(): Bot {
  */
 export function DemoBoard({ me }: { me?: string }) {
   const t = useT()
-  const [side, setSide] = useState<Color>('w')
+  const [side, setSide] = useState<Color>(() => getPrefs().side || 'w')
   const [bot, setBot] = useState<Bot>(savedBot)
   const [id, setId] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
@@ -54,7 +57,8 @@ export function DemoBoard({ me }: { me?: string }) {
       .catch(() => setFailed(true))
   }, [])
 
-  useEffect(() => start('w', savedBot()), [start])
+  // You start on the side you prefer (White unless you picked Black in settings).
+  useEffect(() => start(getPrefs().side || 'w', savedBot()), [start])
 
   const other: Color = side === 'w' ? 'b' : 'w'
   const actions = (
@@ -65,6 +69,16 @@ export function DemoBoard({ me }: { me?: string }) {
       <button type="button" className="demo-btn" onClick={() => start(other, bot)}>
         {t.home.playAs(other === 'w' ? t.common.white : t.common.black)}
       </button>
+      <a
+        href="/settings#s-pieces"
+        className="demo-btn"
+        onClick={(e) => {
+          e.preventDefault()
+          navigate('/settings#s-pieces')
+        }}
+      >
+        {t.pieces.link}
+      </a>
     </div>
   )
   const picker = (
@@ -126,6 +140,7 @@ function Live({
   ...extra
 }: { id: string; side: Color; me?: string; actions: React.ReactNode } & Extra) {
   const t = useT()
+  const img = usePieces(side)
   const { state, send } = useMatch(id)
   // Our own move shows at once; the server's next state replaces it.
   const [pending, setPending] = useState<{ uci: string; ply: number } | null>(null)
@@ -174,7 +189,7 @@ function Live({
       />
       <PromotionDialog
         open={!!promotion}
-        img={(p) => pieceImg(you === 'b' ? p : p.toUpperCase(), gameLook(state.settings, botSide(state)))}
+        img={(p) => img(you === 'b' ? p : p.toUpperCase(), gameLook(state.settings, botSide(state)))}
         onPick={(p) => promotion && play(promotion.from + promotion.to + p)}
         onClose={() => setPromotion(null)}
       />
@@ -219,6 +234,7 @@ function Frame({
   actions: React.ReactNode
 } & Extra) {
   const t = useT()
+  const avatar = avatarImg(usePrefs().avatar)
   const yourTurn = !status && legal.length > 0
   const rows: [string, string?][] = []
   // A game where you're Black starts with White's hidden move.
@@ -252,6 +268,7 @@ function Frame({
           <Board
             board={board}
             orientation={you}
+            you={you}
             legal={legal}
             lastMove={state?.last}
             check={predicting ? undefined : state?.check}
@@ -271,7 +288,7 @@ function Frame({
         </div>
         <div className="strip">
           <span className="strip-ava you" aria-hidden>
-            {me ? me[0].toUpperCase() : '?'}
+            {avatar ? <img src={avatar} alt="" /> : me ? me[0].toUpperCase() : '?'}
           </span>
           <span className="strip-who">
             <span className="strip-name">{me ?? t.common.you}</span>

@@ -2448,7 +2448,8 @@ a.tick:active {
 .strip-ava.bot {
   background: var(--color-fg);
 }
-.strip-ava.bot img {
+.strip-ava.bot img,
+.strip-ava.you img {
   width: 32px;
   height: 32px;
 }
@@ -2910,4 +2911,127 @@ a.tick:active {
 /* A hairline on fogged squares keeps the cross readable on the dark background. */
 .board4 .sq[data-fog='true']:not([data-hill='true']) {
   box-shadow: inset 0 0 0 0.5px rgb(255 250 189 / 0.07);
+}
+
+/* A piece as an avatar: centred in the circle, a little smaller than it. */
+.avatar-piece {
+  position: absolute;
+  inset: 12%;
+  width: 76%;
+  height: 76%;
+  user-select: none;
+}
+
+/* Settings: pieces and avatar. */
+.set-row.stack {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 12px;
+}
+.set-preview {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  width: min(100%, 360px);
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1.5px var(--color-fg);
+}
+.set-preview .sq {
+  aspect-ratio: 1;
+}
+.set-pick {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+}
+.set-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 10px 6px 6px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  text-align: left;
+  font-size: 14px;
+}
+.set-opt:hover {
+  background: var(--color-muted);
+}
+.set-opt[data-state='checked'] {
+  box-shadow: inset 0 0 0 2px var(--color-fg);
+  font-weight: 600;
+}
+.set-opt:focus-visible,
+.ava-opt:focus-visible {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 2px;
+}
+.set-face {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  background: var(--color-sq-dark);
+}
+.set-face img {
+  width: 30px;
+  height: 30px;
+}
+.set-face.pair img {
+  width: 22px;
+  height: 22px;
+}
+.set-face.pair img + img {
+  margin-left: -6px;
+}
+.set-name {
+  min-width: 0;
+  line-height: 1.2;
+}
+.ava-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ava-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.ava-opt {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 5px;
+  border-radius: 999px;
+  background: var(--color-muted);
+}
+.ava-opt:hover {
+  background: var(--color-muted-2);
+}
+.ava-opt[data-state='checked'] {
+  box-shadow:
+    0 0 0 2px var(--color-bg),
+    0 0 0 4px var(--color-fg);
+}
+.ava-opt img {
+  width: 100%;
+  height: 100%;
+}
+@media (max-width: 420px) {
+  .ava-line {
+    gap: 4px;
+  }
+  .ava-opt {
+    width: 36px;
+    height: 36px;
+    padding: 4px;
+  }
 }

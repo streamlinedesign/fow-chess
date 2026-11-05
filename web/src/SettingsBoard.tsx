@@ -1,5 +1,6 @@
 import { useT } from './i18n'
-import { pieceImg, squareIndex } from './position'
+import { squareIndex } from './position'
+import { usePieces } from './prefs'
 import type { Dict } from './i18n'
 import { HILL, OUTPOSTS, setupMode, type Settings } from './settings'
 
@@ -30,6 +31,7 @@ export function setupNotes(settings: Settings, t: Dict) {
  */
 export function SettingsBoard({ settings, boardClassName = '' }: { settings: Settings; boardClassName?: string }) {
   const t = useT()
+  const pieceImg = usePieces('w')
   const setup = setupMode(settings)
   const squares = []
   for (let row = 0; row < 8; row++) {
