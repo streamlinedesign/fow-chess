@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -186,5 +187,145 @@ func TestFourSeedReplays(t *testing.T) {
 	}
 	if g.Result() != string(m[2]) || g.Method().String() != string(m[3]) {
 		t.Errorf("seed says %s by %s, replay gives %s by %s", m[2], m[3], g.Result(), g.Method())
+	}
+}
+
+func TestFourSyncRounds(t *testing.T) {
+	hub := NewFourHub(nil)
+	ann := guestPlayer("ann-browser")
+	m := hub.Create(ann, fourSettings{Fog: true, Sync: true, Time: TimeControl{Base: 60, Inc: 2}})
+	_, cs := fourPlayers(m)
+	for i, c := range cs {
+		s := lastFour(t, c)
+		if len(s.Legal) == 0 || len(s.Ticking) != 4 {
+			t.Fatalf("player %d: %d legal moves, ticking %v", i, len(s.Legal), s.Ticking)
+		}
+	}
+	m.handle(cs[0], fourIn{Type: "move", UCI: "e2e4"})
+	m.handle(cs[0], fourIn{Type: "move", UCI: "f2f4"}) // changed their mind
+	m.handle(cs[1], fourIn{Type: "move", UCI: "b7d7"})
+	m.handle(cs[2], fourIn{Type: "move", UCI: "e2e4"}) // not Green's piece: ignored
+	s := lastFour(t, cs[0])
+	if s.Planned != "f2f4" || !s.Players["b"].Ready || s.Players["g"].Ready || s.Ply != 0 {
+		t.Fatalf("planned %q ready %+v ply %d", s.Planned, s.Players, s.Ply)
+	}
+	if slices.Contains(s.Ticking, "r") || !slices.Contains(s.Ticking, "g") {
+		t.Errorf("ticking %v", s.Ticking)
+	}
+	m.handle(cs[2], fourIn{Type: "move", UCI: "g13g11"})
+	m.handle(cs[3], fourIn{Type: "move", UCI: "m8k8"})
+	s = lastFour(t, cs[0])
+	if s.Ply != 4 || s.Planned != "" || s.Players["b"].Ready || len(s.Ticking) != 4 {
+		t.Fatalf("after the round: ply %d planned %q ticking %v", s.Ply, s.Planned, s.Ticking)
+	}
+	if s.History[0].SAN != "f2-f4" || s.History[1].SAN != "?" || s.History[1].Round != 1 {
+		t.Errorf("history %+v", s.History)
+	}
+	if s.Clock.Left["r"] < 61000 {
+		t.Errorf("no increment: %d", s.Clock.Left["r"])
+	}
+	if m.game.Tokens() != "s:f2f4,b7d7,g13g11,m8k8" {
+		t.Errorf("tokens %q", m.game.Tokens())
+	}
+	// Violet runs out while the others have sent theirs: the round is played without Violet.
+	m.handle(cs[0], fourIn{Type: "move", UCI: "e2e3"})
+	m.handle(cs[1], fourIn{Type: "move", UCI: "b8c8"})
+	m.handle(cs[2], fourIn{Type: "move", UCI: "h13h12"})
+	m.mu.Lock()
+	m.turnStart = time.Now().Add(-90 * time.Second)
+	m.mu.Unlock()
+	m.checkFlag()
+	s = lastFour(t, cs[0])
+	if s.Players["v"].Out != "time" || s.Ply != 8 || s.Clock.Left["r"] < 60000 {
+		t.Fatalf("violet out %q ply %d left %d", s.Players["v"].Out, s.Ply, s.Clock.Left["r"])
+	}
+	// A spectator of a fog game is two rounds behind.
+	sp := newClient("watcher")
+	m.join(sp, guestPlayer("watcher"))
+	if w := lastFour(t, sp); w.Behind != 4 { // Violet's timeout and the last round
+		t.Errorf("spectator behind %d", w.Behind)
+	}
+}
+
+func TestFourSyncBots(t *testing.T) {
+	hub := NewFourHub(nil)
+	hub.botPause = func() time.Duration { return 0 }
+	ann := guestPlayer("ann-browser")
+	m := hub.Create(ann, fourSettings{Sync: true, Hill: true})
+	c := newClient(ann.key)
+	m.join(c, ann)
+	m.handle(c, fourIn{Type: "fill"})
+	m.handle(c, fourIn{Type: "resign"})
+	// Bots dodge each other for a long time in Sync Move; it's enough that rounds go by.
+	deadline := time.Now().Add(20 * time.Second)
+	for {
+		m.mu.Lock()
+		over, n := m.game.Over(), len(m.game.History())
+		m.mu.Unlock()
+		if over || n >= 3*30 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("bots stopped after %d moves", n)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+}
+
+func TestFourSetup(t *testing.T) {
+	store := openTestStore(t, filepath.Join(t.TempDir(), "four.db"))
+	hub := NewFourHub(store)
+	ann := guestPlayer("ann-browser")
+	m := hub.Create(ann, fourSettings{Setup: "backRow", Time: TimeControl{Base: 60}})
+	_, cs := fourPlayers(m)
+	s := lastFour(t, cs[0])
+	if s.Status != "setup" || s.Clock.Running != "" || len(s.Legal) != 0 || slices.Contains(s.Board, "rK") {
+		t.Fatalf("status %s running %q legal %d", s.Status, s.Clock.Running, len(s.Legal))
+	}
+	mine := "KRRQNNBB" + "PPPPPPPP" + "........"
+	m.handle(cs[0], fourIn{Type: "setup", Board: "KKRQNNBB" + "PPPPPPPP" + "........"}) // refused
+	if lastFour(t, cs[0]).Arranged != "" {
+		t.Fatal("bad setup taken")
+	}
+	m.handle(cs[0], fourIn{Type: "setup", Board: mine})
+	m.handle(cs[1], fourIn{Type: "setup", Board: four.StandardSetup})
+	m.handle(cs[2], fourIn{Type: "resign"})
+	s = lastFour(t, cs[0])
+	if s.Arranged != mine || !s.Players["b"].Ready || s.Players["v"].Ready || s.Players["g"].Out != "resignation" {
+		t.Fatalf("arranged %q players %+v", s.Arranged, s.Players)
+	}
+	if lastFour(t, cs[1]).Arranged != four.StandardSetup {
+		t.Fatal("blue's arrangement")
+	}
+	hub.flush()
+	if again := NewFourHub(store).Get(m.id); again == nil || again.start != m.start || !again.arranging() {
+		t.Fatalf("arranging not restored")
+	}
+	m.handle(cs[3], fourIn{Type: "setup", Board: four.StandardSetup})
+	s = lastFour(t, cs[0])
+	if s.Status != "playing" || s.Board[0*14+3] != "rK" || s.Clock.Running != "r" || s.Players["g"].Out != "resignation" {
+		t.Fatalf("status %s d1 %s running %q", s.Status, s.Board[3], s.Clock.Running)
+	}
+	m.handle(cs[0], fourIn{Type: "move", UCI: "e2e4"})
+	hub.flush()
+	again := NewFourHub(store).Get(m.id)
+	if again == nil || again.game.Tokens() != m.game.Tokens() || again.game.Position().Board != m.game.Position().Board {
+		t.Fatalf("game with a setup not restored")
+	}
+}
+
+func TestFourSetupBots(t *testing.T) {
+	hub := NewFourHub(nil)
+	ann := guestPlayer("ann-browser")
+	m := hub.Create(ann, fourSettings{Setup: "battleship"})
+	c := newClient(ann.key)
+	m.join(c, ann)
+	m.handle(c, fourIn{Type: "fill"})
+	if s := lastFour(t, c); s.Status != "setup" || !s.Players["b"].Ready || s.Players["r"].Ready {
+		t.Fatalf("status %s players %+v", s.Status, s.Players)
+	}
+	m.handle(c, fourIn{Type: "setup", Board: "PPPPPPPP" + "RRBBNN.." + "...KQ..."})
+	if s := lastFour(t, c); s.Status != "playing" || len(s.Legal) == 0 {
+		t.Fatalf("status %s", s.Status)
 	}
 }

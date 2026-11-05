@@ -13,6 +13,10 @@ type Rules struct {
 	Hill bool
 	// CenterVision shows the whole board to a player holding a centre square.
 	CenterVision CenterVision
+	// Sync is Sync Move: every player picks a move each round without seeing
+	// the others', the moves happen at once, and captures come last, so a
+	// piece that moves away dodges whatever was aimed at it. See PlayRound.
+	Sync bool
 }
 
 // CenterVision is a fog rule: a piece on one of the four centre squares shows
@@ -172,7 +176,7 @@ func (p Position) Apply(m Move) (Position, Piece) {
 	p.Castling &^= castleMask(m.From) | castleMask(m.To)
 
 	p.EP, p.EPPawn = NoSquare, NoSquare
-	if m.Is(FlagDoublePush) {
+	if m.Is(FlagDoublePush) && !p.Sync {
 		p.EP = At((m.From.X()+m.To.X())/2, (m.From.Y()+m.To.Y())/2)
 		p.EPPawn = m.To
 	}

@@ -91,6 +91,12 @@ type Event struct {
 	SAN string
 	// Captured is the piece the move took, or NoPiece.
 	Captured Piece
+	// Round is the Sync Move round the move was part of, counted from 1; 0
+	// in a game played in turns.
+	Round int
+	// Bumped is set when the piece landed on the same square as another
+	// player's piece in a Sync Move round, and both were taken.
+	Bumped bool
 }
 
 // Token is the event as saved: the move's UCI, or "-r" for Red resigning and
@@ -109,6 +115,10 @@ func (e Event) Token() string {
 type Game struct {
 	pos     Position
 	history []Event
+	// setups are the players' own arrangements, when the game started from them.
+	setups [4]string
+	// rounds is how many Sync Move rounds have been played.
+	rounds int
 	// fell is how each player went out, NoMethod while they're in.
 	fell   [4]Method
 	over   bool
@@ -195,6 +205,20 @@ func (g *Game) AgreeDraw() {
 
 // PlayToken replays a saved event; see Event.Token.
 func (g *Game) PlayToken(tok string) error {
+	if rest, ok := strings.CutPrefix(tok, "s:"); ok {
+		parts := strings.Split(rest, ",")
+		if len(parts) != 4 {
+			return errors.New("bad round " + tok)
+		}
+		var moves [4]string
+		for i, p := range parts {
+			if p != "-" {
+				moves[i] = p
+			}
+		}
+		_, err := g.PlayRound(moves)
+		return err
+	}
 	if len(tok) == 2 && (tok[0] == '-' || tok[0] == '~') {
 		c, ok := ParseColor(tok[1:])
 		if !ok {
@@ -213,11 +237,27 @@ func (g *Game) PlayToken(tok string) error {
 
 // Tokens is the history as saved, space separated.
 func (g *Game) Tokens() string {
-	out := make([]string, len(g.history))
-	for i, e := range g.history {
-		out[i] = e.Token()
+	return strings.Join(g.TokenList(), " ")
+}
+
+// TokenList is the history as saved, one token per move, leaving, or Sync
+// Move round ("s:" and each player's move or "-", like "s:e2e4,-,j13j11,m10k10").
+func (g *Game) TokenList() []string {
+	var out []string
+	for i := 0; i < len(g.history); i++ {
+		e := g.history[i]
+		if e.Round == 0 {
+			out = append(out, e.Token())
+			continue
+		}
+		parts := [4]string{"-", "-", "-", "-"}
+		for ; i < len(g.history) && g.history[i].Round == e.Round; i++ {
+			parts[g.history[i].By] = g.history[i].Move.UCI()
+		}
+		i--
+		out = append(out, "s:"+strings.Join(parts[:], ","))
 	}
-	return strings.Join(out, " ")
+	return out
 }
 
 func (g *Game) end(winner Color, why Method) {
@@ -236,6 +276,19 @@ func (g *Game) evaluate(why Method) {
 		}
 		return
 	}
+	if p.Alive() == 0 {
+		g.over, g.drawn, g.method = true, true, why
+		return
+	}
+	if p.Sync {
+		for _, c := range Colors {
+			if !p.Out[c] && len(p.MovesFor(c)) > 0 {
+				return
+			}
+		}
+		g.over, g.drawn, g.method = true, true, Stuck
+		return
+	}
 	for range 4 {
 		if len(p.LegalMoves()) > 0 {
 			return
@@ -248,15 +301,18 @@ func (g *Game) evaluate(why Method) {
 
 // san writes m in long algebraic notation: the piece letter (none for a
 // pawn), the from square, "-" or "x", the to square, and "=Q" for a promotion.
-func (g *Game) san(m Move) string {
+func (g *Game) san(m Move) string { return sanAt(&g.pos, m) }
+
+// sanAt writes m as played from p.
+func sanAt(p *Position, m Move) string {
 	if m.Is(FlagCastle) {
-		if cell(g.pos.Turn, 6, 0) == m.To {
+		if cell(p.Board[m.From].Color(), 6, 0) == m.To {
 			return "O-O"
 		}
 		return "O-O-O"
 	}
 	var b strings.Builder
-	if k := g.pos.Board[m.From].Kind(); k != Pawn {
+	if k := p.Board[m.From].Kind(); k != Pawn {
 		b.WriteByte(k.Letter())
 	}
 	b.WriteString(m.From.String())

@@ -31,28 +31,38 @@ type fourSettings struct {
 	JesterPawns  bool        `json:"jesterPawns,omitempty"`
 	Hill         bool        `json:"hill,omitempty"`
 	CenterVision string      `json:"centerVision,omitempty"`
+	// Setup is "" for the usual start, or "backRow" or "battleship" for each
+	// player arranging their own pieces before the game.
+	Setup string `json:"setup,omitempty"`
+	// Sync is Sync Move: everyone moves at once each round.
+	Sync bool `json:"sync,omitempty"`
 }
+
+var fourLayouts = map[string]four.Layout{"": four.Standard, "backRow": four.BackRow, "battleship": four.Battleship}
 
 func (s fourSettings) rules() four.Rules {
 	return four.Rules{JumpKing: s.JumpKing, BackPawns: s.BackPawns, JesterPawns: s.JesterPawns, Hill: s.Hill,
-		CenterVision: four.CenterVision(centerVisions[s.CenterVision])}
+		CenterVision: four.CenterVision(centerVisions[s.CenterVision]), Sync: s.Sync}
 }
+
+func (s fourSettings) layout() four.Layout { return fourLayouts[s.Setup] }
 
 func (s fourSettings) valid() bool {
 	_, center := centerVisions[s.CenterVision]
-	return center && (s.Time.valid() || s.Time.modsValid())
+	_, layout := fourLayouts[s.Setup]
+	return center && layout && (s.Time.valid() || s.Time.modsValid())
 }
 
 // fourProtocol changes whenever the four-player state message changes shape.
 // Must match FOUR_PROTOCOL in web/src/useFourMatch.ts.
-const fourProtocol = 1
+const fourProtocol = 2
 
 // fourBotName is who fills an empty seat.
 const fourBotName = "Rex inutilis"
 
-// fourSpectatorDelay is how many events spectators of a fog game are kept
-// behind: two rounds of four.
-const fourSpectatorDelay = 8
+// fourSpectatorDelay is how many saved events spectators of a fog game are
+// kept behind: two rounds of four moves, or two Sync Move rounds.
+const fourSpectatorDelay, fourSyncSpectatorDelay = 8, 2
 
 // FourHub holds the four-player matches in play, and saves them.
 type FourHub struct {
@@ -147,6 +157,7 @@ type fourRecord struct {
 	Moves     string
 	Result    string
 	Reason    string
+	Start     fourStart
 	Clock     [4]time.Duration
 	TurnStart time.Time
 	Created   time.Time
@@ -154,6 +165,14 @@ type fourRecord struct {
 	// done, when set, makes this record a marker that is closed once every
 	// write before it is done; see flush.
 	done chan struct{}
+}
+
+// fourStart is the players' own arrangements in a game with a setup.
+type fourStart struct {
+	// Setups are the arrangements placed so far, "" for a player still arranging.
+	Setups [4]string `json:"setups"`
+	// Quit marks the players who resigned while arranging; they leave as the game starts.
+	Quit [4]bool `json:"quit"`
 }
 
 // flush waits until every queued write is in the database.
@@ -181,19 +200,20 @@ func (h *FourHub) writer() {
 			ms[i] = d.Milliseconds()
 		}
 		clock, _ := json.Marshal(ms)
+		start, _ := json.Marshal(r.Start)
 		var turnStart any
 		if !r.TurnStart.IsZero() {
 			turnStart = r.TurnStart
 		}
 		_, err := h.db.Exec(`
-			INSERT INTO four_games (match_id, settings, seats, users, names, moves, result, reason, clock_ms, turn_started_at, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			INSERT INTO four_games (match_id, settings, seats, users, names, moves, result, reason, clock_ms, turn_started_at, created_at, updated_at, start)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 			ON CONFLICT (match_id) DO UPDATE SET
 				seats = excluded.seats, users = excluded.users, names = excluded.names, moves = excluded.moves,
 				result = excluded.result, reason = excluded.reason, clock_ms = excluded.clock_ms,
-				turn_started_at = excluded.turn_started_at, updated_at = excluded.updated_at`,
+				turn_started_at = excluded.turn_started_at, updated_at = excluded.updated_at, start = excluded.start`,
 			r.ID, string(settings), string(seats), string(users), string(names), r.Moves, r.Result, r.Reason,
-			string(clock), turnStart, r.Created, r.Updated)
+			string(clock), turnStart, r.Created, r.Updated, string(start))
 		if err != nil {
 			log.Printf("saving four-player game %s: %v", r.ID, err)
 		}
@@ -206,11 +226,11 @@ func (h *FourHub) load(id string) (*fourRecord, error) {
 		return nil, nil
 	}
 	var r fourRecord
-	var settings, seats, names, users, clock string
+	var settings, seats, names, users, clock, start string
 	var turnStart sql.NullTime
-	err := h.db.QueryRow(`SELECT match_id, settings, seats, users, names, moves, result, reason, clock_ms, turn_started_at, created_at, updated_at
+	err := h.db.QueryRow(`SELECT match_id, settings, seats, users, names, moves, result, reason, clock_ms, turn_started_at, created_at, updated_at, start
 		FROM four_games WHERE match_id = $1`, id).
-		Scan(&r.ID, &settings, &seats, &users, &names, &r.Moves, &r.Result, &r.Reason, &clock, &turnStart, &r.Created, &r.Updated)
+		Scan(&r.ID, &settings, &seats, &users, &names, &r.Moves, &r.Result, &r.Reason, &clock, &turnStart, &r.Created, &r.Updated, &start)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -221,6 +241,7 @@ func (h *FourHub) load(id string) (*fourRecord, error) {
 	json.Unmarshal([]byte(seats), &r.Seats)
 	json.Unmarshal([]byte(names), &r.Names)
 	json.Unmarshal([]byte(users), &r.Users)
+	json.Unmarshal([]byte(start), &r.Start)
 	var ms [4]int64
 	json.Unmarshal([]byte(clock), &ms)
 	for i, n := range ms {
@@ -235,9 +256,16 @@ func (h *FourHub) load(id string) (*fourRecord, error) {
 func restoreFour(h *FourHub, r *fourRecord) (*FourMatch, error) {
 	m := &FourMatch{hub: h, id: r.ID, settings: r.Settings, game: four.NewGame(r.Settings.rules()),
 		clients: map[*client]struct{}{}, created: r.Created, touched: time.Now(),
-		seats: r.Seats, users: r.Users, names: r.Names, clock: r.Clock, turnStart: r.TurnStart}
+		seats: r.Seats, users: r.Users, names: r.Names, clock: r.Clock, turnStart: r.TurnStart, start: r.Start}
 	for i, key := range r.Seats {
 		m.bots[i] = strings.HasPrefix(key, "bot:")
+	}
+	if m.placed() {
+		g, err := four.NewGameFromSetups(r.Settings.rules(), r.Start.Setups)
+		if err != nil {
+			return nil, err
+		}
+		m.game = g
 	}
 	for _, tok := range strings.Fields(r.Moves) {
 		if err := m.game.PlayToken(tok); err != nil {
@@ -283,8 +311,12 @@ type FourMatch struct {
 	turnStart   time.Time
 	timer       *time.Timer
 	botThinking bool
-	chat        []chatLine
-	chatID      int
+	// start is the arrangements in a game with a setup.
+	start fourStart
+	// pending is each player's move for the Sync Move round in play, "" until sent.
+	pending [4]string
+	chat    []chatLine
+	chatID  int
 }
 
 func (m *FourMatch) seat(c four.Color, p *player) {
@@ -319,7 +351,7 @@ func (m *FourMatch) online(c int) bool {
 // save queues the match for the database. Callers hold m.mu.
 func (m *FourMatch) save() {
 	m.hub.writes <- fourRecord{ID: m.id, Settings: m.settings, Seats: m.seats, Users: m.users, Names: m.names,
-		Moves: m.game.Tokens(), Result: m.game.Result(), Reason: m.game.Method().String(),
+		Moves: m.game.Tokens(), Result: m.game.Result(), Reason: m.game.Method().String(), Start: m.start,
 		Clock: m.clock, TurnStart: m.turnStart, Created: m.created, Updated: time.Now()}
 }
 
@@ -333,17 +365,39 @@ func (m *FourMatch) resetClock() {
 
 func (m *FourMatch) running() bool { return !m.turnStart.IsZero() }
 
+// ticking is whether c's clock is running: the player to move's, or in a
+// Sync Move round everyone's who can move and hasn't sent a move yet.
+func (m *FourMatch) ticking(c int) bool {
+	if !m.running() {
+		return false
+	}
+	if !m.settings.Sync {
+		return int(m.game.Turn()) == c
+	}
+	pos := m.game.Position()
+	return !pos.Out[c] && m.pending[c] == "" && len(pos.MovesFor(four.Color(c))) > 0
+}
+
 func (m *FourMatch) left(c int, now time.Time) time.Duration {
 	d := m.clock[c]
-	if m.running() && int(m.game.Turn()) == c {
+	if m.ticking(c) {
 		d -= now.Sub(m.turnStart)
 	}
 	return d
 }
 
+// armTimer wakes the match when the first running clock runs out.
 func (m *FourMatch) armTimer() {
 	m.stopTimer()
-	m.timer = time.AfterFunc(max(m.left(int(m.game.Turn()), time.Now()), 0), m.checkFlag)
+	now, next := time.Now(), time.Duration(-1)
+	for c := range 4 {
+		if l := max(m.left(c, now), 0); m.ticking(c) && (next < 0 || l < next) {
+			next = l
+		}
+	}
+	if next >= 0 {
+		m.timer = time.AfterFunc(next, m.checkFlag)
+	}
 }
 
 func (m *FourMatch) stopTimer() {
@@ -353,16 +407,23 @@ func (m *FourMatch) stopTimer() {
 	}
 }
 
-// startTurn starts the clock of the player to move, if the game has one and is
-// on. Callers hold m.mu.
+// startTurn starts a turn, or a Sync Move round, and the clocks of whoever
+// is to move, if the game has a clock and is on. Callers hold m.mu.
 func (m *FourMatch) startTurn(now time.Time) {
 	m.turnStart = time.Time{}
 	m.stopTimer()
-	if !m.settings.Time.clocked() || !m.full() || m.game.Over() {
+	m.pending = [4]string{}
+	if !m.settings.Time.clocked() || !m.full() || m.arranging() || m.game.Over() {
 		return
 	}
 	if pm := m.settings.Time.PerMove; pm > 0 {
-		m.clock[m.game.Turn()] = time.Duration(pm) * time.Second
+		if m.settings.Sync {
+			for c := range m.clock {
+				m.clock[c] = time.Duration(pm) * time.Second
+			}
+		} else {
+			m.clock[m.game.Turn()] = time.Duration(pm) * time.Second
+		}
 	}
 	m.turnStart = now
 	m.armTimer()
@@ -380,20 +441,139 @@ func (m *FourMatch) checkFlag() {
 	}
 }
 
-// flagged takes the player to move out of the game if their time is up, and
-// reports whether it did. Callers hold m.mu.
+// flagged takes the players whose time is up out of the game, and reports
+// whether there were any. Callers hold m.mu.
 func (m *FourMatch) flagged(now time.Time) bool {
 	if m.game.Over() || !m.running() {
 		return false
 	}
-	c := int(m.game.Turn())
-	if m.left(c, now) > 0 {
+	var out []int
+	for c := range 4 {
+		if m.ticking(c) && m.left(c, now) <= 0 {
+			out = append(out, c)
+		}
+	}
+	if len(out) == 0 {
 		return false
 	}
-	m.clock[c] = 0
-	m.game.Leave(four.Color(c), four.Timeout)
+	for _, c := range out {
+		m.clock[c] = 0
+		m.game.Leave(four.Color(c), four.Timeout)
+	}
+	if m.settings.Sync {
+		m.afterLeave(now)
+	} else {
+		m.startTurn(now)
+	}
+	return true
+}
+
+// arranging is whether the players are placing their pieces: a game with a
+// setup, every seat taken, and not everyone placed yet. No clock runs.
+func (m *FourMatch) arranging() bool {
+	return m.settings.layout() != four.Standard && m.full() && !m.placed()
+}
+
+// placed is whether every player has placed their pieces.
+func (m *FourMatch) placed() bool { return !slices.Contains(m.start.Setups[:], "") }
+
+// begin starts a game with a setup once everyone has placed. Callers hold m.mu.
+func (m *FourMatch) begin(now time.Time) {
+	g, err := four.NewGameFromSetups(m.settings.rules(), m.start.Setups)
+	if err != nil {
+		log.Printf("starting four-player match %s: %v", m.id, err)
+		return
+	}
+	m.game = g
+	for c, quit := range m.start.Quit {
+		if quit {
+			g.Leave(four.Color(c), four.Resignation)
+		}
+	}
+	m.startTurn(now)
+}
+
+// freshGame is the game as it was before the first move.
+func (m *FourMatch) freshGame() *four.Game {
+	if m.placed() {
+		if g, err := four.NewGameFromSetups(m.settings.rules(), m.start.Setups); err == nil {
+			return g
+		}
+	}
+	return four.NewGame(m.settings.rules())
+}
+
+// submit sends c's move for the Sync Move round; c can change it until the
+// round is played. Callers hold m.mu.
+func (m *FourMatch) submit(c int, uci string, now time.Time) bool {
+	pos := m.game.Position()
+	if pos.Out[c] {
+		return false
+	}
+	if _, ok := pos.FindMoveFor(four.Color(c), uci); !ok {
+		return false
+	}
+	if m.pending[c] == "" && m.running() {
+		m.clock[c] = max(m.left(c, now), 0)
+	}
+	m.pending[c] = uci
+	if !m.resolve(now) && m.running() {
+		m.armTimer()
+	}
+	return true
+}
+
+// resolve plays the Sync Move round once everyone who can move has sent a
+// move, and reports whether it did. Callers hold m.mu.
+func (m *FourMatch) resolve(now time.Time) bool {
+	if !m.settings.Sync || !m.full() || m.arranging() || m.game.Over() {
+		return false
+	}
+	pos := m.game.Position()
+	for _, c := range four.Colors {
+		if !pos.Out[c] && m.pending[c] == "" && len(pos.MovesFor(c)) > 0 {
+			return false
+		}
+	}
+	if _, err := m.game.PlayRound(m.pending); err != nil {
+		log.Printf("four-player match %s round %v: %v", m.id, m.pending, err)
+		m.pending = [4]string{}
+		return false
+	}
+	if m.running() {
+		for c, uci := range m.pending {
+			if uci != "" {
+				m.clock[c] += time.Duration(m.settings.Time.Inc) * time.Second
+			}
+		}
+	}
 	m.startTurn(now)
 	return true
+}
+
+// afterLeave carries on a Sync Move round after someone left it: a move that
+// went for the leaver's pieces may no longer be possible, and has to be sent
+// again. Callers hold m.mu.
+func (m *FourMatch) afterLeave(now time.Time) {
+	if m.game.Over() {
+		m.startTurn(now)
+		return
+	}
+	pos := m.game.Position()
+	for c, uci := range m.pending {
+		if uci == "" {
+			continue
+		}
+		if _, ok := pos.FindMoveFor(four.Color(c), uci); pos.Out[c] || !ok {
+			m.pending[c] = ""
+			if m.running() && !pos.Out[c] {
+				m.clock[c] += now.Sub(m.turnStart)
+			}
+		}
+	}
+	if !m.resolve(now) && m.running() {
+		m.armTimer()
+	}
 }
 
 // join seats the player in the first free seat while the game hasn't
@@ -436,6 +616,8 @@ type fourIn struct {
 	Text string  `json:"text"`
 	Side string  `json:"side"`
 	T    float64 `json:"t"`
+	// Board is an arrangement for "setup"; see four.SetupLen. "" takes it back.
+	Board string `json:"board"`
 }
 
 func (m *FourMatch) handle(c *client, msg fourIn) {
@@ -458,28 +640,72 @@ func (m *FourMatch) handle(c *client, msg fourIn) {
 		if m.full() {
 			return
 		}
+		rng := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
 		for i, s := range m.seats {
 			if s == "" {
 				m.seat(four.Color(i), &player{key: "bot:four:" + four.Color(i).String(), name: fourBotName})
+				if m.settings.layout() != four.Standard {
+					m.start.Setups[i] = four.BotSetup(rng)
+				}
 			}
 		}
-		m.startTurn(now)
+		if m.settings.layout() != four.Standard && m.placed() {
+			m.begin(now)
+		} else {
+			m.startTurn(now)
+		}
+		m.save()
+	case "setup":
+		if !m.arranging() || m.start.Quit[color] {
+			break
+		}
+		if msg.Board != "" && four.CheckSetup(m.settings.layout(), msg.Board) != nil {
+			break
+		}
+		m.start.Setups[color] = msg.Board
+		if m.placed() {
+			m.begin(now)
+		}
 		m.save()
 	case "move":
-		if !m.full() || m.game.Over() || int(m.game.Turn()) != color || m.flagged(now) {
+		if !m.full() || m.arranging() || m.game.Over() || m.flagged(now) {
 			break
 		}
-		m.play(msg.UCI, now)
+		if m.settings.Sync {
+			m.submit(color, msg.UCI, now)
+		} else if int(m.game.Turn()) == color {
+			m.play(msg.UCI, now)
+		}
 	case "resign":
-		if !m.full() || m.game.Over() || m.game.Position().Out[color] {
+		if !m.full() || m.game.Over() {
 			break
 		}
-		onTurn := int(m.game.Turn()) == color
-		if onTurn && m.running() {
+		if m.arranging() {
+			// They leave as the game starts, with the usual arrangement in place of theirs.
+			if m.start.Quit[color] {
+				break
+			}
+			m.start.Quit[color] = true
+			if m.start.Setups[color] == "" {
+				m.start.Setups[color] = four.StandardSetup
+			}
+			if m.placed() {
+				m.begin(now)
+			}
+			m.save()
+			break
+		}
+		if m.game.Position().Out[color] {
+			break
+		}
+		if m.ticking(color) {
 			m.clock[color] = max(m.left(color, now), 0)
 		}
+		onTurn := int(m.game.Turn()) == color
 		m.game.Leave(four.Color(color), four.Resignation)
-		if onTurn || m.game.Over() {
+		if m.settings.Sync {
+			m.afterLeave(now)
+		} else if onTurn || m.game.Over() {
 			m.startTurn(now)
 		}
 	case "chat":
@@ -525,9 +751,32 @@ func (m *FourMatch) play(uci string, now time.Time) bool {
 	return true
 }
 
-// pokeBot has a bot move after a short pause when it's a bot's turn. Callers hold m.mu.
+// botsToMove are the bots that still have to send a move in a Sync Move
+// round, or the bot to move. Callers hold m.mu.
+func (m *FourMatch) botsToMove() []four.Color {
+	if !m.full() || m.arranging() || m.game.Over() {
+		return nil
+	}
+	if !m.settings.Sync {
+		if m.bots[m.game.Turn()] {
+			return []four.Color{m.game.Turn()}
+		}
+		return nil
+	}
+	var out []four.Color
+	pos := m.game.Position()
+	for _, c := range four.Colors {
+		if m.bots[c] && !pos.Out[c] && m.pending[c] == "" && len(pos.MovesFor(c)) > 0 {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+// pokeBot has the bots move after a short pause when it's their turn, or in
+// a Sync Move round. Callers hold m.mu.
 func (m *FourMatch) pokeBot() {
-	if !m.full() || m.game.Over() || !m.bots[m.game.Turn()] || m.botThinking {
+	if m.botThinking || len(m.botsToMove()) == 0 {
 		return
 	}
 	m.botThinking = true
@@ -537,13 +786,28 @@ func (m *FourMatch) pokeBot() {
 		m.mu.Lock()
 		defer m.mu.Unlock()
 		m.botThinking = false
-		if m.game.Over() || len(m.game.History()) != events || !m.bots[m.game.Turn()] {
+		bots := m.botsToMove()
+		if len(m.game.History()) != events || len(bots) == 0 {
 			m.pokeBot()
 			return
 		}
-		pos := m.game.Position()
-		if mv, ok := four.BotMove(&pos, rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))); ok {
-			m.play(mv.UCI(), time.Now())
+		rng := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+		now := time.Now()
+		var moves []string
+		for _, c := range bots {
+			pos := m.game.Position()
+			pos.Turn = c
+			mv, _ := four.BotMove(&pos, rng)
+			moves = append(moves, mv.UCI())
+		}
+		for i, c := range bots {
+			if m.settings.Sync {
+				m.submit(int(c), moves[i], now)
+			} else {
+				m.play(moves[i], now)
+			}
+		}
+		if len(m.game.History()) != events {
 			m.save()
 		}
 		m.pokeBot()
@@ -566,22 +830,29 @@ type fourSeat struct {
 	Bot    bool   `json:"bot,omitempty"`
 	// Out is how the player left the game: "capturing the king", "resignation" or "time".
 	Out string `json:"out,omitempty"`
+	// Ready is set once the player has sent a move for the Sync Move round,
+	// or placed their pieces in a game with a setup.
+	Ready bool `json:"ready,omitempty"`
 }
 
 type fourEvent struct {
 	By  string `json:"by"`
 	SAN string `json:"san"` // "?" for a move the viewer can't know
 	Out string `json:"out,omitempty"`
+	// Round is the Sync Move round the move was part of.
+	Round int `json:"round,omitempty"`
 }
 
 type fourView struct {
 	// Board is every square from the bottom left, row by row: " " off the
 	// board, "." empty, "?" hidden, or the piece's colour and kind, like "rK".
-	Board        []string            `json:"board"`
-	Turn         string              `json:"turn"`
-	Ply          int                 `json:"ply"`
-	Legal        []string            `json:"legal"`
-	Last         *lastMove           `json:"last"`
+	Board []string  `json:"board"`
+	Turn  string    `json:"turn"`
+	Ply   int       `json:"ply"`
+	Legal []string  `json:"legal"`
+	Last  *lastMove `json:"last"`
+	// LastRound is every move of the last Sync Move round, when the viewer can see them all.
+	LastRound    []lastMove          `json:"lastRound,omitempty"`
 	Danger       string              `json:"danger,omitempty"`
 	DangerHidden bool                `json:"dangerHidden,omitempty"`
 	FullVision   bool                `json:"fullVision,omitempty"`
@@ -597,13 +868,19 @@ type fourState struct {
 	You      string       `json:"you"`
 	Settings fourSettings `json:"settings"`
 	fourView
-	Status     string              `json:"status"` // waiting, playing, over
+	Status     string              `json:"status"` // waiting, setup, playing, over
 	Result     string              `json:"result,omitempty"`
 	Reason     string              `json:"reason,omitempty"`
 	Players    map[string]fourSeat `json:"players"`
 	Clock      *clockView          `json:"clock,omitempty"`
 	Watching   string              `json:"watching,omitempty"`
 	Spectators int                 `json:"spectators"`
+	// Ticking is whose clocks run in a Sync Move round.
+	Ticking []string `json:"ticking,omitempty"`
+	// Planned is the move the viewer has sent for this Sync Move round.
+	Planned string `json:"planned,omitempty"`
+	// Arranged is the viewer's arrangement while players place their pieces.
+	Arranged string `json:"arranged,omitempty"`
 }
 
 // fourViewFor is the game as viewer sees it (-1 sees everything). Under fog a
@@ -634,8 +911,8 @@ func fourViewFor(g *four.Game, viewer int, playable, fog bool) fourView {
 			v.Board[i] = pc.Code()
 		}
 	}
-	if playable && !g.Over() && viewer == int(pos.Turn) {
-		for _, mv := range g.LegalMoves() {
+	if playable && !g.Over() && viewer >= 0 && !pos.Out[viewer] && (pos.Sync || viewer == int(pos.Turn)) {
+		for _, mv := range pos.MovesFor(four.Color(viewer)) {
 			v.Legal = append(v.Legal, mv.UCI())
 		}
 	}
@@ -650,7 +927,7 @@ func fourViewFor(g *four.Game, viewer int, playable, fog bool) fourView {
 	}
 	for i, e := range hist {
 		mine := !hidden || int(e.By) == viewer
-		v.History[i] = fourEvent{By: e.By.String(), SAN: "?"}
+		v.History[i] = fourEvent{By: e.By.String(), SAN: "?", Round: e.Round}
 		if e.Out != four.NoMethod {
 			v.History[i] = fourEvent{By: e.By.String(), Out: e.Out.String()}
 			continue
@@ -669,6 +946,11 @@ func fourViewFor(g *four.Game, viewer int, playable, fog bool) fourView {
 			break
 		}
 	}
+	if n := len(hist); n > 0 && !hidden && hist[n-1].Round > 0 {
+		for i := n - 1; i >= 0 && hist[i].Round == hist[n-1].Round; i-- {
+			v.LastRound = append(v.LastRound, lastMove{From: hist[i].Move.From.String(), To: hist[i].Move.To.String()})
+		}
+	}
 	return v
 }
 
@@ -681,12 +963,22 @@ func (m *FourMatch) base() fourState {
 		s.Status, s.Result, s.Reason = "over", m.game.Result(), m.game.Method().String()
 	case !m.full():
 		s.Status = "waiting"
+	case m.arranging():
+		s.Status = "setup"
 	}
 	for _, c := range four.Colors {
 		seat := fourSeat{Taken: m.seats[c] != "", Name: m.names[c], Bot: m.bots[c]}
 		seat.Online = seat.Taken && m.online(int(c))
 		if f := m.game.Fell(c); f != four.NoMethod {
 			seat.Out = f.String()
+		}
+		if s.Status == "setup" {
+			seat.Ready = m.start.Setups[c] != ""
+			if m.start.Quit[c] {
+				seat.Out = four.Resignation.String()
+			}
+		} else {
+			seat.Ready = m.pending[c] != ""
 		}
 		s.Players[c.String()] = seat
 	}
@@ -696,7 +988,12 @@ func (m *FourMatch) base() fourState {
 		for _, c := range four.Colors {
 			s.Clock.Left[c.String()] = max(m.left(int(c), now), 0).Milliseconds()
 		}
-		if m.running() {
+		for _, c := range four.Colors {
+			if m.ticking(int(c)) {
+				s.Ticking = append(s.Ticking, c.String())
+			}
+		}
+		if m.running() && !m.settings.Sync {
 			s.Clock.Running = m.game.Turn().String()
 		}
 	}
@@ -716,9 +1013,21 @@ func (m *FourMatch) view(s fourState, color, side int) []byte {
 	if color >= 0 {
 		s.You = four.Color(color).String()
 		s.fourView = fourViewFor(m.game, color, s.Status == "playing", m.settings.Fog)
+		s.Planned = m.pending[color]
+		if s.Status == "setup" {
+			s.Arranged = m.start.Setups[color]
+		}
 	} else {
 		s.Watching = four.Color(side).String()
 		s.fourView = m.spectatorView(side)
+	}
+	if s.Status == "setup" {
+		// Nobody sees anybody's arrangement; the page shows the viewer's own.
+		for i, sq := range s.Board {
+			if sq != " " {
+				s.Board[i] = "."
+			}
+		}
 	}
 	b, _ := json.Marshal(s)
 	return b
@@ -730,14 +1039,17 @@ func (m *FourMatch) spectatorView(side int) fourView {
 	if !m.settings.Fog || m.game.Over() {
 		return fourViewFor(m.game, -1, false, m.settings.Fog)
 	}
-	hist := m.game.History()
-	shown := max(0, len(hist)-fourSpectatorDelay)
-	past := four.NewGame(m.settings.rules())
-	for _, e := range hist[:shown] {
-		past.PlayToken(e.Token())
+	hist, toks := m.game.History(), m.game.TokenList()
+	delay := fourSpectatorDelay
+	if m.settings.Sync {
+		delay = fourSyncSpectatorDelay
+	}
+	past := m.freshGame()
+	for _, tok := range toks[:max(0, len(toks)-delay)] {
+		past.PlayToken(tok)
 	}
 	v := fourViewFor(past, side, false, true)
-	v.Turn, v.Ply, v.Behind = m.game.Turn().String(), len(hist), len(hist)-shown
+	v.Turn, v.Ply, v.Behind = m.game.Turn().String(), len(hist), len(hist)-len(past.History())
 	return v
 }
 

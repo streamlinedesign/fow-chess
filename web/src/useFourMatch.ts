@@ -12,6 +12,10 @@ export type FourSettings = {
   jesterPawns?: boolean
   hill?: boolean
   centerVision?: '' | 'pawn' | 'any'
+  /** Each player arranges their own pieces first. */
+  setup?: '' | 'backRow' | 'battleship'
+  /** Sync Move: everyone moves at once each round. */
+  sync?: boolean
 }
 
 export type FourSeatState = {
@@ -21,6 +25,8 @@ export type FourSeatState = {
   bot?: boolean
   /** How the player left the game: "capturing the king", "resignation" or "time". */
   out?: string
+  /** Has sent a move for this Sync Move round, or placed their pieces. */
+  ready?: boolean
 }
 
 /** Must match fourState in server/four_match.go. */
@@ -34,14 +40,16 @@ export type FourState = {
   ply: number
   legal: string[]
   last: { from: string; to: string } | null
+  /** Every move of the last Sync Move round, when you can see them all. */
+  lastRound?: { from: string; to: string }[]
   danger?: string
   dangerHidden?: boolean
   fullVision?: boolean
   /** Every move and leaving; san is "?" for a move you can't know. */
-  history: { by: Seat; san?: string; out?: string }[]
+  history: { by: Seat; san?: string; out?: string; round?: number }[]
   /** The pieces each player has taken that you know of, as codes like "gQ". */
   captured: Record<Seat, string[]>
-  status: 'waiting' | 'playing' | 'over'
+  status: 'waiting' | 'setup' | 'playing' | 'over'
   /** The winner's seat, or "draw". */
   result?: Seat | 'draw'
   reason?: string
@@ -50,6 +58,12 @@ export type FourState = {
   watching?: Seat
   behind?: number
   spectators: number
+  /** Whose clocks run in a Sync Move round. */
+  ticking?: Seat[]
+  /** The move you've sent for this Sync Move round. */
+  planned?: string
+  /** Your arrangement, once placed, while players arrange their pieces. */
+  arranged?: string
   receivedAt: number
 }
 
@@ -57,6 +71,7 @@ export type FourChatLine = { id: number; from: Seat; text: string; at: number }
 
 export type FourOutgoing =
   | { type: 'move'; uci: string }
+  | { type: 'setup'; board: string }
   | { type: 'resign' }
   | { type: 'fill' }
   | { type: 'chat'; text: string }
@@ -65,7 +80,7 @@ export type FourOutgoing =
 export type FourConnection = 'connecting' | 'open' | 'closed' | 'failed' | 'missing' | 'outdated'
 
 /** Must match fourProtocol in server/four_match.go. */
-const FOUR_PROTOCOL = 1
+const FOUR_PROTOCOL = 2
 
 /** The live connection to a four-player match, reconnecting as useMatch does. */
 export function useFourMatch(id: string) {

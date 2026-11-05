@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Clock } from './Clock'
 import { aroundFrom, parseMove, pieceImg4, SEAT_COLORS, SEATS, type Seat } from './four'
 import { FourBoard } from './FourBoard'
+import { FourSetup } from './FourSetup'
 import { useT, type Dict } from './i18n'
 import { how } from './MatchPage'
 import { navigate } from './router'
@@ -15,13 +16,22 @@ const seatName = (t: Dict, s: Seat) => t.four.seats[s]
 export function FourMatchPage({ id }: { id: string }) {
   const { state, conn, send, chat } = useFourMatch(id)
   const t = useT()
-  const [pending, setPending] = useState<{ uci: string; sentWith: FourState } | null>(null)
-  const [promotion, setPromotion] = useState<{ from: string; to: string } | null>(null)
+  const [pending, setPending] = useState<{
+    uci: string
+    sentWith: FourState
+  } | null>(null)
+  const [promotion, setPromotion] = useState<{
+    from: string
+    to: string
+  } | null>(null)
   const [side, setSide] = useState<Seat>('r')
   const [confirmResign, setConfirmResign] = useState(false)
   const [filling, setFilling] = useState(false)
 
-  const predicting = !!state && !!pending && pending.sentWith === state
+  const sync = !!state?.settings.sync
+  const sentNow = !!state && !!pending && pending.sentWith === state
+  // In Sync Move nothing moves until the round is played; the move you sent is marked instead.
+  const predicting = sentNow && !sync
   useEffect(() => {
     if (state && pending && pending.sentWith !== state) setPending(null)
   }, [state, pending])
@@ -30,9 +40,11 @@ export function FourMatchPage({ id }: { id: string }) {
   const seat: Seat = you ?? side
   const playing = state?.status === 'playing'
   const legal = state && !predicting && conn === 'open' ? state.legal : []
-  const toMove = playing && conn === 'open' && !predicting ? state!.turn : null
-  const yourMove = !!you && toMove === you
+  const toMove = playing && conn === 'open' && !predicting && !sync ? state!.turn : null
   const youOut = !!you && !!state?.players[you].out
+  const planned = sync ? (sentNow ? pending!.uci : state?.planned) || '' : ''
+  const yourMove = sync ? playing && !!you && !youOut && !planned && legal.length > 0 : !!you && toMove === you
+  const arranging = state?.status === 'setup'
 
   // Show our own move at once; the server's next state replaces it.
   const board = (() => {
@@ -101,12 +113,14 @@ export function FourMatchPage({ id }: { id: string }) {
     if (conn === 'failed') return t.match.cantReach
     if (conn !== 'open') return t.match.reconnecting
     if (state.status === 'waiting') return t.four.waitingTitle
+    if (arranging) return t.four.arranging
     if (state.status === 'over') {
       if (state.result === 'draw') return t.four.draw
       const w = state.result as Seat
       return you === w ? t.four.youWin : t.four.wins(seatName(t, w))
     }
     if (youOut) return state.players[you!].out === 'capturing the king' ? t.four.kingEaten : t.four.youAreOut
+    if (sync) return !you ? t.four.picking : planned ? t.four.sent : t.four.pickMove
     if (you) return toMove === you ? t.common.yourMove : t.four.toMove(seatName(t, state.turn))
     return t.four.toMove(seatName(t, state.turn))
   })()
@@ -117,37 +131,50 @@ export function FourMatchPage({ id }: { id: string }) {
     <main className="flex flex-1 justify-center px-4 pb-6 sm:px-8">
       <div className="flex w-full max-w-[1240px] flex-col gap-5 lg:flex-row lg:items-start lg:justify-center">
         <section className="four-wrap mx-auto flex flex-col gap-3 lg:mx-0">
-          <div className="board-turn relative rounded-md" data-your-move={yourMove}>
-            <FourBoard
-              board={board.length ? board : emptyBoard}
-              seat={seat}
-              legal={legal}
-              lastMove={last}
-              danger={predicting ? undefined : state?.danger}
-              hill={state?.settings.hill}
-              center={state?.settings.centerVision ? { live: !predicting && !!state.fullVision } : undefined}
-              look={state?.settings}
-              onMove={onMove}
+          {arranging && you && !youOut ? (
+            <FourSetup
+              seat={you}
+              layout={state.settings.setup === 'backRow' ? 'backRow' : 'battleship'}
+              look={state.settings}
+              mine={state.arranged}
+              onReady={(board) => send({ type: 'setup', board })}
+              onChange={() => send({ type: 'setup', board: '' })}
             />
-            <SeatLabels state={state} seat={seat} />
-            {state?.status === 'waiting' && (
-              <WaitingCard
-                id={id}
-                seated={seated}
-                canFill={!!you}
-                filling={filling}
-                onFill={() => {
-                  setFilling(true)
-                  send({ type: 'fill' })
-                }}
+          ) : (
+            <div className="board-turn relative rounded-md" data-your-move={yourMove}>
+              <FourBoard
+                board={board.length ? board : emptyBoard}
+                seat={seat}
+                legal={legal}
+                lastMove={last}
+                lastMoves={predicting ? undefined : state?.lastRound}
+                planned={planned ? parseMove(planned) : null}
+                danger={predicting ? undefined : state?.danger}
+                hill={state?.settings.hill}
+                center={state?.settings.centerVision ? { live: !predicting && !!state.fullVision } : undefined}
+                look={state?.settings}
+                onMove={onMove}
               />
-            )}
-            {!state && (
-              <div className="absolute inset-0 z-20 grid place-items-center rounded-md bg-bg/60 text-lg font-semibold">
-                <Spinner label={t.match.joining} />
-              </div>
-            )}
-          </div>
+              <SeatLabels state={state} seat={seat} />
+              {state?.status === 'waiting' && (
+                <WaitingCard
+                  id={id}
+                  seated={seated}
+                  canFill={!!you}
+                  filling={filling}
+                  onFill={() => {
+                    setFilling(true)
+                    send({ type: 'fill' })
+                  }}
+                />
+              )}
+              {!state && (
+                <div className="absolute inset-0 z-20 grid place-items-center rounded-md bg-bg/60 text-lg font-semibold">
+                  <Spinner label={t.match.joining} />
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         <aside className="flex w-full flex-col gap-4 lg:w-[340px] lg:pt-1">
@@ -161,6 +188,7 @@ export function FourMatchPage({ id }: { id: string }) {
               {status}
             </p>
             {overDetail && <p className="mt-1 text-sm text-accent">{overDetail}</p>}
+            {planned && playing && <p className="mt-1 text-sm text-accent">{t.four.sentHint}</p>}
           </div>
           {danger && (
             <p className="-mt-2 flex items-center gap-2 text-sm font-semibold text-danger" role="status">
@@ -195,7 +223,9 @@ export function FourMatchPage({ id }: { id: string }) {
           )}
 
           <div className="flex flex-wrap gap-2">
-            {you && playing && !youOut && <Button onClick={() => setConfirmResign(true)}>{t.match.resign}</Button>}
+            {you && (playing || arranging) && !youOut && (
+              <Button onClick={() => setConfirmResign(true)}>{t.match.resign}</Button>
+            )}
             {(state?.status === 'over' || youOut || !you) && (
               <Button variant={state?.status === 'over' ? 'solid' : 'outline'} onClick={() => navigate('/mods')}>
                 {t.four.newGame}
@@ -252,6 +282,18 @@ export function FourMatchPage({ id }: { id: string }) {
   )
 }
 
+/** Whether the table is waiting on s: to move, to send a Sync Move, or to arrange their pieces. */
+function waitingOn(state: FourState, s: Seat) {
+  const p = state.players[s]
+  if (p.out) return false
+  if (state.status === 'setup') return !p.ready
+  if (state.status !== 'playing') return false
+  return state.settings.sync ? !p.ready : state.turn === s
+}
+
+const ticking = (state: FourState, s: Seat) =>
+  state.settings.sync ? !!state.ticking?.includes(s) : state.clock?.running === s
+
 const emptyBoard: string[] = Array.from({ length: 196 }, (_, i) => {
   const x = i % 14
   const y = Math.floor(i / 14)
@@ -268,7 +310,7 @@ function SeatLabels({ state, seat }: { state: FourState | null; seat: Seat }) {
     <>
       {aroundFrom(seat).map((s, i) => {
         const p = state.players[s]
-        const active = state.status === 'playing' && state.turn === s
+        const active = waitingOn(state, s)
         return (
           <div
             key={s}
@@ -283,7 +325,7 @@ function SeatLabels({ state, seat }: { state: FourState | null; seat: Seat }) {
             {state.clock && (
               <Clock
                 left={state.clock.left[s]}
-                running={state.clock.running === s}
+                running={ticking(state, s)}
                 since={state.receivedAt}
                 daily={!!state.settings.time.perMove}
               />
@@ -307,7 +349,7 @@ function Seats({ state, you, toMove }: { state: FourState | null; you: Seat | nu
           <li
             key={s}
             className="player-bar flex h-11 items-center gap-2 rounded-lg pr-1.5 pl-3 text-[15px]"
-            data-active={toMove === s}
+            data-active={toMove === s || (state.settings.sync && waitingOn(state, s))}
             data-out={!!p.out}
           >
             <span
@@ -326,10 +368,15 @@ function Seats({ state, you, toMove }: { state: FourState | null; you: Seat | nu
                 <>
                   {p.taken && !p.online && <span className="text-sm text-danger">{t.match.offline}</span>}
                   {toMove === s && !state.clock && <span className="turn-tag">{t.common.toMove}</span>}
+                  {p.ready && (state.status === 'setup' || state.status === 'playing') && (
+                    <span className="text-sm text-accent">
+                      {state.status === 'setup' ? t.four.ready : t.four.sentTag}
+                    </span>
+                  )}
                   {state.clock && (
                     <Clock
                       left={state.clock.left[s]}
-                      running={state.clock.running === s}
+                      running={ticking(state, s)}
                       since={state.receivedAt}
                       daily={!!state.settings.time.perMove}
                     />
@@ -360,18 +407,49 @@ function Moves({ state }: { state: FourState }) {
           ref={list}
           className="grid max-h-[30dvh] grid-cols-4 gap-x-2 gap-y-1 overflow-y-auto font-mono text-[13px] tabular-nums lg:max-h-[34dvh]"
         >
-          {state.history.map((e, i) => (
-            <li key={i} className="flex min-w-0 items-center gap-1.5" title={t.four.seats[e.by]}>
-              <span className="size-2 shrink-0 rounded-full" style={{ background: SEAT_COLORS[e.by] }} aria-hidden />
-              <span className="truncate">
-                {e.out ? (e.out === 'resignation' ? t.four.resigned : t.four.outOfTime) : e.san}
-              </span>
-            </li>
-          ))}
+          {moveCells(state).map((e, i) =>
+            e ? (
+              <li key={i} className="flex min-w-0 items-center gap-1.5" title={t.four.seats[e.by]}>
+                <span className="size-2 shrink-0 rounded-full" style={{ background: SEAT_COLORS[e.by] }} aria-hidden />
+                <span className="truncate">
+                  {e.out ? (e.out === 'resignation' ? t.four.resigned : t.four.outOfTime) : e.san}
+                </span>
+              </li>
+            ) : (
+              <li key={i} aria-hidden />
+            ),
+          )}
         </ol>
       )}
     </section>
   )
+}
+
+/**
+ * The history as cells of a four-column grid. In Sync Move each round is a
+ * row with each player's move in their own column; anyone leaving gets a row
+ * of their own.
+ */
+function moveCells(state: FourState) {
+  type Cell = FourState['history'][number] | null
+  if (!state.settings.sync) return state.history
+  const cells: Cell[] = []
+  let row: Cell[] | null = null
+  let round = -1
+  for (const e of state.history) {
+    if (!row || !e.round || e.round !== round) {
+      if (row) cells.push(...row)
+      row = [null, null, null, null]
+      round = e.round ?? -1
+    }
+    row[SEATS.indexOf(e.by)] = e
+    if (!e.round) {
+      cells.push(...row)
+      row = null
+    }
+  }
+  if (row) cells.push(...row)
+  return cells
 }
 
 function TableChat({

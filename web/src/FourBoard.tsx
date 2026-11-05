@@ -10,6 +10,10 @@ type Props = {
   /** Moves you may play now; empty when it isn't your turn. */
   legal: string[]
   lastMove?: { from: string; to: string } | null
+  /** Every move of the last Sync Move round. */
+  lastMoves?: { from: string; to: string }[]
+  /** The move you've sent for this Sync Move round. */
+  planned?: { from: string; to: string } | null
   /** Your king's square while something attacks it. */
   danger?: string
   /** King of the Hill: ring the four centre squares. */
@@ -30,6 +34,8 @@ export const FourBoard = memo(function FourBoard({
   seat,
   legal,
   lastMove,
+  lastMoves,
+  planned,
   danger,
   hill,
   center,
@@ -137,7 +143,11 @@ export const FourBoard = memo(function FourBoard({
           className="sq"
           data-square={sq}
           data-light={(x + y) % 2 === 1}
-          data-last={!fog && (lastMove?.from === sq || lastMove?.to === sq)}
+          data-last={
+            !fog &&
+            (lastMove?.from === sq || lastMove?.to === sq || !!lastMoves?.some((m) => m.from === sq || m.to === sq))
+          }
+          data-planned={planned?.from === sq || planned?.to === sq}
           data-selected={sel === sq}
           data-danger={danger === sq}
           data-target={target ? (capture ? 'capture' : 'move') : undefined}
