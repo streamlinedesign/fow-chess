@@ -90,18 +90,20 @@ func (s Shape) RankOf(c Color, sq Square) int {
 
 // Promotes reports whether c's pawn arriving on sq promotes. On the cross
 // that's the eighth rank from its own side, just past the middle. On the
-// extended board it's any edge but the player's own: the far edge, and the
-// two side edges past the player's own rows, so a jester pawn can't walk
-// sideways along its own rows to the wall and promote.
+// extended board it's the same idea: any square past the middle (the ninth
+// rank on), plus the side walls where the players to the left and right
+// sit, from just past the player's own rows (a5 to a12 and p5 to p12 for
+// Red). The walls matter for pawns that move sideways, like jester pawns.
 func (s Shape) Promotes(c Color, sq Square) bool {
 	r := s.RankOf(c, sq)
 	if s == Cross {
 		return r >= 7
 	}
-	w := s.Width()
-	x, y := sq.X(), sq.Y()
-	edge := x == 0 || y == 0 || x == w-1 || y == w-1
-	return edge && r >= s.Rows()
+	if r >= s.Width()/2 {
+		return true
+	}
+	side := s.RankOf((c+1)%4, sq) == 0 || s.RankOf((c+3)%4, sq) == 0
+	return side && r >= s.Rows()
 }
 
 // Centre is the four middle squares.
