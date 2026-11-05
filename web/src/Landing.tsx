@@ -32,7 +32,6 @@ import {
 import { api, openOffer, type UserCard } from './social'
 import { countdown, type Tournament } from './TournamentsPage'
 import { Button } from './ui'
-import { GameCard, type LiveGame } from './WatchPage'
 
 /** Clocks split by how long a game takes: Short is Blitz and Rapid, Long the rest. */
 const SHORT_GROUPS = ['Blitz', 'Rapid']
@@ -85,9 +84,6 @@ export function Landing() {
       <Bots settings={settings} />
 
       <div className="home-row home-r3">
-        <div className="home-cell cross">
-          <LiveNow />
-        </div>
         <div className="home-cell">
           <Leaderboard me={me?.username} />
         </div>
@@ -536,48 +532,6 @@ function YourGames({ username }: { username: string }) {
               </a>
             )
           })}
-        </div>
-      )}
-    </section>
-  )
-}
-
-/** How often the live games refresh while the page is open. */
-const REFRESH_MS = 15_000
-
-/** A few games being played right now, friends' games first. */
-function LiveNow() {
-  const t = useT()
-  const [games, setGames] = useState<LiveGame[] | null>(null)
-
-  useEffect(() => {
-    let stopped = false
-    const load = () => {
-      if (document.visibilityState !== 'visible') return
-      api<{ games: LiveGame[] }>('GET', '/api/watch')
-        .then((b) => !stopped && setGames(b.games))
-        .catch(() => !stopped && setGames((g) => g ?? []))
-    }
-    load()
-    const timer = setInterval(load, REFRESH_MS)
-    document.addEventListener('visibilitychange', load)
-    return () => {
-      stopped = true
-      clearInterval(timer)
-      document.removeEventListener('visibilitychange', load)
-    }
-  }, [])
-
-  return (
-    <section>
-      <Heading title={t.landing.liveNow} href="/watch" link={t.landing.allGames} />
-      {games && games.length === 0 ? (
-        <p className="text-accent">{t.landing.nobodyLive}</p>
-      ) : (
-        <div className="wgrid">
-          {(games ?? []).slice(0, 2).map((g) => (
-            <GameCard key={g.id} g={g} />
-          ))}
         </div>
       )}
     </section>
