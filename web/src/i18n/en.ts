@@ -814,8 +814,46 @@ export const en = {
 
   captured: (n: number) => `Captured: ${n}`,
 
+  bug: {
+    note: 'Eat the King is in beta, so bugs are possible.',
+    report: 'Report a bug',
+    desc: "Tell us what happened and we'll look into it. The match code lets us replay the game.",
+    category: 'What is it about',
+    categories: {
+      ui: 'Looks',
+      rules: 'Rules',
+      connection: 'Connection',
+      clock: 'Clocks',
+      bots: 'Bots',
+      account: 'Account',
+      other: 'Other',
+    },
+    hints: {
+      ui: "Something looks wrong or doesn't respond.",
+      rules: 'A move, the fog or a result seems wrong.',
+      connection: 'The game froze, lagged or lost the opponent.',
+      clock: "A clock ran wrong or didn't stop.",
+      bots: 'A bot played oddly or stalled.',
+      account: 'Signing in, profiles, friends or messages.',
+      other: 'Anything else.',
+    },
+    match: 'Match code',
+    matchHint: "Optional. It's in the address after /m/.",
+    text: 'What happened',
+    placeholder: 'What you did, what you expected, and what happened instead.',
+    send: 'Send report',
+    sentTitle: 'Thanks',
+    sent: (n: number) => `Report #${n} is in.`,
+    close: 'Close',
+  },
+
   /** Server errors, by the code the server sends with them. */
   errors: {
+    bug_category: 'Pick what the bug is about.',
+    bug_match: "That isn't a match code.",
+    bug_empty: 'Write what happened first.',
+    bug_length: 'Reports are up to 2000 characters.',
+    bug_too_many: 'Too many reports. Try again later.',
     load_profile: "Couldn't load the profile.",
     no_player: 'No such player.',
     too_many: 'Too many attempts. Try again in a few minutes.',

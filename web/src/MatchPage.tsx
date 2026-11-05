@@ -1,3 +1,4 @@
+import { BugButton } from './BugReport'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { refreshMe } from './auth'
 import { Board } from './Board'
@@ -328,6 +329,7 @@ export function MatchPage({ id }: { id: string }) {
                 </svg>
               </Button>
             </Tip>
+            <BugButton match={id} />
             <CopyLink link={link} />
           </div>
 
