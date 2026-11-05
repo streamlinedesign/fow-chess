@@ -1,15 +1,17 @@
 import * as RadioGroup from '@radix-ui/react-radio-group'
+import * as Switch from '@radix-ui/react-switch'
 import { useT } from './i18n'
-import { piecesFor, setPrefs, usePrefs } from './prefs'
-import { CLASSIC, KINDS, SET_IDS, SETS, setImg } from './sets'
+import { piecesFor, setPrefs, tilesFor, usePrefs, type Prefs } from './prefs'
+import { concrete, KINDS, SET_IDS, SETS, setImg, TILE_IDS, tileImg } from './sets'
 
-/** A set's face in a picker: its knight, or for classic a cream and an ink one. */
+/** A set's face in a picker: its knight, or for a two-sided set (classic, the themes) both knights. */
 function SetFace({ id }: { id: string }) {
-  if (id === CLASSIC)
+  const w = concrete(id, 'w')
+  if (w !== concrete(id, 'b'))
     return (
       <span className="set-face pair" aria-hidden>
-        <img src={setImg('cream', 'N')} alt="" />
-        <img src={setImg('ink', 'N')} alt="" />
+        <img src={setImg(w, 'N')} alt="" />
+        <img src={setImg(concrete(id, 'b'), 'N')} alt="" />
       </span>
     )
   return (
@@ -33,10 +35,46 @@ function SetPicker({ label, value, onChange }: { label: string; value: string; o
   )
 }
 
-/** Their back row and pawns at the top, yours at the bottom, as on a board you play as `bottom`. */
-function Preview({ primary, secondary, bottom }: { primary: string; secondary: string; bottom: 'w' | 'b' }) {
+function TilePicker({
+  label,
+  light,
+  value,
+  onChange,
+}: {
+  label: string
+  light: boolean
+  value: string
+  onChange: (id: string) => void
+}) {
   const t = useT()
-  const img = piecesFor({ primary, secondary }, bottom)
+  return (
+    <RadioGroup.Root
+      aria-label={label}
+      value={value || 'plain'}
+      onValueChange={(v) => onChange(v === 'plain' ? '' : v)}
+      className="set-pick"
+    >
+      {TILE_IDS.map((id) => (
+        <RadioGroup.Item key={id || 'plain'} value={id || 'plain'} className="set-opt">
+          <span
+            className="set-face tile"
+            data-light={light}
+            style={id ? { backgroundImage: `url("${tileImg(id, light)}")` } : undefined}
+            aria-hidden
+          />
+          <span className="set-name">{id ? t.pieces.sets[id] : t.pieces.plainTiles}</span>
+        </RadioGroup.Item>
+      ))}
+    </RadioGroup.Root>
+  )
+}
+
+/** Their back row and pawns at the top, yours at the bottom on your tiles, as on a board you play as `bottom`. */
+function Preview({ prefs, bottom }: { prefs: Prefs; bottom: 'w' | 'b' }) {
+  const t = useT()
+  const img = piecesFor(prefs, bottom)
+  // Your half is the bottom two rows here; any rank on it will do.
+  const tile = tilesFor(prefs, 'w')
   const row = 'RNBQKBNR'
   const top = bottom === 'w' ? row.toLowerCase() : row
   const mine = bottom === 'w' ? row : row.toLowerCase()
@@ -46,7 +84,15 @@ function Preview({ primary, secondary, bottom }: { primary: string; secondary: s
     <div className="set-preview" role="img" aria-label={t.pieces.preview}>
       {lines.map((line, r) =>
         [...line].map((p, c) => (
-          <span key={`${r}${c}`} className="sq" data-light={(r + c) % 2 === 0}>
+          <span
+            key={`${r}${c}`}
+            className="sq"
+            data-light={(r + c) % 2 === 0}
+            style={(() => {
+              const src = r >= 2 ? tile(0, (r + c) % 2 === 0) : undefined
+              return src ? { background: `url("${src}") center / cover` } : undefined
+            })()}
+          >
             <img className="piece" src={img(p)} alt="" draggable={false} />
           </span>
         )),
@@ -62,8 +108,17 @@ export function PiecesSettings({ signedIn }: { signedIn: boolean }) {
   return (
     <>
       <div className="set-row stack">
-        <Preview primary={p.primary} secondary={p.secondary} bottom={p.side || 'w'} />
+        <Preview prefs={p} bottom={p.side || 'w'} />
       </div>
+      <label className="set-row cursor-pointer">
+        <div className="row-l">
+          <b>{t.pieces.skins}</b>
+          <span>{p.plain ? t.pieces.skinsOff : t.pieces.skinsOn}</span>
+        </div>
+        <Switch.Root checked={!p.plain} onCheckedChange={(on) => setPrefs({ plain: !on })} className="sl-switch">
+          <span className="sl-switch-track" />
+        </Switch.Root>
+      </label>
       <div className="set-row stack">
         <div className="row-l">
           <b>{t.pieces.yours}</b>
@@ -77,6 +132,30 @@ export function PiecesSettings({ signedIn }: { signedIn: boolean }) {
           <span>{t.pieces.theirsHint}</span>
         </div>
         <SetPicker label={t.pieces.theirs} value={p.secondary} onChange={(secondary) => setPrefs({ secondary })} />
+      </div>
+      <div className="set-row stack">
+        <div className="row-l">
+          <b>{t.pieces.lightTiles}</b>
+          <span>{t.pieces.tilesHint}</span>
+        </div>
+        <TilePicker
+          label={t.pieces.lightTiles}
+          light
+          value={p.lightTiles}
+          onChange={(lightTiles) => setPrefs({ lightTiles })}
+        />
+      </div>
+      <div className="set-row stack">
+        <div className="row-l">
+          <b>{t.pieces.darkTiles}</b>
+          <span>{t.pieces.tilesHint}</span>
+        </div>
+        <TilePicker
+          label={t.pieces.darkTiles}
+          light={false}
+          value={p.darkTiles}
+          onChange={(darkTiles) => setPrefs({ darkTiles })}
+        />
       </div>
       <div className="set-row">
         <div className="row-l">

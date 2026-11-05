@@ -19,6 +19,8 @@ func TestPrefsAndAvatars(t *testing.T) {
 		`{"avatar":"classic/K"}`,
 		`{"avatar":"red/Z"}`,
 		`{"avatar":"red"}`,
+		`{"avatar":"galaxy/K"}`,
+		`{"lightTiles":"marble"}`,
 	} {
 		if code, _ := ann.do("PUT", "/api/prefs", bad); code != 400 {
 			t.Errorf("%s: %d", bad, code)
@@ -32,6 +34,16 @@ func TestPrefsAndAvatars(t *testing.T) {
 	if me["primary"] != "red-ink" || me["secondary"] != "blue" || me["side"] != "b" || me["avatar"] != "violet-ink/N" {
 		t.Errorf("saved: %v", me)
 	}
+
+	// Themes: a two-sided set, tiles per square colour, and no skins at all.
+	if code, _ := ann.do("PUT", "/api/prefs", `{"primary":"holy","secondary":"galaxy","lightTiles":"holy","darkTiles":"galaxy","plain":true,"avatar":"ancient-dark/N"}`); code != 200 {
+		t.Fatalf("themes: %d", code)
+	}
+	_, me = ann.do("GET", "/api/me", "")
+	if me["primary"] != "holy" || me["lightTiles"] != "holy" || me["darkTiles"] != "galaxy" || me["plain"] != true || me["avatar"] != "ancient-dark/N" {
+		t.Errorf("themes saved: %v", me)
+	}
+	ann.do("PUT", "/api/prefs", `{"primary":"red-ink","secondary":"blue","side":"b","avatar":"violet-ink/N"}`)
 
 	// Anyone can see avatars; players on the pawn are left out.
 	_, got := ann.do("GET", "/api/avatars?u=ANN,ben,nobody", "")

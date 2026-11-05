@@ -19,7 +19,7 @@
 
 ## Later
 
-- Piece sets: themed sets (galaxy and others) go in `web/src/sets.ts` and `pieceSets` in `server/prefs.go`
+- Holy set: a new knight symbol, centred low on the knight (SVGs in `web/src/pieces/holy/`)
 - Side preference for games shared by code (the creator always plays White for now)
 
 - chess-bots: copy `server/engine` (Sync Move, jester pawns and more are missing there)
