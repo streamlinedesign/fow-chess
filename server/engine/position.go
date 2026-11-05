@@ -24,8 +24,6 @@ type Position struct {
 	KingCapture bool
 	// JumpKing lets kings also jump like a knight. A rule setting too.
 	JumpKing bool
-	// BackPawns lets pawns also step one square straight back.
-	BackPawns bool
 	// JesterPawns lets pawns also step one square in any direction, like a
 	// king, capturing on any of those squares. They keep the double step from
 	// their starting rank, en passant and promotion.

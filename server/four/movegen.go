@@ -163,10 +163,6 @@ func (p *Position) pawnMoves(sq Square, us Color) []Move {
 				add(to, FlagCapture)
 			}
 		}
-	} else if p.BackPawns {
-		if back, ok := sq.Offset(-fx, -fy); ok && p.Board[back].IsEmpty() {
-			add(back, 0)
-		}
 	}
 	return moves
 }

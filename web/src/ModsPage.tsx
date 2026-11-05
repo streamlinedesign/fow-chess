@@ -36,12 +36,11 @@ export function ModsPage() {
     try {
       saveSettings(settings)
       if (four) {
-        const { fog, time, jumpKing, backPawns, jesterPawns, hill, centerVision, setup, sync } = settings
+        const { fog, time, jumpKing, jesterPawns, hill, centerVision, setup, sync } = settings
         const body = {
           fog,
           time,
           jumpKing,
-          backPawns,
           jesterPawns,
           hill,
           centerVision,

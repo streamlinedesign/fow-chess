@@ -16,10 +16,10 @@ func (p *Position) SAN(m Move) string {
 			b.WriteString("O-O-O")
 		}
 	case pc.Kind() == Pawn:
-		// Plain pawns never need more than the file of a capture. Pawns that
-		// step back or sideways can reach a square from more than one side.
+		// Plain pawns never need more than the file of a capture. Jester pawns
+		// step sideways and back, so they can reach a square from more than one side.
 		d := ""
-		if p.JesterPawns || p.BackPawns {
+		if p.JesterPawns {
 			d = p.disambiguation(m, pc)
 		}
 		file := string('a' + byte(m.From.File()))

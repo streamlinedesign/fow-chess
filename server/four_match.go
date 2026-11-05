@@ -27,7 +27,6 @@ type fourSettings struct {
 	Fog          bool        `json:"fog"`
 	Time         TimeControl `json:"time"`
 	JumpKing     bool        `json:"jumpKing,omitempty"`
-	BackPawns    bool        `json:"backPawns,omitempty"`
 	JesterPawns  bool        `json:"jesterPawns,omitempty"`
 	Hill         bool        `json:"hill,omitempty"`
 	CenterVision string      `json:"centerVision,omitempty"`
@@ -41,7 +40,7 @@ type fourSettings struct {
 var fourLayouts = map[string]four.Layout{"": four.Standard, "backRow": four.BackRow, "battleship": four.Battleship}
 
 func (s fourSettings) rules() four.Rules {
-	return four.Rules{JumpKing: s.JumpKing, BackPawns: s.BackPawns, JesterPawns: s.JesterPawns, Hill: s.Hill,
+	return four.Rules{JumpKing: s.JumpKing, JesterPawns: s.JesterPawns, Hill: s.Hill,
 		CenterVision: four.CenterVision(centerVisions[s.CenterVision]), Sync: s.Sync}
 }
 

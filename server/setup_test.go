@@ -215,7 +215,7 @@ func setupOf(t *testing.T, s map[string]any) map[string]any {
 	return v
 }
 
-func TestHillAndBackPawnsMatch(t *testing.T) {
+func TestHillMatch(t *testing.T) {
 	store := openTestStore(t, filepath.Join(t.TempDir(), "x"))
 	hub := NewHub(store)
 	// A jump king reaches the hill in two hops; without check, the pawn on e5 can't stop it.
@@ -230,16 +230,6 @@ func TestHillAndBackPawnsMatch(t *testing.T) {
 		t.Fatalf("result %v reason %v", s["result"], s["reason"])
 	}
 
-	b := hub.Create(guestPlayer("g3"), Settings{Fog: true, BackPawns: true})
-	c3, c4 := newClient("g3"), newClient("g4")
-	b.join(c3, guestPlayer("g3"))
-	b.join(c4, guestPlayer("g4"))
-	b.handle(c3, inMsg{Type: "move", UCI: "e2e4"})
-	b.handle(c4, inMsg{Type: "move", UCI: "e7e5"})
-	b.handle(c3, inMsg{Type: "move", UCI: "e4e3"})
-	if n := len(b.game.History()); n != 3 {
-		t.Fatalf("the pawn didn't step back: %d plies", n)
-	}
 }
 
 func TestJesterPawnsMatch(t *testing.T) {

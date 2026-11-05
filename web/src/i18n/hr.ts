@@ -184,7 +184,6 @@ export const hr: Dict = {
     hillHint: 'Pobijedi i tako da dovedeš kralja na jedno od četiri središnja polja.',
     twists: 'Začini',
     jumpHint: 'Tvoj kralj može skakati i kao skakač.',
-    backPawnsHint: 'Pješaci mogu i jedno polje natrag, i vide iza sebe.',
     jesterPawnsHint:
       'Pješaci se kreću i uzimaju i jedno polje u bilo kojem smjeru, kao kralj. Zadržavaju dvostruki prvi korak, en passant i promociju.',
     center: 'Pogled iz centra',
@@ -289,7 +288,6 @@ export const hr: Dict = {
     checkmate: 'Šah-mat',
     hill: 'Kralj brda',
     jump: 'Jump King',
-    backPawns: 'Pješaci unatrag',
     jesterPawns: 'Pješaci lakrdijaši',
     centerPawn: 'Pogled iz centra (pješaci)',
     noCenter: 'Bez pogleda iz centra',

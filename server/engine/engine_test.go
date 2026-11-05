@@ -325,39 +325,6 @@ func kingMoves(g *Game) int {
 	return n
 }
 
-func TestBackPawns(t *testing.T) {
-	// A white pawn on e4 can step back to e3 but not capture backward or go back two.
-	g, err := NewGameFromFEN("4k3/8/8/8/4P3/8/8/4K3 w - - 0 1", Rules{BackPawns: true})
-	if err != nil {
-		t.Fatal(err)
-	}
-	var pawn []string
-	for _, m := range g.LegalMoves() {
-		if m.From == SquareAt(4, 3) {
-			pawn = append(pawn, m.UCI())
-		}
-	}
-	if strings.Join(pawn, " ") != "e4e5 e4e3" {
-		t.Errorf("pawn moves %v, want e4e5 e4e3", pawn)
-	}
-	if _, err := g.PlayUCI("e4e3"); err != nil {
-		t.Fatalf("stepping back: %v", err)
-	}
-	if san := g.History()[0].SAN; san != "e3" {
-		t.Errorf("SAN %q", san)
-	}
-	// A blocked pawn still sees the square behind it, like the one ahead.
-	p, _ := ParseFEN("4k3/8/8/8/3P4/3r4/8/K7 w - - 0 1")
-	p.BackPawns = true
-	if got := visionString(p.Vision(White)); got != "......../......../......../...x..../...x..../...x..../xx....../xx......" {
-		t.Errorf("vision\n got %s", got)
-	}
-	plain, _ := NewGameFromFEN("4k3/8/8/8/4P3/8/8/4K3 w - - 0 1")
-	if _, err := plain.PlayUCI("e4e3"); err == nil {
-		t.Error("a normal pawn stepped back")
-	}
-}
-
 func TestKingOfTheHill(t *testing.T) {
 	g, err := NewGameFromFEN("4k3/8/8/8/8/8/8/3K4 w - - 0 1", Rules{Hill: true})
 	if err != nil {

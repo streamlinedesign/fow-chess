@@ -5,8 +5,6 @@ package four
 type Rules struct {
 	// JumpKing lets kings also jump like a knight.
 	JumpKing bool
-	// BackPawns lets pawns also step one square straight back.
-	BackPawns bool
 	// JesterPawns lets pawns also step and take one square in any direction.
 	JesterPawns bool
 	// Hill wins the game for the first king to reach one of the four centre squares.

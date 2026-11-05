@@ -33,9 +33,6 @@ func (p *Position) Vision(c Color) [64]bool {
 					}
 				}
 			}
-			if behind, ok := sq.Offset(0, -pawnDir(c)); ok && p.BackPawns {
-				seen[behind] = true
-			}
 		}
 		for _, m := range p.PieceMoves(sq) {
 			seen[m.To] = true

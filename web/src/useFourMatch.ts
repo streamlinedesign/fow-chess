@@ -8,7 +8,6 @@ export type FourSettings = {
   fog: boolean
   time: TimeControl
   jumpKing?: boolean
-  backPawns?: boolean
   jesterPawns?: boolean
   hill?: boolean
   centerVision?: '' | 'pawn' | 'any'
