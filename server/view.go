@@ -22,8 +22,6 @@ type Settings struct {
 	Setup string `json:"setup,omitempty"`
 	// JumpKing lets kings also jump like a knight.
 	JumpKing bool `json:"jumpKing,omitempty"`
-	// BackPawns lets pawns also step one square straight back, and see behind them.
-	BackPawns bool `json:"backPawns,omitempty"`
 	// JesterPawns lets pawns also step and take one square in any direction, like a king.
 	JesterPawns bool `json:"jesterPawns,omitempty"`
 	// Hill is King of the Hill: a king on one of the four centre squares wins.
@@ -51,7 +49,7 @@ type Settings struct {
 const demoBot = bots.Solomon
 
 func (s Settings) rules() engine.Rules {
-	return engine.Rules{KingCapture: s.KingCapture, JumpKing: s.JumpKing, BackPawns: s.BackPawns, Hill: s.Hill,
+	return engine.Rules{KingCapture: s.KingCapture, JumpKing: s.JumpKing, Hill: s.Hill,
 		CenterVision: centerVisions[s.CenterVision], JesterPawns: s.JesterPawns}
 }
 
@@ -86,7 +84,7 @@ func (s *Settings) normalize() {
 		return
 	}
 	s.Fog, s.KingCapture, s.CenterVision = true, true, "any"
-	s.JumpKing, s.BackPawns, s.JesterPawns, s.Hill = false, false, false, false
+	s.JumpKing, s.JesterPawns, s.Hill = false, false, false
 }
 
 // startFrom is the FEN a game starts from: the usual position, or the players' setups.

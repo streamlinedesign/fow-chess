@@ -276,15 +276,6 @@ func TestMods(t *testing.T) {
 	if n := len(p.PieceMoves(sq("g5"))); n != 16 {
 		t.Errorf("jump king has %d moves", n)
 	}
-	p = StartPosition(Rules{BackPawns: true})
-	p.Board[sq("g5")] = NewPiece(Green, Pawn) // Green goes down; back is g6
-	var back bool
-	for _, m := range p.PieceMoves(sq("g5")) {
-		back = back || m.To == sq("g6")
-	}
-	if !back {
-		t.Errorf("back pawn can't step back")
-	}
 }
 
 // Bots playing each other always finish without breaking a rule.

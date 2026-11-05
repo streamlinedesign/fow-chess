@@ -203,12 +203,6 @@ func (p *Position) appendPawnMoves(moves []Move, from Square, us Color) []Move {
 	if p.JesterPawns {
 		return p.appendSteps(moves, from, us, []delta{{-1, 0}, {1, 0}, {-1, -dir}, {0, -dir}, {1, -dir}})
 	}
-	// A backward step never captures and never promotes.
-	if p.BackPawns {
-		if back, ok := from.Offset(0, -dir); ok && p.Board[back].IsEmpty() {
-			moves = append(moves, Move{From: from, To: back})
-		}
-	}
 	return moves
 }
 

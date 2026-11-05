@@ -185,7 +185,7 @@ Accounts and games live in Postgres, which survives redeploys; back it up with `
 
 ## Protocol
 
-- `POST /api/matches?player=<browser id>` with an optional body `{"fog":true,"kingCapture":true,"setup":"battleship","jumpKing":true,"backPawns":true,"hill":true,"unrated":false,"time":{...}}` (`setup` is `""`, `"backRow"` or `"battleship"`) returns `{"id":"K7QF2M"}`. The creator gets white.
+- `POST /api/matches?player=<browser id>` with an optional body `{"fog":true,"kingCapture":true,"setup":"battleship","jumpKing":true,"hill":true,"unrated":false,"time":{...}}` (`setup` is `""`, `"backRow"` or `"battleship"`) returns `{"id":"K7QF2M"}`. The creator gets white.
 - `GET /api/matches/{id}` returns 204 if the match exists, 404 if it doesn't
 - `GET /ws/{id}?player=<browser id>`: the server sends `{"type":"state", ...}` to each viewer after every change, built for that viewer:
   - `board`: 64 characters from a1 to h8. FEN letters for pieces (uppercase is white), `.` for empty, and `?` for squares the viewer can't see (reserved for fog of war).

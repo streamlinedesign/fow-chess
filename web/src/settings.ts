@@ -21,7 +21,6 @@ export type Settings = {
   /** Kings can also jump like a knight. */
   jumpKing?: boolean
   /** Pawns can also step one square straight back, and see behind them. */
-  backPawns?: boolean
   /** Pawns can also step and take one square in any direction, like a king. */
   jesterPawns?: boolean
   /** King of the Hill: a king on one of the four centre squares wins. */
@@ -147,13 +146,14 @@ export function loadSettings(mods = false): Settings {
     // Settings saved before clocks existed, or a preset that's since gone, fall back to the default.
     const known = clocksFor(mods).some((p) => saved.time && sameTime(p, saved.time))
     if (!SETUPS.some((m) => m.value === saved.setup)) saved.setup = ''
+    // Backward pawns were a mod once; settings saved with them drop them.
+    delete saved.backPawns
     if (mods) {
       saved.mods = true
       saved.unrated = true
     } else {
       // The site plays one game; twists saved earlier are dropped.
       delete saved.jumpKing
-      delete saved.backPawns
       delete saved.jesterPawns
       delete saved.hill
       delete saved.sync
@@ -187,7 +187,6 @@ export function twists(s: Settings, d: Dict) {
     ...(s.kingCapture === false ? [d.legacy.checkmate] : []),
     ...(s.hill ? [d.legacy.hill] : []),
     ...(s.jumpKing ? [d.legacy.jump] : []),
-    ...(s.backPawns ? [d.legacy.backPawns] : []),
     ...(s.jesterPawns ? [d.legacy.jesterPawns] : []),
     // Centre vision for any piece is the game; mods games can turn it off, and early demo games counted only pawns.
     ...(s.centerVision === 'pawn' ? [d.legacy.centerPawn] : s.mods && !s.centerVision ? [d.legacy.noCenter] : []),

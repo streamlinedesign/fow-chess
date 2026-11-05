@@ -144,12 +144,6 @@ export function SettingsPanel({
                 onChange={(jumpKing) => onChange({ ...value, jumpKing })}
               />
               <Toggle
-                label={t.legacy.backPawns}
-                hint={t.panel.backPawnsHint}
-                checked={!!value.backPawns}
-                onChange={(backPawns) => onChange({ ...value, backPawns })}
-              />
-              <Toggle
                 label={t.legacy.jesterPawns}
                 hint={t.panel.jesterPawnsHint}
                 checked={!!value.jesterPawns}

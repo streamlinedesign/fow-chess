@@ -2860,6 +2860,9 @@ a.tick:active {
 }
 .board4 {
   --board: calc(var(--board4, 400px) * 8 / 14);
+  /* Dragging a piece must not select the squares it passes. */
+  user-select: none;
+  -webkit-user-select: none;
   grid-template-columns: repeat(14, minmax(0, 1fr));
   grid-template-rows: repeat(14, minmax(0, 1fr));
   touch-action: none;

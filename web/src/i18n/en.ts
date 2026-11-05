@@ -184,7 +184,6 @@ export const en = {
     hillHint: 'Also win by walking your king onto one of the four centre squares.',
     twists: 'Twists',
     jumpHint: 'Your king can also jump like a knight.',
-    backPawnsHint: 'Pawns can also step one square back, and see behind them.',
     jesterPawnsHint:
       'Pawns also step and take one square any way, like a king. They keep the double first step, en passant and promotion.',
     center: 'Centre vision',
@@ -289,7 +288,6 @@ export const en = {
     checkmate: 'Checkmate',
     hill: 'King of the Hill',
     jump: 'Jump King',
-    backPawns: 'Backward pawns',
     jesterPawns: 'Jester pawns',
     centerPawn: 'Centre vision (pawns)',
     noCenter: 'No centre vision',
