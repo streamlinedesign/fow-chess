@@ -19,6 +19,9 @@
 
 ## Later
 
+- Four players: a player's skin can share a colour with another seat (violet set next to the violet seat); decide whether to steer away from that, and whether the seat dots should follow the skin
+- Skins are kept only in memory for live games: after a server restart a player's skin shows once they reconnect
+
 - Side preference for games shared by code (the creator always plays White for now)
 
 - chess-bots: copy `server/engine` (Sync Move, jester pawns and more are missing there)
@@ -28,6 +31,7 @@
 
 ## Done
 
+- 0.11.0: White and Black sets that opponents see, light and dark lines for colours, tiles on your first three rows, faster settings, head avatars
 - 0.10.1: themed piece sets (galaxy, blueprint, holy with the wing knight, ancient), tile skins with Greek key ancient tiles, skins switch
 - 0.5.0: bug reports from the footer and game pages; read them with `make bugs`
 - 0.1.0: the game, accounts, ratings, modes, tournaments, bots

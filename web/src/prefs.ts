@@ -1,31 +1,30 @@
 import { useSyncExternalStore } from 'react'
 import { setCachedAvatar } from './avatars'
-import { pieceImg, type Look, type PieceSet } from './pieces'
-import { avatarImg, CLASSIC, lookKind, SET_IDS, setImg, setsFor, TILE_IDS, tileImg } from './sets'
+import type { Look, Skin } from './pieces'
+import { avatarImg, CLASSIC, concrete, familyOf, lookKind, SET_IDS, setImg, TILE_IDS, tileImg } from './sets'
 
 /**
- * How a player likes the game to look: a set for their own pieces and one for
- * their opponent's, the side they like to play, and their avatar. Guests keep
- * them in this browser; signed-in players on the server too, so they follow
- * them to every device. Must match prefs in server/prefs.go.
+ * How a player likes the game to look: their set as White and as Black and
+ * the tiles on their first three rows, which their opponents and spectators
+ * see too; the side they like to play; their avatar. Guests keep them in this
+ * browser; signed-in players on the server too, so they follow them to every
+ * device. Must match prefs in server/prefs.go.
  */
-export type Prefs = {
-  primary: string
-  secondary: string
+export type Prefs = Skin & {
   /** The side you start as on the home board and get against bots; "" for either. */
   side: '' | 'w' | 'b'
   /** "" for the pawn, else "<set>/<kind>". */
   avatar: string
-  /** The skin for the light and the dark squares on your half of the board; "" for plain. */
-  lightTiles: string
-  darkTiles: string
-  /** No skins at all: classic pieces for both sides (bots too) and the plain board. Your picks are kept. */
+  /**
+   * No skins on your screen: classic pieces and the plain board for everyone,
+   * yours and your opponents' alike. Bots and four-player colours stay. Your picks are kept.
+   */
   plain: boolean
 }
 
 export const DEFAULT_PREFS: Prefs = {
-  primary: CLASSIC,
-  secondary: CLASSIC,
+  white: CLASSIC,
+  black: CLASSIC,
   side: '',
   avatar: '',
   lightTiles: '',
@@ -33,17 +32,22 @@ export const DEFAULT_PREFS: Prefs = {
   plain: false,
 }
 
-function clean(p: Partial<Prefs> | null | undefined): Prefs {
+function clean(p: (Partial<Prefs> & { primary?: string }) | null | undefined): Prefs {
   const out = { ...DEFAULT_PREFS, ...(p ?? {}) }
-  if (!SET_IDS.includes(out.primary)) out.primary = CLASSIC
-  if (!SET_IDS.includes(out.secondary)) out.secondary = CLASSIC
+  // Before White and Black sets there was one set for your own pieces: it becomes both.
+  if (p?.primary && !p.white && !p.black) out.white = out.black = familyOf(p.primary)
+  if (!SET_IDS.includes(out.white)) out.white = CLASSIC
+  if (!SET_IDS.includes(out.black)) out.black = CLASSIC
   if (out.side !== 'w' && out.side !== 'b') out.side = ''
   if (out.avatar && !avatarImg(out.avatar)) out.avatar = ''
   if (!TILE_IDS.includes(out.lightTiles)) out.lightTiles = ''
   if (!TILE_IDS.includes(out.darkTiles)) out.darkTiles = ''
-  const { primary, secondary, side, avatar, lightTiles, darkTiles } = out
-  return { primary, secondary, side, avatar, lightTiles, darkTiles, plain: out.plain === true }
+  const { white, black, side, avatar, lightTiles, darkTiles } = out
+  return { white, black, side, avatar, lightTiles, darkTiles, plain: out.plain === true }
 }
+
+/** The part of your preferences everyone in your games sees. */
+export const skinOf = ({ white, black, lightTiles, darkTiles }: Skin): Skin => ({ white, black, lightTiles, darkTiles })
 
 function loadLocal(): Prefs {
   try {
@@ -68,7 +72,14 @@ function set(next: Prefs) {
   listeners.forEach((l) => l())
 }
 
+// Picks often come several in a row; the account gets the last of them.
+let pushTimer: ReturnType<typeof setTimeout> | undefined
 function push(p: Prefs) {
+  clearTimeout(pushTimer)
+  pushTimer = setTimeout(() => send(p), 400)
+}
+
+function send(p: Prefs) {
   fetch('/api/prefs', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -84,7 +95,7 @@ export function syncPrefs(me: (Partial<Prefs> & { username: string }) | null) {
   username = me?.username ?? null
   if (!me) return
   const server = clean(me)
-  if (isDefault(server) && !isDefault(prefs)) push(prefs)
+  if (isDefault(server) && !isDefault(prefs)) send(prefs)
   else set(server)
   setCachedAvatar(me.username, prefs.avatar)
 }
@@ -109,52 +120,51 @@ export function usePrefs() {
   )
 }
 
-/** The game's own set letters (pieces.ts) as sets here. */
-const BOT_SETS: Record<PieceSet, string> = { w: 'cream', b: 'ink', r: 'red', g: 'green', v: 'violet' }
-
 export type PieceImg = (letter: string, look?: Look) => string
 
-/** Draws pieces in a set pair for a board with `bottom` at the bottom. */
-export function piecesFor(p: Pick<Prefs, 'primary' | 'secondary' | 'plain'>, bottom: 'w' | 'b'): PieceImg {
-  if (p.plain) return (letter, look) => pieceImg(letter, look && { ...look, sets: undefined })
-  if (p.primary === CLASSIC && p.secondary === CLASSIC) return pieceImg
-  const sets = setsFor(p.primary, p.secondary, bottom)
-  const top = bottom === 'w' ? 'b' : 'w'
-  return (letter, look) => {
-    const color = letter === letter.toUpperCase() ? 'w' : 'b'
-    const kind = lookKind(letter.toUpperCase(), look)
-    // A bot plays in its own colour (see gameLook): that wins over your opponent's set,
-    // and if your own set comes to the same, yours falls back to what the game picked.
-    const forced = look?.sets
-    if (forced?.[top]) {
-      const theirs = BOT_SETS[forced[top]]
-      if (color === top) return setImg(theirs, kind, color)
-      const mine = sets[bottom] === theirs ? BOT_SETS[forced[bottom] ?? bottom] : sets[bottom]
-      return setImg(mine, kind, color)
-    }
-    return setImg(sets[color], kind, color)
-  }
-}
-
-/** The image function for a board seen from `bottom`'s side, in your sets: yours at the bottom. */
-export function usePieces(bottom: 'w' | 'b' = 'w'): PieceImg {
-  const p = usePrefs()
-  return piecesFor(p, bottom)
+/** The family a side is drawn in: a bot's set first, then nothing on a no-skins screen, then the player's own skin. */
+function familyFor(p: Prefs, color: 'w' | 'b', mine: 'w' | 'b' | undefined, look?: Look) {
+  const bot = look?.sets?.[color]
+  if (bot) return bot
+  if (p.plain) return CLASSIC
+  const skin = color === mine ? p : look?.skins?.[color]
+  return (color === 'w' ? skin?.white : skin?.black) ?? CLASSIC
 }
 
 /**
- * The tile image for a square, or undefined for a plain one. Skins cover only
- * your own half: ranks 1 to 4 as White, 5 to 8 as Black.
+ * Draws pieces as a viewer with preferences `p` sees them: each side in its
+ * player's own set for that colour (yours from `p` when you play `mine`, so a
+ * change shows at once), a bot's side in the bot's set. No skins draws classic
+ * for every player.
  */
-export function tilesFor(p: Pick<Prefs, 'lightTiles' | 'darkTiles' | 'plain'>, bottom: 'w' | 'b') {
-  if (p.plain || (!p.lightTiles && !p.darkTiles)) return () => undefined
-  return (rank: number, light: boolean) => {
-    if (bottom === 'w' ? rank >= 4 : rank < 4) return undefined
-    return tileImg(light ? p.lightTiles : p.darkTiles, light)
+export function piecesFor(p: Prefs, mine?: 'w' | 'b'): PieceImg {
+  return (letter, look) => {
+    const color = letter === letter.toUpperCase() ? 'w' : 'b'
+    const kind = lookKind(letter.toUpperCase(), look)
+    return setImg(concrete(familyFor(p, color, mine, look), color), kind, color)
   }
 }
 
-/** Tiles for a board seen from `bottom`'s side; rank counts from 0. */
-export function useTiles(bottom: 'w' | 'b' = 'w') {
-  return tilesFor(usePrefs(), bottom)
+/** The image function for a board where you play `mine` (none for a spectator). */
+export function usePieces(mine?: 'w' | 'b'): PieceImg {
+  return piecesFor(usePrefs(), mine)
+}
+
+/**
+ * The tile image for a square, or undefined for a plain one. A player's tiles
+ * cover only their own first three rows: ranks 1 to 3 for White, 6 to 8 for
+ * Black. Rank counts from 0.
+ */
+export function tilesFor(p: Prefs, mine?: 'w' | 'b', look?: Look) {
+  return (rank: number, light: boolean) => {
+    const color = rank <= 2 ? 'w' : rank >= 5 ? 'b' : null
+    if (!color || p.plain || look?.sets?.[color]) return undefined
+    const skin = color === mine ? p : look?.skins?.[color]
+    return skin ? tileImg(light ? skin.lightTiles : skin.darkTiles, light) : undefined
+  }
+}
+
+/** Tiles for a board where you play `mine`. */
+export function useTiles(mine?: 'w' | 'b', look?: Look) {
+  return tilesFor(usePrefs(), mine, look)
 }

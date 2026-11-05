@@ -1,6 +1,5 @@
 import { memo, useMemo, useRef, useState } from 'react'
-import { CENTRE, cellFor, onBoard, parseMove, pieceImg4, SIZE, squareName, type Seat } from './four'
-import type { Look } from './pieces'
+import { CENTRE, cellFor, onBoard, parseMove, pieceImg4, SIZE, squareName, tile4, type FourLook, type Seat } from './four'
 
 type Props = {
   /** 196 squares from the bottom left, as the server sends them. */
@@ -20,7 +19,7 @@ type Props = {
   hill?: boolean
   /** Centre vision: ring the four centre squares, lit while you hold one. */
   center?: { live?: boolean }
-  look?: Look
+  look?: FourLook
   onMove?: (from: string, to: string) => void
   /** A still board, for previews. */
   still?: boolean
@@ -137,12 +136,15 @@ export const FourBoard = memo(function FourBoard({
       // A pawn moving onto an empty square sideways is taking en passant.
       const capture = target && (!!piece || (at(sel!)?.[1] === 'P' && isDiagonal(sel!, sq)))
       const [x, y] = [sq.charCodeAt(0) - 97, Number(sq.slice(1)) - 1]
+      const tileSrc = fog ? undefined : tile4(look, x, y)
       cells.push(
         <div
           key={sq}
           className="sq"
           data-square={sq}
           data-light={(x + y) % 2 === 1}
+          data-tile={tileSrc ? true : undefined}
+          style={tileSrc ? ({ '--tile': `url("${tileSrc}")` } as React.CSSProperties) : undefined}
           data-last={
             !fog &&
             (lastMove?.from === sq || lastMove?.to === sq || !!lastMoves?.some((m) => m.from === sq || m.to === sq))

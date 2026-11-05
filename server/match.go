@@ -285,6 +285,10 @@ type Match struct {
 	chatID int
 	// pending is each side's move for the Sync Move round in play, "" until sent.
 	pending [2]string
+	// skins is how each seat's player likes their pieces and squares drawn,
+	// as their browser last said; everyone in the match sees them. Kept only
+	// in memory: a seat with none draws in the default set.
+	skins [2]*skin
 }
 
 const (
@@ -597,11 +601,13 @@ type seatState struct {
 	Name   string `json:"name,omitempty"` // username; empty for a guest
 	// Bot is set on the seat a bot holds, so the board can draw its own set.
 	Bot bool `json:"bot,omitempty"`
+	// Skin is how the player in the seat likes their pieces and squares drawn.
+	Skin *skin `json:"skin,omitempty"`
 }
 
 // protocolVersion changes whenever the state message changes shape, so a web app
 // talking to a server from another version can say so instead of breaking.
-const protocolVersion = 11
+const protocolVersion = 12
 
 type stateMsg struct {
 	Type     string   `json:"type"`
@@ -662,6 +668,8 @@ type inMsg struct {
 	Board string  `json:"board"`
 	Side  string  `json:"side"` // "w" or "b": the side a spectator wants to see the game as
 	T     float64 `json:"t"`    // ping timestamp, echoed back
+	// Skin is the player's own look, sent on joining and whenever they change it.
+	Skin *skin `json:"skin,omitempty"`
 }
 
 // join seats the player if a seat is free (white first); anyone else watches.
@@ -791,6 +799,13 @@ func (m *Match) handle(c *client, msg inMsg) {
 				c.side = side
 				c.push(m.state(c))
 			}
+		}
+		return
+	}
+	if msg.Type == "skin" {
+		if s := cleanSkin(msg.Skin); s != m.skins[color] && (s == nil || m.skins[color] == nil || *s != *m.skins[color]) {
+			m.skins[color] = s
+			m.broadcast()
 		}
 		return
 	}
@@ -950,6 +965,7 @@ func (m *Match) startRematch(now time.Time) {
 	m.seats[white], m.seats[black] = m.seats[black], m.seats[white]
 	m.users[white], m.users[black] = m.users[black], m.users[white]
 	m.names[white], m.names[black] = m.names[black], m.names[white]
+	m.skins[white], m.skins[black] = m.skins[black], m.skins[white]
 	m.rematch = [2]bool{}
 	m.draw = [2]bool{}
 	m.pending = [2]string{}
@@ -1044,7 +1060,7 @@ func (m *Match) base() stateMsg {
 	}
 	bot := m.botColor()
 	for i, name := range colorNames {
-		base.Players[name] = seatState{Taken: m.seats[i] != "", Online: m.seats[i] != "" && m.online(i), Name: m.names[i], Bot: i == bot}
+		base.Players[name] = seatState{Taken: m.seats[i] != "", Online: m.seats[i] != "" && m.online(i), Name: m.names[i], Bot: i == bot, Skin: m.skins[i]}
 	}
 	return base
 }

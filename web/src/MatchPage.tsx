@@ -79,7 +79,8 @@ export function MatchPage({ id }: { id: string }) {
   const you = state?.you || null
   const them = you ? other(you) : null
   const orientation: Color = you ? ((you === 'b') !== flipped ? 'b' : 'w') : side
-  const img = usePieces(you ?? orientation)
+  const img = usePieces(you ?? undefined)
+  const look = gameLook(state?.settings, botSide(state), state?.players)
   const playing = state?.status === 'playing'
   const ply = state?.ply ?? 0
   const turn = state && (predicting ? other(state.turn) : state.turn)
@@ -186,7 +187,7 @@ export function MatchPage({ id }: { id: string }) {
           className="board-wrap mx-auto flex flex-col gap-3 lg:mx-0"
           data-setup={state?.status === 'setup' && !!you}
         >
-          <PlayerBar color={top} state={state} you={you} view={orientation} active={waitsOn(top)} />
+          <PlayerBar color={top} state={state} you={you} active={waitsOn(top)} />
           {state?.status === 'setup' && you ? (
             <SetupBoard
               key={`${state.round}:${you}`}
@@ -197,7 +198,7 @@ export function MatchPage({ id }: { id: string }) {
               theirs={state.setup?.theirs}
               onReady={(board) => send({ type: 'setup', board })}
               onChange={() => send({ type: 'setup', board: '' })}
-              below={<PlayerBar color={you} state={state} you={you} view={orientation} active={false} />}
+              below={<PlayerBar color={you} state={state} you={you} active={false} />}
             />
           ) : (
             <>
@@ -214,7 +215,7 @@ export function MatchPage({ id }: { id: string }) {
                   danger={predicting ? undefined : state?.danger}
                   unsafe={state?.unsafe}
                   hill={state?.settings.hill}
-                  look={gameLook(state?.settings, botSide(state))}
+                  look={look}
                   center={
                     state?.settings.centerVision
                       ? { you: you ?? undefined, live: !predicting && !!state.fullVision }
@@ -230,7 +231,7 @@ export function MatchPage({ id }: { id: string }) {
                   </div>
                 )}
               </div>
-              <PlayerBar color={bottom} state={state} you={you} view={orientation} active={waitsOn(bottom)} />
+              <PlayerBar color={bottom} state={state} you={you} active={waitsOn(bottom)} />
             </>
           )}
         </section>
@@ -371,7 +372,7 @@ export function MatchPage({ id }: { id: string }) {
 
       <PromotionDialog
         open={!!promotion}
-        img={(p) => img(you === 'b' ? p : p.toUpperCase(), gameLook(state?.settings, botSide(state)))}
+        img={(p) => img(you === 'b' ? p : p.toUpperCase(), look)}
         onPick={(p) => sendMove(promotion!.from + promotion!.to + p)}
         onClose={() => setPromotion(null)}
       />
@@ -434,9 +435,9 @@ export function MatchPage({ id }: { id: string }) {
   )
 }
 
-type PlayerBarProps = { color: Color; state: MatchState | null; you: Color | null; view: Color; active: boolean }
+type PlayerBarProps = { color: Color; state: MatchState | null; you: Color | null; active: boolean }
 
-function PlayerBar({ color, state, you, view, active }: PlayerBarProps) {
+function PlayerBar({ color, state, you, active }: PlayerBarProps) {
   const t = useT()
   const seat = state?.players[color]
   const name = seat?.name
@@ -470,8 +471,8 @@ function PlayerBar({ color, state, you, view, active }: PlayerBarProps) {
         {seat?.taken && !seat.online && <span className="text-sm text-danger">{t.match.offline}</span>}
         <Captured
           pieces={state?.captured[color] ?? ''}
-          look={gameLook(state?.settings, botSide(state))}
-          bottom={you ?? view}
+          look={gameLook(state?.settings, botSide(state), state?.players)}
+          mine={you ?? undefined}
           className="text-[clamp(16px,calc(var(--board)/30),22px)]"
         />
         {state?.clock && (

@@ -125,6 +125,9 @@ type replayResponse struct {
 	Frames   []replayFrame     `json:"frames"`
 	Ended    int64             `json:"ended"` // unix milliseconds
 	Sniper   bool              `json:"sniper,omitempty"`
+	// Skins are the signed-in players' looks as they are now, so a replay
+	// draws each player's pieces and squares the way they like them.
+	Skins map[string]*skin `json:"skins,omitempty"`
 }
 
 const profileGames = 200
@@ -231,6 +234,19 @@ func profileRoutes(mux *http.ServeMux, store *Store, auth *Auth, live *Live) {
 		if err != nil {
 			jsonError(w, "Couldn't load the game.", http.StatusInternalServerError)
 			return
+		}
+		for i, id := range rec.Users {
+			if id == 0 {
+				continue
+			}
+			if l, err := store.Look(id); err == nil {
+				if s := cleanSkin(&l.skin); s != nil {
+					if resp.Skins == nil {
+						resp.Skins = map[string]*skin{}
+					}
+					resp.Skins[colorNames[i]] = s
+				}
+			}
 		}
 		writeJSON(w, resp)
 	})

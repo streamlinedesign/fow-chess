@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { Skin } from './pieces'
 import { playerId } from './player'
+import { skinOf, usePrefs } from './prefs'
 import type { Settings } from './settings'
 
 export type Color = 'w' | 'b'
@@ -47,7 +49,7 @@ export type MatchState = {
   /** During setup: who is ready, what you placed, and the opponent's setup once they're ready in a game without fog. */
   setup?: { ready: Record<Color, boolean>; mine?: string; theirs?: string }
   /** name is the username of a signed-in player, absent for a guest. */
-  players: Record<Color, { taken: boolean; online: boolean; name?: string; bot?: boolean }>
+  players: Record<Color, { taken: boolean; online: boolean; name?: string; bot?: boolean; skin?: Skin }>
   rematch: Record<Color, boolean>
   draw: Record<Color, boolean>
   /** Time left as of when this state was sent, and whose clock is ticking. Absent for No clock games. */
@@ -82,7 +84,7 @@ export type Outgoing =
 export type Connection = 'connecting' | 'open' | 'closed' | 'failed' | 'missing' | 'outdated'
 
 /** Must match protocolVersion in server/match.go. */
-const PROTOCOL = 11
+const PROTOCOL = 12
 
 export function useMatch(id: string) {
   const [state, setState] = useState<MatchState | null>(null)
@@ -106,6 +108,7 @@ export function useMatch(id: string) {
         retry = 0
         setConn('open')
         ping()
+        sendSkin()
       }
       sock.onmessage = (e) => {
         const msg = JSON.parse(e.data)
@@ -183,6 +186,18 @@ export function useMatch(id: string) {
   }, [id])
 
   useEffect(() => setChat([]), [id])
+
+  // Your skin goes to the match on connecting and whenever you change it, so
+  // your opponent and spectators see your pieces and squares as you pick them.
+  const prefs = usePrefs()
+  const skin = JSON.stringify(skinOf(prefs))
+  const skinRef = useRef(skin)
+  skinRef.current = skin
+  const sendSkin = () => {
+    if (ws.current?.readyState === WebSocket.OPEN)
+      ws.current.send(`{"type":"skin","skin":${skinRef.current}}`)
+  }
+  useEffect(sendSkin, [skin])
 
   const send = useCallback((msg: Outgoing) => {
     if (ws.current?.readyState !== WebSocket.OPEN) return false

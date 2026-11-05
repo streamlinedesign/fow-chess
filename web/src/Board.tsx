@@ -80,8 +80,8 @@ export const Board = memo(function Board({
   you,
   onMove,
 }: Props) {
-  const img = usePieces(you ?? orientation)
-  const tile = useTiles(you ?? orientation)
+  const img = usePieces(you ?? undefined)
+  const tile = useTiles(you ?? undefined, look)
   const boardRef = useRef<HTMLDivElement>(null)
   const drag = useRef<Drag | null>(null)
   const [selected, setSelected] = useState<string | null>(null)

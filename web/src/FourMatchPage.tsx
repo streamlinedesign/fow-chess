@@ -1,12 +1,13 @@
 import { BugButton } from './BugReport'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Clock } from './Clock'
-import { aroundFrom, parseMove, pieceImg4, SEAT_COLORS, SEATS, type Seat } from './four'
+import { aroundFrom, parseMove, pieceImg4, SEAT_COLORS, SEATS, seatSkin, type FourLook, type Seat } from './four'
 import { FourBoard } from './FourBoard'
 import { FourSetup } from './FourSetup'
 import { useT, type Dict } from './i18n'
 import { how } from './MatchPage'
 import { PromotionDialog } from './Promotion'
+import { skinOf, usePrefs, type Prefs } from './prefs'
 import { navigate } from './router'
 import { Button, Dialog, Spinner } from './ui'
 import { useFourMatch, type FourState } from './useFourMatch'
@@ -39,6 +40,7 @@ export function FourMatchPage({ id }: { id: string }) {
 
   const you = state?.you || null
   const seat: Seat = you ?? side
+  const look = fourLook(state, you, usePrefs())
   const playing = state?.status === 'playing'
   // A move sent in Sync Move is locked in.
   const legal = state && !predicting && !(sync && sentNow) && conn === 'open' ? state.legal : []
@@ -137,7 +139,7 @@ export function FourMatchPage({ id }: { id: string }) {
             <FourSetup
               seat={you}
               layout={state.settings.setup === 'backRow' ? 'backRow' : 'battleship'}
-              look={state.settings}
+              look={look}
               mine={state.arranged}
               onReady={(board) => send({ type: 'setup', board })}
               onChange={() => send({ type: 'setup', board: '' })}
@@ -154,7 +156,7 @@ export function FourMatchPage({ id }: { id: string }) {
                 danger={predicting ? undefined : state?.danger}
                 hill={state?.settings.hill}
                 center={state?.settings.centerVision ? { live: !predicting && !!state.fullVision } : undefined}
-                look={state?.settings}
+                look={look}
                 onMove={onMove}
               />
               <SeatLabels state={state} seat={seat} />
@@ -243,7 +245,7 @@ export function FourMatchPage({ id }: { id: string }) {
 
       <PromotionDialog
         open={!!promotion}
-        img={(p) => pieceImg4((you ?? 'r') + p.toUpperCase())}
+        img={(p) => pieceImg4((you ?? 'r') + p.toUpperCase(), look)}
         onPick={(p) => sendMove(promotion!.from + promotion!.to + p)}
         onClose={() => setPromotion(null)}
       />
@@ -545,4 +547,19 @@ function WaitingCard({
       </div>
     </div>
   )
+}
+
+/**
+ * How the board draws each seat: a player with a skin in one of their own sets
+ * and on their own tiles (yours as you pick them now), everyone else in the
+ * seat colour. On a no-skins screen every seat is in its colour.
+ */
+function fourLook(state: FourState | null, you: Seat | null, prefs: Prefs): FourLook | undefined {
+  if (!state || prefs.plain) return state?.settings
+  const seats: FourLook['seats'] = {}
+  for (const s of SEATS) {
+    const p = state.players[s]
+    seats[s] = seatSkin(s === you ? skinOf(prefs) : p?.skin, p?.half)
+  }
+  return { ...state.settings, seats }
 }

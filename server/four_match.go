@@ -54,7 +54,7 @@ func (s fourSettings) valid() bool {
 
 // fourProtocol changes whenever the four-player state message changes shape.
 // Must match FOUR_PROTOCOL in web/src/useFourMatch.ts.
-const fourProtocol = 2
+const fourProtocol = 3
 
 // fourBotName is who fills an empty seat.
 const fourBotName = "Rex inutilis"
@@ -316,6 +316,11 @@ type FourMatch struct {
 	pending [4]string
 	chat    []chatLine
 	chatID  int
+	// skins is how each seat's player likes their pieces drawn, as their
+	// browser last said, and half which of their two sets they play in here,
+	// "w" or "b", picked at random the first time. Kept only in memory.
+	skins [4]*skin
+	half  [4]string
 }
 
 func (m *FourMatch) seat(c four.Color, p *player) {
@@ -617,6 +622,8 @@ type fourIn struct {
 	T    float64 `json:"t"`
 	// Board is an arrangement for "setup"; see four.SetupLen. "" takes it back.
 	Board string `json:"board"`
+	// Skin is the player's own look, sent on joining and whenever they change it.
+	Skin *skin `json:"skin,omitempty"`
 }
 
 func (m *FourMatch) handle(c *client, msg fourIn) {
@@ -627,6 +634,16 @@ func (m *FourMatch) handle(c *client, msg fourIn) {
 		if side, ok := four.ParseColor(msg.Side); msg.Type == "watch" && ok && c.side != int(side) {
 			c.side = int(side)
 			c.push(m.state(c))
+		}
+		return
+	}
+	if msg.Type == "skin" {
+		if s := cleanSkin(msg.Skin); s != m.skins[color] && (s == nil || m.skins[color] == nil || *s != *m.skins[color]) {
+			m.skins[color] = s
+			if m.half[color] == "" {
+				m.half[color] = []string{"w", "b"}[rand.IntN(2)]
+			}
+			m.broadcast()
 		}
 		return
 	}
@@ -832,6 +849,11 @@ type fourSeat struct {
 	// Ready is set once the player has sent a move for the Sync Move round,
 	// or placed their pieces in a game with a setup.
 	Ready bool `json:"ready,omitempty"`
+	// Skin is the player's own look, and Half the one of their White and
+	// Black sets they play in this game ("w" or "b"). A seat without one
+	// plays in its own colour.
+	Skin *skin  `json:"skin,omitempty"`
+	Half string `json:"half,omitempty"`
 }
 
 type fourEvent struct {
@@ -966,7 +988,10 @@ func (m *FourMatch) base() fourState {
 		s.Status = "setup"
 	}
 	for _, c := range four.Colors {
-		seat := fourSeat{Taken: m.seats[c] != "", Name: m.names[c], Bot: m.bots[c]}
+		seat := fourSeat{Taken: m.seats[c] != "", Name: m.names[c], Bot: m.bots[c], Skin: m.skins[c]}
+		if seat.Skin != nil {
+			seat.Half = m.half[c]
+		}
 		seat.Online = seat.Taken && m.online(int(c))
 		if f := m.game.Fell(c); f != four.NoMethod {
 			seat.Out = f.String()

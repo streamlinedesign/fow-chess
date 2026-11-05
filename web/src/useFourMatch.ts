@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Seat } from './four'
+import type { Skin } from './pieces'
 import { playerId } from './player'
+import { skinOf, usePrefs } from './prefs'
 import type { TimeControl } from './settings'
 
 /** Must match fourSettings in server/four_match.go. */
@@ -26,6 +28,9 @@ export type FourSeatState = {
   out?: string
   /** Has sent a move for this Sync Move round, or placed their pieces. */
   ready?: boolean
+  /** The player's own skin, and which of its two sets they play in here. */
+  skin?: Skin
+  half?: 'w' | 'b'
 }
 
 /** Must match fourState in server/four_match.go. */
@@ -79,7 +84,7 @@ export type FourOutgoing =
 export type FourConnection = 'connecting' | 'open' | 'closed' | 'failed' | 'missing' | 'outdated'
 
 /** Must match fourProtocol in server/four_match.go. */
-const FOUR_PROTOCOL = 2
+const FOUR_PROTOCOL = 3
 
 /** The live connection to a four-player match, reconnecting as useMatch does. */
 export function useFourMatch(id: string) {
@@ -101,6 +106,7 @@ export function useFourMatch(id: string) {
       sock.onopen = () => {
         retry = 0
         setConn('open')
+        sendSkin()
       }
       sock.onmessage = (e) => {
         const msg = JSON.parse(e.data)
@@ -150,6 +156,16 @@ export function useFourMatch(id: string) {
   }, [id])
 
   useEffect(() => setChat([]), [id])
+
+  // Your skin goes to the match on connecting and whenever you change it.
+  const prefs = usePrefs()
+  const skin = JSON.stringify(skinOf(prefs))
+  const skinRef = useRef(skin)
+  skinRef.current = skin
+  const sendSkin = () => {
+    if (ws.current?.readyState === WebSocket.OPEN) ws.current.send(`{"type":"skin","skin":${skinRef.current}}`)
+  }
+  useEffect(sendSkin, [skin])
 
   const send = useCallback((msg: FourOutgoing) => {
     if (ws.current?.readyState !== WebSocket.OPEN) return false

@@ -1,17 +1,23 @@
-// The piece sets a player can pick for their own pieces and their opponent's.
-// Every one-colour set is also a row of avatars. Must match pieceSets in server/prefs.go.
+// The piece sets: the families a player picks for White and for Black, and the
+// one-colour sets they are drawn in, each of which is also a row of avatars.
+// Must match setFamilies and pieceSets in server/prefs.go.
 import type { Look } from './pieces'
 
 type Color = 'w' | 'b'
 
 const classic = import.meta.glob<string>('./pieces/*.svg', { eager: true, import: 'default' })
 const coloured = import.meta.glob<string>('./pieces/four/*.svg', { eager: true, import: 'default' })
+const lightLines = import.meta.glob<string>('./pieces/light/*.svg', { eager: true, import: 'default' })
 const inkLines = import.meta.glob<string>('./pieces/ink/*.svg', { eager: true, import: 'default' })
 const themed = import.meta.glob<string>('./pieces/{galaxy,blueprint,holy,ancient}/*.svg', {
   eager: true,
   import: 'default',
 })
 const tiles = import.meta.glob<string>('./tiles/*.svg', { eager: true, import: 'default' })
+
+/** The plain colours, and the letter their files go by. */
+export const COLOURS = ['red', 'blue', 'green', 'violet'] as const
+const LETTER: Record<string, string> = { red: 'r', blue: 'b', green: 'g', violet: 'v' }
 
 /** The themed sets: each has a light side for White and a dark side for Black, and tiles to match. */
 export const THEMES = ['galaxy', 'blueprint', 'holy', 'ancient'] as const
@@ -23,28 +29,25 @@ export type PieceSet = {
   id: string
   /** The image for one piece, by uppercase kind. */
   img: (kind: string) => string
-  /** A one-colour set can be an avatar and either side's set; "classic" is the only two-colour one. */
 }
 
 const from = (files: Record<string, string>, dir: string, prefix: string) => (kind: string) =>
   files[`./pieces/${dir}${prefix}${kind}.svg`]
 
 /**
- * The one-colour sets, in picker order. Names are in the dictionary (pieces.sets).
- * To add a set: its SVGs in pieces/<name>/, a line here, its name in both
- * dictionaries, and its id in pieceSets in server/prefs.go.
+ * The one-colour sets. Names are in the dictionary (pieces.sets). A colour has
+ * a light-line half for White ("red-light") and a dark-line half for Black
+ * ("red-ink"); the plain ids ("red") are the four-player seat colours, whose
+ * lines are mixed, kept for those games and for avatars picked before.
  */
 export const SETS: PieceSet[] = [
   { id: 'cream', img: from(classic, '', 'w') },
   { id: 'ink', img: from(classic, '', 'b') },
-  { id: 'red', img: from(coloured, 'four/', 'r') },
-  { id: 'blue', img: from(coloured, 'four/', 'b') },
-  { id: 'green', img: from(coloured, 'four/', 'g') },
-  { id: 'violet', img: from(coloured, 'four/', 'v') },
-  { id: 'red-ink', img: from(inkLines, 'ink/', 'r') },
-  { id: 'blue-ink', img: from(inkLines, 'ink/', 'b') },
-  { id: 'green-ink', img: from(inkLines, 'ink/', 'g') },
-  { id: 'violet-ink', img: from(inkLines, 'ink/', 'v') },
+  ...COLOURS.flatMap((c) => [
+    { id: c, img: from(coloured, 'four/', LETTER[c]) },
+    { id: `${c}-light`, img: from(lightLines, 'light/', LETTER[c]) },
+    { id: `${c}-ink`, img: from(inkLines, 'ink/', LETTER[c]) },
+  ]),
   ...THEMES.flatMap((t) => [
     { id: `${t}-light`, img: from(themed, `${t}/`, 'w') },
     { id: `${t}-dark`, img: from(themed, `${t}/`, 'b') },
@@ -54,26 +57,31 @@ export const SETS: PieceSet[] = [
 /** Eat the King's own: cream for White, ink for Black. The default for both sides. */
 export const CLASSIC = 'classic'
 
-/** The two-sided sets: the one-colour set each is for White and for Black. */
-const PAIRS: Record<string, Record<Color, string>> = {
-  [CLASSIC]: { w: 'cream', b: 'ink' },
-  ...Object.fromEntries(THEMES.map((t) => [t, { w: `${t}-light`, b: `${t}-dark` }])),
-}
-
-/**
- * The sets a player picks from for a side: classic, the plain colours, then the
- * themes. A theme's light and dark halves are avatars, not picks of their own.
- */
-export const SET_IDS = [
-  CLASSIC,
-  ...SETS.map((s) => s.id).filter((id) => !THEMES.some((t) => id.startsWith(t + '-'))),
-  ...THEMES,
-]
+/** The sets a player picks from for White and for Black, in picker order. */
+export const SET_IDS: string[] = [CLASSIC, ...COLOURS, ...THEMES]
 
 const byId = new Map(SETS.map((s) => [s.id, s]))
 
-/** The one-colour set a choice comes to for one side: classic is cream for White, ink for Black; a theme its light or dark half. */
-export const concrete = (id: string, color: Color) => (byId.has(id) ? id : (PAIRS[id] ?? PAIRS[CLASSIC])[color])
+/**
+ * The one-colour set a family is drawn in for one side: classic is cream for
+ * White and ink for Black, a colour its light or dark lines, a theme its light
+ * or dark half. So the sides never look alike, even in the same family.
+ */
+export function concrete(id: string, color: Color) {
+  // A colour's own id is also its four-player set, so families come first.
+  if (COLOURS.includes(id as (typeof COLOURS)[number])) return `${id}-${color === 'w' ? 'light' : 'ink'}`
+  if (byId.has(id)) return id
+  if (THEMES.includes(id as (typeof THEMES)[number])) return `${id}-${color === 'w' ? 'light' : 'dark'}`
+  return color === 'w' ? 'cream' : 'ink'
+}
+
+/** The family a one-colour set belongs to, as old choices are carried over. */
+export function familyOf(id: string) {
+  return SET_IDS.find((f) => f !== CLASSIC && (id === f || id.startsWith(f + '-'))) ?? CLASSIC
+}
+
+/** The avatar rows, by family: White's half, then Black's. */
+export const AVATAR_GROUPS = SET_IDS.map((f) => ({ id: f, sets: [concrete(f, 'w'), concrete(f, 'b')] }))
 
 /** The tile skins: "" is the plain board. Must match tileSkins in server/prefs.go. */
 export const TILE_IDS = ['', ...THEMES]
@@ -82,20 +90,6 @@ export const TILE_IDS = ['', ...THEMES]
 export const tileImg = (id: string, light: boolean) =>
   id ? tiles[`./tiles/${id}-${light ? 'l' : 'd'}.svg`] : undefined
 
-/**
- * Which set each colour is drawn in, for a board whose bottom is `bottom`:
- * your set for the pieces at the bottom, theirs for the top. If the two come
- * to the same set, the top side falls back to classic, so the sides never look alike.
- */
-export function setsFor(primary: string, secondary: string, bottom: Color): Record<Color, string> {
-  const top: Color = bottom === 'w' ? 'b' : 'w'
-  const mine = concrete(primary, bottom)
-  let theirs = concrete(secondary, top)
-  if (theirs === mine) theirs = concrete(CLASSIC, top)
-  if (theirs === mine) theirs = mine === 'cream' ? 'ink' : 'cream'
-  return { [bottom]: mine, [top]: theirs } as Record<Color, string>
-}
-
 /** The kind a piece is drawn as, for the game's mods. */
 export function lookKind(kind: string, look?: Look) {
   if (look?.jesterPawns && kind === 'P') return 'J'
@@ -103,9 +97,9 @@ export function lookKind(kind: string, look?: Look) {
   return kind
 }
 
-/** The image for one piece of a one-colour set; unknown sets draw in classic. */
+/** The image for one piece of a one-colour set (see concrete for a family); unknown sets draw in classic. */
 export function setImg(id: string, kind: string, color: Color = 'w') {
-  return (byId.get(id) ?? byId.get(concrete(CLASSIC, color))!).img(kind.toUpperCase())
+  return (byId.get(id) ?? byId.get(concrete(id, color))!).img(kind.toUpperCase())
 }
 
 /** An avatar is "" for the default pawn, or "<set>/<kind>" like "red/N". Must match validAvatar in server/prefs.go. */

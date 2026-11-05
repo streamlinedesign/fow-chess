@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type { Skin } from './pieces'
 import { Board } from './Board'
 import { Captured } from './Captured'
 import { errorText, useT, type Dict } from './i18n'
@@ -26,6 +27,8 @@ type Replay = {
   frames: Frame[]
   ended: number
   sniper?: boolean
+  /** The signed-in players' skins as they are now. */
+  skins?: Partial<Record<Color, Skin>>
 }
 
 const noMoves: string[] = []
@@ -92,6 +95,7 @@ export function ReplayPage({ id, round }: { id: string; round: number }) {
   const f = replay.frames[ply]
   const last = replay.frames.length - 1
   const orientation: Color = flipped ? 'b' : 'w'
+  const look = { ...replay.settings, skins: replay.skins }
   const rows = []
   for (let i = 0; i < replay.history.length; i += 2) rows.push(i)
 
@@ -115,8 +119,7 @@ export function ReplayPage({ id, round }: { id: string; round: number }) {
       <span className="text-accent">{c === 'w' ? t.common.white : t.common.black}</span>
       <Captured
         pieces={f.captured[c]}
-        look={replay.settings}
-        bottom={orientation}
+        look={look}
         className="ml-auto text-[clamp(16px,calc(var(--board)/30),22px)]"
       />
     </div>
@@ -134,7 +137,7 @@ export function ReplayPage({ id, round }: { id: string; round: number }) {
             lastMove={f.last}
             check={f.check}
             hill={replay.settings.hill}
-            look={replay.settings}
+            look={look}
             center={replay.settings.centerVision ? {} : undefined}
             onMove={noop}
           />
