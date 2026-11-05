@@ -1,0 +1,74 @@
+/* The bug report: a note in the footer and the report dialog. */
+.bug-note {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  color: var(--color-accent);
+}
+.bug-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-fg);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.bug-link:hover {
+  color: var(--color-accent);
+}
+.bug-link:focus-visible,
+.bug-cats > button:focus-visible {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 2px;
+}
+.bug-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.bug-cats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 6px;
+}
+.bug-cats > button {
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  font-size: 14px;
+  font-weight: 550;
+  transition:
+    background-color 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+.bug-cats > button:hover {
+  border-color: var(--color-fg);
+}
+.bug-cats > button[data-state='checked'] {
+  background: var(--color-fg);
+  border-color: var(--color-fg);
+  color: var(--color-bg);
+}
+.bug-hint {
+  font-size: 13px;
+  color: var(--color-accent);
+}
+.bug-code {
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.bug-text {
+  height: auto;
+  min-height: 120px;
+  padding: 10px 14px;
+  line-height: 1.45;
+  resize: vertical;
+}
+.site-foot {
+  flex-wrap: wrap;
+  align-items: center;
+}

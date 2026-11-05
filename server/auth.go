@@ -367,6 +367,11 @@ var errorCodes = map[string]string{
 	"Couldn't delete the account.":                    "delete_account",
 	"Couldn't change the password.":                   "change_password",
 	"Bad request.":                                    "bad_request",
+	"Pick what the bug is about.":                     "bug_category",
+	"That isn't a match code.":                        "bug_match",
+	"Write what happened first.":                      "bug_empty",
+	"Reports are up to 2000 characters.":              "bug_length",
+	"Too many reports. Try again later.":              "bug_too_many",
 }
 
 func jsonError(w http.ResponseWriter, msg string, status int) {

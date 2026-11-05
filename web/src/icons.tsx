@@ -70,6 +70,16 @@ const paths = {
     </>
   ),
   trend: <path d="M1.5 11 5.5 7l2.5 2.5L13.5 4M10 4h3.5v3.5" strokeLinecap="round" strokeLinejoin="round" />,
+  bug: (
+    <>
+      <path d="M5 4.6a2.5 2.5 0 0 1 5 0" strokeLinejoin="round" />
+      <path d="M4.5 5.5h6v3.5a3 3 0 0 1-6 0V5.5Z" strokeLinejoin="round" />
+      <path
+        d="M7.5 5.5V12M6 2.8 5 1.6M9 2.8l1-1.2M4.5 7.2H2M10.5 7.2H13M4.6 9.8l-2.1 1.4M10.4 9.8l2.1 1.4M4.6 5.6 2.8 4.4M10.4 5.6l1.8-1.2"
+        strokeLinecap="round"
+      />
+    </>
+  ),
   book: (
     <>
       <path

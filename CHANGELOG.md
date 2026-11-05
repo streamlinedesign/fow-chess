@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Bug reports: the footer says the game is in beta and has a "Report a bug" link, and game pages have a bug button. A report takes a category (looks, rules, connection, clocks, bots, account, other), the match code (filled in from the game) and what happened. Reports are stored in Postgres; `make bugs` prints the newest.
 - Four-player chess under Mods: a cross-shaped board, Red, Blue, Green and Violet moving clockwise, last king standing wins. Works with fog, the hill, the twists, centre vision and any clock; empty seats can be filled with bots. New dusty red, blue, green and violet piece sets.
 - The prince (Jump King) now has the king's head under its coronet.
 - The Jump King piece is now a prince (a young king with a coronet) instead of a crowned knight.

@@ -1,3 +1,4 @@
+import { BugButton } from './BugReport'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Clock } from './Clock'
 import { aroundFrom, parseMove, pieceImg4, SEAT_COLORS, SEATS, type Seat } from './four'
@@ -200,6 +201,7 @@ export function FourMatchPage({ id }: { id: string }) {
                 {t.four.newGame}
               </Button>
             )}
+            <BugButton match={id} />
           </div>
 
           {state && <Moves state={state} />}

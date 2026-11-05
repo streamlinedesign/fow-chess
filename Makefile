@@ -59,6 +59,9 @@ db-reset: ## Drop the local chess database and recreate it
 db-seed: ## Load demo accounts from seed/ (password: demo)
 	@for f in seed/*.sql; do echo "$$f"; psql -v ON_ERROR_STOP=1 -q "$${DATABASE_URL:-postgres:///$(DB)}" -f "$$f"; done
 
+bugs: ## Print the newest bug reports (N=50), from DATABASE_URL or the local database
+	cd server && go run . -bugs $(or $(N),50)
+
 psql: ## A psql shell on the database
 	psql "$${DATABASE_URL:-postgres:///$(DB)}"
 
@@ -92,4 +95,4 @@ configure-repo: ## One-time GitHub settings: auto-merge, Actions may open PRs, m
 clean: ## Remove build output and the dev server binary
 	rm -rf web/dist server/dist/* .dev-server $(NAME) $(NAME)-linux-amd64
 
-.PHONY: help dev test build lint migrate db-reset db-seed psql deploy release configure-repo clean
+.PHONY: help dev test build lint migrate db-reset db-seed bugs psql deploy release configure-repo clean
