@@ -170,6 +170,7 @@ export const en = {
   },
 
   panel: {
+    syncEat: 'Sync Move games are always Eat the King: there is no check when both sides move at once.',
     title: 'Match settings',
     mode: 'Layout',
     timeControl: 'Time control',
@@ -324,6 +325,10 @@ export const en = {
   },
 
   match: {
+    syncPick: 'Pick your move',
+    syncSent: 'Move sent. Waiting for your opponent',
+    syncPicking: 'Both players are picking a move',
+    syncLocked: 'Your move is locked in. The round is played once your opponent sends theirs.',
     notFound: 'Match not found',
     notFoundDetail: (id: string) => `The ID ${id} doesn't exist, or the server restarted.`,
     outdated: 'Server out of date',

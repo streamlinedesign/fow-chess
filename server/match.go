@@ -283,6 +283,8 @@ type Match struct {
 	// cleared when the next round starts or both players leave a finished game.
 	chat   []chatLine
 	chatID int
+	// pending is each side's move for the Sync Move round in play, "" until sent.
+	pending [2]string
 }
 
 const (
@@ -364,13 +366,21 @@ func replay(rec *gameRecord) (*engine.Game, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, uci := range strings.Fields(rec.Moves) {
-		if _, err := g.PlayUCI(uci); err != nil {
-			return nil, fmt.Errorf("move %s: %w", uci, err)
+	for _, tok := range strings.Fields(rec.Moves) {
+		if err := g.PlayToken(tok); err != nil {
+			return nil, fmt.Errorf("move %s: %w", tok, err)
 		}
 	}
 	if !g.Over() && rec.Result != "" {
 		switch {
+		case rec.Settings.Sync && (rec.Reason == engine.Timeout.String() || rec.Reason == engine.TimeoutVsInsufficientMaterial.String()):
+			// Either side can run out in Sync Move: the saved result says who.
+			o := map[string]engine.Outcome{"1-0": engine.WhiteWins, "0-1": engine.BlackWins}[rec.Result]
+			m := engine.Timeout
+			if o == engine.Ongoing {
+				o, m = engine.Drawn, engine.TimeoutVsInsufficientMaterial
+			}
+			g.Finish(o, m)
 		case rec.Reason == engine.Timeout.String() || rec.Reason == engine.TimeoutVsInsufficientMaterial.String():
 			g.TimeOut()
 		case rec.Reason == engine.Agreement.String():
@@ -394,16 +404,9 @@ func (m *Match) save() {
 	if m.settings.Demo {
 		return
 	}
-	var moves strings.Builder
-	for i, pm := range m.game.History() {
-		if i > 0 {
-			moves.WriteByte(' ')
-		}
-		moves.WriteString(pm.Move.UCI())
-	}
 	rec := gameRecord{
 		MatchID: m.id, Round: m.round, Settings: m.settings, Seats: m.seats, Users: m.users, StartFEN: m.startFEN(),
-		Moves: moves.String(), CreatedAt: m.started, UpdatedAt: time.Now(),
+		Moves: strings.Join(m.game.Tokens(), " "), CreatedAt: m.started, UpdatedAt: time.Now(),
 		Clock: m.clock, TurnStart: m.turnStart, Rated: m.rated(),
 	}
 	round := m.round
@@ -481,10 +484,23 @@ func (m *Match) rated() bool {
 
 func (m *Match) running() bool { return !m.turnStart.IsZero() }
 
+// ticking is whether c's clock is running: the side to move's, or in a Sync
+// Move round each side's that can move and hasn't sent its move.
+func (m *Match) ticking(c int) bool {
+	if !m.running() {
+		return false
+	}
+	if !m.settings.Sync {
+		return int(m.game.Turn()) == c
+	}
+	pos := m.game.Position()
+	return m.pending[c] == "" && len(pos.MovesFor(engine.Color(c))) > 0
+}
+
 // left is how much time c has at now.
 func (m *Match) left(c int, now time.Time) time.Duration {
 	d := m.clock[c]
-	if m.running() && int(m.game.Turn()) == c {
+	if m.ticking(c) {
 		d -= now.Sub(m.turnStart)
 	}
 	return d
@@ -497,7 +513,11 @@ func (m *Match) startClock(now time.Time) {
 		return
 	}
 	if pm := m.settings.Time.PerMove; pm > 0 {
-		m.clock[m.game.Turn()] = time.Duration(pm) * time.Second
+		if m.settings.Sync {
+			m.clock = [2]time.Duration{time.Duration(pm) * time.Second, time.Duration(pm) * time.Second}
+		} else {
+			m.clock[m.game.Turn()] = time.Duration(pm) * time.Second
+		}
 	}
 	m.turnStart = now
 	m.armTimer()
@@ -509,15 +529,27 @@ func (m *Match) stopClock(now time.Time) {
 	if !m.running() {
 		return
 	}
-	c := int(m.game.Turn())
-	m.clock[c] = max(m.left(c, now), 0)
+	for c := range 2 {
+		if m.ticking(c) {
+			m.clock[c] = max(m.left(c, now), 0)
+		}
+	}
 	m.turnStart = time.Time{}
 	m.stopTimer()
 }
 
+// armTimer wakes the match when the first running clock runs out.
 func (m *Match) armTimer() {
 	m.stopTimer()
-	m.timer = time.AfterFunc(max(m.left(int(m.game.Turn()), time.Now()), 0), m.checkFlag)
+	now, next := time.Now(), time.Duration(-1)
+	for c := range 2 {
+		if l := max(m.left(c, now), 0); m.ticking(c) && (next < 0 || l < next) {
+			next = l
+		}
+	}
+	if next >= 0 {
+		m.timer = time.AfterFunc(next, m.checkFlag)
+	}
 }
 
 func (m *Match) stopTimer() {
@@ -539,14 +571,23 @@ func (m *Match) checkFlag() {
 	}
 }
 
-// flagged ends the game if the side to move has run out of time, and reports
-// whether it did. Callers hold m.mu.
+// flagged ends the game if a running clock has run out, and reports whether
+// it did. Callers hold m.mu.
 func (m *Match) flagged(now time.Time) bool {
-	if m.game.Over() || !m.running() || m.left(int(m.game.Turn()), now) > 0 {
+	if m.game.Over() || !m.running() {
+		return false
+	}
+	out := -1
+	for c := range 2 {
+		if m.ticking(c) && m.left(c, now) <= 0 && (out < 0 || m.left(c, now) < m.left(out, now)) {
+			out = c
+		}
+	}
+	if out < 0 {
 		return false
 	}
 	m.stopClock(now)
-	m.game.TimeOut()
+	m.game.Flag(engine.Color(out))
 	return true
 }
 
@@ -558,7 +599,7 @@ type seatState struct {
 
 // protocolVersion changes whenever the state message changes shape, so a web app
 // talking to a server from another version can say so instead of breaking.
-const protocolVersion = 10
+const protocolVersion = 11
 
 type stateMsg struct {
 	Type     string   `json:"type"`
@@ -586,6 +627,12 @@ type stateMsg struct {
 	Setup *setupState `json:"setup,omitempty"`
 	// Sniper marks a game won on the winner's first move; see sniperWin.
 	Sniper bool `json:"sniper,omitempty"`
+	// Sent is who has sent a move in the Sync Move round in play.
+	Sent map[string]bool `json:"sent,omitempty"`
+	// Ticking is whose clocks run in a Sync Move round.
+	Ticking []string `json:"ticking,omitempty"`
+	// Planned is the move this player has sent for the Sync Move round.
+	Planned string `json:"planned,omitempty"`
 }
 
 // setupState is the setup as one viewer may know it.
@@ -813,6 +860,9 @@ func (m *Match) handle(c *client, msg inMsg) {
 // playMove plays color's move if it's their turn and the move is legal, and
 // handles the clock. Callers hold m.mu.
 func (m *Match) playMove(color int, uci string, now time.Time) bool {
+	if m.settings.Sync {
+		return m.sendMove(color, uci, now)
+	}
 	if m.game.Over() || !m.setUp || m.seats[black] == "" || int(m.game.Turn()) != color {
 		return false
 	}
@@ -846,6 +896,52 @@ func (m *Match) playMove(color int, uci string, now time.Time) bool {
 	return true
 }
 
+// sendMove takes color's move for the Sync Move round, locked in once sent,
+// and plays the round once both sides have sent theirs (or the other side
+// has no move). Callers hold m.mu.
+func (m *Match) sendMove(color int, uci string, now time.Time) bool {
+	if m.game.Over() || !m.setUp || m.seats[black] == "" || m.pending[color] != "" || m.flagged(now) {
+		return false
+	}
+	pos := m.game.Position()
+	if _, ok := pos.FindMoveFor(engine.Color(color), uci); !ok {
+		return false
+	}
+	if m.ticking(color) {
+		m.clock[color] = max(m.left(color, now), 0)
+	}
+	m.pending[color] = uci
+	if m.pending[1-color] == "" && len(pos.MovesFor(engine.Color(1-color))) > 0 {
+		if m.running() {
+			m.armTimer()
+		}
+		return true
+	}
+	if _, err := m.game.PlayRound(m.pending); err != nil {
+		log.Printf("match %s: round %v: %v", m.id, m.pending, err)
+		m.pending = [2]string{}
+		return false
+	}
+	t := m.settings.Time
+	if m.running() {
+		for c := range 2 {
+			if m.pending[c] != "" {
+				m.clock[c] += time.Duration(t.Inc) * time.Second
+			}
+		}
+		m.turnStart = time.Time{}
+		m.stopTimer()
+	}
+	m.pending = [2]string{}
+	m.draw = [2]bool{}
+	m.turnBegan = now
+	m.startClock(now)
+	if m.game.Over() {
+		m.stopClock(now)
+	}
+	return true
+}
+
 // startRematch begins the next round with the colours swapped. Callers hold m.mu.
 func (m *Match) startRematch(now time.Time) {
 	m.game = engine.NewGameWithRules(m.settings.rules())
@@ -854,6 +950,7 @@ func (m *Match) startRematch(now time.Time) {
 	m.names[white], m.names[black] = m.names[black], m.names[white]
 	m.rematch = [2]bool{}
 	m.draw = [2]bool{}
+	m.pending = [2]string{}
 	m.setUp, m.placed = m.settings.Setup == "", [2]string{}
 	m.round++
 	m.started = now
@@ -925,8 +1022,16 @@ func (m *Match) base() stateMsg {
 		for i, name := range colorNames {
 			base.Clock.Left[name] = max(m.left(i, now), 0).Milliseconds()
 		}
-		if m.running() {
+		if m.running() && !m.settings.Sync {
 			base.Clock.Running = m.game.Turn().String()
+		}
+	}
+	if m.settings.Sync && status == "playing" {
+		base.Sent = map[string]bool{"w": m.pending[white] != "", "b": m.pending[black] != ""}
+		for i, name := range colorNames {
+			if m.ticking(i) {
+				base.Ticking = append(base.Ticking, name)
+			}
 		}
 	}
 	if d := m.ratingDiff; d != nil {
@@ -963,6 +1068,9 @@ func (m *Match) view(msg stateMsg, color, side int) []byte {
 	if color >= 0 {
 		msg.You = colorNames[color]
 		msg.gameView = viewFor(m.game, color, msg.Status == "playing", m.settings.Fog)
+		if msg.Planned = m.pending[color]; msg.Planned != "" {
+			msg.Legal = []string{} // a sent move is locked in
+		}
 	} else {
 		msg.Watching = colorNames[side]
 		msg.gameView = spectatorView(m.game, m.settings.rules(), side, m.settings.Fog)

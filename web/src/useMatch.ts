@@ -17,6 +17,14 @@ export type MatchState = {
   /** UCI moves you may play now. Empty unless it's your turn. */
   legal: string[]
   last: { from: string; to: string } | null
+  /** The other move of the last Sync Move round, when you may see it. */
+  also?: { from: string; to: string }
+  /** Sync Move: who has sent a move this round. */
+  sent?: Record<Color, boolean>
+  /** Sync Move: whose clocks are running. */
+  ticking?: Color[]
+  /** Sync Move: the move you've sent this round, locked in. */
+  planned?: string
   check?: string
   /** Your king's square when a piece you can see attacks it. */
   danger?: string
@@ -74,7 +82,7 @@ export type Outgoing =
 export type Connection = 'connecting' | 'open' | 'closed' | 'failed' | 'missing' | 'outdated'
 
 /** Must match protocolVersion in server/match.go. */
-const PROTOCOL = 10
+const PROTOCOL = 11
 
 export function useMatch(id: string) {
   const [state, setState] = useState<MatchState | null>(null)

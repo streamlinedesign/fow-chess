@@ -56,8 +56,7 @@ export function ModsPage() {
         navigate(`/f/${id}`)
         return
       }
-      const { sync: _, ...two } = settings
-      const body = { ...two, mods: true, unrated: true }
+      const body = { ...settings, kingCapture: settings.kingCapture || !!settings.sync, mods: true, unrated: true }
       const res = await fetch(`/api/matches?player=${playerId}`, {
         method: 'POST',
         body: JSON.stringify(body),

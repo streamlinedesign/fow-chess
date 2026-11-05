@@ -79,8 +79,8 @@ export function SettingsPanel({
                 onChange={(fog) => onChange({ ...value, fog })}
               />
               <Group id={`${id}-win`} label={t.panel.winBy}>
-                {four ? (
-                  <p className="text-sm text-accent">{t.four.eatAlways}</p>
+                {four || value.sync ? (
+                  <p className="text-sm text-accent">{four ? t.four.eatAlways : t.panel.syncEat}</p>
                 ) : (
                   <RadioGroup.Root
                     aria-labelledby={`${id}-win`}
@@ -129,14 +129,12 @@ export function SettingsPanel({
         <div className="@container flex min-w-0 flex-col gap-6">
           {mods && (
             <Group id={`${id}-twists`} label={t.panel.twists}>
-              {four && (
-                <Toggle
-                  label={t.four.sync}
-                  hint={t.four.syncHint}
-                  checked={!!value.sync}
-                  onChange={(sync) => onChange({ ...value, sync })}
-                />
-              )}
+              <Toggle
+                label={t.four.sync}
+                hint={t.four.syncHint}
+                checked={!!value.sync}
+                onChange={(sync) => onChange({ ...value, sync })}
+              />
               <Toggle
                 label={t.legacy.jump}
                 hint={t.panel.jumpHint}

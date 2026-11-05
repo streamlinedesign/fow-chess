@@ -29,6 +29,9 @@ type Settings struct {
 	// CenterVision gives the whole board to a player with a piece on the
 	// centre of the opponent's half: "pawn" counts only pawns, "any" any piece.
 	CenterVision string `json:"centerVision,omitempty"`
+	// Sync is Sync Move: both players send a move each round and both happen
+	// at once (see engine.Game.PlayRound). Mods only, and always Eat the King.
+	Sync bool `json:"sync,omitempty"`
 	// Unrated keeps a game from counting. Players can't ask for it: every
 	// game of the one game is ranked when it can be, and normalize sets it
 	// for bot and mods games, which never are.
@@ -50,7 +53,7 @@ const demoBot = bots.Solomon
 
 func (s Settings) rules() engine.Rules {
 	return engine.Rules{KingCapture: s.KingCapture, JumpKing: s.JumpKing, Hill: s.Hill,
-		CenterVision: centerVisions[s.CenterVision], JesterPawns: s.JesterPawns}
+		CenterVision: centerVisions[s.CenterVision], JesterPawns: s.JesterPawns, Sync: s.Sync}
 }
 
 // centerVisions are the CenterVision settings.
@@ -81,8 +84,12 @@ func (s *Settings) normalize() {
 	}
 	if s.Mods {
 		s.Unrated = true
+		if s.Sync {
+			s.KingCapture = true // there's no check when both sides move at once
+		}
 		return
 	}
+	s.Sync = false
 	s.Fog, s.KingCapture, s.CenterVision = true, true, "any"
 	s.JumpKing, s.JesterPawns, s.Hill = false, false, false
 }
@@ -168,6 +175,8 @@ type gameView struct {
 	Ply   int       `json:"ply"`
 	Legal []string  `json:"legal"`
 	Last  *lastMove `json:"last"`
+	// Also is the other move of the last Sync Move round, when the viewer may see it.
+	Also  *lastMove `json:"also,omitempty"`
 	Check string    `json:"check,omitempty"`
 	// Danger is the player's king square when any enemy piece attacks it, even
 	// one the fog hides (the player learns the king is attacked, not from
@@ -225,8 +234,8 @@ func viewFor(g *engine.Game, viewer int, playable, fog bool) gameView {
 		History:  make([]string, n),
 		Captured: captured(hist),
 	}
-	if playable && !g.Over() && viewer == int(pos.Turn) {
-		for _, m := range g.LegalMoves() {
+	if playable && !g.Over() && viewer >= 0 && (pos.Sync || viewer == int(pos.Turn)) {
+		for _, m := range pos.MovesFor(engine.Color(viewer)) {
 			v.Legal = append(v.Legal, m.UCI())
 		}
 	}
@@ -245,10 +254,13 @@ func viewFor(g *engine.Game, viewer int, playable, fog bool) gameView {
 		for i, pm := range hist {
 			v.History[i] = pm.SAN
 		}
-		if n > 0 {
+		if n > 0 && !hist[n-1].IsPass() {
 			v.Last = &lastMove{From: hist[n-1].Move.From.String(), To: hist[n-1].Move.To.String()}
 		}
-		if pos.InCheck() {
+		if pos.Sync && n > 0 && !hist[n-2].IsPass() {
+			v.Also = &lastMove{From: hist[n-2].Move.From.String(), To: hist[n-2].Move.To.String()}
+		}
+		if pos.InCheck() && !pos.Sync {
 			v.Check = pos.KingSquare(pos.Turn).String()
 		}
 		return v
@@ -267,11 +279,19 @@ func viewFor(g *engine.Game, viewer int, playable, fog bool) gameView {
 			v.History[i] = "?"
 		}
 	}
-	if n > 0 && mover(n-1) == viewer {
-		v.Last = &lastMove{From: hist[n-1].Move.From.String(), To: hist[n-1].Move.To.String()}
+	// Your own last move: the last ply, or in Sync Move your half of the last round.
+	lo := n - 1
+	if pos.Sync {
+		lo = n - 2
+	}
+	for i := n - 1; i >= 0 && i >= lo; i-- {
+		if mover(i) == viewer && !hist[i].IsPass() {
+			v.Last = &lastMove{From: hist[i].Move.From.String(), To: hist[i].Move.To.String()}
+			break
+		}
 	}
 	// You know when you're in check, since it limits your moves; never the reverse.
-	if viewer == int(pos.Turn) && pos.InCheck() {
+	if viewer == int(pos.Turn) && pos.InCheck() && !pos.Sync {
 		v.Check = pos.KingSquare(pos.Turn).String()
 	}
 	return v
@@ -306,8 +326,8 @@ func kingDanger(pos *engine.Position, us engine.Color, seen *[64]bool) (danger s
 		danger = king.String()
 		hidden = !attacks(pos, king, seen)
 	}
-	if pos.Turn == us {
-		for _, m := range pos.LegalMoves() {
+	if pos.Turn == us || pos.Sync {
+		for _, m := range pos.MovesFor(us) {
 			if m.From != king {
 				continue
 			}
@@ -333,12 +353,16 @@ func spectatorView(g *engine.Game, rules engine.Rules, side int, fog bool) gameV
 	if !fog || g.Over() {
 		return viewFor(g, -1, false, fog)
 	}
-	hist := g.History()
-	shown := max(0, len(hist)-spectatorDelay)
-	past, _ := engine.NewGameFromFEN(g.StartFEN(), rules)
-	for _, pm := range hist[:shown] {
-		past.PlayUCI(pm.Move.UCI())
+	hist, toks := g.History(), g.Tokens()
+	delay := spectatorDelay
+	if rules.Sync {
+		delay = spectatorDelay / 2 // rounds, each two plies
 	}
+	past, _ := engine.NewGameFromFEN(g.StartFEN(), rules)
+	for _, tok := range toks[:max(0, len(toks)-delay)] {
+		past.PlayToken(tok)
+	}
+	shown := len(past.History())
 	v := viewFor(past, side, false, true)
 	v.Turn = g.Turn().String()
 	v.Ply = len(hist)

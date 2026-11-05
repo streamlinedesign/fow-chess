@@ -12,6 +12,10 @@ type Props = {
   /** UCI moves the viewer may play right now; empty when it isn't their turn. */
   legal: string[]
   lastMove?: { from: string; to: string } | null
+  /** The other move of the last Sync Move round. */
+  alsoMove?: { from: string; to: string } | null
+  /** The move you've sent for this Sync Move round. */
+  planned?: { from: string; to: string } | null
   check?: string
   /** Your king's square while a piece you can see attacks it. */
   danger?: string
@@ -62,6 +66,8 @@ export const Board = memo(function Board({
   orientation,
   legal,
   lastMove,
+  alsoMove,
+  planned,
   check,
   danger,
   unsafe,
@@ -163,7 +169,10 @@ export const Board = memo(function Board({
           data-square={sq}
           data-light={((i & 7) + (i >> 3)) % 2 === 1}
           // Under fog the square your piece left is often out of sight; a highlight there would read as visible.
-          data-last={!fog && (lastMove?.from === sq || lastMove?.to === sq)}
+          data-last={
+            !fog && (lastMove?.from === sq || lastMove?.to === sq || alsoMove?.from === sq || alsoMove?.to === sq)
+          }
+          data-planned={planned?.from === sq || planned?.to === sq}
           data-selected={sel === sq}
           data-check={check === sq}
           data-danger={danger === sq}

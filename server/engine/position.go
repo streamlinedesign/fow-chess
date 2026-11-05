@@ -33,6 +33,8 @@ type Position struct {
 	// Hill ends the game as a win for the side whose king reaches one of the
 	// four centre squares (King of the Hill).
 	Hill bool
+	// Sync is Sync Move (see Game.PlayRound). Turn stays White throughout.
+	Sync bool
 }
 
 // hill is the four centre squares: d4, e4, d5 and e5.

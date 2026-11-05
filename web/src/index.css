@@ -2904,6 +2904,9 @@ a.tick:active {
 .board4 .sq[data-planned='true'] {
   box-shadow: inset 0 0 0 calc(var(--board4, 400px) / 140) var(--color-fg);
 }
+.board:not(.board4) .sq[data-planned='true'] {
+  box-shadow: inset 0 0 0 calc(var(--board, 400px) / 90) var(--color-fg);
+}
 /* A hairline on fogged squares keeps the cross readable on the dark background. */
 .board4 .sq[data-fog='true']:not([data-hill='true']) {
   box-shadow: inset 0 0 0 0.5px rgb(255 250 189 / 0.07);
