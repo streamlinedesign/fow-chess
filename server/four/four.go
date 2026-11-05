@@ -88,10 +88,21 @@ func (s Shape) RankOf(c Color, sq Square) int {
 	return w - 1 - sq.X()
 }
 
-// PromotionRank is how far up the board a pawn promotes: on the cross, the
-// eighth rank from its own side, just past the middle; on the extended
-// board, the far edge.
-func (s Shape) PromotionRank() int { return [...]int{7, 15}[s] }
+// Promotes reports whether c's pawn arriving on sq promotes. On the cross
+// that's the eighth rank from its own side, just past the middle. On the
+// extended board it's any edge but the player's own: the far edge, and the
+// two side edges past the player's own rows, so a jester pawn can't walk
+// sideways along its own rows to the wall and promote.
+func (s Shape) Promotes(c Color, sq Square) bool {
+	r := s.RankOf(c, sq)
+	if s == Cross {
+		return r >= 7
+	}
+	w := s.Width()
+	x, y := sq.X(), sq.Y()
+	edge := x == 0 || y == 0 || x == w-1 || y == w-1
+	return edge && r >= s.Rows()
+}
 
 // Centre is the four middle squares.
 func (s Shape) Centre() [4]Square {

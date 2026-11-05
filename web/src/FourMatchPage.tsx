@@ -1,7 +1,18 @@
 import { BugButton } from './BugReport'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Clock } from './Clock'
-import { aroundFrom, geo, parseMove, pieceImg4, SEAT_COLORS, SEATS, seatSkin, type FourLook, type Seat } from './four'
+import {
+  aroundFrom,
+  geo,
+  geoOf,
+  parseMove,
+  pieceImg4,
+  SEAT_COLORS,
+  SEATS,
+  seatSkin,
+  type FourLook,
+  type Seat,
+} from './four'
 import { FourBoard } from './FourBoard'
 import { FourSetup } from './FourSetup'
 import { useT, type Dict } from './i18n'
@@ -56,7 +67,7 @@ export function FourMatchPage({ id }: { id: string }) {
     if (!predicting) return state.board
     const m = parseMove(pending!.uci)!
     const b = [...state.board]
-    const idx = (sq: string) => (Number(sq.slice(1)) - 1) * 14 + sq.charCodeAt(0) - 97
+    const idx = geoOf(state.board).squareIdx
     b[idx(m.to)] = m.promo ? b[idx(m.from)][0] + m.promo.toUpperCase() : b[idx(m.from)]
     b[idx(m.from)] = '.'
     return b

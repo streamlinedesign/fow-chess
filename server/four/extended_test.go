@@ -185,3 +185,48 @@ func TestExtendedBotsFinish(t *testing.T) {
 		}
 	}
 }
+
+// On the extended board a pawn promotes on any edge but its own side.
+func TestExtendedPromotionEdges(t *testing.T) {
+	var p Position
+	p.Rules = Rules{Shape: Extended, JesterPawns: true}
+	p.EP, p.EPPawn = NoSquare, NoSquare
+	promos := func(from string) map[string]bool {
+		out := map[string]bool{}
+		p.Board = [NumSquares]Piece{}
+		f := sqs(t, from)[0]
+		p.Board[f] = NewPiece(Red, Pawn)
+		for _, m := range p.PieceMoves(f) {
+			if m.Promo != NoKind {
+				out[m.To.String()] = true
+			}
+		}
+		return out
+	}
+	if got := promos("b9"); !got["a9"] || !got["a10"] || !got["a8"] || got["b10"] {
+		t.Errorf("from b9: %v", got)
+	}
+	if got := promos("o12"); !got["p12"] || !got["p13"] {
+		t.Errorf("from o12: %v", got)
+	}
+	if got := promos("b2"); len(got) != 0 {
+		t.Errorf("a jester pawn on its own rows promoted: %v", got)
+	}
+	if got := promos("b4"); !got["a5"] || got["a4"] || got["a3"] {
+		t.Errorf("from b4: %v", got)
+	}
+	// Blue's pawns go right; its far edge is the p-file and its sides the
+	// top and bottom edges past its own rows.
+	p.Board = [NumSquares]Piece{}
+	f := sqs(t, "e2")[0]
+	p.Board[f] = NewPiece(Blue, Pawn)
+	got := map[string]bool{}
+	for _, m := range p.PieceMoves(f) {
+		if m.Promo != NoKind {
+			got[m.To.String()] = true
+		}
+	}
+	if !got["e1"] || !got["f1"] || got["d1"] {
+		t.Errorf("blue from e2: %v", got)
+	}
+}
