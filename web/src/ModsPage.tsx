@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { onBoard, SIZE, startBoard } from './four'
+import { FourBoard } from './FourBoard'
 import { useT } from './i18n'
 import { Page } from './Page'
 import { playerId } from './player'
@@ -14,12 +16,34 @@ export function ModsPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [settings, setSettings] = useState<Settings>(() => loadSettings(true))
+  const [four, setFour] = useState(() => {
+    try {
+      return localStorage.getItem('modsPlayers') === '4'
+    } catch {
+      return false
+    }
+  })
+  const pickFour = (on: boolean) => {
+    setFour(on)
+    try {
+      localStorage.setItem('modsPlayers', on ? '4' : '2')
+    } catch {}
+  }
 
   const create = async () => {
     setBusy(true)
     setError('')
     try {
       saveSettings(settings)
+      if (four) {
+        const { fog, time, jumpKing, backPawns, jesterPawns, hill, centerVision } = settings
+        const body = { fog, time, jumpKing, backPawns, jesterPawns, hill, centerVision }
+        const res = await fetch(`/api/four?player=${playerId}`, { method: 'POST', body: JSON.stringify(body) })
+        if (!res.ok) throw new Error()
+        const { id } = await res.json()
+        navigate(`/f/${id}`)
+        return
+      }
       const body = { ...settings, mods: true, unrated: true }
       const res = await fetch(`/api/matches?player=${playerId}`, {
         method: 'POST',
@@ -40,7 +64,11 @@ export function ModsPage() {
         <div className="home-cell cross">
           <div className="demo mods-board">
             <div className="demo-main">
-              <SettingsBoard settings={settings} boardClassName="w-full" captionClassName="mt-1 max-[760px]:px-4" />
+              {four ? (
+                <FourPreview settings={settings} />
+              ) : (
+                <SettingsBoard settings={settings} boardClassName="w-full" captionClassName="mt-1 max-[760px]:px-4" />
+              )}
             </div>
           </div>
         </div>
@@ -50,7 +78,7 @@ export function ModsPage() {
             <p className="mt-2.5 text-[15px] text-accent">{t.mods.intro}</p>
           </section>
           <section>
-            <SettingsPanel value={settings} onChange={setSettings} className="bare" />
+            <SettingsPanel value={settings} onChange={setSettings} className="bare" four={four} onFour={pickFour} />
           </section>
           <section className="flex flex-col gap-3">
             <Button variant="solid" className="home-play" onClick={create} loading={busy} disabled={busy}>
@@ -65,5 +93,41 @@ export function ModsPage() {
         </div>
       </div>
     </Page>
+  )
+}
+
+/** The four-player board from Red's seat at the start, with the settings' fog. */
+function FourPreview({ settings }: { settings: Settings }) {
+  const t = useT()
+  const board = useMemo(() => {
+    const b = startBoard()
+    if (!settings.fog) return b
+    // At the start Red's pieces see their own two rows and the two ahead.
+    return b.map((v, i) => {
+      const x = i % SIZE
+      const y = Math.floor(i / SIZE)
+      return onBoard(x, y) && !(y <= 3 && x >= 3 && x <= 10) ? '?' : v
+    })
+  }, [settings.fog])
+  return (
+    <>
+      <div className="four-preview" role="img" aria-label={t.four.preview}>
+        <FourBoard
+          board={board}
+          seat="r"
+          legal={[]}
+          hill={settings.hill}
+          center={settings.centerVision ? {} : undefined}
+          look={settings}
+          still
+        />
+      </div>
+      <div className="mt-1 flex flex-col gap-1.5 max-[760px]:px-4">
+        <p className="text-[15px] font-semibold">{t.settingsBoard.yourView}</p>
+        <p className="text-sm text-accent">
+          {t.four.preview} {settings.fog ? t.four.previewFog : ''}
+        </p>
+      </div>
+    </>
   )
 }

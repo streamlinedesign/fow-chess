@@ -17,6 +17,7 @@
 
 ## Later
 
+- Four-player: show these games on profiles, Watch and the bell; rematch and draw offers; a stronger bot
 - Decide what else the hub should show
 
 ## Done

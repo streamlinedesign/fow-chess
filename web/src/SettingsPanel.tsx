@@ -26,10 +26,16 @@ export function SettingsPanel({
   value,
   onChange,
   className = '',
+  four,
+  onFour,
 }: {
   value: Settings
   onChange: (s: Settings) => void
   className?: string
+  /** A four-player game: always Eat the King, no setup modes. */
+  four?: boolean
+  /** Offers the choice of two or four players (the mods page). */
+  onFour?: (four: boolean) => void
 }) {
   // The panel can be on screen twice (home page and Offer a match), so ids are per panel.
   const id = useId()
@@ -41,10 +47,26 @@ export function SettingsPanel({
       <legend className="sr-only">{t.panel.title}</legend>
       <div className="flex items-center justify-between gap-3 border-b border-border bg-muted px-4 py-3 text-[13px] sm:px-5">
         <span className="shrink-0 text-sm font-semibold whitespace-nowrap">{mods ? t.common.mods : t.panel.title}</span>
-        <span className="truncate text-accent">{[modeName(value, t), describeTime(value.time, t)].join(' · ')}</span>
+        <span className="truncate text-accent">
+          {[four ? t.four.four : modeName(value, t), describeTime(value.time, t)].join(' · ')}
+        </span>
       </div>
 
       <div className="flex flex-1 flex-col justify-between gap-6 p-4 sm:p-5">
+        {onFour && (
+          <Group id={`${id}-players`} label={t.four.players}>
+            <RadioGroup.Root
+              aria-labelledby={`${id}-players`}
+              value={four ? '4' : '2'}
+              onValueChange={(v) => onFour(v === '4')}
+              className="grid grid-cols-2 gap-2.5"
+            >
+              <Choice value="2" label={t.four.two} hint={t.four.twoHint} />
+              <Choice value="4" label={t.four.four} hint={t.four.fourHint} />
+            </RadioGroup.Root>
+          </Group>
+        )}
+
         {mods && (
           <>
             <Toggle
@@ -55,15 +77,19 @@ export function SettingsPanel({
               onChange={(fog) => onChange({ ...value, fog })}
             />
             <Group id={`${id}-win`} label={t.panel.winBy}>
-              <RadioGroup.Root
-                aria-labelledby={`${id}-win`}
-                value={value.kingCapture ? 'capture' : 'mate'}
-                onValueChange={(v) => onChange({ ...value, kingCapture: v === 'capture' })}
-                className="grid grid-cols-2 gap-2.5"
-              >
-                <Choice value="capture" label={t.panel.eat} hint={t.panel.eatHint} />
-                <Choice value="mate" label={t.panel.mate} hint={t.panel.mateHint} />
-              </RadioGroup.Root>
+              {four ? (
+                <p className="text-sm text-accent">{t.four.eatAlways}</p>
+              ) : (
+                <RadioGroup.Root
+                  aria-labelledby={`${id}-win`}
+                  value={value.kingCapture ? 'capture' : 'mate'}
+                  onValueChange={(v) => onChange({ ...value, kingCapture: v === 'capture' })}
+                  className="grid grid-cols-2 gap-2.5"
+                >
+                  <Choice value="capture" label={t.panel.eat} hint={t.panel.eatHint} />
+                  <Choice value="mate" label={t.panel.mate} hint={t.panel.mateHint} />
+                </RadioGroup.Root>
+              )}
               <Toggle
                 label={t.legacy.hill}
                 hint={t.panel.hillHint}
@@ -74,28 +100,30 @@ export function SettingsPanel({
           </>
         )}
 
-        <Group id={`${id}-mode`} label={t.panel.mode}>
-          <RadioGroup.Root
-            aria-labelledby={`${id}-mode`}
-            value={setupMode(value).value || 'standard'}
-            onValueChange={(v) =>
-              onChange({
-                ...value,
-                setup: v === 'standard' ? '' : (v as Settings['setup']),
-              })
-            }
-            className="grid gap-2.5 sm:grid-cols-3"
-          >
-            {SETUPS.map((m) => (
-              <Choice
-                key={m.value}
-                value={m.value || 'standard'}
-                label={t.setups[m.value].label}
-                hint={t.setups[m.value].hint}
-              />
-            ))}
-          </RadioGroup.Root>
-        </Group>
+        {!four && (
+          <Group id={`${id}-mode`} label={t.panel.mode}>
+            <RadioGroup.Root
+              aria-labelledby={`${id}-mode`}
+              value={setupMode(value).value || 'standard'}
+              onValueChange={(v) =>
+                onChange({
+                  ...value,
+                  setup: v === 'standard' ? '' : (v as Settings['setup']),
+                })
+              }
+              className="grid gap-2.5 sm:grid-cols-3"
+            >
+              {SETUPS.map((m) => (
+                <Choice
+                  key={m.value}
+                  value={m.value || 'standard'}
+                  label={t.setups[m.value].label}
+                  hint={t.setups[m.value].hint}
+                />
+              ))}
+            </RadioGroup.Root>
+          </Group>
+        )}
 
         {mods && (
           <Group id={`${id}-twists`} label={t.panel.twists}>
@@ -119,7 +147,7 @@ export function SettingsPanel({
             />
             <Toggle
               label={t.panel.center}
-              hint={t.panel.centerHint}
+              hint={four ? t.four.centerHint : t.panel.centerHint}
               checked={!!value.centerVision}
               onChange={(on) => onChange({ ...value, centerVision: on ? 'any' : '' })}
             />
