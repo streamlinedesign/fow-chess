@@ -3,6 +3,20 @@ import { useT } from './i18n'
 import { avatarImg } from './sets'
 
 /**
+ * A piece as an avatar, zoomed on its head: the top of the piece fills the
+ * circle (see .ava-head in index.css, which places each kind).
+ */
+export function AvatarImg({ code }: { code: string }) {
+  const src = avatarImg(code)
+  if (!src) return null
+  return (
+    <span className="ava-head" aria-hidden>
+      <img src={src} alt="" draggable={false} data-kind={code.split('/')[1]} decoding="async" />
+    </span>
+  )
+}
+
+/**
  * A player's avatar: the piece they picked (see sets.ts), or the pawn
  * everyone starts with, cut off at the shoulders. Give the player's name to
  * look theirs up, or code to draw one directly.
@@ -22,7 +36,8 @@ export function Avatar({
 }) {
   const t = useT()
   const looked = useAvatar(code === undefined ? name : undefined)
-  const src = avatarImg(code ?? looked)
+  const avatar = code ?? looked
+  const src = avatarImg(avatar)
   const dot = Math.min(Math.max(Math.round(size * 0.28), 9), 20)
   return (
     <span
@@ -30,7 +45,7 @@ export function Avatar({
       style={{ width: size, height: size }}
     >
       {src ? (
-        <img src={src} alt="" aria-hidden draggable={false} className="avatar-piece" />
+        <AvatarImg code={avatar!} />
       ) : (
         <svg viewBox="0 0 40 40" aria-hidden className="block size-full rounded-full opacity-80">
           <circle cx="20" cy="15.2" r="5.6" fill="currentColor" />

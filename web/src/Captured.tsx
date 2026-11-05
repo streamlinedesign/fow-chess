@@ -6,18 +6,18 @@ import { usePieces } from './prefs'
 export function Captured({
   pieces,
   look,
-  bottom = 'w',
+  mine,
   className = '',
 }: {
   pieces: string
-  /** The side drawn in the viewer's own set (see prefs.ts). */
-  bottom?: 'w' | 'b'
+  /** The side the viewer plays, drawn in their own set as they pick it (see prefs.ts). */
+  mine?: 'w' | 'b'
   /** The mods that change how pieces are drawn. */
   look?: Look
   className?: string
 }) {
   const t = useT()
-  const img = usePieces(bottom)
+  const img = usePieces(mine)
   if (!pieces) return null
   const groups: string[][] = []
   for (const p of pieces) {

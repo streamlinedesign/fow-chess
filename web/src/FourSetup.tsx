@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
-import { ownCell, pieceImg4, squareName, type Seat } from './four'
+import { ownCell, pieceImg4, squareName, type FourLook, type Seat } from './four'
 import { useT } from './i18n'
-import type { Look } from './pieces'
 import { Button } from './ui'
 
 /** Every player's pieces. Must match army in server/four/setup.go. */
@@ -58,7 +57,7 @@ export function FourSetup({
 }: {
   seat: Seat
   layout: Layout
-  look?: Look
+  look?: FourLook
   /** What you sent, so a reload picks it up. */
   mine?: string
   onReady: (board: string) => void

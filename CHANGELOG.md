@@ -4,6 +4,13 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Your look is yours to show: you pick a set for when you play White and one for when you play Black, and your opponent and spectators see your pieces and tiles as you picked them. Watch and replays show them too. Same set on both sides is fine: colours have light lines as White and dark lines as Black, themes their light and dark halves.
+- Coloured sets now come with light lines and with dark lines instead of mixed outlines; bots play theirs the same way.
+- Tiles cover your first three rows only, in two- and four-player games.
+- No skins means classic pieces and the plain board for every player on your screen; bots and the four-player colours stay.
+- Four players: a player with a skin plays in one of their two sets, picked at random per game; everyone else keeps their seat colour.
+- Settings opens about six times faster on a phone: plain radio buttons, and the avatar is picked by set, then piece.
+- Avatars are zoomed on the head of the piece.
 - Ancient tiles: a Greek key border on all four sides of each square that joins up with the next square, in place of the single band along the bottom.
 - Themed piece sets: galaxy, blueprint, holy and ancient, light for White and dark for Black, for your pieces or your opponent's. Their light and dark pieces are avatars too.
 - Tile skins: pick a skin for the light squares and one for the dark squares (galaxy, blueprint, holy, ancient or plain). They cover only your half of the board.

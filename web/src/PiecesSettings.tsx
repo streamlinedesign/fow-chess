@@ -1,114 +1,219 @@
-import * as RadioGroup from '@radix-ui/react-radio-group'
 import * as Switch from '@radix-ui/react-switch'
+import { memo, useId, useState } from 'react'
+import { AvatarImg } from './Avatar'
 import { useT } from './i18n'
-import { piecesFor, setPrefs, tilesFor, usePrefs, type Prefs } from './prefs'
-import { concrete, KINDS, SET_IDS, SETS, setImg, TILE_IDS, tileImg } from './sets'
+import { setPrefs, usePrefs, type Prefs } from './prefs'
+import { AVATAR_GROUPS, CLASSIC, concrete, familyOf, KINDS, SET_IDS, setImg, TILE_IDS, tileImg } from './sets'
 
-/** A set's face in a picker: its knight, or for a two-sided set (classic, the themes) both knights. */
-function SetFace({ id }: { id: string }) {
-  const w = concrete(id, 'w')
-  if (w !== concrete(id, 'b'))
-    return (
-      <span className="set-face pair" aria-hidden>
-        <img src={setImg(w, 'N')} alt="" />
-        <img src={setImg(concrete(id, 'b'), 'N')} alt="" />
-      </span>
-    )
-  return (
-    <span className="set-face" aria-hidden>
-      <img src={setImg(id, 'N')} alt="" />
-    </span>
-  )
-}
+// The pickers are plain radio buttons, not Radix: a page of them stays quick
+// to open on a phone, and the arrow keys move through each group for free.
+// Each picker is memoised, so a pick redraws only the picker that changed.
 
-function SetPicker({ label, value, onChange }: { label: string; value: string; onChange: (id: string) => void }) {
-  const t = useT()
-  return (
-    <RadioGroup.Root aria-label={label} value={value} onValueChange={onChange} className="set-pick">
-      {SET_IDS.map((id) => (
-        <RadioGroup.Item key={id} value={id} className="set-opt">
-          <SetFace id={id} />
-          <span className="set-name">{t.pieces.sets[id] ?? id}</span>
-        </RadioGroup.Item>
-      ))}
-    </RadioGroup.Root>
-  )
-}
+type Opt = { value: string; label: string; face: React.ReactNode }
 
-function TilePicker({
+const Radios = memo(function Radios({
   label,
-  light,
   value,
+  options,
   onChange,
+  className = 'set-pick',
+  optClass = 'set-opt',
 }: {
   label: string
-  light: boolean
   value: string
-  onChange: (id: string) => void
+  options: Opt[]
+  onChange: (v: string) => void
+  className?: string
+  optClass?: string
 }) {
-  const t = useT()
+  const name = useId()
   return (
-    <RadioGroup.Root
-      aria-label={label}
-      value={value || 'plain'}
-      onValueChange={(v) => onChange(v === 'plain' ? '' : v)}
-      className="set-pick"
-    >
-      {TILE_IDS.map((id) => (
-        <RadioGroup.Item key={id || 'plain'} value={id || 'plain'} className="set-opt">
-          <span
-            className="set-face tile"
-            data-light={light}
-            style={id ? { backgroundImage: `url("${tileImg(id, light)}")` } : undefined}
-            aria-hidden
+    <div role="radiogroup" aria-label={label} className={className}>
+      {options.map((o) => (
+        <label key={o.value} className={optClass} data-state={o.value === value ? 'checked' : 'unchecked'}>
+          <input
+            type="radio"
+            name={name}
+            value={o.value}
+            checked={o.value === value}
+            onChange={() => onChange(o.value)}
+            className="sr-only"
+            aria-label={o.label}
           />
-          <span className="set-name">{id ? t.pieces.sets[id] : t.pieces.plainTiles}</span>
-        </RadioGroup.Item>
+          {o.face}
+        </label>
       ))}
-    </RadioGroup.Root>
+    </div>
   )
+})
+
+/** A family's face in a picker: its knight in the half that side plays. */
+function setOptions(t: ReturnType<typeof useT>, color: 'w' | 'b'): Opt[] {
+  return SET_IDS.map((id) => ({
+    value: id,
+    label: t.pieces.sets[id] ?? id,
+    face: (
+      <>
+        <span className="set-face" data-side={color} aria-hidden>
+          <img src={setImg(concrete(id, color), 'N')} alt="" decoding="async" />
+        </span>
+        <span className="set-name">{t.pieces.sets[id] ?? id}</span>
+      </>
+    ),
+  }))
 }
 
-/** Their back row and pawns at the top, yours at the bottom on your tiles, as on a board you play as `bottom`. */
-function Preview({ prefs, bottom }: { prefs: Prefs; bottom: 'w' | 'b' }) {
+function tileOptions(t: ReturnType<typeof useT>, light: boolean): Opt[] {
+  return TILE_IDS.map((id) => ({
+    value: id || 'plain',
+    label: id ? t.pieces.sets[id] : t.pieces.plainTiles,
+    face: (
+      <>
+        <span
+          className="set-face tile"
+          data-light={light}
+          style={id ? { backgroundImage: `url("${tileImg(id, light)}")` } : undefined}
+          aria-hidden
+        />
+        <span className="set-name">{id ? t.pieces.sets[id] : t.pieces.plainTiles}</span>
+      </>
+    ),
+  }))
+}
+
+// Options depend only on the language, so they're built once per language.
+const cache = new Map<unknown, Record<string, Opt[]>>()
+function useOptions() {
   const t = useT()
-  const img = piecesFor(prefs, bottom)
-  // Your half is the bottom two rows here; any rank on it will do.
-  const tile = tilesFor(prefs, 'w')
+  let o = cache.get(t)
+  if (!o) {
+    o = {
+      w: setOptions(t, 'w'),
+      b: setOptions(t, 'b'),
+      lightTiles: tileOptions(t, true),
+      darkTiles: tileOptions(t, false),
+    }
+    cache.set(t, o)
+  }
+  return o
+}
+
+const onWhite = (white: string) => setPrefs({ white })
+const onBlack = (black: string) => setPrefs({ black })
+const onLight = (v: string) => setPrefs({ lightTiles: v === 'plain' ? '' : v })
+const onDark = (v: string) => setPrefs({ darkTiles: v === 'plain' ? '' : v })
+
+/** Your Black set's back row and pawns at the top, your White set's at the bottom, all on your tiles. */
+const Preview = memo(function Preview({
+  white,
+  black,
+  lightTiles,
+  darkTiles,
+  plain,
+}: Pick<Prefs, 'white' | 'black' | 'lightTiles' | 'darkTiles' | 'plain'>) {
+  const t = useT()
   const row = 'RNBQKBNR'
-  const top = bottom === 'w' ? row.toLowerCase() : row
-  const mine = bottom === 'w' ? row : row.toLowerCase()
-  const pawn = (c: 'w' | 'b') => (c === 'w' ? 'P' : 'p')
-  const lines = [top, pawn(bottom === 'w' ? 'b' : 'w').repeat(8), pawn(bottom).repeat(8), mine]
+  const lines = [row.toLowerCase(), 'pppppppp', 'PPPPPPPP', row]
+  const img = (p: string) => {
+    const c = p === p.toUpperCase() ? 'w' : 'b'
+    return setImg(concrete(plain ? CLASSIC : c === 'w' ? white : black, c), p, c)
+  }
   return (
     <div className="set-preview" role="img" aria-label={t.pieces.preview}>
       {lines.map((line, r) =>
-        [...line].map((p, c) => (
-          <span
-            key={`${r}${c}`}
-            className="sq"
-            data-light={(r + c) % 2 === 0}
-            style={(() => {
-              const src = r >= 2 ? tile(0, (r + c) % 2 === 0) : undefined
-              return src ? { background: `url("${src}") center / cover` } : undefined
-            })()}
-          >
-            <img className="piece" src={img(p)} alt="" draggable={false} />
-          </span>
-        )),
+        [...line].map((p, c) => {
+          const light = (r + c) % 2 === 0
+          const src = plain ? undefined : tileImg(light ? lightTiles : darkTiles, light)
+          return (
+            <span
+              key={`${r}${c}`}
+              className="sq"
+              data-light={light}
+              style={src ? { background: `url("${src}") center / cover` } : undefined}
+            >
+              <img className="piece" src={img(p)} alt="" draggable={false} decoding="async" />
+            </span>
+          )
+        }),
       )}
     </div>
   )
+})
+
+/** The pawn everyone starts with, as an avatar. */
+export function PawnFace() {
+  return (
+    <svg viewBox="0 0 40 40" aria-hidden className="size-full opacity-80">
+      <circle cx="20" cy="15.2" r="5.6" fill="currentColor" />
+      <path
+        d="M15.4 21.6h9.2l-1.3 3.2c3.4 1.6 5.9 4.4 7.4 8.8.6 1.8.9 4 .9 6.4H8.4c0-2.4.3-4.6.9-6.4 1.5-4.4 4-7.2 7.4-8.8l-1.3-3.2Z"
+        fill="currentColor"
+      />
+      <rect x="13.6" y="20.6" width="12.8" height="2.4" rx="1.2" fill="currentColor" />
+    </svg>
+  )
 }
+
+/**
+ * The avatar: first a set (or the pawn), then one of its sixteen pieces, its
+ * White half and its Black half. Sixteen choices at a time instead of every
+ * piece of every set.
+ */
+const AvatarPicker = memo(function AvatarPicker({ avatar }: { avatar: string }) {
+  const t = useT()
+  const current = avatar ? familyOf(avatar.split('/')[0]) : 'pawn'
+  const [family, setFamily] = useState(current)
+  const group = AVATAR_GROUPS.find((g) => g.id === family)
+  const families: Opt[] = [
+    { value: 'pawn', label: t.pieces.pawn, face: <PawnFace /> },
+    ...AVATAR_GROUPS.map((g) => ({
+      value: g.id,
+      label: t.pieces.sets[g.id] ?? g.id,
+      face: <AvatarImg code={`${g.sets[0]}/N`} />,
+    })),
+  ]
+  return (
+    <div className="ava-pick">
+      <Radios
+        label={t.pieces.avatarSet}
+        value={family}
+        options={families}
+        onChange={(f) => {
+          setFamily(f)
+          if (f === 'pawn') setPrefs({ avatar: '' })
+        }}
+        className="ava-line"
+        optClass="ava-opt"
+      />
+      {group && (
+        <Radios
+          label={t.pieces.avatarPiece}
+          value={avatar}
+          options={group.sets.flatMap((s) =>
+            KINDS.map((k) => ({
+              value: `${s}/${k}`,
+              label: `${t.pieces.sets[s] ?? s} ${kindName(t, k)}`,
+              face: <AvatarImg code={`${s}/${k}`} />,
+            })),
+          )}
+          onChange={(avatar) => setPrefs({ avatar })}
+          className="ava-line ava-pieces"
+          optClass="ava-opt"
+        />
+      )}
+    </div>
+  )
+})
 
 /** The Pieces and avatar settings. Guests have them too, kept in this browser. */
 export function PiecesSettings({ signedIn }: { signedIn: boolean }) {
   const t = useT()
   const p = usePrefs()
+  const o = useOptions()
   return (
     <>
       <div className="set-row stack">
-        <Preview prefs={p} bottom={p.side || 'w'} />
+        <Preview white={p.white} black={p.black} lightTiles={p.lightTiles} darkTiles={p.darkTiles} plain={p.plain} />
       </div>
       <label className="set-row cursor-pointer">
         <div className="row-l">
@@ -121,28 +226,28 @@ export function PiecesSettings({ signedIn }: { signedIn: boolean }) {
       </label>
       <div className="set-row stack">
         <div className="row-l">
-          <b>{t.pieces.yours}</b>
-          <span>{t.pieces.yoursHint}</span>
+          <b>{t.pieces.whiteSet}</b>
+          <span>{t.pieces.whiteSetHint}</span>
         </div>
-        <SetPicker label={t.pieces.yours} value={p.primary} onChange={(primary) => setPrefs({ primary })} />
+        <Radios label={t.pieces.whiteSet} value={p.white} options={o.w} onChange={onWhite} />
       </div>
       <div className="set-row stack">
         <div className="row-l">
-          <b>{t.pieces.theirs}</b>
-          <span>{t.pieces.theirsHint}</span>
+          <b>{t.pieces.blackSet}</b>
+          <span>{t.pieces.blackSetHint}</span>
         </div>
-        <SetPicker label={t.pieces.theirs} value={p.secondary} onChange={(secondary) => setPrefs({ secondary })} />
+        <Radios label={t.pieces.blackSet} value={p.black} options={o.b} onChange={onBlack} />
       </div>
       <div className="set-row stack">
         <div className="row-l">
           <b>{t.pieces.lightTiles}</b>
           <span>{t.pieces.tilesHint}</span>
         </div>
-        <TilePicker
+        <Radios
           label={t.pieces.lightTiles}
-          light
-          value={p.lightTiles}
-          onChange={(lightTiles) => setPrefs({ lightTiles })}
+          value={p.lightTiles || 'plain'}
+          options={o.lightTiles}
+          onChange={onLight}
         />
       </div>
       <div className="set-row stack">
@@ -150,12 +255,7 @@ export function PiecesSettings({ signedIn }: { signedIn: boolean }) {
           <b>{t.pieces.darkTiles}</b>
           <span>{t.pieces.tilesHint}</span>
         </div>
-        <TilePicker
-          label={t.pieces.darkTiles}
-          light={false}
-          value={p.darkTiles}
-          onChange={(darkTiles) => setPrefs({ darkTiles })}
-        />
+        <Radios label={t.pieces.darkTiles} value={p.darkTiles || 'plain'} options={o.darkTiles} onChange={onDark} />
       </div>
       <div className="set-row">
         <div className="row-l">
@@ -187,40 +287,7 @@ export function PiecesSettings({ signedIn }: { signedIn: boolean }) {
           <b>{t.pieces.avatar}</b>
           <span>{signedIn ? t.pieces.avatarHint : t.pieces.avatarGuest}</span>
         </div>
-        <RadioGroup.Root
-          aria-label={t.pieces.avatar}
-          value={p.avatar || 'pawn'}
-          onValueChange={(v) => setPrefs({ avatar: v === 'pawn' ? '' : v })}
-          className="ava-pick"
-        >
-          <div className="ava-line">
-            <RadioGroup.Item value="pawn" className="ava-opt" aria-label={t.pieces.pawn}>
-              <svg viewBox="0 0 40 40" aria-hidden className="size-full opacity-80">
-                <circle cx="20" cy="15.2" r="5.6" fill="currentColor" />
-                <path
-                  d="M15.4 21.6h9.2l-1.3 3.2c3.4 1.6 5.9 4.4 7.4 8.8.6 1.8.9 4 .9 6.4H8.4c0-2.4.3-4.6.9-6.4 1.5-4.4 4-7.2 7.4-8.8l-1.3-3.2Z"
-                  fill="currentColor"
-                />
-                <rect x="13.6" y="20.6" width="12.8" height="2.4" rx="1.2" fill="currentColor" />
-              </svg>
-            </RadioGroup.Item>
-            <span className="text-[13px] text-accent">{t.pieces.pawn}</span>
-          </div>
-          {SETS.map((s) => (
-            <div key={s.id} className="ava-line">
-              {KINDS.map((k) => (
-                <RadioGroup.Item
-                  key={k}
-                  value={`${s.id}/${k}`}
-                  className="ava-opt"
-                  aria-label={`${t.pieces.sets[s.id] ?? s.id} ${kindName(t, k)}`}
-                >
-                  <img src={s.img(k)} alt="" draggable={false} />
-                </RadioGroup.Item>
-              ))}
-            </div>
-          ))}
-        </RadioGroup.Root>
+        <AvatarPicker avatar={p.avatar} />
       </div>
     </>
   )

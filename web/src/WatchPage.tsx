@@ -4,6 +4,7 @@ import { useT } from './i18n'
 import { Page, PageHead } from './Page'
 import { Icon } from './icons'
 import type { Look } from './position'
+import type { Skin } from './pieces'
 import { usePieces } from './prefs'
 import { navigate } from './router'
 import { describeTime, modeName, NO_CLOCK, type Settings } from './settings'
@@ -14,7 +15,7 @@ import type { Color } from './useMatch'
 export type LiveGame = {
   id: string
   settings: Settings
-  players: Record<Color, { name?: string; rating?: number }>
+  players: Record<Color, { name?: string; rating?: number; skin?: Skin }>
   /** 64 chars a1..h8, as a spectator seeing it as White sees it. */
   board: string
   ply: number
@@ -117,7 +118,7 @@ export function GameCard({ g }: { g: LiveGame }) {
         <b>{modeName(g.settings, t)}</b>
         <span>{describeTime(g.settings.time ?? NO_CLOCK, t)}</span>
       </div>
-      <MiniBoard board={g.board} look={g.settings} />
+      <MiniBoard board={g.board} look={{ ...g.settings, skins: { w: g.players.w.skin, b: g.players.b.skin } }} />
       <div className="flex flex-col gap-1.5">
         <Seat color="b" g={g} />
         <Seat color="w" g={g} />
@@ -154,7 +155,7 @@ function Seat({ color, g }: { color: Color; g: LiveGame }) {
 
 /** A small board from White's side, with fog where that view has it. */
 export function MiniBoard({ board, look }: { board: string; look?: Look }) {
-  const img = usePieces('w')
+  const img = usePieces()
   const squares = []
   for (let row = 7; row >= 0; row--) {
     for (let col = 0; col < 8; col++) {

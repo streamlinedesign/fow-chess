@@ -7,55 +7,122 @@ import (
 	"strings"
 )
 
-// The piece sets a player can pick. Must match SETS in web/src/sets.ts.
-// "classic" is Eat the King's own: cream for White, ink for Black. The rest
-// are one colour each, and every piece of those is also an avatar.
-var pieceSets = []string{
+// setFamilies are the sets a player picks for White and for Black. Must match
+// SET_IDS in web/src/sets.ts. "classic" is Eat the King's own: cream for White,
+// ink for Black. A colour is drawn with light lines as White and dark lines as
+// Black, and a theme in its light half as White and its dark half as Black, so
+// the two sides never look alike even when both players pick the same set.
+var setFamilies = []string{
 	"classic",
+	"red", "blue", "green", "violet",
+	"galaxy", "blueprint", "holy", "ancient",
+}
+
+// pieceSets are the one-colour sets, each of which is also a row of avatars.
+// Must match SETS in web/src/sets.ts. The plain colours ("red") are the
+// four-player defaults, kept for avatars picked before the light and dark lines.
+var pieceSets = []string{
 	"cream", "ink",
 	"red", "blue", "green", "violet",
+	"red-light", "blue-light", "green-light", "violet-light",
 	"red-ink", "blue-ink", "green-ink", "violet-ink",
-	// The themed sets, light for White and dark for Black like classic. Each
-	// half is a one-colour set of its own, for avatars.
-	"galaxy", "blueprint", "holy", "ancient",
 	"galaxy-light", "galaxy-dark", "blueprint-light", "blueprint-dark",
 	"holy-light", "holy-dark", "ancient-light", "ancient-dark",
 }
 
-// twoSided are the sets drawn differently for White and Black: never avatars.
-var twoSided = []string{"classic", "galaxy", "blueprint", "holy", "ancient"}
-
-// tileSkins are the board skins for your half: "" is the plain board. Must match TILE_IDS in web/src/sets.ts.
+// tileSkins are the board skins for your first three rows: "" is the plain board. Must match TILE_IDS in web/src/sets.ts.
 var tileSkins = []string{"", "galaxy", "blueprint", "holy", "ancient"}
 
 // avatarKinds are the pieces an avatar can be: the usual six, the jester pawn and the prince.
 const avatarKinds = "KQRBNPJX"
 
-// prefs are a player's own choices for how the game looks and which side they play.
-type prefs struct {
-	Primary   string `json:"primary"`   // the set for your pieces
-	Secondary string `json:"secondary"` // the set for your opponent's
-	Side      string `json:"side"`      // "w", "b", or "" for no preference
-	// The skins for the light and dark squares on your half; "" for plain.
+// skin is how a player's own pieces and squares look, to everyone in their
+// games: their set as White and as Black, and the tiles on their first three rows.
+type skin struct {
+	White string `json:"white"`
+	Black string `json:"black"`
+	// The skins for the light and dark squares on your first three rows; "" for plain.
 	LightTiles string `json:"lightTiles"`
 	DarkTiles  string `json:"darkTiles"`
-	// Plain turns every skin off: classic pieces and the plain board. The picks are kept.
+}
+
+// plain is whether the skin draws exactly like the default.
+func (s skin) plain() bool {
+	return (s.White == "" || s.White == "classic") && (s.Black == "" || s.Black == "classic") &&
+		s.LightTiles == "" && s.DarkTiles == ""
+}
+
+func (s skin) valid() bool {
+	return slices.Contains(setFamilies, s.White) && slices.Contains(setFamilies, s.Black) &&
+		slices.Contains(tileSkins, s.LightTiles) && slices.Contains(tileSkins, s.DarkTiles)
+}
+
+// clean drops what's no longer offered, so an old choice falls back to the default.
+func (s *skin) clean() {
+	if !slices.Contains(setFamilies, s.White) {
+		s.White = "classic"
+	}
+	if !slices.Contains(setFamilies, s.Black) {
+		s.Black = "classic"
+	}
+	if !slices.Contains(tileSkins, s.LightTiles) {
+		s.LightTiles = ""
+	}
+	if !slices.Contains(tileSkins, s.DarkTiles) {
+		s.DarkTiles = ""
+	}
+}
+
+// cleanSkin is a skin a browser sent, or nil when it draws like the default or isn't allowed.
+func cleanSkin(s *skin) *skin {
+	if s == nil || !s.valid() || s.plain() {
+		return nil
+	}
+	c := *s
+	return &c
+}
+
+// prefs are a player's own choices for how the game looks and which side they play.
+type prefs struct {
+	skin
+	Side string `json:"side"` // "w", "b", or "" for no preference
+	// Plain turns every skin off on this player's screen: classic pieces and
+	// the plain board for everyone but bots. The picks are kept.
 	Plain bool `json:"plain"`
+	// Primary was the set for your own pieces before White and Black sets.
+	// Read once to carry an old choice over, never written.
+	Primary string `json:"primary,omitempty"`
+}
+
+// familyOf is the set family a one-colour or old two-sided set belongs to.
+func familyOf(id string) string {
+	switch id {
+	case "cream", "ink":
+		return "classic"
+	}
+	for _, f := range setFamilies {
+		if id == f || strings.HasPrefix(id, f+"-") {
+			return f
+		}
+	}
+	return "classic"
 }
 
 func (p *prefs) fill() {
-	if p.Primary == "" {
-		p.Primary = "classic"
+	if p.Primary != "" && p.White == "" && p.Black == "" {
+		p.White, p.Black = familyOf(p.Primary), familyOf(p.Primary)
 	}
-	if p.Secondary == "" {
-		p.Secondary = "classic"
+	p.Primary = ""
+	if p.White == "" {
+		p.White = "classic"
+	}
+	if p.Black == "" {
+		p.Black = "classic"
 	}
 }
 
 func (p prefs) valid() bool {
-	return slices.Contains(pieceSets, p.Primary) && slices.Contains(pieceSets, p.Secondary) &&
-		(p.Side == "" || p.Side == "w" || p.Side == "b") &&
-		slices.Contains(tileSkins, p.LightTiles) && slices.Contains(tileSkins, p.DarkTiles)
+	return p.skin.valid() && (p.Side == "" || p.Side == "w" || p.Side == "b")
 }
 
 // validAvatar: "" for the default pawn, or "<set>/<piece>" from a one-colour set.
@@ -64,7 +131,7 @@ func validAvatar(a string) bool {
 		return true
 	}
 	set, kind, ok := strings.Cut(a, "/")
-	return ok && !slices.Contains(twoSided, set) && slices.Contains(pieceSets, set) && len(kind) == 1 && strings.Contains(avatarKinds, kind)
+	return ok && slices.Contains(pieceSets, set) && len(kind) == 1 && strings.Contains(avatarKinds, kind)
 }
 
 type lookResponse struct {
@@ -80,26 +147,15 @@ func (s *Store) Look(id int64) (lookResponse, error) {
 		return l, err
 	}
 	json.Unmarshal(raw, &l.prefs)
+	l.fill()
 	// A set that's since gone falls back to the default.
-	if !slices.Contains(pieceSets, l.Primary) {
-		l.Primary = ""
-	}
-	if !slices.Contains(pieceSets, l.Secondary) {
-		l.Secondary = ""
-	}
+	l.skin.clean()
 	if l.Side != "w" && l.Side != "b" {
 		l.Side = ""
-	}
-	if !slices.Contains(tileSkins, l.LightTiles) {
-		l.LightTiles = ""
-	}
-	if !slices.Contains(tileSkins, l.DarkTiles) {
-		l.DarkTiles = ""
 	}
 	if !validAvatar(l.Avatar) {
 		l.Avatar = ""
 	}
-	l.fill()
 	return l, nil
 }
 
@@ -143,6 +199,7 @@ func (s *Social) prefRoutes(mux *http.ServeMux) {
 		if !readJSON(w, r, &l) {
 			return
 		}
+		l.Primary = ""
 		l.fill()
 		if !l.prefs.valid() || !validAvatar(l.Avatar) {
 			jsonError(w, "Those settings aren't allowed.", http.StatusBadRequest)

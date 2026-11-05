@@ -8,6 +8,7 @@ import { getPrefs, usePieces, usePrefs } from './prefs'
 import { navigate } from './router'
 import { avatarImg } from './sets'
 import { PromotionDialog } from './Promotion'
+import { AvatarImg } from './Avatar'
 import { BOT_FACE, BOTS, gameLook, type Bot } from './settings'
 import { botSide, useMatch, type Color, type MatchState } from './useMatch'
 
@@ -234,7 +235,7 @@ function Frame({
   actions: React.ReactNode
 } & Extra) {
   const t = useT()
-  const avatar = avatarImg(usePrefs().avatar)
+  const avatar = usePrefs().avatar
   const yourTurn = !status && legal.length > 0
   const rows: [string, string?][] = []
   // A game where you're Black starts with White's hidden move.
@@ -288,7 +289,7 @@ function Frame({
         </div>
         <div className="strip">
           <span className="strip-ava you" aria-hidden>
-            {avatar ? <img src={avatar} alt="" /> : me ? me[0].toUpperCase() : '?'}
+            {avatarImg(avatar) ? <AvatarImg code={avatar} /> : me ? me[0].toUpperCase() : '?'}
           </span>
           <span className="strip-who">
             <span className="strip-name">{me ?? t.common.you}</span>

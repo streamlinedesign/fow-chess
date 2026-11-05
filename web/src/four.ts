@@ -1,6 +1,7 @@
 // Four-player chess, as the browser sees it. The server holds the rules; this
 // file only names squares, colours and pieces for drawing.
-import type { Look } from './pieces'
+import type { Look, Skin } from './pieces'
+import { CLASSIC, concrete, setImg, tileImg } from './sets'
 
 const svgs = import.meta.glob<string>('./pieces/four/*.svg', { eager: true, import: 'default' })
 
@@ -68,12 +69,56 @@ export function aroundFrom(seat: Seat): Seat[] {
   return [0, 1, 2, 3].map((k) => SEATS[(i + k) % 4])
 }
 
-/** The image for a piece code like "rK", drawn for the game's mods. */
-export function pieceImg4(code: string, look?: Look) {
+/**
+ * The mods, and how each seat is drawn: a player with a skin plays in one of
+ * their own sets, the rest in their seat colour.
+ */
+export type FourLook = Look & { seats?: Partial<Record<Seat, SeatSkin>> }
+
+/** A seat's pieces as a one-colour set (see sets.ts), and the tiles on its first three rows. */
+export type SeatSkin = { set?: string; lightTiles: string; darkTiles: string }
+
+/** The image for a piece code like "rK", drawn for the game's mods and the seat's skin. */
+export function pieceImg4(code: string, look?: FourLook) {
   let kind = code[1]
   if (look?.jesterPawns && kind === 'P') kind = 'J'
   if (look?.jumpKing && kind === 'K') kind = 'X'
-  return svgs[`./pieces/four/${code[0]}${kind}.svg`]
+  const set = look?.seats?.[code[0] as Seat]?.set
+  return set ? setImg(set, kind) : svgs[`./pieces/four/${code[0]}${kind}.svg`]
+}
+
+/**
+ * A seat's skin: the one of the player's White and Black sets the server
+ * picked for this game (half), or the other if that one is classic. A player
+ * with neither, a bot, or any player on a no-skins screen plays in the seat colour.
+ */
+export function seatSkin(skin: Skin | undefined, half: 'w' | 'b' | undefined): SeatSkin | undefined {
+  if (!skin) return undefined
+  const order: ['w' | 'b', string][] = [
+    ['w', skin.white],
+    ['b', skin.black],
+  ]
+  if (half === 'b') order.reverse()
+  const pick = order.find(([, f]) => f !== CLASSIC)
+  return { set: pick && concrete(pick[1], pick[0]), lightTiles: skin.lightTiles, darkTiles: skin.darkTiles }
+}
+
+/** The seat whose first three rows hold square (x, y), if any. */
+export function homeOf(x: number, y: number): Seat | null {
+  if (y <= 2) return 'r'
+  if (x <= 2) return 'b'
+  if (y >= SIZE - 3) return 'g'
+  if (x >= SIZE - 3) return 'v'
+  return null
+}
+
+/** The tile image for square (x, y), or undefined for a plain one. */
+export function tile4(look: FourLook | undefined, x: number, y: number) {
+  const home = homeOf(x, y)
+  const s = home && look?.seats?.[home]
+  if (!s) return undefined
+  const light = (x + y) % 2 === 1
+  return tileImg(light ? s.lightTiles : s.darkTiles, light)
 }
 
 /** The four centre squares: the hill, and the squares that give centre vision. Must match four.Centre. */
