@@ -11,10 +11,10 @@ import { applyLocal, pieceImg } from './position'
 import { go } from './ProfilePage'
 import { PromotionDialog } from './Promotion'
 import { navigate } from './router'
-import { describeSettings } from './settings'
+import { describeSettings, gameLook } from './settings'
 import { SetupBoard } from './SetupBoard'
 import { Button, Dialog, Spinner, Tip } from './ui'
-import { useMatch, type Color, type MatchState } from './useMatch'
+import { botSide, useMatch, type Color, type MatchState } from './useMatch'
 
 const other = (c: Color): Color => (c === 'w' ? 'b' : 'w')
 const sideName = (t: Dict, c: Color) => (c === 'w' ? t.common.white : t.common.black)
@@ -211,7 +211,7 @@ export function MatchPage({ id }: { id: string }) {
                   danger={predicting ? undefined : state?.danger}
                   unsafe={state?.unsafe}
                   hill={state?.settings.hill}
-                  look={state?.settings}
+                  look={gameLook(state?.settings, botSide(state))}
                   center={
                     state?.settings.centerVision
                       ? { you: you ?? undefined, live: !predicting && !!state.fullVision }
@@ -368,7 +368,7 @@ export function MatchPage({ id }: { id: string }) {
 
       <PromotionDialog
         open={!!promotion}
-        img={(p) => pieceImg(you === 'b' ? p : p.toUpperCase())}
+        img={(p) => pieceImg(you === 'b' ? p : p.toUpperCase(), gameLook(state?.settings, botSide(state)))}
         onPick={(p) => sendMove(promotion!.from + promotion!.to + p)}
         onClose={() => setPromotion(null)}
       />
@@ -467,7 +467,7 @@ function PlayerBar({ color, state, you, active }: PlayerBarProps) {
         {seat?.taken && !seat.online && <span className="text-sm text-danger">{t.match.offline}</span>}
         <Captured
           pieces={state?.captured[color] ?? ''}
-          look={state?.settings}
+          look={gameLook(state?.settings, botSide(state))}
           className="text-[clamp(16px,calc(var(--board)/30),22px)]"
         />
         {state?.clock && (

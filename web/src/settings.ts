@@ -1,6 +1,6 @@
 import { pieceImg4 } from './four'
 import type { Dict } from './i18n'
-import { pieceImg } from './pieces'
+import { pieceImg, type Look, type PieceSet } from './pieces'
 
 /** A clock setting. All zero means no clock. Must match timeControls in server/view.go. */
 export type TimeControl = {
@@ -52,6 +52,21 @@ export const BOT_FACE: Record<Bot, string> = {
   vercingetorix: pieceImg4('gN'), // green
   ramesses: pieceImg('X'), // cream
   solomon: pieceImg4('rK'), // red
+}
+
+/** The set each bot plays with, the colour of its face. */
+export const BOT_SET: Record<Bot, PieceSet> = { rex: 'v', vercingetorix: 'g', ramesses: 'w', solomon: 'r' }
+
+/**
+ * How a game's pieces are drawn: its mods, and a bot's pieces in the bot's
+ * colour. When the bot's set is the player's own colour (Ramesses II is cream,
+ * so as Black he'd match a White player), the player's pieces turn black.
+ */
+export function gameLook(settings: (Look & { bot?: Bot }) | undefined, botSide?: 'w' | 'b' | null): Look | undefined {
+  if (!settings?.bot || !botSide) return settings
+  const set = BOT_SET[settings.bot]
+  const them = botSide === 'w' ? 'b' : 'w'
+  return { ...settings, sets: { [botSide]: set, [them]: set === them ? botSide : them } }
 }
 
 /** The computer opponents, weakest first. Their names are the same in every language. */

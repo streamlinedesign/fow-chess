@@ -595,6 +595,8 @@ type seatState struct {
 	Taken  bool   `json:"taken"`
 	Online bool   `json:"online"`
 	Name   string `json:"name,omitempty"` // username; empty for a guest
+	// Bot is set on the seat a bot holds, so the board can draw its own set.
+	Bot bool `json:"bot,omitempty"`
 }
 
 // protocolVersion changes whenever the state message changes shape, so a web app
@@ -1040,8 +1042,9 @@ func (m *Match) base() stateMsg {
 	if status == "over" {
 		base.Sniper = sniperWin(result, reason, len(m.game.History()))
 	}
+	bot := m.botColor()
 	for i, name := range colorNames {
-		base.Players[name] = seatState{Taken: m.seats[i] != "", Online: m.seats[i] != "" && m.online(i), Name: m.names[i]}
+		base.Players[name] = seatState{Taken: m.seats[i] != "", Online: m.seats[i] != "" && m.online(i), Name: m.names[i], Bot: i == bot}
 	}
 	return base
 }

@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Bots play with their own coloured sets, on the home board and in bot games: Solomon red, Vercingetorix green, Rex inutilis violet, Ramesses II cream. Against Ramesses as Black, your White pieces are drawn black so the two sides differ.
 - Home page board: pawns that reach the last rank ask what to become (queen, rook, bishop or knight) instead of always turning into a queen, and the centre vision squares are ringed and light up as in a real game.
 - Bot faces have their own colours: Solomon red, Vercingetorix green, Rex inutilis violet, Ramesses II cream.
 - Sync Move for two-player mods games: both players send a move each round without seeing the other's, then both happen at once, with captures last, as in four-player Sync Move. A sent move is locked in. Both clocks run until each side sends. Sync Move games are always Eat the King.
