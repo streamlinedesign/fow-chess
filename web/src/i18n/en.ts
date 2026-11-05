@@ -290,7 +290,7 @@ export const en = {
     boardExtended: 'Extended',
     boardExtendedHint: '16 by 16, four rows each. The corners are open to everyone.',
     previewExtended:
-      'Extended board: four rows each, and the corners are neutral squares anyone can cross. Pawns promote on any edge but your own.',
+      'Extended board: four rows each, and the corners are neutral squares anyone can cross. Pawns promote past the middle, or on the side walls of the players beside you.',
     centerHintExtended:
       'A piece on your two centre squares on the far side shows you the whole board while it stays there.',
     noHill: 'The extended board has no hill.',

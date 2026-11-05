@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Four players, extended board: pawns promote past the middle, as on the cross (the ninth rank from their side on), or on the side walls where the players beside them sit.
 - Four players, extended board: pawns promote on any edge but their own side (the side edges count past your own rows), not just the far edge. Fixed the board jumping while a move was being sent on the extended board.
 - Security: a guest ID can no longer name a signed-in player's or a bot's seat, which let anyone play, resign or see the fog view of any signed-in player's game. Rate limits now count the real address behind Caddy, so a few wrong passwords no longer lock everyone out of signing in. New limits per address on sign-ups, new matches and match codes that don't exist; bug reports count per address whatever browser ID they send.
 - Four players: an extended board under Mods, 16 by 16 with four rows each and neutral corners anyone can cross. Centre vision comes from your two centre squares on the far side, pawns promote on the far edge, Battleship uses all four rows, and there's no hill.

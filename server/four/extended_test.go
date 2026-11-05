@@ -68,7 +68,7 @@ func TestExtendedCorners(t *testing.T) {
 
 func TestExtendedPromotion(t *testing.T) {
 	p := StartPosition(Rules{Shape: Extended})
-	at := sqs(t, "e8", "e15", "e16")
+	at := sqs(t, "e7", "e15", "e16")
 	p.Board[at[2]] = NoPiece
 	p.Board[at[0]] = NewPiece(Red, Pawn)
 	p.Board[at[1]] = NewPiece(Red, Pawn)
@@ -186,7 +186,8 @@ func TestExtendedBotsFinish(t *testing.T) {
 	}
 }
 
-// On the extended board a pawn promotes on any edge but its own side.
+// On the extended board a pawn promotes past the middle, or on the side
+// walls where the players to its left and right sit.
 func TestExtendedPromotionEdges(t *testing.T) {
 	var p Position
 	p.Rules = Rules{Shape: Extended, JesterPawns: true}
@@ -203,11 +204,14 @@ func TestExtendedPromotionEdges(t *testing.T) {
 		}
 		return out
 	}
-	if got := promos("b9"); !got["a9"] || !got["a10"] || !got["a8"] || got["b10"] {
+	if got := promos("b9"); !got["a9"] || !got["a10"] || !got["a8"] || !got["b10"] {
 		t.Errorf("from b9: %v", got)
 	}
 	if got := promos("o12"); !got["p12"] || !got["p13"] {
 		t.Errorf("from o12: %v", got)
+	}
+	if got := promos("f8"); !got["e9"] || !got["f9"] || !got["g9"] || got["e8"] {
+		t.Errorf("from f8: %v", got)
 	}
 	if got := promos("b2"); len(got) != 0 {
 		t.Errorf("a jester pawn on its own rows promoted: %v", got)
