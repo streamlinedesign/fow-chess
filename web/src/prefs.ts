@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { setCachedAvatar } from './avatars'
-import { pieceImg, type Look } from './pieces'
+import { pieceImg, type Look, type PieceSet } from './pieces'
 import { avatarImg, CLASSIC, lookKind, SET_IDS, setImg, setsFor } from './sets'
 
 /**
@@ -93,15 +93,29 @@ export function usePrefs() {
   )
 }
 
+/** The game's own set letters (pieces.ts) as sets here. */
+const BOT_SETS: Record<PieceSet, string> = { w: 'cream', b: 'ink', r: 'red', g: 'green', v: 'violet' }
+
 export type PieceImg = (letter: string, look?: Look) => string
 
 /** Draws pieces in a set pair for a board with `bottom` at the bottom. */
 export function piecesFor(p: Pick<Prefs, 'primary' | 'secondary'>, bottom: 'w' | 'b'): PieceImg {
   if (p.primary === CLASSIC && p.secondary === CLASSIC) return pieceImg
   const sets = setsFor(p.primary, p.secondary, bottom)
+  const top = bottom === 'w' ? 'b' : 'w'
   return (letter, look) => {
     const color = letter === letter.toUpperCase() ? 'w' : 'b'
-    return setImg(sets[color], lookKind(letter.toUpperCase(), look), color)
+    const kind = lookKind(letter.toUpperCase(), look)
+    // A bot plays in its own colour (see gameLook): that wins over your opponent's set,
+    // and if your own set comes to the same, yours falls back to what the game picked.
+    const forced = look?.sets
+    if (forced?.[top]) {
+      const theirs = BOT_SETS[forced[top]]
+      if (color === top) return setImg(theirs, kind, color)
+      const mine = sets[bottom] === theirs ? BOT_SETS[forced[bottom] ?? bottom] : sets[bottom]
+      return setImg(mine, kind, color)
+    }
+    return setImg(sets[color], kind, color)
   }
 }
 

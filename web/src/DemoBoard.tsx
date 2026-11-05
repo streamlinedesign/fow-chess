@@ -8,8 +8,8 @@ import { getPrefs, usePieces, usePrefs } from './prefs'
 import { navigate } from './router'
 import { avatarImg } from './sets'
 import { PromotionDialog } from './Promotion'
-import { BOT_FACE, BOTS, type Bot } from './settings'
-import { useMatch, type Color, type MatchState } from './useMatch'
+import { BOT_FACE, BOTS, gameLook, type Bot } from './settings'
+import { botSide, useMatch, type Color, type MatchState } from './useMatch'
 
 /** Your view of the start under fog: your four rows, the rest hidden. Drawn until the game connects. */
 const startView = (side: Color) => {
@@ -189,7 +189,7 @@ function Live({
       />
       <PromotionDialog
         open={!!promotion}
-        img={(p) => img(you === 'b' ? p : p.toUpperCase())}
+        img={(p) => img(you === 'b' ? p : p.toUpperCase(), gameLook(state.settings, botSide(state)))}
         onPick={(p) => promotion && play(promotion.from + promotion.to + p)}
         onClose={() => setPromotion(null)}
       />
@@ -275,7 +275,7 @@ function Frame({
             danger={predicting ? undefined : state?.danger}
             unsafe={state?.unsafe}
             hill={state?.settings.hill}
-            look={state?.settings}
+            look={gameLook(state?.settings ?? { bot }, you === 'w' ? 'b' : 'w')}
             // The same outpost rings as a real game, from the game's own rules.
             center={state?.settings.centerVision ? { you, live: !predicting && !!state.fullVision } : undefined}
             onMove={onMove}
