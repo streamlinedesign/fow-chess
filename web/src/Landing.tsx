@@ -12,6 +12,7 @@ import { playerId } from './player'
 import { ago, go, type GameSummary } from './ProfilePage'
 import { navigate } from './router'
 import {
+  BOT_PIECE,
   BOTS,
   describeTime,
   loadSettings,
@@ -40,8 +41,8 @@ const isLong = (t: TimeControl) => !SHORT_GROUPS.includes(timeGroup(t))
 
 /**
  * The home page is one big board, full width, its cells split by hairlines:
- * a game you can play at once against Ramesses II next to the play menu, then
- * what's going on around you. Every game started here is ranked when both
+ * a game you can play at once against a bot (Solomon by default) next to the
+ * play menu, what the game is, then what's going on around you. Every game started here is ranked when both
  * players are signed in; Mods have their own page and are never ranked.
  */
 export function Landing() {
@@ -70,6 +71,8 @@ export function Landing() {
           </section>
         </div>
       </div>
+
+      <About />
 
       <div className="home-row home-r1">
         <div className="home-cell cross">{me ? <YourGames username={me.username} /> : <GuestPitch />}</div>
@@ -125,7 +128,8 @@ function PlayMenu({
     set({ ...settings, time })
   }
   const clocks = presets(long)
-  const summary = describeTime(settings.time, t) + (signedIn ? ` · ${t.home.ranked}` : '')
+  const layout = t.setups[setupMode(settings).value].label
+  const summary = [describeTime(settings.time, t), t.home.layoutIs(layout), signedIn ? t.home.ranked : t.home.guestNote]
 
   return (
     <section>
@@ -165,7 +169,7 @@ function PlayMenu({
 
         <div>
           <div id="home-mode" className="mb-2 text-sm font-semibold">
-            {t.home.mode}
+            {t.home.layout}
           </div>
           <RadioGroup.Root
             aria-labelledby="home-mode"
@@ -286,14 +290,6 @@ async function playBot(settings: Settings, bot: Bot) {
   navigate(`/m/${id}`)
 }
 
-/** Each bot's face: a piece of its strength. */
-const BOT_PIECE: Record<Bot, string> = {
-  rex: 'P',
-  vercingetorix: 'N',
-  ramesses: 'K',
-  solomon: 'Q',
-}
-
 /** The computer opponents, a row of cells. They play with the mode and clock set above. */
 function Bots({ settings }: { settings: Settings }) {
   const t = useT()
@@ -324,7 +320,7 @@ function Bots({ settings }: { settings: Settings }) {
           <h3>{b.name}</h3>
           <p className="text-sm text-accent">{t.landing.botHints[b.level]}</p>
           <Button
-            variant={b.level === 'ramesses' ? 'solid' : 'outline'}
+            variant={b.level === 'solomon' ? 'solid' : 'outline'}
             className="home-bot-play h-10 px-4"
             onClick={() => start(b.level)}
             loading={starting === b.level}
@@ -356,7 +352,7 @@ function FindMatch({
   settings: Settings
   signedIn: boolean
   busy: boolean
-  summary: string
+  summary: string[]
 }) {
   const [botBusy, setBotBusy] = useState(false)
   const t = useT()
@@ -413,13 +409,19 @@ function FindMatch({
   // Leaving the page leaves the queue.
   useEffect(() => () => void (since !== null && api('DELETE', '/api/queue').catch(() => {})), [since])
 
+  const about = (
+    <p className="home-summary">
+      <b>{summary[0]}</b> · {summary[1]}
+      <span className="block">{summary[2]}</span>
+    </p>
+  )
   if (!signedIn)
     return (
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2.5">
+        {about}
         <Button variant="solid" className="home-play" onClick={() => navigate('/login')}>
           {t.home.logInToPlay}
         </Button>
-        <p className="text-[13px] text-accent">{t.home.guestNote}</p>
       </div>
     )
   if (waiting) {
@@ -459,9 +461,10 @@ function FindMatch({
     )
   }
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2.5">
+      {about}
       <Button variant="solid" className="home-play" onClick={start} disabled={busy}>
-        {t.home.play} <small>{summary}</small>
+        {t.home.play}
       </Button>
       {error && (
         <p role="alert" className="text-sm text-danger">
@@ -674,6 +677,44 @@ function NextArena() {
           <span className="home-arena-go">{next.joined ? t.tournaments.joined.split('.')[0] : t.tournaments.join}</span>
         </a>
       ) : null}
+    </section>
+  )
+}
+
+/** What the game is: Eat the King is the original, everything else a mod, and where the ideas came from. */
+function About() {
+  const t = useT()
+  return (
+    <section className="home-row home-about" aria-labelledby="about-title">
+      <div className="home-cell cross">
+        <h2 id="about-title" className="text-[22px] font-semibold tracking-tight">
+          {t.about.title}
+        </h2>
+        <div className="home-about-text">
+          {t.about.paras.map((p) => (
+            <p key={p}>{p}</p>
+          ))}
+        </div>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <Button className="h-10 px-4" onClick={() => navigate('/rules')}>
+            {t.landing.howToPlay}
+          </Button>
+          <Button className="h-10 px-4" onClick={() => navigate('/mods')}>
+            {t.common.mods}
+          </Button>
+        </div>
+      </div>
+      <div className="home-cell">
+        <h3 className="text-[15px] font-semibold">{t.about.inspired}</h3>
+        <dl className="home-inspo">
+          {t.about.sources.map(([name, what]) => (
+            <div key={name}>
+              <dt>{name}</dt>
+              <dd>{what}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
     </section>
   )
 }

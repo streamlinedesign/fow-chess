@@ -52,129 +52,133 @@ export function SettingsPanel({
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col justify-between gap-6 p-4 sm:p-5">
-        {onFour && (
-          <Group id={`${id}-players`} label={t.four.players}>
-            <RadioGroup.Root
-              aria-labelledby={`${id}-players`}
-              value={four ? '4' : '2'}
-              onValueChange={(v) => onFour(v === '4')}
-              className="grid grid-cols-2 gap-2.5"
-            >
-              <Choice value="2" label={t.four.two} hint={t.four.twoHint} />
-              <Choice value="4" label={t.four.four} hint={t.four.fourHint} />
-            </RadioGroup.Root>
-          </Group>
-        )}
+      <div className="setup-body flex flex-1 flex-col justify-between gap-6 p-4 sm:p-5">
+        <div className="@container flex min-w-0 flex-col gap-6">
+          {onFour && (
+            <Group id={`${id}-players`} label={t.four.players}>
+              <RadioGroup.Root
+                aria-labelledby={`${id}-players`}
+                value={four ? '4' : '2'}
+                onValueChange={(v) => onFour(v === '4')}
+                className="grid grid-cols-2 gap-2.5"
+              >
+                <Choice value="2" label={t.four.two} hint={t.four.twoHint} />
+                <Choice value="4" label={t.four.four} hint={t.four.fourHint} />
+              </RadioGroup.Root>
+            </Group>
+          )}
 
-        {mods && (
-          <>
-            <Toggle
-              big
-              label={t.panel.fog}
-              hint={value.fog ? t.panel.fogOnHint : t.panel.fogOffHint}
-              checked={value.fog}
-              onChange={(fog) => onChange({ ...value, fog })}
-            />
-            <Group id={`${id}-win`} label={t.panel.winBy}>
-              {four ? (
-                <p className="text-sm text-accent">{t.four.eatAlways}</p>
-              ) : (
-                <RadioGroup.Root
-                  aria-labelledby={`${id}-win`}
-                  value={value.kingCapture ? 'capture' : 'mate'}
-                  onValueChange={(v) => onChange({ ...value, kingCapture: v === 'capture' })}
-                  className="grid grid-cols-2 gap-2.5"
-                >
-                  <Choice value="capture" label={t.panel.eat} hint={t.panel.eatHint} />
-                  <Choice value="mate" label={t.panel.mate} hint={t.panel.mateHint} />
-                </RadioGroup.Root>
-              )}
+          {mods && (
+            <>
               <Toggle
-                label={t.legacy.hill}
-                hint={t.panel.hillHint}
-                checked={!!value.hill}
-                onChange={(hill) => onChange({ ...value, hill })}
+                big
+                label={t.panel.fog}
+                hint={value.fog ? t.panel.fogOnHint : t.panel.fogOffHint}
+                checked={value.fog}
+                onChange={(fog) => onChange({ ...value, fog })}
+              />
+              <Group id={`${id}-win`} label={t.panel.winBy}>
+                {four ? (
+                  <p className="text-sm text-accent">{t.four.eatAlways}</p>
+                ) : (
+                  <RadioGroup.Root
+                    aria-labelledby={`${id}-win`}
+                    value={value.kingCapture ? 'capture' : 'mate'}
+                    onValueChange={(v) => onChange({ ...value, kingCapture: v === 'capture' })}
+                    className="grid grid-cols-2 gap-2.5"
+                  >
+                    <Choice value="capture" label={t.panel.eat} hint={t.panel.eatHint} />
+                    <Choice value="mate" label={t.panel.mate} hint={t.panel.mateHint} />
+                  </RadioGroup.Root>
+                )}
+                <Toggle
+                  label={t.legacy.hill}
+                  hint={t.panel.hillHint}
+                  checked={!!value.hill}
+                  onChange={(hill) => onChange({ ...value, hill })}
+                />
+              </Group>
+            </>
+          )}
+
+          {!four && (
+            <Group id={`${id}-mode`} label={t.panel.mode}>
+              <RadioGroup.Root
+                aria-labelledby={`${id}-mode`}
+                value={setupMode(value).value || 'standard'}
+                onValueChange={(v) =>
+                  onChange({
+                    ...value,
+                    setup: v === 'standard' ? '' : (v as Settings['setup']),
+                  })
+                }
+                className="grid gap-2.5 @md:grid-cols-3"
+              >
+                {SETUPS.map((m) => (
+                  <Choice
+                    key={m.value}
+                    value={m.value || 'standard'}
+                    label={t.setups[m.value].label}
+                    hint={t.setups[m.value].hint}
+                  />
+                ))}
+              </RadioGroup.Root>
+            </Group>
+          )}
+        </div>
+
+        <div className="@container flex min-w-0 flex-col gap-6">
+          {mods && (
+            <Group id={`${id}-twists`} label={t.panel.twists}>
+              <Toggle
+                label={t.legacy.jump}
+                hint={t.panel.jumpHint}
+                checked={!!value.jumpKing}
+                onChange={(jumpKing) => onChange({ ...value, jumpKing })}
+              />
+              <Toggle
+                label={t.legacy.backPawns}
+                hint={t.panel.backPawnsHint}
+                checked={!!value.backPawns}
+                onChange={(backPawns) => onChange({ ...value, backPawns })}
+              />
+              <Toggle
+                label={t.legacy.jesterPawns}
+                hint={t.panel.jesterPawnsHint}
+                checked={!!value.jesterPawns}
+                onChange={(jesterPawns) => onChange({ ...value, jesterPawns })}
+              />
+              <Toggle
+                label={t.panel.center}
+                hint={four ? t.four.centerHint : t.panel.centerHint}
+                checked={!!value.centerVision}
+                onChange={(on) => onChange({ ...value, centerVision: on ? 'any' : '' })}
               />
             </Group>
-          </>
-        )}
+          )}
 
-        {!four && (
-          <Group id={`${id}-mode`} label={t.panel.mode}>
+          <Group id={`${id}-time`} label={t.panel.timeControl}>
             <RadioGroup.Root
-              aria-labelledby={`${id}-mode`}
-              value={setupMode(value).value || 'standard'}
-              onValueChange={(v) =>
-                onChange({
-                  ...value,
-                  setup: v === 'standard' ? '' : (v as Settings['setup']),
-                })
-              }
-              className="grid gap-2.5 sm:grid-cols-3"
+              aria-labelledby={`${id}-time`}
+              value={String(clocks.findIndex((p) => sameTime(p, value.time)))}
+              onValueChange={(i) => onChange({ ...value, time: clocks[Number(i)] })}
+              className="grid grid-cols-2 gap-2 @xs:grid-cols-3"
             >
-              {SETUPS.map((m) => (
-                <Choice
-                  key={m.value}
-                  value={m.value || 'standard'}
-                  label={t.setups[m.value].label}
-                  hint={t.setups[m.value].hint}
-                />
+              {clocks.map((p, i) => (
+                <RadioGroup.Item
+                  key={i}
+                  value={String(i)}
+                  className="flex flex-col items-start gap-0.5 rounded-md border border-border px-3 py-2 text-left transition-colors hover:border-fg data-[state=checked]:border-fg data-[state=checked]:bg-fg data-[state=checked]:text-bg"
+                >
+                  <span className="text-[15px] leading-tight font-semibold">
+                    {clocked(p) ? t.time.groups[timeGroup(p)] : t.time.noClock}
+                  </span>
+                  <span className="text-[13px] leading-tight opacity-70">{clocked(p) ? timeLabel(p, t) : '∞'}</span>
+                </RadioGroup.Item>
               ))}
             </RadioGroup.Root>
           </Group>
-        )}
-
-        {mods && (
-          <Group id={`${id}-twists`} label={t.panel.twists}>
-            <Toggle
-              label={t.legacy.jump}
-              hint={t.panel.jumpHint}
-              checked={!!value.jumpKing}
-              onChange={(jumpKing) => onChange({ ...value, jumpKing })}
-            />
-            <Toggle
-              label={t.legacy.backPawns}
-              hint={t.panel.backPawnsHint}
-              checked={!!value.backPawns}
-              onChange={(backPawns) => onChange({ ...value, backPawns })}
-            />
-            <Toggle
-              label={t.legacy.jesterPawns}
-              hint={t.panel.jesterPawnsHint}
-              checked={!!value.jesterPawns}
-              onChange={(jesterPawns) => onChange({ ...value, jesterPawns })}
-            />
-            <Toggle
-              label={t.panel.center}
-              hint={four ? t.four.centerHint : t.panel.centerHint}
-              checked={!!value.centerVision}
-              onChange={(on) => onChange({ ...value, centerVision: on ? 'any' : '' })}
-            />
-          </Group>
-        )}
-
-        <Group id={`${id}-time`} label={t.panel.timeControl}>
-          <RadioGroup.Root
-            aria-labelledby={`${id}-time`}
-            value={String(clocks.findIndex((p) => sameTime(p, value.time)))}
-            onValueChange={(i) => onChange({ ...value, time: clocks[Number(i)] })}
-            className="grid grid-cols-2 gap-2 sm:grid-cols-3"
-          >
-            {clocks.map((p, i) => (
-              <RadioGroup.Item
-                key={i}
-                value={String(i)}
-                className="flex flex-col items-start gap-0.5 rounded-md border border-border px-3 py-2 text-left transition-colors hover:border-fg data-[state=checked]:border-fg data-[state=checked]:bg-fg data-[state=checked]:text-bg"
-              >
-                <span className="text-[15px] leading-tight font-semibold">
-                  {clocked(p) ? t.time.groups[timeGroup(p)] : t.time.noClock}
-                </span>
-                <span className="text-[13px] leading-tight opacity-70">{clocked(p) ? timeLabel(p, t) : '∞'}</span>
-              </RadioGroup.Item>
-            ))}
-          </RadioGroup.Root>
-        </Group>
+        </div>
       </div>
     </fieldset>
   )
@@ -204,6 +208,7 @@ function Choice({ value, label, hint }: { value: string; label: string; hint: st
   )
 }
 
+/** A setting that's on or off, with the design system's switch: a lever, not a pill. */
 function Toggle({
   label,
   hint,
@@ -230,17 +235,9 @@ function Toggle({
         checked={checked}
         disabled={disabled}
         onCheckedChange={onChange}
-        className={`relative shrink-0 rounded-full bg-fg/10 shadow-[inset_0_0_0_1px_var(--color-border)] transition-colors data-[state=checked]:bg-fg ${
-          big ? 'h-8 w-[52px]' : 'h-6 w-10'
-        }`}
+        className={`sl-switch ${big ? 'sl-switch-lg' : ''}`}
       >
-        <Switch.Thumb
-          className={`block rounded-full bg-fg transition-transform data-[state=checked]:bg-bg ${
-            big
-              ? 'size-6 translate-x-1 data-[state=checked]:translate-x-6'
-              : 'size-[18px] translate-x-[3px] data-[state=checked]:translate-x-[19px]'
-          }`}
-        />
+        <span className="sl-switch-track" />
       </Switch.Root>
     </label>
   )

@@ -97,11 +97,21 @@ func TestRandomSetupIsValid(t *testing.T) {
 	}
 }
 
-// The demo board's game: Ramesses II, no clock, never saved, never listed.
+// The demo board's game: the bot you pick (Solomon by default), no clock, never saved, never listed.
 func TestDemoGame(t *testing.T) {
 	store := openTestStore(t, filepath.Join(t.TempDir(), "x"))
 	hub := NewHub(store)
-	settings := Settings{Demo: true, Time: TimeControl{Base: 300}, Setup: "battleship", Bot: "solomon"}
+	def := Settings{Demo: true}
+	def.normalize()
+	if def.Bot != "solomon" {
+		t.Errorf("default demo bot: %q", def.Bot)
+	}
+	bad := Settings{Demo: true, Bot: "deep-blue"}
+	bad.normalize()
+	if bad.Bot != "solomon" {
+		t.Errorf("unknown demo bot became %q", bad.Bot)
+	}
+	settings := Settings{Demo: true, Time: TimeControl{Base: 300}, Setup: "battleship", Bot: "ramesses"}
 	settings.normalize()
 	if !settings.valid() || settings.Bot != "ramesses" || settings.Time.clocked() || settings.Setup != "" || !settings.Fog || !settings.Unrated {
 		t.Fatalf("demo settings: %+v", settings)

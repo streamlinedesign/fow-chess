@@ -89,8 +89,8 @@ export const en = {
     botHints: {
       rex: 'The useless king. Moves at random.',
       vercingetorix: 'Takes what it sees and dodges the obvious.',
-      ramesses: 'Looks three moves ahead and guards its king. It plays the board up top.',
-      solomon: 'Looks further, and likes to see the board.',
+      ramesses: 'Looks three moves ahead and guards its king.',
+      solomon: 'Looks furthest, and likes to see the board. The strongest bot.',
     } as Record<string, string>,
     codePlaceholder: 'Paste a code',
     codeLabel: 'Match code',
@@ -117,13 +117,14 @@ export const en = {
     shortSub: 'Minutes',
     long: 'Long',
     longSub: 'Hours to days',
-    mode: 'Mode',
+    layout: 'Layout',
+    layoutIs: (layout: string) => `${layout} layout`,
     play: 'Play',
     ranked: 'Ranked',
     logInToPlay: 'Log in to play',
-    guestNote: 'Matchmaking is ranked, so it needs an account. The board here and the bots need nothing.',
+    guestNote: 'Matchmaking is ranked, so it needs an account. The board and the bots need nothing.',
     codeTitle: 'Play a friend with a code',
-    codeSub: 'Same clock and mode as above. Share the code or the link, and they join with it.',
+    codeSub: 'Same clock and layout as above. Share the code or the link, and they join with it.',
     createCode: 'Create a code',
     modsSub: 'Every rule switch: no fog, checkmate, King of the Hill, any clock. Never ranked.',
     demoBot: 'Demo bot',
@@ -131,17 +132,12 @@ export const en = {
     yourMove: 'your move',
     moves: 'Moves',
     noMovesYet: 'White moves first.',
-    howItPlays: 'How Ramesses plays here',
-    howItPlaysList: [
-      'Only sees what its pieces see. No peeking.',
-      'Looks three moves ahead on the board it can see.',
-      'Keeps the ways into its king covered, because most kings fall to a piece their owner never saw.',
-    ],
+    opponent: 'Opponent',
     newGame: 'New game',
     playAs: (side: string) => `Play as ${side}`,
     demoTip: 'Click a piece to move. Nothing to set up and nothing is saved: it’s a warm-up.',
     youWon: 'You took the king.',
-    youLost: 'Ramesses took your king.',
+    youLost: (bot: string) => `${bot} took your king.`,
     drawn: 'A draw.',
     noGames: 'Nothing in progress. Press Play to start a game.',
     noArena: 'No arena coming up right now.',
@@ -178,7 +174,7 @@ export const en = {
 
   panel: {
     title: 'Match settings',
-    mode: 'Mode',
+    mode: 'Layout',
     timeControl: 'Time control',
     fog: 'Fog of war',
     fogOnHint: 'You see only what your pieces see.',
@@ -192,11 +188,32 @@ export const en = {
     twists: 'Twists',
     jumpHint: 'Your king can also jump like a knight.',
     backPawnsHint: 'Pawns can also step one square back, and see behind them.',
-    jesterPawnsHint: 'Pawns also step and take one square any way, like a king. They keep the double first step, en passant and promotion.',
+    jesterPawnsHint:
+      'Pawns also step and take one square any way, like a king. They keep the double first step, en passant and promotion.',
     center: 'Centre vision',
-    centerHint: 'Any piece on d5 or e5 (d4 or e4 for Black) shows you the whole board while it stays there. On in every normal game.',
+    centerHint:
+      'Any piece on d5 or e5 (d4 or e4 for Black) shows you the whole board while it stays there. On in every normal game.',
     modsNote: 'Mods games are never ranked.',
   },
+
+  about: {
+    title: 'About the game',
+    paras: [
+      'Eat the King is the original game: chess in the fog of war. You see only the squares your pieces can reach, there is no check, and you win by capturing the king. Every game you start from this page is that game.',
+      'Everything else is a mod. Mods turn one dial at a time: lift the fog, play to checkmate, set your pieces up in secret, race to the hill, or bring four players to one board. Mods games are never ranked.',
+    ],
+    inspired: 'Inspired by',
+    sources: [
+      ['Chess', 'The board, the pieces and how they move.'],
+      ['Kriegspiel', 'Playing without seeing the other side.'],
+      ['King of the Hill', 'Winning by walking your king to the centre.'],
+      ['Battleship', 'Placing your pieces where nobody can see them.'],
+      ['Hungry Hungry Hippos', 'Eating is the point. Take the king and it’s over.'],
+      ['Four-player chess', 'Everyone for themselves on a cross-shaped board.'],
+    ] as [string, string][],
+  },
+
+  beta: 'beta',
 
   mods: {
     title: 'Mods',
@@ -218,7 +235,11 @@ export const en = {
     openSeat: 'Open seat',
     bot: 'bot',
     out: 'out',
-    outBy: { 'capturing the king': 'king eaten', resignation: 'resigned', time: 'out of time' } as Record<string, string>,
+    outBy: {
+      'capturing the king': 'king eaten',
+      resignation: 'resigned',
+      time: 'out of time',
+    } as Record<string, string>,
     waitingTitle: 'Waiting for players',
     waiting: (n: number) => `Waiting for players, ${n} of 4 seated`,
     sendCode: 'Send this code to up to three friends, or fill the empty seats with bots.',
@@ -274,9 +295,18 @@ export const en = {
   },
 
   setups: {
-    '': { label: 'Standard', hint: 'The usual start. Nobody begins in danger.' },
-    backRow: { label: 'Back row', hint: 'Arrange your back row however you like.' },
-    battleship: { label: 'Battleship', hint: 'Place all sixteen pieces anywhere in your four rows.' },
+    '': {
+      label: 'Standard',
+      hint: 'The usual start. Nobody begins in danger.',
+    },
+    backRow: {
+      label: 'Back row',
+      hint: 'Arrange your back row however you like.',
+    },
+    battleship: {
+      label: 'Battleship',
+      hint: 'Place all sixteen pieces anywhere in your four rows.',
+    },
   },
 
   match: {

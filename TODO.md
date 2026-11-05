@@ -8,6 +8,7 @@
 
 ## Next
 
+- Beta launch: check the new home page and mods page on a phone
 - Copy the jester pawns engine change into `chess-bots` (or extract the engine module first)
 - Review the mod artwork: jester pawn (`wJ`/`bJ`) and jump king (`wX`/`bX`) in `web/src/pieces/`
 - Adopt the Streamline design system (typeface, tokens) in place of Geist/Tailwind defaults
