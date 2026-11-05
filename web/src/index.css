@@ -3035,3 +3035,20 @@ a.tick:active {
     padding: 4px;
   }
 }
+
+/* A tile skin on your half of the board (see prefs.ts). */
+.sq[data-tile] {
+  background: var(--tile) center / cover;
+}
+.sq[data-tile][data-check='true'] {
+  background:
+    radial-gradient(circle, #ef4444 0%, #ef444499 35%, transparent 75%),
+    var(--tile) center / cover;
+}
+.set-face.tile {
+  background: var(--color-sq-dark) center / cover;
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+.set-face.tile[data-light='true'] {
+  background-color: var(--color-sq-light);
+}

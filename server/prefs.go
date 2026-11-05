@@ -15,7 +15,18 @@ var pieceSets = []string{
 	"cream", "ink",
 	"red", "blue", "green", "violet",
 	"red-ink", "blue-ink", "green-ink", "violet-ink",
+	// The themed sets, light for White and dark for Black like classic. Each
+	// half is a one-colour set of its own, for avatars.
+	"galaxy", "blueprint", "holy", "ancient",
+	"galaxy-light", "galaxy-dark", "blueprint-light", "blueprint-dark",
+	"holy-light", "holy-dark", "ancient-light", "ancient-dark",
 }
+
+// twoSided are the sets drawn differently for White and Black: never avatars.
+var twoSided = []string{"classic", "galaxy", "blueprint", "holy", "ancient"}
+
+// tileSkins are the board skins for your half: "" is the plain board. Must match TILE_IDS in web/src/sets.ts.
+var tileSkins = []string{"", "galaxy", "blueprint", "holy", "ancient"}
 
 // avatarKinds are the pieces an avatar can be: the usual six, the jester pawn and the prince.
 const avatarKinds = "KQRBNPJX"
@@ -25,6 +36,11 @@ type prefs struct {
 	Primary   string `json:"primary"`   // the set for your pieces
 	Secondary string `json:"secondary"` // the set for your opponent's
 	Side      string `json:"side"`      // "w", "b", or "" for no preference
+	// The skins for the light and dark squares on your half; "" for plain.
+	LightTiles string `json:"lightTiles"`
+	DarkTiles  string `json:"darkTiles"`
+	// Plain turns every skin off: classic pieces and the plain board. The picks are kept.
+	Plain bool `json:"plain"`
 }
 
 func (p *prefs) fill() {
@@ -38,7 +54,8 @@ func (p *prefs) fill() {
 
 func (p prefs) valid() bool {
 	return slices.Contains(pieceSets, p.Primary) && slices.Contains(pieceSets, p.Secondary) &&
-		(p.Side == "" || p.Side == "w" || p.Side == "b")
+		(p.Side == "" || p.Side == "w" || p.Side == "b") &&
+		slices.Contains(tileSkins, p.LightTiles) && slices.Contains(tileSkins, p.DarkTiles)
 }
 
 // validAvatar: "" for the default pawn, or "<set>/<piece>" from a one-colour set.
@@ -47,7 +64,7 @@ func validAvatar(a string) bool {
 		return true
 	}
 	set, kind, ok := strings.Cut(a, "/")
-	return ok && set != "classic" && slices.Contains(pieceSets, set) && len(kind) == 1 && strings.Contains(avatarKinds, kind)
+	return ok && !slices.Contains(twoSided, set) && slices.Contains(pieceSets, set) && len(kind) == 1 && strings.Contains(avatarKinds, kind)
 }
 
 type lookResponse struct {
@@ -72,6 +89,12 @@ func (s *Store) Look(id int64) (lookResponse, error) {
 	}
 	if l.Side != "w" && l.Side != "b" {
 		l.Side = ""
+	}
+	if !slices.Contains(tileSkins, l.LightTiles) {
+		l.LightTiles = ""
+	}
+	if !slices.Contains(tileSkins, l.DarkTiles) {
+		l.DarkTiles = ""
 	}
 	if !validAvatar(l.Avatar) {
 		l.Avatar = ""

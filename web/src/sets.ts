@@ -7,6 +7,14 @@ type Color = 'w' | 'b'
 const classic = import.meta.glob<string>('./pieces/*.svg', { eager: true, import: 'default' })
 const coloured = import.meta.glob<string>('./pieces/four/*.svg', { eager: true, import: 'default' })
 const inkLines = import.meta.glob<string>('./pieces/ink/*.svg', { eager: true, import: 'default' })
+const themed = import.meta.glob<string>('./pieces/{galaxy,blueprint,holy,ancient}/*.svg', {
+  eager: true,
+  import: 'default',
+})
+const tiles = import.meta.glob<string>('./tiles/*.svg', { eager: true, import: 'default' })
+
+/** The themed sets: each has a light side for White and a dark side for Black, and tiles to match. */
+export const THEMES = ['galaxy', 'blueprint', 'holy', 'ancient'] as const
 
 /** The pieces a set has: the usual six, the jester pawn (J) and the prince (X). */
 export const KINDS = ['K', 'Q', 'R', 'B', 'N', 'P', 'J', 'X'] as const
@@ -37,18 +45,42 @@ export const SETS: PieceSet[] = [
   { id: 'blue-ink', img: from(inkLines, 'ink/', 'b') },
   { id: 'green-ink', img: from(inkLines, 'ink/', 'g') },
   { id: 'violet-ink', img: from(inkLines, 'ink/', 'v') },
+  ...THEMES.flatMap((t) => [
+    { id: `${t}-light`, img: from(themed, `${t}/`, 'w') },
+    { id: `${t}-dark`, img: from(themed, `${t}/`, 'b') },
+  ]),
 ]
 
 /** Eat the King's own: cream for White, ink for Black. The default for both sides. */
 export const CLASSIC = 'classic'
 
-/** Every set a player can pick for a side: classic first. */
-export const SET_IDS = [CLASSIC, ...SETS.map((s) => s.id)]
+/** The two-sided sets: the one-colour set each is for White and for Black. */
+const PAIRS: Record<string, Record<Color, string>> = {
+  [CLASSIC]: { w: 'cream', b: 'ink' },
+  ...Object.fromEntries(THEMES.map((t) => [t, { w: `${t}-light`, b: `${t}-dark` }])),
+}
+
+/**
+ * The sets a player picks from for a side: classic, the plain colours, then the
+ * themes. A theme's light and dark halves are avatars, not picks of their own.
+ */
+export const SET_IDS = [
+  CLASSIC,
+  ...SETS.map((s) => s.id).filter((id) => !THEMES.some((t) => id.startsWith(t + '-'))),
+  ...THEMES,
+]
 
 const byId = new Map(SETS.map((s) => [s.id, s]))
 
-/** The one-colour set a choice comes to for one side: classic is cream for White, ink for Black. */
-export const concrete = (id: string, color: Color) => (byId.has(id) ? id : color === 'w' ? 'cream' : 'ink')
+/** The one-colour set a choice comes to for one side: classic is cream for White, ink for Black; a theme its light or dark half. */
+export const concrete = (id: string, color: Color) => (byId.has(id) ? id : (PAIRS[id] ?? PAIRS[CLASSIC])[color])
+
+/** The tile skins: "" is the plain board. Must match tileSkins in server/prefs.go. */
+export const TILE_IDS = ['', ...THEMES]
+
+/** A tile skin's image for a light or dark square; undefined for the plain board. */
+export const tileImg = (id: string, light: boolean) =>
+  id ? tiles[`./tiles/${id}-${light ? 'l' : 'd'}.svg`] : undefined
 
 /**
  * Which set each colour is drawn in, for a board whose bottom is `bottom`:

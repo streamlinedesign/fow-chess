@@ -4,6 +4,9 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Themed piece sets: galaxy, blueprint, holy and ancient, light for White and dark for Black, for your pieces or your opponent's. Their light and dark pieces are avatars too.
+- Tile skins: pick a skin for the light squares and one for the dark squares (galaxy, blueprint, holy, ancient or plain). They cover only your half of the board.
+- Skins switch: off draws classic pieces (bots included) and the plain board everywhere, keeping your picks for when you turn it back on.
 - Your pieces: Settings has a Pieces and avatar section, for guests too. Pick a set for your own pieces and one for your opponent's (classic, cream, ink, red, blue, green, violet, and the four colours with black lines), and the side you play on the home board and against bots. Signed-in players keep them on the account; guests in the browser. The home board has a Pieces link.
 - Avatars: the pawn stays the default, and every piece of every one-colour set can be your avatar. Others see it next to your name in lists, profiles, the bell and Watch.
 - Black-lined versions of the red, blue, green and violet sets.
