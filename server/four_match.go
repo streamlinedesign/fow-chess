@@ -502,17 +502,17 @@ func (m *FourMatch) freshGame() *four.Game {
 	return four.NewGame(m.settings.rules())
 }
 
-// submit sends c's move for the Sync Move round; c can change it until the
-// round is played. Callers hold m.mu.
+// submit sends c's move for the Sync Move round. A sent move is locked in.
+// Callers hold m.mu.
 func (m *FourMatch) submit(c int, uci string, now time.Time) bool {
 	pos := m.game.Position()
-	if pos.Out[c] {
+	if pos.Out[c] || m.pending[c] != "" {
 		return false
 	}
 	if _, ok := pos.FindMoveFor(four.Color(c), uci); !ok {
 		return false
 	}
-	if m.pending[c] == "" && m.running() {
+	if m.running() {
 		m.clock[c] = max(m.left(c, now), 0)
 	}
 	m.pending[c] = uci
@@ -1013,6 +1013,9 @@ func (m *FourMatch) view(s fourState, color, side int) []byte {
 		s.You = four.Color(color).String()
 		s.fourView = fourViewFor(m.game, color, s.Status == "playing", m.settings.Fog)
 		s.Planned = m.pending[color]
+		if s.Planned != "" {
+			s.Legal = []string{}
+		}
 		if s.Status == "setup" {
 			s.Arranged = m.start.Setups[color]
 		}

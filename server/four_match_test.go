@@ -202,11 +202,11 @@ func TestFourSyncRounds(t *testing.T) {
 		}
 	}
 	m.handle(cs[0], fourIn{Type: "move", UCI: "e2e4"})
-	m.handle(cs[0], fourIn{Type: "move", UCI: "f2f4"}) // changed their mind
+	m.handle(cs[0], fourIn{Type: "move", UCI: "f2f4"}) // too late: the first move is locked in
 	m.handle(cs[1], fourIn{Type: "move", UCI: "b7d7"})
 	m.handle(cs[2], fourIn{Type: "move", UCI: "e2e4"}) // not Green's piece: ignored
 	s := lastFour(t, cs[0])
-	if s.Planned != "f2f4" || !s.Players["b"].Ready || s.Players["g"].Ready || s.Ply != 0 {
+	if s.Planned != "e2e4" || len(s.Legal) != 0 || !s.Players["b"].Ready || s.Players["g"].Ready || s.Ply != 0 {
 		t.Fatalf("planned %q ready %+v ply %d", s.Planned, s.Players, s.Ply)
 	}
 	if slices.Contains(s.Ticking, "r") || !slices.Contains(s.Ticking, "g") {
@@ -218,17 +218,17 @@ func TestFourSyncRounds(t *testing.T) {
 	if s.Ply != 4 || s.Planned != "" || s.Players["b"].Ready || len(s.Ticking) != 4 {
 		t.Fatalf("after the round: ply %d planned %q ticking %v", s.Ply, s.Planned, s.Ticking)
 	}
-	if s.History[0].SAN != "f2-f4" || s.History[1].SAN != "?" || s.History[1].Round != 1 {
+	if s.History[0].SAN != "e2-e4" || s.History[1].SAN != "?" || s.History[1].Round != 1 {
 		t.Errorf("history %+v", s.History)
 	}
 	if s.Clock.Left["r"] < 61000 {
 		t.Errorf("no increment: %d", s.Clock.Left["r"])
 	}
-	if m.game.Tokens() != "s:f2f4,b7d7,g13g11,m8k8" {
+	if m.game.Tokens() != "s:e2e4,b7d7,g13g11,m8k8" {
 		t.Errorf("tokens %q", m.game.Tokens())
 	}
 	// Violet runs out while the others have sent theirs: the round is played without Violet.
-	m.handle(cs[0], fourIn{Type: "move", UCI: "e2e3"})
+	m.handle(cs[0], fourIn{Type: "move", UCI: "f2f3"})
 	m.handle(cs[1], fourIn{Type: "move", UCI: "b8c8"})
 	m.handle(cs[2], fourIn{Type: "move", UCI: "h13h12"})
 	m.mu.Lock()
