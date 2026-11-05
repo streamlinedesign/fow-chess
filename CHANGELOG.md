@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Mods page: Current setup is part of the Mods section, without a box. The clock picker is the home page's: Short or Long (or No clock on the mods page), then three presets. The extra Bullet, Blitz, Rapid and Classical mods clocks are no longer offered.
 - Mods page: what the settings mean is in a Current setup card above the settings, not under the board.
 - Bot faces: Rex inutilis is a jester pawn, Ramesses II a prince, Solomon a king.
 - The home page no longer has the Live now panel; the top 100 takes the full row. The fallen king in the logo sits 10px higher.

@@ -88,18 +88,11 @@ export const TIME_GROUPS: [string, TimeControl[]][] = [
   ['Weekly', [tc(0, 0, 7 * DAY)]],
 ]
 
-/** The extra clocks a mods game can have. Must match modTimeControls in server/view.go. */
-export const MOD_TIMES: TimeControl[] = [
-  tc(0),
-  tc(60),
-  tc(120, 1),
-  tc(180),
-  tc(300, 3),
-  tc(600, 5),
-  tc(900, 10),
-  tc(1800),
-  tc(1800, 20),
-]
+/**
+ * The extra clock a mods game can have: none. The server's modTimeControls
+ * (server/view.go) still accepts the longer list the mods page used to offer.
+ */
+export const MOD_TIMES: TimeControl[] = [tc(0)]
 
 export const NO_CLOCK = tc(0)
 const DEFAULTS: Settings = {
