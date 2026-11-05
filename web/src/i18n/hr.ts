@@ -277,7 +277,7 @@ export const hr: Dict = {
     ready: 'gotovo',
     pickMove: 'Odaberi potez',
     sent: 'Potez poslan. Čekamo ostale',
-    sentHint: 'Možeš ga promijeniti dok ga svi ne pošalju.',
+    sentHint: 'Tvoj potez je zaključan. Krug se odigra kad svi pošalju svoj.',
     picking: 'Svi biraju potez',
     sentTag: 'poslano',
     round: (n: number) => `Krug ${n}`,

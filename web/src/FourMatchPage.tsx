@@ -39,7 +39,8 @@ export function FourMatchPage({ id }: { id: string }) {
   const you = state?.you || null
   const seat: Seat = you ?? side
   const playing = state?.status === 'playing'
-  const legal = state && !predicting && conn === 'open' ? state.legal : []
+  // A move sent in Sync Move is locked in.
+  const legal = state && !predicting && !(sync && sentNow) && conn === 'open' ? state.legal : []
   const toMove = playing && conn === 'open' && !predicting && !sync ? state!.turn : null
   const youOut = !!you && !!state?.players[you].out
   const planned = sync ? (sentNow ? pending!.uci : state?.planned) || '' : ''
