@@ -1,4 +1,6 @@
+import { pieceImg4 } from './four'
 import type { Dict } from './i18n'
+import { pieceImg } from './pieces'
 
 /** A clock setting. All zero means no clock. Must match timeControls in server/view.go. */
 export type TimeControl = {
@@ -41,12 +43,15 @@ export type Settings = {
 
 export type Bot = 'rex' | 'vercingetorix' | 'ramesses' | 'solomon'
 
-/** Each bot's face: a piece of its strength. J is the jester pawn, X the prince (see pieces.ts). */
-export const BOT_PIECE: Record<Bot, string> = {
-  rex: 'J',
-  vercingetorix: 'N',
-  ramesses: 'X',
-  solomon: 'K',
+/**
+ * Each bot's face: a piece of its strength, in its own colour. J is the jester
+ * pawn, X the prince (see pieces.ts); the coloured sets are the four-player ones.
+ */
+export const BOT_FACE: Record<Bot, string> = {
+  rex: pieceImg4('vJ'), // Rex inutilis: violet
+  vercingetorix: pieceImg4('gN'), // green
+  ramesses: pieceImg('X'), // cream
+  solomon: pieceImg4('rK'), // red
 }
 
 /** The computer opponents, weakest first. Their names are the same in every language. */
