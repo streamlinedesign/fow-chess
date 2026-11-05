@@ -6,6 +6,7 @@ import { FourBoard } from './FourBoard'
 import { FourSetup } from './FourSetup'
 import { useT, type Dict } from './i18n'
 import { how } from './MatchPage'
+import { PromotionDialog } from './Promotion'
 import { navigate } from './router'
 import { Button, Dialog, Spinner } from './ui'
 import { useFourMatch, type FourState } from './useFourMatch'
@@ -240,23 +241,12 @@ export function FourMatchPage({ id }: { id: string }) {
         </aside>
       </div>
 
-      <Dialog open={!!promotion} onOpenChange={(o) => !o && setPromotion(null)} title={t.match.promoteTo}>
-        <div className="grid grid-cols-4 gap-2">
-          {(['q', 'r', 'b', 'n'] as const).map((p) => (
-            <button
-              key={p}
-              onClick={() => {
-                sendMove(promotion!.from + promotion!.to + p)
-                setPromotion(null)
-              }}
-              className="aspect-square rounded-lg bg-sq-light p-1 shadow-[inset_0_0_0_1.5px_var(--color-fg)] transition-transform hover:scale-105 active:scale-95"
-              aria-label={p}
-            >
-              <img src={pieceImg4((you ?? 'r') + p.toUpperCase())} alt="" draggable={false} className="size-full" />
-            </button>
-          ))}
-        </div>
-      </Dialog>
+      <PromotionDialog
+        open={!!promotion}
+        img={(p) => pieceImg4((you ?? 'r') + p.toUpperCase())}
+        onPick={(p) => sendMove(promotion!.from + promotion!.to + p)}
+        onClose={() => setPromotion(null)}
+      />
 
       <Dialog
         open={confirmResign}

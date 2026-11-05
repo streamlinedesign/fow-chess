@@ -7,12 +7,11 @@ import { useT } from './i18n'
 import { Icon } from './icons'
 import { Leaderboard } from './Leaderboard'
 import { useLive } from './live'
-import { pieceImg } from './position'
 import { playerId } from './player'
 import { ago, go, type GameSummary } from './ProfilePage'
 import { navigate } from './router'
 import {
-  BOT_PIECE,
+  BOT_FACE,
   BOTS,
   describeTime,
   loadSettings,
@@ -305,7 +304,7 @@ function Bots({ settings }: { settings: Settings }) {
         <div key={b.level} className={`home-cell home-bot ${i < 3 ? 'cross' : ''}`}>
           <span className="home-bot-top">
             <span className="home-bot-face" aria-hidden>
-              <img src={pieceImg(BOT_PIECE[b.level])} alt="" />
+              <img src={BOT_FACE[b.level]} alt="" />
             </span>
             <span className="strength" aria-label={`${i + 1}/4`}>
               {BOTS.map((_, j) => (

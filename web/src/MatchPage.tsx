@@ -9,6 +9,7 @@ import { useT, type Dict } from './i18n'
 import { Icon } from './icons'
 import { applyLocal, pieceImg } from './position'
 import { go } from './ProfilePage'
+import { PromotionDialog } from './Promotion'
 import { navigate } from './router'
 import { describeSettings } from './settings'
 import { SetupBoard } from './SetupBoard'
@@ -365,24 +366,12 @@ export function MatchPage({ id }: { id: string }) {
         </aside>
       </div>
 
-      <Dialog open={!!promotion} onOpenChange={(o) => !o && setPromotion(null)} title={t.match.promoteTo}>
-        <div className="grid grid-cols-4 gap-2">
-          {(['q', 'r', 'b', 'n'] as const).map((p) => (
-            <button
-              key={p}
-              autoFocus={p === 'q'}
-              aria-label={{ q: t.match.queen, r: t.match.rook, b: t.match.bishop, n: t.match.knight }[p]}
-              className="aspect-square rounded-lg bg-sq-light p-1 shadow-[inset_0_0_0_1.5px_var(--color-fg)] transition-transform hover:scale-105 active:scale-95"
-              onClick={() => {
-                sendMove(promotion!.from + promotion!.to + p)
-                setPromotion(null)
-              }}
-            >
-              <img src={pieceImg(you === 'b' ? p : p.toUpperCase())} alt="" draggable={false} className="size-full" />
-            </button>
-          ))}
-        </div>
-      </Dialog>
+      <PromotionDialog
+        open={!!promotion}
+        img={(p) => pieceImg(you === 'b' ? p : p.toUpperCase())}
+        onPick={(p) => sendMove(promotion!.from + promotion!.to + p)}
+        onClose={() => setPromotion(null)}
+      />
 
       <Dialog
         open={confirmResign}

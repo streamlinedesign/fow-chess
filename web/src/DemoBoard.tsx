@@ -4,7 +4,8 @@ import { Board } from './Board'
 import { useT } from './i18n'
 import { applyLocal, pieceImg } from './position'
 import { playerId } from './player'
-import { BOT_PIECE, BOTS, type Bot } from './settings'
+import { PromotionDialog } from './Promotion'
+import { BOT_FACE, BOTS, type Bot } from './settings'
 import { useMatch, type Color, type MatchState } from './useMatch'
 
 /** Your view of the start under fog: your four rows, the rest hidden. Drawn until the game connects. */
@@ -78,7 +79,7 @@ export function DemoBoard({ me }: { me?: string }) {
         {BOTS.map((b, i) => (
           <RadioGroup.Item key={b.level} value={b.level} className="demo-bot">
             <span className="demo-bot-face" aria-hidden>
-              <img src={pieceImg(BOT_PIECE[b.level])} alt="" />
+              <img src={BOT_FACE[b.level]} alt="" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block font-semibold">{b.name}</span>
@@ -129,6 +130,7 @@ function Live({
   // Our own move shows at once; the server's next state replaces it.
   const [pending, setPending] = useState<{ uci: string; ply: number } | null>(null)
   const shown = pending && state && state.ply === pending.ply ? pending : null
+  const [promotion, setPromotion] = useState<{ from: string; to: string } | null>(null)
 
   if (!state)
     return (
@@ -146,25 +148,37 @@ function Live({
       />
     )
   const you = (state.you || 'w') as Color
+  const play = (uci: string) => {
+    if (state.legal.includes(uci) && send({ type: 'move', uci })) setPending({ uci, ply: state.ply })
+  }
+  // A pawn reaching the last rank asks what it becomes, as in a real game.
   const move = (from: string, to: string) => {
-    const legal = state.legal
-    const uci = legal.includes(from + to) ? from + to : legal.includes(from + to + 'q') ? from + to + 'q' : null
-    if (uci && send({ type: 'move', uci })) setPending({ uci, ply: state.ply })
+    if (state.legal.includes(from + to + 'q')) setPromotion({ from, to })
+    else play(from + to)
   }
   return (
-    <Frame
-      {...extra}
-      me={me}
-      you={you}
-      board={shown ? applyLocal(state.board, shown.uci) : state.board}
-      legal={shown ? [] : state.legal}
-      state={state}
-      onMove={move}
-      history={state.history}
-      status={over(state, you, t, extra.name)}
-      thinking={!!shown || (state.status === 'playing' && state.turn !== you)}
-      actions={actions}
-    />
+    <>
+      <Frame
+        {...extra}
+        me={me}
+        you={you}
+        board={shown ? applyLocal(state.board, shown.uci) : state.board}
+        legal={shown ? [] : state.legal}
+        state={state}
+        predicting={!!shown}
+        onMove={move}
+        history={state.history}
+        status={over(state, you, t, extra.name)}
+        thinking={!!shown || (state.status === 'playing' && state.turn !== you)}
+        actions={actions}
+      />
+      <PromotionDialog
+        open={!!promotion}
+        img={(p) => pieceImg(you === 'b' ? p : p.toUpperCase())}
+        onPick={(p) => promotion && play(promotion.from + promotion.to + p)}
+        onClose={() => setPromotion(null)}
+      />
+    </>
   )
 }
 
@@ -184,6 +198,7 @@ function Frame({
   board,
   legal,
   state,
+  predicting = false,
   onMove,
   history,
   status,
@@ -195,6 +210,8 @@ function Frame({
   board: string
   legal: string[]
   state?: MatchState
+  /** Our own move is drawn before the server confirms it, so the state's marks are out of date. */
+  predicting?: boolean
   onMove: (from: string, to: string) => void
   history: string[]
   status: string | null
@@ -211,7 +228,7 @@ function Frame({
       <div className="demo-main">
         <div className="strip">
           <span className="strip-ava bot" aria-hidden>
-            <img src={pieceImg(BOT_PIECE[bot])} alt="" />
+            <img src={BOT_FACE[bot]} alt="" />
           </span>
           <span className="strip-who">
             <span className="strip-name">{name}</span>
@@ -237,8 +254,13 @@ function Frame({
             orientation={you}
             legal={legal}
             lastMove={state?.last}
-            danger={state?.danger}
+            check={predicting ? undefined : state?.check}
+            danger={predicting ? undefined : state?.danger}
             unsafe={state?.unsafe}
+            hill={state?.settings.hill}
+            look={state?.settings}
+            // The same outpost rings as a real game, from the game's own rules.
+            center={state?.settings.centerVision ? { you, live: !predicting && !!state.fullVision } : undefined}
             onMove={onMove}
           />
           {status && (
