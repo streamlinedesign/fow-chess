@@ -6,7 +6,7 @@ import { Page } from './Page'
 import { playerId } from './player'
 import { navigate } from './router'
 import { describeTime, loadSettings, modeName, saveSettings, type Settings } from './settings'
-import { SettingsBoard } from './SettingsBoard'
+import { SettingsBoard, setupNotes } from './SettingsBoard'
 import { SettingsPanel } from './SettingsPanel'
 import { Button } from './ui'
 
@@ -78,7 +78,7 @@ export function ModsPage() {
               {four ? (
                 <FourPreview settings={settings} />
               ) : (
-                <SettingsBoard settings={settings} boardClassName="w-full" captionClassName="mt-1 max-[760px]:px-4" />
+                <SettingsBoard settings={settings} boardClassName="w-full" />
               )}
             </div>
           </div>
@@ -87,6 +87,9 @@ export function ModsPage() {
           <section>
             <h1 className="home-title">{t.mods.title}</h1>
             <p className="mt-2.5 text-[15px] text-accent">{t.mods.intro}</p>
+          </section>
+          <section>
+            <CurrentSetup settings={settings} four={four} />
           </section>
           <section>
             <SettingsPanel value={settings} onChange={setSettings} className="bare" four={four} onFour={pickFour} />
@@ -111,6 +114,27 @@ export function ModsPage() {
   )
 }
 
+/** What the board beside it shows, in words: the game picked and what each setting means at the start. */
+function CurrentSetup({ settings, four }: { settings: Settings; four: boolean }) {
+  const t = useT()
+  const notes = four ? [t.four.preview, ...(settings.fog ? [t.four.previewFog] : [])] : setupNotes(settings, t)
+  return (
+    <div className="setup-card">
+      <h2 id="current-setup" className="text-lg font-semibold tracking-tight">
+        {t.mods.currentSetup}
+      </h2>
+      <p className="mt-0.5 text-sm font-medium">
+        {four ? t.four.four : modeName(settings, t)} · {describeTime(settings.time, t)}
+      </p>
+      <ul className="setup-notes">
+        {notes.map((n) => (
+          <li key={n}>{n}</li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
 /** The four-player board from Red's seat at the start, with the settings' fog. */
 function FourPreview({ settings }: { settings: Settings }) {
   const t = useT()
@@ -125,24 +149,16 @@ function FourPreview({ settings }: { settings: Settings }) {
     })
   }, [settings.fog])
   return (
-    <>
-      <div className="four-preview" role="img" aria-label={t.four.preview}>
-        <FourBoard
-          board={board}
-          seat="r"
-          legal={[]}
-          hill={settings.hill}
-          center={settings.centerVision ? {} : undefined}
-          look={settings}
-          still
-        />
-      </div>
-      <div className="mt-1 flex flex-col gap-1.5 max-[760px]:px-4">
-        <p className="text-[15px] font-semibold">{t.settingsBoard.yourView}</p>
-        <p className="text-sm text-accent">
-          {t.four.preview} {settings.fog ? t.four.previewFog : ''}
-        </p>
-      </div>
-    </>
+    <div className="four-preview" role="img" aria-label={t.four.preview}>
+      <FourBoard
+        board={board}
+        seat="r"
+        legal={[]}
+        hill={settings.hill}
+        center={settings.centerVision ? {} : undefined}
+        look={settings}
+        still
+      />
+    </div>
   )
 }
