@@ -798,7 +798,7 @@ export const en = {
     skinsOff: 'Off: classic pieces and the plain board for every player. Bots and four-player colours stay. Your picks are kept.',
     lightTiles: 'Light squares',
     darkTiles: 'Dark squares',
-    tilesHint: 'On your first three rows. Your opponent sees them too.',
+    tilesHint: 'On your half of the board, your first three rows with four players. Your opponent sees them too.',
     plainTiles: 'Plain',
     sets: {
       classic: 'Classic',

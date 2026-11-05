@@ -797,7 +797,7 @@ export const hr: Dict = {
     skinsOff: 'Isključeno: klasične figure i obična ploča za sve igrače. Botovi i boje za četvero ostaju. Tvoj izbor ostaje spremljen.',
     lightTiles: 'Svijetla polja',
     darkTiles: 'Tamna polja',
-    tilesHint: 'Na tvoja prva tri reda. Vidi ih i protivnik.',
+    tilesHint: 'Na tvojoj polovici ploče, s četvero igrača na prva tri reda. Vidi ih i protivnik.',
     plainTiles: 'Obična',
     sets: {
       classic: 'Klasične',

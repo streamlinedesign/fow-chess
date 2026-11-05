@@ -30,18 +30,18 @@ var pieceSets = []string{
 	"holy-light", "holy-dark", "ancient-light", "ancient-dark",
 }
 
-// tileSkins are the board skins for your first three rows: "" is the plain board. Must match TILE_IDS in web/src/sets.ts.
+// tileSkins are the board skins for your half: "" is the plain board. Must match TILE_IDS in web/src/sets.ts.
 var tileSkins = []string{"", "galaxy", "blueprint", "holy", "ancient"}
 
 // avatarKinds are the pieces an avatar can be: the usual six, the jester pawn and the prince.
 const avatarKinds = "KQRBNPJX"
 
 // skin is how a player's own pieces and squares look, to everyone in their
-// games: their set as White and as Black, and the tiles on their first three rows.
+// games: their set as White and as Black, and the tiles on their half (first three rows with four players).
 type skin struct {
 	White string `json:"white"`
 	Black string `json:"black"`
-	// The skins for the light and dark squares on your first three rows; "" for plain.
+	// The skins for the light and dark squares on your half (your first three rows with four players); "" for plain.
 	LightTiles string `json:"lightTiles"`
 	DarkTiles  string `json:"darkTiles"`
 }

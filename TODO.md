@@ -31,7 +31,7 @@
 
 ## Done
 
-- 0.11.0: White and Black sets that opponents see, light and dark lines for colours, tiles on your first three rows, faster settings, head avatars
+- 0.11.0: White and Black sets that opponents see, light and dark lines for colours, tiles on your half (three rows with four players), faster settings, head avatars
 - 0.10.1: themed piece sets (galaxy, blueprint, holy with the wing knight, ancient), tile skins with Greek key ancient tiles, skins switch
 - 0.5.0: bug reports from the footer and game pages; read them with `make bugs`
 - 0.1.0: the game, accounts, ratings, modes, tournaments, bots
