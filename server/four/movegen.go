@@ -121,7 +121,7 @@ func (p *Position) pawnMoves(sq Square, us Color) []Move {
 	var moves []Move
 	fx, fy := forward[us][0], forward[us][1]
 	add := func(to Square, flags MoveFlag) {
-		if p.Shape.RankOf(us, to) >= p.Shape.PromotionRank() {
+		if p.Shape.Promotes(us, to) {
 			for _, k := range promoKinds {
 				moves = append(moves, Move{From: sq, To: to, Promo: k, Flags: flags})
 			}

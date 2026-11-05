@@ -289,7 +289,7 @@ export const hr: Dict = {
     boardExtended: 'Proširena',
     boardExtendedHint: '16 sa 16, svakome četiri reda. Kutovi su otvoreni za sve.',
     previewExtended:
-      'Proširena ploča: svakome četiri reda, a kutovi su neutralna polja preko kojih smije svatko. Pješaci se promoviraju na suprotnom rubu.',
+      'Proširena ploča: svakome četiri reda, a kutovi su neutralna polja preko kojih smije svatko. Pješaci se promoviraju na bilo kojem rubu osim svog.',
     centerHintExtended:
       'Figura na tvoja dva središnja polja na suprotnoj strani pokazuje ti cijelu ploču dok god stoji tamo.',
     noHill: 'Na proširenoj ploči nema brda.',
