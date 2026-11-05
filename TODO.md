@@ -22,4 +22,5 @@
 
 ## Done
 
+- 0.5.0: bug reports from the footer and game pages; read them with `make bugs`
 - 0.1.0: the game, accounts, ratings, modes, tournaments, bots
