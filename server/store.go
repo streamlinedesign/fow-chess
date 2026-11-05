@@ -324,6 +324,7 @@ func (s *Store) Rank(userID int64) (*leader, error) {
 func (s *Store) cleanup() {
 	for {
 		s.db.Exec(`DELETE FROM games WHERE white_user IS NULL AND black_user IS NULL AND updated_at < $1`, time.Now().Add(-guestGameTTL))
+		s.db.Exec(`DELETE FROM four_games WHERE users = '[0,0,0,0]' AND updated_at < $1`, time.Now().Add(-guestGameTTL))
 		s.db.Exec(`DELETE FROM sessions WHERE expires_at < now()`)
 		select {
 		case <-s.done:

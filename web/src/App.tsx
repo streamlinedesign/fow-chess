@@ -9,6 +9,7 @@ import { FriendsPage } from './FriendsPage'
 import { Landing } from './Landing'
 import { Footer } from './Page'
 import { connectLive, useLive } from './live'
+import { FourMatchPage } from './FourMatchPage'
 import { MatchPage } from './MatchPage'
 import { MessagesPage } from './MessagesPage'
 import { NotFound } from './NotFound'
@@ -27,6 +28,7 @@ import { Toaster } from './Toaster'
 export function App() {
   const path = usePath()
   const match = /^\/m\/([A-Za-z0-9]{4,12})\/?$/.exec(path)
+  const four = /^\/f\/([A-Za-z0-9]{4,12})\/?$/.exec(path)
   const user = /^\/u\/([A-Za-z0-9_-]{1,20})\/?$/.exec(path)
   const game = /^\/g\/([A-Za-z0-9]{4,12})\/(\d+)\/?$/.exec(path)
   const chat = /^\/messages(?:\/([A-Za-z0-9_-]{1,20}))?\/?$/.exec(path)
@@ -53,6 +55,8 @@ export function App() {
 
   const page = match ? (
     <MatchPage key={match[1].toUpperCase()} id={match[1].toUpperCase()} />
+  ) : four ? (
+    <FourMatchPage key={four[1].toUpperCase()} id={four[1].toUpperCase()} />
   ) : user ? (
     <ProfilePage name={user[1]} />
   ) : game ? (

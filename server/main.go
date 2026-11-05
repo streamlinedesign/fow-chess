@@ -143,6 +143,44 @@ func main() {
 		m.serve(r.Context(), conn, p)
 	})
 
+	// Four-player games, from the mods page.
+	fourHub := NewFourHub(store)
+	mux.HandleFunc("POST /api/four", func(w http.ResponseWriter, r *http.Request) {
+		p := playerFor(r, auth.user(r))
+		if p == nil {
+			p = &player{}
+		}
+		var settings fourSettings
+		json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&settings)
+		if !settings.valid() {
+			jsonError(w, "Those match settings aren't available.", http.StatusBadRequest)
+			return
+		}
+		m := fourHub.Create(p, settings)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"id": m.id})
+	})
+	mux.HandleFunc("GET /api/four/{id}", func(w http.ResponseWriter, r *http.Request) {
+		if fourHub.Get(strings.ToUpper(r.PathValue("id"))) == nil {
+			http.NotFound(w, r)
+			return
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+	mux.HandleFunc("GET /ws/four/{id}", func(w http.ResponseWriter, r *http.Request) {
+		m := fourHub.Get(strings.ToUpper(r.PathValue("id")))
+		p := playerFor(r, auth.userForSocket(r))
+		if m == nil || p == nil {
+			http.NotFound(w, r)
+			return
+		}
+		conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true})
+		if err != nil {
+			return
+		}
+		m.serve(r.Context(), conn, p)
+	})
+
 	mux.Handle("/", spa(dist))
 
 	srv := &http.Server{Addr: *addr, Handler: mux}

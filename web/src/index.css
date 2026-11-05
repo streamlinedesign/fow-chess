@@ -2613,3 +2613,65 @@ a.tick:active {
 .strength i[data-on='true'] {
   background: var(--color-fg);
 }
+
+/* Four-player chess: the cross-shaped board. --board4 is the whole board's
+   width; --board is set to an eight-square board's worth so the marks drawn
+   on squares come out the same size as on the usual board. */
+.four-wrap {
+  --board4: min(100vw - 32px, 100dvh - 150px, 760px);
+  width: var(--board4);
+  flex: none;
+}
+@media (min-width: 640px) {
+  .four-wrap {
+    --board4: min(100vw - 64px, 100dvh - 150px, 760px);
+  }
+}
+@media (min-width: 1024px) {
+  .four-wrap {
+    --board4: min(100vw - 440px, 100dvh - 150px, 860px);
+  }
+}
+.board4 {
+  --board: calc(var(--board4, 400px) * 8 / 14);
+  grid-template-columns: repeat(14, minmax(0, 1fr));
+  grid-template-rows: repeat(14, minmax(0, 1fr));
+  touch-action: none;
+}
+.board4[data-still='true'] {
+  touch-action: auto;
+}
+.seat-corner {
+  width: calc(var(--board4, 400px) * 3 / 14);
+  height: calc(var(--board4, 400px) * 3 / 14);
+  border-radius: 6px;
+  transition:
+    background-color 200ms ease,
+    box-shadow 200ms ease;
+}
+.seat-corner .clock {
+  min-width: 0;
+  align-self: flex-start;
+  font-size: inherit;
+  padding: 1px 5px;
+}
+.seat-corner[data-active='true'] {
+  background: color-mix(in srgb, var(--color-fg) 9%, transparent);
+  box-shadow: inset 0 0 0 2px var(--color-fg);
+}
+.seat-corner[data-out='true'],
+.player-bar[data-out='true'] {
+  opacity: 0.55;
+}
+.four-preview {
+  --board4: min(100vw - 32px, 560px);
+}
+/* The square ring that marks your move would box in the cross; the seat corners show whose move it is instead. */
+.four-wrap .board-turn[data-your-move='true'] {
+  box-shadow: none;
+  animation: none;
+}
+/* A hairline on fogged squares keeps the cross readable on the dark background. */
+.board4 .sq[data-fog='true']:not([data-hill='true']) {
+  box-shadow: inset 0 0 0 0.5px rgb(255 250 189 / 0.07);
+}
