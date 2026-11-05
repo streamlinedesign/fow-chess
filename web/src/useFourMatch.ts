@@ -17,6 +17,8 @@ export type FourSettings = {
   setup?: '' | 'backRow' | 'battleship'
   /** Sync Move: everyone moves at once each round. */
   sync?: boolean
+  /** The 16 by 16 board with four rows each and neutral corners; no hill. */
+  board?: '' | 'extended'
 }
 
 export type FourSeatState = {
@@ -38,7 +40,7 @@ export type FourState = {
   id: string
   you: Seat | ''
   settings: FourSettings
-  /** 196 squares from the bottom left, row by row: " " off the board, "." empty, "?" hidden, or a piece like "rK". */
+  /** Every square from the bottom left, row by row, 14 by 14 or 16 by 16 on the extended board: " " off the board, "." empty, "?" hidden, or a piece like "rK". */
   board: string[]
   turn: Seat
   ply: number
@@ -84,7 +86,7 @@ export type FourOutgoing =
 export type FourConnection = 'connecting' | 'open' | 'closed' | 'failed' | 'missing' | 'outdated'
 
 /** Must match fourProtocol in server/four_match.go. */
-const FOUR_PROTOCOL = 3
+const FOUR_PROTOCOL = 4
 
 /** The live connection to a four-player match, reconnecting as useMatch does. */
 export function useFourMatch(id: string) {

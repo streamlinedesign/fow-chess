@@ -27,6 +27,7 @@
 - chess-bots: copy `server/engine` (Sync Move, jester pawns and more are missing there)
 - Four-player: drag pieces in the setup (taps only for now); bots that think about Sync Move rounds (they play as if in turns, and bot-only games can go on for a very long time)
 - Four-player: show these games on profiles, Watch and the bell; rematch and draw offers; a stronger bot
+- Four-player extended board: the seat names and clocks aren't drawn in the corners (they're playable there), only in the list beside the board; find a place for them on the board
 - Decide what else the hub should show
 
 ## Done

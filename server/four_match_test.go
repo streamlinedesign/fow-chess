@@ -47,7 +47,7 @@ func TestFourSeatsAndTurns(t *testing.T) {
 		if s.You != four.Colors[i].String() || s.Status != "playing" {
 			t.Fatalf("player %d: you %q status %s", i, s.You, s.Status)
 		}
-		if len(s.Board) != four.NumSquares {
+		if len(s.Board) != 14*14 {
 			t.Fatalf("board has %d squares", len(s.Board))
 		}
 		if (i == 0) != (len(s.Legal) > 0) {
@@ -82,7 +82,7 @@ func TestFourSeatsAndTurns(t *testing.T) {
 		t.Errorf("after red resigns: %+v turn %s", s.Players["r"], s.Turn)
 	}
 	// A player who is out sees everything.
-	if r := lastFour(t, cs[0]); r.Board[four.At(6, 12)] == "?" {
+	if r := lastFour(t, cs[0]); r.Board[12*14+6] == "?" {
 		t.Errorf("red is out and should see the whole board")
 	}
 }
@@ -288,20 +288,20 @@ func TestFourSetup(t *testing.T) {
 		t.Fatal("bad setup taken")
 	}
 	m.handle(cs[0], fourIn{Type: "setup", Board: mine})
-	m.handle(cs[1], fourIn{Type: "setup", Board: four.StandardSetup})
+	m.handle(cs[1], fourIn{Type: "setup", Board: four.Cross.StandardSetup()})
 	m.handle(cs[2], fourIn{Type: "resign"})
 	s = lastFour(t, cs[0])
 	if s.Arranged != mine || !s.Players["b"].Ready || s.Players["v"].Ready || s.Players["g"].Out != "resignation" {
 		t.Fatalf("arranged %q players %+v", s.Arranged, s.Players)
 	}
-	if lastFour(t, cs[1]).Arranged != four.StandardSetup {
+	if lastFour(t, cs[1]).Arranged != four.Cross.StandardSetup() {
 		t.Fatal("blue's arrangement")
 	}
 	hub.flush()
 	if again := NewFourHub(store).Get(m.id); again == nil || again.start != m.start || !again.arranging() {
 		t.Fatalf("arranging not restored")
 	}
-	m.handle(cs[3], fourIn{Type: "setup", Board: four.StandardSetup})
+	m.handle(cs[3], fourIn{Type: "setup", Board: four.Cross.StandardSetup()})
 	s = lastFour(t, cs[0])
 	if s.Status != "playing" || s.Board[0*14+3] != "rK" || s.Clock.Running != "r" || s.Players["g"].Out != "resignation" {
 		t.Fatalf("status %s d1 %s running %q", s.Status, s.Board[3], s.Clock.Running)
@@ -327,5 +327,36 @@ func TestFourSetupBots(t *testing.T) {
 	m.handle(c, fourIn{Type: "setup", Board: "PPPPPPPP" + "RRBBNN.." + "...KQ..."})
 	if s := lastFour(t, c); s.Status != "playing" || len(s.Legal) == 0 {
 		t.Fatalf("status %s", s.Status)
+	}
+}
+
+func TestFourExtended(t *testing.T) {
+	if (fourSettings{Board: "extended", Hill: true, Time: TimeControl{Base: 180, Inc: 2}}).valid() {
+		t.Fatal("hill on the extended board")
+	}
+	if (fourSettings{Board: "huge", Time: TimeControl{Base: 180, Inc: 2}}).valid() {
+		t.Fatal("unknown board")
+	}
+	store := openTestStore(t, filepath.Join(t.TempDir(), "four.db"))
+	hub := NewFourHub(store)
+	m := hub.Create(guestPlayer("ann-browser"), fourSettings{Board: "extended", Setup: "battleship", Time: TimeControl{Base: 60}})
+	_, cs := fourPlayers(m)
+	deep := "RNBQKBNR" + "................" + "PPPPPPPP"
+	m.handle(cs[0], fourIn{Type: "setup", Board: four.Cross.StandardSetup()}) // refused: three rows
+	if lastFour(t, cs[0]).Arranged != "" {
+		t.Fatal("cross setup taken on the extended board")
+	}
+	for _, c := range cs {
+		m.handle(c, fourIn{Type: "setup", Board: deep})
+	}
+	s := lastFour(t, cs[0])
+	if s.Status != "playing" || len(s.Board) != 256 || s.Board[0] != "." || s.Board[3*16+4] != "rP" || s.Board[8] != "rK" {
+		t.Fatalf("status %s board %d a1 %q e4 %q i1 %q", s.Status, len(s.Board), s.Board[0], s.Board[3*16+4], s.Board[8])
+	}
+	m.handle(cs[0], fourIn{Type: "move", UCI: "e4e5"})
+	hub.flush()
+	again := NewFourHub(store).Get(m.id)
+	if again == nil || again.game.Tokens() != m.game.Tokens() || again.game.Position().Shape != four.Extended {
+		t.Fatalf("extended game not restored")
 	}
 }

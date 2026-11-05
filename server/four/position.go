@@ -7,7 +7,8 @@ type Rules struct {
 	JumpKing bool
 	// JesterPawns lets pawns also step and take one square in any direction.
 	JesterPawns bool
-	// Hill wins the game for the first king to reach one of the four centre squares.
+	// Hill wins the game for the first king to reach one of the four centre
+	// squares. Only on the cross: the extended board has no hill.
 	Hill bool
 	// CenterVision shows the whole board to a player holding a centre square.
 	CenterVision CenterVision
@@ -15,10 +16,12 @@ type Rules struct {
 	// the others', the moves happen at once, and captures come last, so a
 	// piece that moves away dodges whatever was aimed at it. See PlayRound.
 	Sync bool
+	// Shape is the board: the cross, or the extended board.
+	Shape Shape
 }
 
-// CenterVision is a fog rule: a piece on one of the four centre squares shows
-// its player the whole board for as long as it stays.
+// CenterVision is a fog rule: a piece on one of the player's outposts (see
+// Shape.Outposts) shows its player the whole board for as long as it stays.
 type CenterVision uint8
 
 const (
@@ -28,20 +31,6 @@ const (
 	// CenterAny counts any piece.
 	CenterAny
 )
-
-// Centre is the four middle squares: the hill, and the outposts that give
-// centre vision. Every player shares them.
-var Centre = [4]Square{At(6, 6), At(7, 6), At(6, 7), At(7, 7)}
-
-// InCentre reports whether sq is one of the four middle squares.
-func InCentre(sq Square) bool {
-	for _, c := range Centre {
-		if c == sq {
-			return true
-		}
-	}
-	return false
-}
 
 // Position is a value type: Apply returns a new Position and leaves the old one untouched.
 type Position struct {
@@ -57,13 +46,13 @@ type Position struct {
 	Rules
 }
 
-// StartPosition is every player's pieces in their three rows, Red to move.
+// StartPosition is every player's pieces on their back two rows, Red to move.
 func StartPosition(r Rules) Position {
 	p := Position{Turn: Red, Castling: 0xff, EP: NoSquare, EPPawn: NoSquare, Rules: r}
 	for _, c := range Colors {
 		for f, k := range backRank {
-			p.Board[cell(c, f, 0)] = NewPiece(c, k)
-			p.Board[cell(c, f, 1)] = NewPiece(c, Pawn)
+			p.Board[r.Shape.Cell(c, f, 0)] = NewPiece(c, k)
+			p.Board[r.Shape.Cell(c, f, 1)] = NewPiece(c, Pawn)
 		}
 	}
 	return p
@@ -125,15 +114,15 @@ func (p *Position) Eliminate(c Color) {
 
 // castleSquares are, for each colour, the king's start square and the rooks' on
 // the king's and the queen's side.
-func castleSquares(c Color) (king, kingRook, queenRook Square) {
-	return cell(c, 4, 0), cell(c, 7, 0), cell(c, 0, 0)
+func (s Shape) castleSquares(c Color) (king, kingRook, queenRook Square) {
+	return s.Cell(c, 4, 0), s.Cell(c, 7, 0), s.Cell(c, 0, 0)
 }
 
 // castleMask is the castling rights lost when a piece moves from or to sq.
-func castleMask(sq Square) uint8 {
+func (s Shape) castleMask(sq Square) uint8 {
 	var mask uint8
 	for _, c := range Colors {
-		k, kr, qr := castleSquares(c)
+		k, kr, qr := s.castleSquares(c)
 		switch sq {
 		case k:
 			mask |= 3 << (2 * c)
@@ -164,14 +153,14 @@ func (p Position) Apply(m Move) (Position, Piece) {
 	p.Board[m.To] = pc
 
 	if m.Is(FlagCastle) {
-		_, kr, qr := castleSquares(us)
-		if m.To == cell(us, 6, 0) {
-			p.Board[kr], p.Board[cell(us, 5, 0)] = NoPiece, p.Board[kr]
+		_, kr, qr := p.Shape.castleSquares(us)
+		if m.To == p.Shape.Cell(us, 6, 0) {
+			p.Board[kr], p.Board[p.Shape.Cell(us, 5, 0)] = NoPiece, p.Board[kr]
 		} else {
-			p.Board[qr], p.Board[cell(us, 3, 0)] = NoPiece, p.Board[qr]
+			p.Board[qr], p.Board[p.Shape.Cell(us, 3, 0)] = NoPiece, p.Board[qr]
 		}
 	}
-	p.Castling &^= castleMask(m.From) | castleMask(m.To)
+	p.Castling &^= p.Shape.castleMask(m.From) | p.Shape.castleMask(m.To)
 
 	p.EP, p.EPPawn = NoSquare, NoSquare
 	if m.Is(FlagDoublePush) && !p.Sync {
@@ -184,3 +173,7 @@ func (p Position) Apply(m Move) (Position, Piece) {
 	}
 	return p, captured
 }
+
+// HillOn reports whether King of the Hill is in play: asked for, and on the
+// cross, since the extended board has no hill.
+func (r Rules) HillOn() bool { return r.Hill && r.Shape == Cross }

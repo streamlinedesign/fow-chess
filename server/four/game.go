@@ -26,10 +26,10 @@ func (p *Position) Vision(c Color) [NumSquares]bool {
 		seen[sq] = true
 		if pc.Kind() == Pawn {
 			fx, fy := forward[c][0], forward[c][1]
-			if ahead, ok := sq.Offset(fx, fy); ok {
+			if ahead, ok := p.Shape.Offset(sq, fx, fy); ok {
 				seen[ahead] = true
-				if rankOf(c, sq) == 1 {
-					if two, ok := ahead.Offset(fx, fy); ok {
+				if p.Shape.RankOf(c, sq) == 1 {
+					if two, ok := p.Shape.Offset(ahead, fx, fy); ok {
 						seen[two] = true
 					}
 				}
@@ -42,13 +42,13 @@ func (p *Position) Vision(c Color) [NumSquares]bool {
 	return seen
 }
 
-// Outpost is the centre square holding c's piece that gives c the whole board
+// Outpost is the outpost (see Shape.Outposts) holding c's piece that gives c the whole board
 // under centre vision, or NoSquare.
 func (p *Position) Outpost(c Color) Square {
 	if p.CenterVision == CenterOff {
 		return NoSquare
 	}
-	for _, sq := range Centre {
+	for _, sq := range p.Shape.Outposts(c) {
 		pc := p.Board[sq]
 		if pc.Is(c) && (p.CenterVision == CenterAny || pc.Kind() == Pawn) {
 			return sq
@@ -174,7 +174,7 @@ func (g *Game) PlayUCI(uci string) (Event, error) {
 	}
 	e := Event{By: us, Move: m, SAN: san, Captured: captured}
 	g.history = append(g.history, e)
-	if g.pos.Hill && g.pos.Board[m.To].Kind() == King && InCentre(m.To) {
+	if g.pos.HillOn() && g.pos.Board[m.To].Kind() == King && g.pos.Shape.InCentre(m.To) {
 		g.end(us, KingOfTheHill)
 		return e, nil
 	}
@@ -303,7 +303,7 @@ func (g *Game) san(m Move) string { return sanAt(&g.pos, m) }
 // sanAt writes m as played from p.
 func sanAt(p *Position, m Move) string {
 	if m.Is(FlagCastle) {
-		if cell(p.Board[m.From].Color(), 6, 0) == m.To {
+		if p.Shape.Cell(p.Board[m.From].Color(), 6, 0) == m.To {
 			return "O-O"
 		}
 		return "O-O-O"

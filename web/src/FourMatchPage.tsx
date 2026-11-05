@@ -1,7 +1,7 @@
 import { BugButton } from './BugReport'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Clock } from './Clock'
-import { aroundFrom, parseMove, pieceImg4, SEAT_COLORS, SEATS, seatSkin, type FourLook, type Seat } from './four'
+import { aroundFrom, geo, parseMove, pieceImg4, SEAT_COLORS, SEATS, seatSkin, type FourLook, type Seat } from './four'
 import { FourBoard } from './FourBoard'
 import { FourSetup } from './FourSetup'
 import { useT, type Dict } from './i18n'
@@ -139,6 +139,7 @@ export function FourMatchPage({ id }: { id: string }) {
             <FourSetup
               seat={you}
               layout={state.settings.setup === 'backRow' ? 'backRow' : 'battleship'}
+              board={state.settings.board}
               look={look}
               mine={state.arranged}
               onReady={(board) => send({ type: 'setup', board })}
@@ -147,7 +148,7 @@ export function FourMatchPage({ id }: { id: string }) {
           ) : (
             <div className="board-turn relative rounded-md" data-your-move={yourMove}>
               <FourBoard
-                board={board.length ? board : emptyBoard}
+                board={board.length ? board : emptyBoard(state?.settings.board)}
                 seat={seat}
                 legal={legal}
                 lastMove={last}
@@ -159,7 +160,7 @@ export function FourMatchPage({ id }: { id: string }) {
                 look={look}
                 onMove={onMove}
               />
-              <SeatLabels state={state} seat={seat} />
+              {state?.settings.board !== 'extended' && <SeatLabels state={state} seat={seat} />}
               {state?.status === 'waiting' && (
                 <WaitingCard
                   id={id}
@@ -287,11 +288,11 @@ function waitingOn(state: FourState, s: Seat) {
 const ticking = (state: FourState, s: Seat) =>
   state.settings.sync ? !!state.ticking?.includes(s) : state.clock?.running === s
 
-const emptyBoard: string[] = Array.from({ length: 196 }, (_, i) => {
-  const x = i % 14
-  const y = Math.floor(i / 14)
-  return (x < 3 || x > 10) && (y < 3 || y > 10) ? ' ' : '.'
-})
+/** The board with nothing on it, while the game loads. */
+const emptyBoard = (board?: string) =>
+  geo(board)
+    .startBoard()
+    .map((v) => (v === ' ' ? ' ' : '.'))
 
 /** Each player's name in the empty corner nearest their pieces. */
 function SeatLabels({ state, seat }: { state: FourState | null; seat: Seat }) {

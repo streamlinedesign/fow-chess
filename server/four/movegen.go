@@ -60,14 +60,14 @@ func (p *Position) PieceMoves(sq Square) []Move {
 	}
 	steps := func(ds []delta) {
 		for _, d := range ds {
-			if to, ok := sq.Offset(d.dx, d.dy); ok {
+			if to, ok := p.Shape.Offset(sq, d.dx, d.dy); ok {
 				add(to)
 			}
 		}
 	}
 	slides := func(ds []delta) {
 		for _, d := range ds {
-			for to, ok := sq.Offset(d.dx, d.dy); ok && add(to); to, ok = to.Offset(d.dx, d.dy) {
+			for to, ok := p.Shape.Offset(sq, d.dx, d.dy); ok && add(to); to, ok = p.Shape.Offset(to, d.dx, d.dy) {
 			}
 		}
 	}
@@ -94,7 +94,7 @@ func (p *Position) PieceMoves(sq Square) []Move {
 }
 
 func (p *Position) castles(sq Square, us Color) []Move {
-	king, kr, qr := castleSquares(us)
+	king, kr, qr := p.Shape.castleSquares(us)
 	if sq != king {
 		return nil
 	}
@@ -102,17 +102,17 @@ func (p *Position) castles(sq Square, us Color) []Move {
 	var moves []Move
 	empty := func(files ...int) bool {
 		for _, f := range files {
-			if !p.Board[cell(us, f, 0)].IsEmpty() {
+			if !p.Board[p.Shape.Cell(us, f, 0)].IsEmpty() {
 				return false
 			}
 		}
 		return true
 	}
 	if p.Castling&(1<<(2*us)) != 0 && p.Board[kr] == rook && empty(5, 6) {
-		moves = append(moves, Move{From: sq, To: cell(us, 6, 0), Flags: FlagCastle})
+		moves = append(moves, Move{From: sq, To: p.Shape.Cell(us, 6, 0), Flags: FlagCastle})
 	}
 	if p.Castling&(2<<(2*us)) != 0 && p.Board[qr] == rook && empty(1, 2, 3) {
-		moves = append(moves, Move{From: sq, To: cell(us, 2, 0), Flags: FlagCastle})
+		moves = append(moves, Move{From: sq, To: p.Shape.Cell(us, 2, 0), Flags: FlagCastle})
 	}
 	return moves
 }
@@ -121,7 +121,7 @@ func (p *Position) pawnMoves(sq Square, us Color) []Move {
 	var moves []Move
 	fx, fy := forward[us][0], forward[us][1]
 	add := func(to Square, flags MoveFlag) {
-		if rankOf(us, to) >= PromotionRank {
+		if p.Shape.RankOf(us, to) >= p.Shape.PromotionRank() {
 			for _, k := range promoKinds {
 				moves = append(moves, Move{From: sq, To: to, Promo: k, Flags: flags})
 			}
@@ -131,17 +131,17 @@ func (p *Position) pawnMoves(sq Square, us Color) []Move {
 	}
 	enemy := func(to Square) bool { t := p.Board[to]; return !t.IsEmpty() && t.Color() != us }
 
-	if one, ok := sq.Offset(fx, fy); ok && p.Board[one].IsEmpty() {
+	if one, ok := p.Shape.Offset(sq, fx, fy); ok && p.Board[one].IsEmpty() {
 		if !p.JesterPawns {
 			add(one, 0)
 		}
-		if two, ok := one.Offset(fx, fy); ok && rankOf(us, sq) == 1 && p.Board[two].IsEmpty() {
+		if two, ok := p.Shape.Offset(one, fx, fy); ok && p.Shape.RankOf(us, sq) == 1 && p.Board[two].IsEmpty() {
 			moves = append(moves, Move{From: sq, To: two, Flags: FlagDoublePush})
 		}
 	}
 	// The diagonals ahead: sideways is the axis across the pawn's way.
 	for _, side := range []int{-1, 1} {
-		to, ok := sq.Offset(fx+side*fy*fy, fy+side*fx*fx)
+		to, ok := p.Shape.Offset(sq, fx+side*fy*fy, fy+side*fx*fx)
 		if !ok {
 			continue
 		}
@@ -154,7 +154,7 @@ func (p *Position) pawnMoves(sq Square, us Color) []Move {
 	}
 	if p.JesterPawns {
 		for _, d := range kingDeltas {
-			to, ok := sq.Offset(d.dx, d.dy)
+			to, ok := p.Shape.Offset(sq, d.dx, d.dy)
 			switch {
 			case !ok:
 			case p.Board[to].IsEmpty():

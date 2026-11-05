@@ -4,9 +4,10 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Four players: an extended board under Mods, 16 by 16 with four rows each and neutral corners anyone can cross. Centre vision comes from your two centre squares on the far side, pawns promote on the far edge, Battleship uses all four rows, and there's no hill.
 - Your look is yours to show: you pick a set for when you play White and one for when you play Black, and your opponent and spectators see your pieces and tiles as you picked them. Watch and replays show them too. Same set on both sides is fine: colours have light lines as White and dark lines as Black, themes their light and dark halves.
 - Coloured sets now come with light lines and with dark lines instead of mixed outlines; bots play theirs the same way.
-- Tiles cover your whole half of the board in a two-player game, and your first three rows with four players.
+- Tiles cover your whole half of the board in a two-player game, and your own rows (three, or four on the extended board) with four players.
 - No skins means classic pieces and the plain board for every player on your screen; bots and the four-player colours stay.
 - Four players: a player with a skin plays in one of their two sets, picked at random per game; everyone else keeps their seat colour.
 - Settings opens about six times faster on a phone: plain radio buttons, and the avatar is picked by set, then piece.
