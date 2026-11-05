@@ -301,7 +301,7 @@ function Arena({ x, me, act }: { x: Tournament; me?: string; act: (x: Tournament
                   onClick={(e) => go(e, `/u/${p.username}`)}
                   className="flex min-w-0 items-center gap-2.5"
                 >
-                  <Avatar size={30} />
+                  <Avatar size={30} name={p.username} />
                   <span className="flex min-w-0 flex-col leading-tight">
                     <span className="truncate font-semibold">{p.username}</span>
                     <span className="text-xs text-accent">

@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -41,6 +42,8 @@ type credentials struct {
 type meResponse struct {
 	Username string `json:"username"`
 	Rating   int    `json:"rating"`
+	// The player's avatar and look preferences, so they follow them to every device.
+	lookResponse
 }
 
 func (a *Auth) routes(mux *http.ServeMux) {
@@ -57,7 +60,7 @@ func (a *Auth) routes(mux *http.ServeMux) {
 			writeJSON(w, nil)
 			return
 		}
-		writeJSON(w, meResponse{u.Username, int(u.Rating + 0.5)})
+		writeJSON(w, a.me(u))
 	})
 }
 
@@ -229,7 +232,16 @@ func (a *Auth) startSession(w http.ResponseWriter, r *http.Request, u *User) {
 		Name: sessionCookie, Value: token, Path: "/", Expires: expires,
 		HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: isHTTPS(r),
 	})
-	writeJSON(w, meResponse{u.Username, int(u.Rating + 0.5)})
+	writeJSON(w, a.me(u))
+}
+
+func (a *Auth) me(u *User) meResponse {
+	look, err := a.store.Look(u.ID)
+	if err != nil {
+		log.Printf("me: %v", err)
+	}
+	look.fill()
+	return meResponse{u.Username, int(u.Rating + 0.5), look}
 }
 
 // user returns the signed-in user for a request, or nil for a guest.

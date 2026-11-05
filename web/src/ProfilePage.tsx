@@ -143,7 +143,7 @@ export function ProfilePage({ name }: { name: string }) {
     <Page>
       <div className="home-row">
         <section className="home-cell prof-head">
-          <Avatar size={112} online={profile.online} className="max-[720px]:!size-[72px]" />
+          <Avatar size={112} online={profile.online} name={profile.username} className="max-[720px]:!size-[72px]" />
           <div className="min-w-0">
             <h1 className="text-[clamp(32px,6vw,48px)] leading-none font-semibold tracking-tight break-all">
               {profile.username}
@@ -440,7 +440,7 @@ function MatchCard({ g, owner }: { g: GameSummary; owner: string }) {
       </div>
       <div className="opp">
         <span className="flex min-w-0 items-center gap-2.5">
-          <Avatar size={30} />
+          <Avatar size={30} name={g.opponent || undefined} />
           <span className="truncate font-semibold">{opponent}</span>
         </span>
         <div className="text-right">

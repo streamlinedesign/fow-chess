@@ -113,7 +113,12 @@ export function ReplayPage({ id, round }: { id: string; round: number }) {
         <span className="font-semibold">{t.common.guest}</span>
       )}
       <span className="text-accent">{c === 'w' ? t.common.white : t.common.black}</span>
-      <Captured pieces={f.captured[c]} look={replay.settings} className="ml-auto text-[clamp(16px,calc(var(--board)/30),22px)]" />
+      <Captured
+        pieces={f.captured[c]}
+        look={replay.settings}
+        bottom={orientation}
+        className="ml-auto text-[clamp(16px,calc(var(--board)/30),22px)]"
+      />
     </div>
   )
 

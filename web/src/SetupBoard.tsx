@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useT } from './i18n'
-import { pieceImg, squareIndex } from './position'
+import { squareIndex } from './position'
+import { usePieces } from './prefs'
 import { HILL, setupMode, type Settings } from './settings'
 import { Button } from './ui'
 import type { Color } from './useMatch'
@@ -90,6 +91,7 @@ export function SetupBoard({
   below?: ReactNode
 }) {
   const t = useT()
+  const pieceImg = usePieces(you)
   const kindNames: Record<string, string> = {
     K: t.match.king,
     Q: t.match.queen,

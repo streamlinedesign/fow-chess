@@ -97,7 +97,8 @@ func main() {
 		// standard start with no clock.
 		var req struct {
 			Settings
-			// Side is the demo player's colour, "w" (the default) or "b".
+			// Side is the colour the player wants against a bot: "w", "b", or "" for
+			// either. The demo board defaults to White.
 			Side string `json:"side"`
 		}
 		json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&req)
@@ -110,12 +111,12 @@ func main() {
 		}
 		var m *Match
 		if settings.Bot != "" {
-			// Against a bot you get a random colour, so you learn both. On the
-			// demo board you pick.
+			// Against a bot you get the colour you prefer, or a random one so you
+			// learn both. The demo board starts you as White.
 			bot := botPlayer(bots.Level(settings.Bot))
-			if settings.Demo && req.Side == "b" {
+			if req.Side == "b" {
 				m = hub.CreateBetween(bot, p, settings)
-			} else if settings.Demo || rand.IntN(2) == 0 {
+			} else if req.Side == "w" || settings.Demo || rand.IntN(2) == 0 {
 				m = hub.CreateBetween(p, bot, settings)
 			} else {
 				m = hub.CreateBetween(bot, p, settings)

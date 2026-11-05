@@ -93,7 +93,7 @@ export function MessagesPage({ name }: { name?: string }) {
                   data-unread={c.unread > 0 || undefined}
                   onClick={() => navigate(`/messages/${c.with.username}`)}
                 >
-                  <Avatar size={44} online={c.with.online} />
+                  <Avatar size={44} online={c.with.online} name={c.with.username} />
                   <div className="min-w-0">
                     <div className="font-semibold">{c.with.username}</div>
                     <div className="prev">

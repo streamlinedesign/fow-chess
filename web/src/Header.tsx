@@ -184,7 +184,7 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
           className="rounded-full p-0.5 transition-shadow outline-none hover:shadow-[0_0_0_2px_var(--color-fg)] focus-visible:shadow-[0_0_0_2px_var(--color-fg)] data-[state=open]:shadow-[0_0_0_2px_var(--color-fg)]"
         >
           <span className="relative block">
-            <Avatar size={34} />
+            <Avatar size={34} name={username} />
             {unreadChats > 0 && (
               <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-fg shadow-[0_0_0_2px_var(--color-bg)]" />
             )}
@@ -193,7 +193,7 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
       }
     >
       <div className="flex items-center gap-3 px-2.5 pt-3 pb-3.5">
-        <Avatar size={44} />
+        <Avatar size={44} name={username} />
         <div className="flex min-w-0 flex-col">
           <span className="truncate text-[17px] font-semibold">{username}</span>
           <span className="font-mono text-sm text-accent tabular-nums">{rating}</span>

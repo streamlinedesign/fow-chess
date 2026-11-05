@@ -1,5 +1,6 @@
 import { memo, useRef, useState } from 'react'
-import { pieceAt, pieceImg, squareIndex, type Look } from './position'
+import { pieceAt, squareIndex, type Look } from './position'
+import { usePieces } from './prefs'
 import { HILL, OUTPOSTS } from './settings'
 import type { Color } from './useMatch'
 
@@ -9,6 +10,8 @@ type Props = {
   /** 64 characters from a1 to h8, as sent by the server (see position.ts). */
   board: string
   orientation: Color
+  /** The player's own side, drawn in their own set; the bottom side when not given. */
+  you?: Color | null
   /** UCI moves the viewer may play right now; empty when it isn't their turn. */
   legal: string[]
   lastMove?: { from: string; to: string } | null
@@ -74,8 +77,10 @@ export const Board = memo(function Board({
   hill,
   center,
   look,
+  you,
   onMove,
 }: Props) {
+  const img = usePieces(you ?? orientation)
   const boardRef = useRef<HTMLDivElement>(null)
   const drag = useRef<Drag | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
@@ -184,7 +189,7 @@ export const Board = memo(function Board({
         >
           {col === 0 && <span className="coord top-[4%] left-[5%]">{sq[1]}</span>}
           {row === 7 && <span className="coord right-[5%] bottom-[4%]">{sq[0]}</span>}
-          {piece && <img className="piece" src={pieceImg(piece, look)} alt={piece} draggable={false} />}
+          {piece && <img className="piece" src={img(piece, look)} alt={piece} draggable={false} />}
         </div>,
       )
     }

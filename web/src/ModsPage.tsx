@@ -4,6 +4,7 @@ import { FourBoard } from './FourBoard'
 import { useT } from './i18n'
 import { Page } from './Page'
 import { playerId } from './player'
+import { getPrefs } from './prefs'
 import { navigate } from './router'
 import { describeTime, loadSettings, modeName, saveSettings, setupMode, type Settings } from './settings'
 import { SettingsBoard, setupNotes } from './SettingsBoard'
@@ -56,7 +57,13 @@ export function ModsPage() {
         navigate(`/f/${id}`)
         return
       }
-      const body = { ...settings, kingCapture: settings.kingCapture || !!settings.sync, mods: true, unrated: true }
+      const body = {
+        ...settings,
+        kingCapture: settings.kingCapture || !!settings.sync,
+        mods: true,
+        unrated: true,
+        side: getPrefs().side,
+      }
       const res = await fetch(`/api/matches?player=${playerId}`, {
         method: 'POST',
         body: JSON.stringify(body),

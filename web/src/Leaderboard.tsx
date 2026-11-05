@@ -105,7 +105,7 @@ function Row({ leader, you }: { leader: Leader; you: boolean }) {
           }}
           className="flex min-w-0 items-center gap-2.5"
         >
-          <Avatar size={30} />
+          <Avatar size={30} name={leader.username} />
           <span className="flex min-w-0 flex-col leading-tight">
             <span className="truncate font-semibold">{leader.username}</span>
             {you && <span className="text-[13px] text-accent">{t.common.you}</span>}
