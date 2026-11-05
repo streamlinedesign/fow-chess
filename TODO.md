@@ -8,6 +8,7 @@
 
 ## Next
 
+- Security before the beta, still open (from the review): a knocked-out four-player player sees the whole board and can still chat to players who are in; security headers (CSP, frame-ancestors, nosniff, HSTS) in the Caddy block when `deploy/` is written; never run `make db-seed` against production (known `demo` passwords)
 - Copy the backward pawns removal (`engine/`) into `chess-bots`
 - Beta launch: check the new home page and mods page on a phone
 - Copy the jester pawns engine change into `chess-bots` (or extract the engine module first)
