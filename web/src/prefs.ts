@@ -5,7 +5,7 @@ import { avatarImg, CLASSIC, concrete, familyOf, lookKind, SET_IDS, setImg, TILE
 
 /**
  * How a player likes the game to look: their set as White and as Black and
- * the tiles on their first three rows, which their opponents and spectators
+ * the tiles on their half of the board, which their opponents and spectators
  * see too; the side they like to play; their avatar. Guests keep them in this
  * browser; signed-in players on the server too, so they follow them to every
  * device. Must match prefs in server/prefs.go.
@@ -152,13 +152,12 @@ export function usePieces(mine?: 'w' | 'b'): PieceImg {
 
 /**
  * The tile image for a square, or undefined for a plain one. A player's tiles
- * cover only their own first three rows: ranks 1 to 3 for White, 6 to 8 for
- * Black. Rank counts from 0.
+ * cover their own half: ranks 1 to 4 for White, 5 to 8 for Black. Rank counts from 0.
  */
 export function tilesFor(p: Prefs, mine?: 'w' | 'b', look?: Look) {
   return (rank: number, light: boolean) => {
-    const color = rank <= 2 ? 'w' : rank >= 5 ? 'b' : null
-    if (!color || p.plain || look?.sets?.[color]) return undefined
+    const color = rank <= 3 ? 'w' : 'b'
+    if (p.plain || look?.sets?.[color]) return undefined
     const skin = color === mine ? p : look?.skins?.[color]
     return skin ? tileImg(light ? skin.lightTiles : skin.darkTiles, light) : undefined
   }
