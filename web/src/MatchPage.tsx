@@ -50,10 +50,15 @@ export function MatchPage({ id }: { id: string }) {
 
   // Show our own move immediately. Any newer state from the server ends the
   // prediction, whether it confirms the move or rejects it.
-  const predicting = !!state && !!pending && pending.sentWith === state
+  const sync = !!state?.settings.sync
+  const sentNow = !!state && !!pending && pending.sentWith === state
+  // In Sync Move nothing moves until the round is played: the move you sent is marked, and locked in.
+  const predicting = sentNow && !sync
   const board = state ? (predicting ? applyLocal(state.board, pending!.uci) : state.board) : '.'.repeat(64)
-  const legal = state && !predicting && conn === 'open' ? state.legal : []
+  const legal = state && !sentNow && conn === 'open' ? state.legal : []
   const last = predicting ? { from: pending!.uci.slice(0, 2), to: pending!.uci.slice(2, 4) } : state?.last
+  const plannedUci = sync ? (sentNow ? pending!.uci : state?.planned) || '' : ''
+  const planned = plannedUci ? { from: plannedUci.slice(0, 2), to: plannedUci.slice(2, 4) } : null
 
   // Once the game is rated, the rating in the top bar is out of date.
   const rated = !!state?.ratingDiff
@@ -75,8 +80,10 @@ export function MatchPage({ id }: { id: string }) {
   const playing = state?.status === 'playing'
   const ply = state?.ply ?? 0
   const turn = state && (predicting ? other(state.turn) : state.turn)
-  const toMove = playing && conn === 'open' ? turn : null
-  const yourMove = !!you && toMove === you
+  const toMove = playing && conn === 'open' && !sync ? turn : null
+  const yourMove = sync ? playing && !!you && !plannedUci && legal.length > 0 : !!you && toMove === you
+  /** Whether the game waits on color: to move, or in Sync Move to send a move. */
+  const waitsOn = (color: Color) => (sync ? playing && conn === 'open' && !state?.sent?.[color] : toMove === color)
 
   const sendMove = useCallback(
     (uci: string) => {
@@ -160,6 +167,7 @@ export function MatchPage({ id }: { id: string }) {
         : you && you !== (state.result === '1-0' ? 'w' : 'b') && state.reason === 'capturing the king'
           ? t.match.kingEaten
           : `${over.title} ${how(state.reason, t)}`
+    if (sync) return !you ? t.match.syncPicking : plannedUci ? t.match.syncSent : t.match.syncPick
     const check = state.check && !predicting && !state.behind ? t.match.check : ''
     if (!you) return `${check}${t.match.sideToMove(sideName(t, turn!))}`
     return `${check}${turn === you ? t.common.yourMove : t.common.theirMove}`
@@ -175,7 +183,7 @@ export function MatchPage({ id }: { id: string }) {
           className="board-wrap mx-auto flex flex-col gap-3 lg:mx-0"
           data-setup={state?.status === 'setup' && !!you}
         >
-          <PlayerBar color={top} state={state} you={you} active={toMove === top} />
+          <PlayerBar color={top} state={state} you={you} active={waitsOn(top)} />
           {state?.status === 'setup' && you ? (
             <SetupBoard
               key={`${state.round}:${you}`}
@@ -196,6 +204,8 @@ export function MatchPage({ id }: { id: string }) {
                   orientation={orientation}
                   legal={legal}
                   lastMove={last}
+                  alsoMove={predicting ? undefined : state?.also}
+                  planned={planned}
                   check={predicting ? undefined : state?.check}
                   danger={predicting ? undefined : state?.danger}
                   unsafe={state?.unsafe}
@@ -216,7 +226,7 @@ export function MatchPage({ id }: { id: string }) {
                   </div>
                 )}
               </div>
-              <PlayerBar color={bottom} state={state} you={you} active={toMove === bottom} />
+              <PlayerBar color={bottom} state={state} you={you} active={waitsOn(bottom)} />
             </>
           )}
         </section>
@@ -230,6 +240,7 @@ export function MatchPage({ id }: { id: string }) {
             )}
             {status}
           </p>
+          {plannedUci && playing && <p className="-mt-2 text-sm text-accent">{t.match.syncLocked}</p>}
           {danger && (
             <p className="-mt-2 flex items-center gap-2 text-sm font-semibold text-danger" role="status">
               <span className="danger-dot" aria-hidden />
@@ -468,11 +479,12 @@ function PlayerBar({ color, state, you, active }: PlayerBarProps) {
         <Captured
           pieces={state?.captured[color] ?? ''}
           look={state?.settings}
-          className="text-[clamp(16px,calc(var(--board)/30),22px)]" />
+          className="text-[clamp(16px,calc(var(--board)/30),22px)]"
+        />
         {state?.clock && (
           <Clock
             left={state.clock.left[color]}
-            running={state.clock.running === color}
+            running={state.settings.sync ? !!state.ticking?.includes(color) : state.clock.running === color}
             since={state.receivedAt}
             daily={state.settings.time.perMove > 0}
           />

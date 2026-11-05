@@ -45,9 +45,10 @@ func (m *Match) pokeBot() {
 				m.pokeBot()
 			}
 		}
-	case int(m.game.Turn()) == c && !m.botThinking:
+	case (m.settings.Sync && m.pending[c] == "" || !m.settings.Sync && int(m.game.Turn()) == c) && !m.botThinking:
 		m.botThinking = true
 		pos := m.game.Position()
+		pos.Turn = engine.Color(c) // in Sync Move the bot moves every round
 		var seen *[64]bool
 		if m.settings.Fog {
 			v := pos.Vision(engine.Color(c))
@@ -65,6 +66,7 @@ func (m *Match) pokeBot() {
 			}
 			m.save()
 			m.broadcast()
+			m.pokeBot() // a Sync Move round may have been played: the bot moves again
 		})
 	}
 }

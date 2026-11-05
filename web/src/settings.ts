@@ -27,7 +27,7 @@ export type Settings = {
   hill?: boolean
   /** Centre vision: a piece on the centre of the opponent's half shows you the whole board. Every game has 'any'; mods games may turn it off; 'pawn' is from early demo games. Must match centerVisions in server/view.go. */
   centerVision?: CenterVision
-  /** Four players only: Sync Move, everyone moves at once each round. */
+  /** Sync Move: everyone moves at once each round. Always Eat the King. Mods only. */
   sync?: boolean
   /** Never ranked: set by the server for bot and mods games. Players can't ask for it. */
   unrated?: boolean
@@ -188,6 +188,7 @@ export function twists(s: Settings, d: Dict) {
     ...(s.hill ? [d.legacy.hill] : []),
     ...(s.jumpKing ? [d.legacy.jump] : []),
     ...(s.jesterPawns ? [d.legacy.jesterPawns] : []),
+    ...(s.sync ? [d.four.sync] : []),
     // Centre vision for any piece is the game; mods games can turn it off, and early demo games counted only pawns.
     ...(s.centerVision === 'pawn' ? [d.legacy.centerPawn] : s.mods && !s.centerVision ? [d.legacy.noCenter] : []),
   ]

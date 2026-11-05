@@ -83,6 +83,9 @@ type Rules struct {
 	// CenterVision gives the whole board to a player holding an outpost (see
 	// Position.Outpost).
 	CenterVision CenterVision
+	// Sync is Sync Move: both players pick a move each round without seeing
+	// the other's, and both happen at once; see PlayRound. Needs KingCapture.
+	Sync bool
 }
 
 func NewGameWithRules(r Rules) *Game {
@@ -98,7 +101,7 @@ func NewGameFromFEN(fen string, rules ...Rules) (*Game, error) {
 	if len(rules) > 0 {
 		r := rules[0]
 		pos.KingCapture, pos.JumpKing, pos.Hill = r.KingCapture, r.JumpKing, r.Hill
-		pos.CenterVision, pos.JesterPawns = r.CenterVision, r.JesterPawns
+		pos.CenterVision, pos.JesterPawns, pos.Sync = r.CenterVision, r.JesterPawns, r.Sync
 	}
 	g := &Game{pos: pos, seen: map[string]int{}, start: fen}
 	g.seen[pos.repetitionKey()] = 1
@@ -119,6 +122,9 @@ func (g *Game) LegalMoves() []Move    { return g.pos.LegalMoves() }
 func (g *Game) PlayUCI(uci string) (PlayedMove, error) {
 	if g.Over() {
 		return PlayedMove{}, ErrGameOver
+	}
+	if g.pos.Sync {
+		return PlayedMove{}, ErrIllegalMove // moves come in rounds; see PlayRound
 	}
 	m, ok := g.pos.FindMove(uci)
 	if !ok {

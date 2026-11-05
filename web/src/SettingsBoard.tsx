@@ -19,6 +19,7 @@ export function setupNotes(settings: Settings, t: Dict) {
     ...(settings.hill ? [t.settingsBoard.hill] : []),
     ...(settings.centerVision ? [t.settingsBoard.center] : []),
     ...(settings.jesterPawns ? [t.settingsBoard.jester] : []),
+    ...(settings.sync ? [t.four.previewSync] : []),
   ]
 }
 

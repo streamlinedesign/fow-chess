@@ -170,6 +170,7 @@ export const hr: Dict = {
   },
 
   panel: {
+    syncEat: 'Istodobni potez se uvijek igra kao Pojedi kralja: nema šaha kad obje strane igraju odjednom.',
     title: 'Postavke partije',
     mode: 'Raspored',
     timeControl: 'Kontrola vremena',
@@ -324,6 +325,10 @@ export const hr: Dict = {
   },
 
   match: {
+    syncPick: 'Odaberi potez',
+    syncSent: 'Potez poslan. Čekamo protivnika',
+    syncPicking: 'Oba igrača biraju potez',
+    syncLocked: 'Tvoj potez je zaključan. Krug se odigra kad protivnik pošalje svoj.',
     notFound: 'Partija nije pronađena',
     notFoundDetail: (id) => `Kod ${id} ne postoji ili je poslužitelj ponovno pokrenut.`,
     outdated: 'Poslužitelj je zastario',
