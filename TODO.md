@@ -19,7 +19,6 @@
 
 ## Later
 
-- Holy set: a new knight symbol, centred low on the knight (SVGs in `web/src/pieces/holy/`)
 - Side preference for games shared by code (the creator always plays White for now)
 
 - chess-bots: copy `server/engine` (Sync Move, jester pawns and more are missing there)
@@ -29,5 +28,6 @@
 
 ## Done
 
+- 0.10.1: themed piece sets (galaxy, blueprint, holy with the wing knight, ancient), tile skins with Greek key ancient tiles, skins switch
 - 0.5.0: bug reports from the footer and game pages; read them with `make bugs`
 - 0.1.0: the game, accounts, ratings, modes, tournaments, bots

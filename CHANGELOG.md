@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Ancient tiles: a Greek key border on all four sides of each square that joins up with the next square, in place of the single band along the bottom.
 - Themed piece sets: galaxy, blueprint, holy and ancient, light for White and dark for Black, for your pieces or your opponent's. Their light and dark pieces are avatars too.
 - Tile skins: pick a skin for the light squares and one for the dark squares (galaxy, blueprint, holy, ancient or plain). They cover only your half of the board.
 - Skins switch: off draws classic pieces (bots included) and the plain board everywhere, keeping your picks for when you turn it back on.
