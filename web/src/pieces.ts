@@ -17,7 +17,7 @@ import bX from './pieces/bX.svg'
 
 // Eat the King's own set: cream pieces with black lines, black pieces with a cream rim so they
 // still show on the dark theme's background. Small enough that Vite inlines them.
-// The mods have their own pieces: J is the jester pawn, X the jump king (a crowned knight).
+// The mods have their own pieces: J is the jester pawn, X the jump king (a prince).
 export const pieceSrc: Record<string, string> = {
   ...{ wK, wQ, wR, wB, wN, wP, wJ, wX },
   ...{ bK, bQ, bR, bB, bN, bP, bJ, bX },
