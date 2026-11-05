@@ -35,6 +35,8 @@ type fourSettings struct {
 	Setup string `json:"setup,omitempty"`
 	// Sync is Sync Move: everyone moves at once each round.
 	Sync bool `json:"sync,omitempty"`
+	// KingWarning tells a player when their king is attacked (see Settings).
+	KingWarning bool `json:"kingWarning,omitempty"`
 }
 
 var fourLayouts = map[string]four.Layout{"": four.Standard, "backRow": four.BackRow, "battleship": four.Battleship}
@@ -1012,6 +1014,9 @@ func (m *FourMatch) view(s fourState, color, side int) []byte {
 	if color >= 0 {
 		s.You = four.Color(color).String()
 		s.fourView = fourViewFor(m.game, color, s.Status == "playing", m.settings.Fog)
+		if !m.settings.KingWarning {
+			s.Danger, s.DangerHidden = "", false
+		}
 		s.Planned = m.pending[color]
 		if s.Planned != "" {
 			s.Legal = []string{}

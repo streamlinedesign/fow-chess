@@ -4,6 +4,8 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Eat the King is now exactly fog of war, no check or checkmate, and no warning when your king is attacked. Centre vision and the king-in-danger ring are mods (Centre vision, and the new King warning switch); arenas and ranked games have neither. Games already saved keep what they were played with.
+- Rules page split in two: `/rules` is Eat the King (the game, layouts, playing a match, the Opera Game replay) and `/rules/mods` has one card per mod. The mods page links to it.
 - Sync Move for two-player mods games: both players send a move each round without seeing the other's, then both happen at once, with captures last, as in four-player Sync Move. A sent move is locked in. Both clocks run until each side sends. Sync Move games are always Eat the King.
 - Backward pawns are gone: the mod, its rule in the engine (two- and four-player) and its strings.
 - Dragging a piece on the four-player board no longer selects (and highlights) the squares it passes.

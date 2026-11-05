@@ -164,6 +164,7 @@ export const en = {
     hill: 'Or walk your king onto one of the ringed centre squares.',
     center: 'Put any piece on a ringed square in their half to see the whole board.',
     jester: 'Pawns are jesters: they step and take one square any way, like a king.',
+    warning: 'You are told when your king is attacked.',
     standard: 'The pieces start as in chess.',
     backRow: 'Arrange your back row first.',
     battleship: 'Place every piece anywhere in the ringed rows first.',
@@ -189,14 +190,16 @@ export const en = {
       'Pawns also step and take one square any way, like a king. They keep the double first step, en passant and promotion.',
     center: 'Centre vision',
     centerHint:
-      'Any piece on d5 or e5 (d4 or e4 for Black) shows you the whole board while it stays there. On in every normal game.',
+      'Any piece on d5 or e5 (d4 or e4 for Black) shows you the whole board while it stays there.',
+    warning: 'King warning',
+    warningHint: 'Say when your king is attacked, even from the fog, and mark the squares around it that a piece you see covers.',
     modsNote: 'Mods games are never ranked.',
   },
 
   about: {
     title: 'About the game',
     paras: [
-      'Eat the King is the original game: chess in the fog of war. You see only the squares your pieces can reach, there is no check, and you win by capturing the king. Every game you start from this page is that game.',
+      'Eat the King is the original game: chess in the fog of war. You see only the squares your pieces can reach, there is no check, nothing warns you when your king is attacked, and you win by capturing it. Every game you start from this page is that game.',
       'Everything else is a mod. Mods turn one dial at a time: lift the fog, play to checkmate, set your pieces up in secret, race to the hill, or bring four players to one board. Mods games are never ranked.',
     ],
     inspired: 'Inspired by',
@@ -215,8 +218,9 @@ export const en = {
   mods: {
     title: 'Mods',
     currentSetup: 'Current setup',
+    howTheyWork: 'How each mod works',
     intro:
-      'The game with the dials exposed. Turn the fog off, play with check, add a hill or a jumping king, or take the clock away. Mods games are for fun and never count for rating.',
+      'The game with the dials exposed. Turn the fog off, play with check, get a warning when your king is attacked, add a hill or a jumping king, or take the clock away. Mods games are for fun and never count for rating.',
   },
 
   four: {
@@ -291,7 +295,8 @@ export const en = {
     jump: 'Jump King',
     jesterPawns: 'Jester pawns',
     centerPawn: 'Centre vision (pawns)',
-    noCenter: 'No centre vision',
+    center: 'Centre vision',
+    kingWarning: 'King warning',
   },
 
   time: {
@@ -441,7 +446,15 @@ export const en = {
   rules: {
     heading: 'How it plays',
     intro:
-      'Normal chess pieces and moves, with two changes: you only see what your pieces see, and you win by taking the king.',
+      'Eat the King is chess with three changes: you only see what your pieces see, nothing tells you when your king is attacked, and you win by taking it.',
+    nav: { aria: 'Rules', core: 'Eat the King', mods: 'Mods' },
+    layouts: 'Layouts',
+    layoutsSub: 'Where the pieces start. Every layout is still Eat the King.',
+    playing: 'Playing a match',
+    modsHeading: 'Mods',
+    modsIntro:
+      'Each mod changes one rule of Eat the King. Turn them on from the Mods page, in any mix. Mods games are never ranked.',
+    openMods: 'Set up a mods game',
     yourMatchCode: 'your match code',
     cards: {
       fog: {
@@ -449,36 +462,35 @@ export const en = {
         title: 'Fog of war',
         p: [
           'You only see what your pieces see: **their own squares** and **every square they could move to**, captures included. The rest is covered.',
-          'Get **any piece onto the centre of their half** (d5 or e5 as White, d4 or e4 as Black) and you **see the whole board** for as long as it stays there. Those squares are ringed on the board, yours solid and theirs dashed, and yours light up while you hold one.',
-          "A **pawn** has its own vision: it always sees the square ahead, even when blocked, and from its starting square both squares ahead, even when it can't step there. It sees its diagonals only when there's something to take. You get no hints about the other side: no last-move highlight, and their moves show as ? in the list. The fog lifts when the game ends.",
+          "A **pawn** has its own vision: it always sees the square ahead, even when blocked, and from its starting square both squares ahead, even when it can't step there. It sees its diagonals only when there's something to take.",
+          'You get no hints about the other side: no last-move highlight, and their moves show as ? in the list. The fog lifts when the game ends.',
         ],
       },
       eat: {
         kind: 'How you win',
         title: 'Eat the King',
         p: [
-          'There is **no check** and no checkmate. Kings may walk into danger, stay there, and castle through an attack. You win by **capturing the king**.',
-          'Under fog nobody can always see the threats, so a king can be taken by a piece that never showed. That is the game.',
+          'There is **no check** and **no checkmate**. Kings may walk into danger, stay there, and castle through an attack. You win by **capturing the king**.',
         ],
       },
-      danger: {
-        kind: 'The one warning',
-        title: 'King in danger',
+      blind: {
+        kind: 'What you are told',
+        title: 'No warnings',
         p: [
-          'When **any** piece attacks your king, the king gets a red ring and the page says so, **even when the attacker is hidden in the fog**. You learn that you are attacked, not from where.',
-          'Pick the king up and the squares a piece you can see covers are marked too. Those marks only use what is already on your board, so a hidden attacker stays hidden.',
+          "Nothing tells you your king is attacked: **no check**, no red ring, no message. If you can't see the attacker, you don't know it's there.",
+          'So a king can be taken by a piece that never showed. That is the game.',
         ],
       },
       start: {
         kind: 'Getting started',
         title: 'Starting a match',
         p: [
-          'Pick a mode and a clock, then press **New match**. You get a 6-character **code** and a link to share. You play White, and whoever opens the link next plays Black.',
+          'Pick a layout and a clock, then press **New match**. You get a 6-character **code** and a link to share. You play White, and whoever opens the link next plays Black.',
           'Refreshing or losing signal puts you back in your seat. You can offer a draw or resign at any time, and a **rematch** swaps colours.',
         ],
       },
       backRow: {
-        kind: 'Mode',
+        kind: 'Layout',
         title: 'Back row',
         p: [
           'Before the game, you each **arrange your back row** however you like. The pawns stay where they always are.',
@@ -486,7 +498,7 @@ export const en = {
         ],
       },
       battleship: {
-        kind: 'Mode',
+        kind: 'Layout',
         title: 'Battleship',
         p: [
           'Place **all sixteen pieces anywhere in your four rows**, pawns included. Hide the king, build a wall, or aim a rook down an open file.',
@@ -501,20 +513,12 @@ export const en = {
           'It still counts, but it moves both ratings only a quarter as far as a whole game.',
         ],
       },
-      jester: {
-        kind: 'Mod',
-        title: 'Jester pawns',
-        p: [
-          'On the **mods** page, pawns can become jesters. A jester **steps one square any way, like a king**, and **takes on any of those squares**, straight ahead and backward included.',
-          'The rest is still a pawn: the **double step** from its starting square, **en passant**, and **promotion** on the last rank. It sees every square around it, and a jester next to a king attacks it.',
-        ],
-      },
       clocks: {
         kind: 'Ranked',
         title: 'Clocks and rating',
         p: [
           "Clocks run on the server, so closing the tab doesn't stop them. Run out and you lose, unless your opponent can't win with what's left. **Daily** gives you 24 hours per move and **Weekly** 7 days, reset after every move.",
-          'Every game between two signed-in players is **ranked**, and every mode shares one rating, starting at 1500. Press **Play** on the home page to be paired with the player nearest your rating. **Mods** games and games against a bot never count.',
+          'Every game between two signed-in players is **ranked**, and every layout shares one rating, starting at 1500. Press **Play** on the home page to be paired with the player nearest your rating. **Mods** games and games against a bot never count.',
         ],
       },
       draws: {
@@ -522,7 +526,72 @@ export const en = {
         title: 'Draws and the rest',
         p: [
           'A game is drawn by **stalemate**, **threefold repetition**, the **fifty-move rule**, **insufficient material**, or when you both agree.',
-          '**Castling**, **en passant** and **promotion** all work. The server checks every move, so the board only offers legal ones.',
+          '**Castling** and **en passant** work, and a pawn on the last rank **promotes** to the piece you pick. The server checks every move, so the board only offers legal ones.',
+        ],
+      },
+    },
+    modCards: {
+      fullBoard: {
+        kind: 'What you see',
+        title: 'Full board',
+        p: ['Turn the **fog off** and both sides see the whole board, as in plain chess.'],
+      },
+      checkmate: {
+        kind: 'How you win',
+        title: 'Checkmate',
+        p: [
+          'Play with **check**: you may not leave your king attacked, and you win by **checkmate** instead of taking the king.',
+          "Under fog you're always told when you're in check, since it limits your moves, but never when you give it.",
+        ],
+      },
+      warning: {
+        kind: 'What you are told',
+        title: 'King warning',
+        p: [
+          'When **any** piece attacks your king, the king gets a red ring and the page says so, **even when the attacker is hidden in the fog**. You learn that you are attacked, not from where.',
+          'Pick the king up and the squares a piece you can see covers are marked too, so a hidden attacker stays hidden.',
+        ],
+      },
+      center: {
+        kind: 'What you see',
+        title: 'Centre vision',
+        p: [
+          'Get **any piece onto the centre of their half** (d5 or e5 as White, d4 or e4 as Black) and you **see the whole board** for as long as it stays there.',
+          'Those squares are ringed on the board, yours solid and theirs dashed, and yours light up while you hold one.',
+        ],
+      },
+      hill: {
+        kind: 'How you win',
+        title: 'King of the Hill',
+        p: ['You also win by walking your king onto **one of the four centre squares**. Taking the king still wins too.'],
+      },
+      jump: {
+        kind: 'Pieces',
+        title: 'Jump King',
+        p: ['Your king can also **jump like a knight**, over anything in the way. It is drawn as a prince so you can tell.'],
+      },
+      jester: {
+        kind: 'Pieces',
+        title: 'Jester pawns',
+        p: [
+          'A jester **steps one square any way, like a king**, and **takes on any of those squares**, straight ahead and backward included.',
+          'The rest is still a pawn: the **double step** from its starting square, **en passant**, and **promotion** on the last rank. It sees every square around it.',
+        ],
+      },
+      sync: {
+        kind: 'Turns',
+        title: 'Sync Move',
+        p: [
+          'Both players **send a move each round** and both happen **at once**. A sent move is locked in.',
+          'There is no check when both sides move together, so Sync Move games are always Eat the King.',
+        ],
+      },
+      four: {
+        kind: 'Players',
+        title: 'Four players',
+        p: [
+          'Four armies on a **cross-shaped board**, everyone for themselves, turns going clockwise.',
+          'Take a king to knock its player out. **Last king standing** wins.',
         ],
       },
     },

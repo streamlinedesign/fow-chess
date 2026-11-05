@@ -9,6 +9,7 @@
 ## Next
 
 - Copy the backward pawns removal (`engine/`) into `chess-bots`
+- chess-bots: simulate Eat the King without centre vision (it left the default game in 0.9.0)
 - Beta launch: check the new home page and mods page on a phone
 - Copy the jester pawns engine change into `chess-bots` (or extract the engine module first)
 - Review the mod artwork: jester pawn (`wJ`/`bJ`) and jump king (`wX`/`bX`) in `web/src/pieces/`
