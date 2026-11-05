@@ -23,19 +23,31 @@ func TestSquares(t *testing.T) {
 			t.Errorf("%s: got %v %v", s, sq, err)
 		}
 	}
-	for _, s := range []string{"a1", "c3", "l12", "n14", "o5", "d0", "d15", "d01"} {
+	for _, s := range []string{"d0", "d17", "d01", "q3", "a", "a1x"} {
 		if _, err := ParseSquare(s); err == nil {
 			t.Errorf("%s should not be a square", s)
 		}
 	}
-	n := 0
-	for i := range NumSquares {
-		if Square(i).Valid() {
-			n++
+	for _, s := range []string{"a1", "c3", "l12", "n14", "o5", "d15"} {
+		if sq, err := ParseSquare(s); err == nil && Cross.Valid(sq) {
+			t.Errorf("%s should not be on the cross", s)
 		}
 	}
-	if n != 160 {
-		t.Errorf("%d squares, want 160", n)
+	for _, s := range []string{"a1", "c3", "p16", "d15"} {
+		if sq, err := ParseSquare(s); err != nil || !Extended.Valid(sq) {
+			t.Errorf("%s should be on the extended board", s)
+		}
+	}
+	for shape, want := range map[Shape]int{Cross: 160, Extended: 256} {
+		n := 0
+		for i := range NumSquares {
+			if shape.Valid(Square(i)) {
+				n++
+			}
+		}
+		if n != want {
+			t.Errorf("shape %d: %d squares, want %d", shape, n, want)
+		}
 	}
 	from, to, promo, err := ParseUCI("g13g11")
 	if err != nil || from.String() != "g13" || to.String() != "g11" || promo != NoKind {

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { onBoard, SIZE, startBoard } from './four'
+import { geo } from './four'
 import { FourBoard } from './FourBoard'
 import { useT } from './i18n'
 import { Page } from './Page'
@@ -37,16 +37,18 @@ export function ModsPage() {
     try {
       saveSettings(settings)
       if (four) {
-        const { fog, time, jumpKing, jesterPawns, hill, centerVision, setup, sync } = settings
+        const { fog, time, jumpKing, jesterPawns, hill, centerVision, setup, sync, fourBoard } = settings
         const body = {
           fog,
           time,
           jumpKing,
           jesterPawns,
-          hill,
+          // The extended board has no hill.
+          hill: hill && fourBoard !== 'extended',
           centerVision,
           setup,
           sync,
+          board: fourBoard || '',
         }
         const res = await fetch(`/api/four?player=${playerId}`, {
           method: 'POST',
@@ -127,8 +129,15 @@ function CurrentSetup({ settings, four }: { settings: Settings; four: boolean })
   const notes = four
     ? [
         t.four.preview,
+        ...(settings.fourBoard === 'extended' ? [t.four.previewExtended] : []),
         ...(settings.fog ? [t.four.previewFog] : []),
-        ...(setup ? [setup === 'backRow' ? t.four.previewBackRow : t.four.previewBattleship] : []),
+        ...(setup
+          ? [
+              setup === 'backRow'
+                ? t.four.previewBackRow
+                : t.four.previewBattleship(settings.fourBoard === 'extended' ? 4 : 3),
+            ]
+          : []),
         ...(settings.sync ? [t.four.previewSync] : []),
       ]
     : setupNotes(settings, t)
@@ -151,22 +160,24 @@ function CurrentSetup({ settings, four }: { settings: Settings; four: boolean })
 function FourPreview({ settings }: { settings: Settings }) {
   const t = useT()
   const board = useMemo(() => {
-    const b = startBoard()
+    const g = geo(settings.fourBoard)
+    const b = g.startBoard()
     if (!settings.fog) return b
     // At the start Red's pieces see their own two rows and the two ahead.
+    const [left] = g.ownCell('r', 0, 0)
     return b.map((v, i) => {
-      const x = i % SIZE
-      const y = Math.floor(i / SIZE)
-      return onBoard(x, y) && !(y <= 3 && x >= 3 && x <= 10) ? '?' : v
+      const x = i % g.size
+      const y = Math.floor(i / g.size)
+      return g.onBoard(x, y) && !(y <= 3 && x >= left && x <= left + 7) ? '?' : v
     })
-  }, [settings.fog])
+  }, [settings.fog, settings.fourBoard])
   return (
     <div className="four-preview" role="img" aria-label={t.four.preview}>
       <FourBoard
         board={board}
         seat="r"
         legal={[]}
-        hill={settings.hill}
+        hill={settings.hill && settings.fourBoard !== 'extended'}
         center={settings.centerVision ? {} : undefined}
         look={settings}
         still

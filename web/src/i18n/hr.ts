@@ -263,15 +263,17 @@ export const hr: Dict = {
     notFoundDetail: (id: string) => `Nema partije za četiri igrača ${id}. Možda je bila davno.`,
     outdated: 'Ova stranica je zastarjela',
     outdatedDetail: 'Server je ažuriran. Ponovno učitaj da nastaviš igrati.',
-    battleshipHint: 'Postavi svih šesnaest figura bilo gdje u svoja tri reda.',
+    battleshipHint: (rows) => `Postavi svih šesnaest figura bilo gdje u svoja ${rows === 4 ? 'četiri' : 'tri'} reda.`,
     sync: 'Istodobni potez',
     syncHint: 'Svi igraju odjednom u svakom krugu. Uzimanje ide zadnje, pa figura koja se makne izbjegne udarac.',
     previewBackRow: 'Prije partije svatko složi svoj zadnji red, a da ne vidi tuđe.',
-    previewBattleship: 'Prije partije svatko postavi svih šesnaest figura u svoja tri reda, a da ne vidi tuđe.',
+    previewBattleship: (rows) =>
+      `Prije partije svatko postavi svih šesnaest figura u svoja ${rows === 4 ? 'četiri' : 'tri'} reda, a da ne vidi tuđe.`,
     previewSync:
       'Istodobni potez: svatko odabere potez, a onda se svi odigraju odjednom. Uzimanje ide zadnje, pa figura koja se makne izbjegne udarac, a figure koje stanu na isto polje izbace jedna drugu.',
     arrange: 'Složi svoje figure',
-    arrangeHint: 'Tvoja tri reda, zadnji red dolje. Nitko ne vidi tvoj raspored.',
+    arrangeHint: (rows) =>
+      `Tvoja ${rows === 4 ? 'četiri' : 'tri'} reda, zadnji red dolje. Nitko ne vidi tvoj raspored.`,
     arranging: 'Igrači slažu figure',
     arranged: 'Gotovo. Čekamo da i ostali slože svoje.',
     ready: 'gotovo',
@@ -281,6 +283,16 @@ export const hr: Dict = {
     picking: 'Svi biraju potez',
     sentTag: 'poslano',
     round: (n: number) => `Krug ${n}`,
+    board: 'Ploča',
+    boardCross: 'Standardna',
+    boardCrossHint: '14 sa 14, bez kutova. Svakome tri reda.',
+    boardExtended: 'Proširena',
+    boardExtendedHint: '16 sa 16, svakome četiri reda. Kutovi su otvoreni za sve.',
+    previewExtended:
+      'Proširena ploča: svakome četiri reda, a kutovi su neutralna polja preko kojih smije svatko. Pješaci se promoviraju na suprotnom rubu.',
+    centerHintExtended:
+      'Figura na tvoja dva središnja polja na suprotnoj strani pokazuje ti cijelu ploču dok god stoji tamo.',
+    noHill: 'Na proširenoj ploči nema brda.',
   },
 
   /** Partije spremljene prije nego što je stranica postala jedna igra još mogu imati ovo. */
@@ -794,10 +806,11 @@ export const hr: Dict = {
     guestNote: 'Prijavi se za postavke računa i privatnosti.',
     skins: 'Izgled',
     skinsOn: 'Setovi i polja svih igrača, tvoji i protivnikovi.',
-    skinsOff: 'Isključeno: klasične figure i obična ploča za sve igrače. Botovi i boje za četvero ostaju. Tvoj izbor ostaje spremljen.',
+    skinsOff:
+      'Isključeno: klasične figure i obična ploča za sve igrače. Botovi i boje za četvero ostaju. Tvoj izbor ostaje spremljen.',
     lightTiles: 'Svijetla polja',
     darkTiles: 'Tamna polja',
-    tilesHint: 'Na tvojoj polovici ploče, s četvero igrača na prva tri reda. Vidi ih i protivnik.',
+    tilesHint: 'Na tvojoj polovici ploče, s četvero igrača na tvojim redovima. Vidi ih i protivnik.',
     plainTiles: 'Obična',
     sets: {
       classic: 'Klasične',

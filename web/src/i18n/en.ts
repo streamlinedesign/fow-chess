@@ -263,16 +263,18 @@ export const en = {
     notFoundDetail: (id: string) => `There's no four-player match ${id}. It may have been a long time ago.`,
     outdated: 'This page is out of date',
     outdatedDetail: 'The server was updated. Reload to keep playing.',
-    battleshipHint: 'Place all sixteen pieces anywhere in your three rows.',
+    battleshipHint: (rows: number) =>
+      `Place all sixteen pieces anywhere in your ${rows === 4 ? 'four' : 'three'} rows.`,
     sync: 'Sync Move',
     syncHint: 'Everyone moves at once each round. Captures come last, so a piece that moves away dodges.',
     previewBackRow: 'Before the game everyone arranges their back row, without seeing anyone else’s.',
-    previewBattleship:
-      'Before the game everyone places all sixteen pieces in their three rows, without seeing anyone else’s.',
+    previewBattleship: (rows: number) =>
+      `Before the game everyone places all sixteen pieces in their ${rows === 4 ? 'four' : 'three'} rows, without seeing anyone else’s.`,
     previewSync:
       'Sync Move: everyone picks a move, then they all happen at once. Captures come last, so a piece that moves away dodges, and pieces landing on the same square knock each other out.',
     arrange: 'Arrange your pieces',
-    arrangeHint: 'Your three rows, back row at the bottom. Nobody sees your arrangement.',
+    arrangeHint: (rows: number) =>
+      `Your ${rows === 4 ? 'four' : 'three'} rows, back row at the bottom. Nobody sees your arrangement.`,
     arranging: 'Players are arranging their pieces',
     arranged: 'Ready. Waiting for the others to arrange theirs.',
     ready: 'ready',
@@ -282,6 +284,16 @@ export const en = {
     picking: 'Everyone is picking a move',
     sentTag: 'sent',
     round: (n: number) => `Round ${n}`,
+    board: 'Board',
+    boardCross: 'Standard',
+    boardCrossHint: '14 by 14 with the corners cut off. Three rows each.',
+    boardExtended: 'Extended',
+    boardExtendedHint: '16 by 16, four rows each. The corners are open to everyone.',
+    previewExtended:
+      'Extended board: four rows each, and the corners are neutral squares anyone can cross. Pawns promote on the far edge.',
+    centerHintExtended:
+      'A piece on your two centre squares on the far side shows you the whole board while it stays there.',
+    noHill: 'The extended board has no hill.',
   },
 
   /** Mods, and games saved before the site became one game. */
@@ -795,10 +807,11 @@ export const en = {
     guestNote: 'Sign in for your account and privacy settings.',
     skins: 'Skins',
     skinsOn: "Everyone's sets and tiles, yours and your opponents'.",
-    skinsOff: 'Off: classic pieces and the plain board for every player. Bots and four-player colours stay. Your picks are kept.',
+    skinsOff:
+      'Off: classic pieces and the plain board for every player. Bots and four-player colours stay. Your picks are kept.',
     lightTiles: 'Light squares',
     darkTiles: 'Dark squares',
-    tilesHint: 'On your half of the board, your first three rows with four players. Your opponent sees them too.',
+    tilesHint: 'On your half of the board, your own rows with four players. Your opponent sees them too.',
     plainTiles: 'Plain',
     sets: {
       classic: 'Classic',

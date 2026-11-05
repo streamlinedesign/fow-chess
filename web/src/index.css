@@ -2872,6 +2872,19 @@ a.tick:active {
   grid-template-rows: repeat(14, minmax(0, 1fr));
   touch-action: none;
 }
+.board4[data-shape='extended'] {
+  --board: calc(var(--board4, 400px) * 8 / 16);
+  grid-template-columns: repeat(16, minmax(0, 1fr));
+  grid-template-rows: repeat(16, minmax(0, 1fr));
+}
+/* The extended board's corners belong to nobody: hatched, so they read apart from the players' rows. */
+.board4 .sq[data-neutral='true']:not([data-fog='true']) {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--color-fg) 14%, transparent) 0 1px,
+    transparent 1px 5px
+  );
+}
 .board4[data-still='true'] {
   touch-action: auto;
 }

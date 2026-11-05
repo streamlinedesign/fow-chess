@@ -31,6 +31,8 @@ export type Settings = {
   centerVision?: CenterVision
   /** Sync Move: everyone moves at once each round. Always Eat the King. Mods only. */
   sync?: boolean
+  /** Four players only: the extended board, 16 by 16 with neutral corners. Sent as board. */
+  fourBoard?: '' | 'extended'
   /** Never ranked: set by the server for bot and mods games. Players can't ask for it. */
   unrated?: boolean
   /** From the mods page: any option, any clock, never ranked. */
@@ -58,7 +60,12 @@ export const BOT_FACE: Record<Bot, string> = {
  * The set each bot plays with, the colour of its face: light lines as White,
  * dark lines as Black (see concrete in sets.ts). Ramesses II plays classic.
  */
-export const BOT_SET: Record<Bot, string> = { rex: 'violet', vercingetorix: 'green', ramesses: 'classic', solomon: 'red' }
+export const BOT_SET: Record<Bot, string> = {
+  rex: 'violet',
+  vercingetorix: 'green',
+  ramesses: 'classic',
+  solomon: 'red',
+}
 
 /**
  * How a game's pieces are drawn: its mods, a bot's pieces in the bot's set,
@@ -186,6 +193,7 @@ export function loadSettings(mods = false): Settings {
       delete saved.jesterPawns
       delete saved.hill
       delete saved.sync
+      delete saved.fourBoard
       saved.centerVision = 'any'
       delete saved.mods
       delete saved.bot

@@ -27,7 +27,7 @@ func BotMove(p *Position, rng *rand.Rand) (Move, bool) {
 			target = NewPiece(Red, Pawn)
 		}
 		score += pieceValue[target.Kind()]
-		if p.Hill && pc.Kind() == King && InCentre(m.To) {
+		if p.HillOn() && pc.Kind() == King && p.Shape.InCentre(m.To) {
 			score += 1000
 		}
 		if m.Promo != NoKind {

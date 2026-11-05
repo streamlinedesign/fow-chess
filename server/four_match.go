@@ -35,26 +35,34 @@ type fourSettings struct {
 	Setup string `json:"setup,omitempty"`
 	// Sync is Sync Move: everyone moves at once each round.
 	Sync bool `json:"sync,omitempty"`
+	// Board is "" for the usual cross, or "extended" for the 16 by 16 board
+	// with four rows each and neutral corners. It has no hill.
+	Board string `json:"board,omitempty"`
 }
+
+var fourShapes = map[string]four.Shape{"": four.Cross, "extended": four.Extended}
 
 var fourLayouts = map[string]four.Layout{"": four.Standard, "backRow": four.BackRow, "battleship": four.Battleship}
 
 func (s fourSettings) rules() four.Rules {
 	return four.Rules{JumpKing: s.JumpKing, JesterPawns: s.JesterPawns, Hill: s.Hill,
-		CenterVision: four.CenterVision(centerVisions[s.CenterVision]), Sync: s.Sync}
+		CenterVision: four.CenterVision(centerVisions[s.CenterVision]), Sync: s.Sync, Shape: fourShapes[s.Board]}
 }
+
+func (s fourSettings) shape() four.Shape { return fourShapes[s.Board] }
 
 func (s fourSettings) layout() four.Layout { return fourLayouts[s.Setup] }
 
 func (s fourSettings) valid() bool {
 	_, center := centerVisions[s.CenterVision]
 	_, layout := fourLayouts[s.Setup]
-	return center && layout && (s.Time.valid() || s.Time.modsValid())
+	_, shape := fourShapes[s.Board]
+	return center && layout && shape && !(s.Hill && s.Board != "") && (s.Time.valid() || s.Time.modsValid())
 }
 
 // fourProtocol changes whenever the four-player state message changes shape.
 // Must match FOUR_PROTOCOL in web/src/useFourMatch.ts.
-const fourProtocol = 3
+const fourProtocol = 4
 
 // fourBotName is who fills an empty seat.
 const fourBotName = "Rex inutilis"
@@ -661,7 +669,7 @@ func (m *FourMatch) handle(c *client, msg fourIn) {
 			if s == "" {
 				m.seat(four.Color(i), &player{key: "bot:four:" + four.Color(i).String(), name: fourBotName})
 				if m.settings.layout() != four.Standard {
-					m.start.Setups[i] = four.BotSetup(rng)
+					m.start.Setups[i] = four.BotSetup(m.settings.shape(), rng)
 				}
 			}
 		}
@@ -675,7 +683,7 @@ func (m *FourMatch) handle(c *client, msg fourIn) {
 		if !m.arranging() || m.start.Quit[color] {
 			break
 		}
-		if msg.Board != "" && four.CheckSetup(m.settings.layout(), msg.Board) != nil {
+		if msg.Board != "" && four.CheckSetup(m.settings.shape(), m.settings.layout(), msg.Board) != nil {
 			break
 		}
 		m.start.Setups[color] = msg.Board
@@ -703,7 +711,7 @@ func (m *FourMatch) handle(c *client, msg fourIn) {
 			}
 			m.start.Quit[color] = true
 			if m.start.Setups[color] == "" {
-				m.start.Setups[color] = four.StandardSetup
+				m.start.Setups[color] = m.settings.shape().StandardSetup()
 			}
 			if m.placed() {
 				m.begin(now)
@@ -865,8 +873,9 @@ type fourEvent struct {
 }
 
 type fourView struct {
-	// Board is every square from the bottom left, row by row: " " off the
-	// board, "." empty, "?" hidden, or the piece's colour and kind, like "rK".
+	// Board is every square from the bottom left, row by row, width by width
+	// (14 or 16): " " off the board, "." empty, "?" hidden, or the piece's
+	// colour and kind, like "rK".
 	Board []string  `json:"board"`
 	Turn  string    `json:"turn"`
 	Ply   int       `json:"ply"`
@@ -910,8 +919,9 @@ type fourState struct {
 func fourViewFor(g *four.Game, viewer int, playable, fog bool) fourView {
 	pos := g.Position()
 	hist := g.History()
+	w := pos.Shape.Width()
 	v := fourView{Turn: pos.Turn.String(), Ply: len(hist), Legal: []string{}, History: make([]fourEvent, len(hist)),
-		Captured: map[string][]string{}, Board: make([]string, four.NumSquares)}
+		Captured: map[string][]string{}, Board: make([]string, w*w)}
 	hidden := fog && !g.Over() && viewer >= 0 && !pos.Out[viewer]
 	var seen *[four.NumSquares]bool
 	if hidden {
@@ -919,12 +929,13 @@ func fourViewFor(g *four.Game, viewer int, playable, fog bool) fourView {
 		seen = &vision
 		v.FullVision = pos.Outpost(four.Color(viewer)) != four.NoSquare
 	}
-	for i, pc := range pos.Board {
-		sq := four.Square(i)
+	for i := range v.Board {
+		sq := four.At(i%w, i/w)
+		pc := pos.Board[sq]
 		switch {
-		case !sq.Valid():
+		case !pos.Shape.Valid(sq):
 			v.Board[i] = " "
-		case seen != nil && !seen[i]:
+		case seen != nil && !seen[sq]:
 			v.Board[i] = "?"
 		case pc.IsEmpty():
 			v.Board[i] = "."

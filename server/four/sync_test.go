@@ -199,7 +199,7 @@ func TestSetups(t *testing.T) {
 		s string
 	}{Battleship, "PPPPPPPP" + "RRBBNN.." + "...KQ..."})
 	for _, c := range ok {
-		if err := CheckSetup(c.l, c.s); err != nil {
+		if err := CheckSetup(Cross, c.l, c.s); err != nil {
 			t.Errorf("%q: %v", c.s, err)
 		}
 	}
@@ -207,7 +207,7 @@ func TestSetups(t *testing.T) {
 		l Layout
 		s string
 	}{
-		{Standard, StandardSetup},
+		{Standard, Cross.StandardSetup()},
 		{BackRow, "RNBQKBN" + "PPPPPPPP" + "........"},
 		{BackRow, "PNBQKBNR" + "RPPPPPPP" + "........"},
 		{BackRow, "RNBQKBNR" + "PPPPPPP." + ".......P"},
@@ -216,7 +216,7 @@ func TestSetups(t *testing.T) {
 		{Battleship, "RNBQKBNR" + "PPPPPPPP" + ".......x"},
 	}
 	for _, c := range bad {
-		if err := CheckSetup(c.l, c.s); err == nil {
+		if err := CheckSetup(Cross, c.l, c.s); err == nil {
 			t.Errorf("%q should be refused", c.s)
 		}
 	}
@@ -225,7 +225,7 @@ func TestSetups(t *testing.T) {
 		"RNBQKBNR" + "PPPPPPPP" + "........",
 		"KRRQNNBB" + "PPPPPPPP" + "........",
 		"PPPPPPPP" + "RRBBNN.." + "...KQ...",
-		StandardSetup,
+		Cross.StandardSetup(),
 	}
 	g, err := NewGameFromSetups(Rules{}, setups)
 	if err != nil {
@@ -235,7 +235,7 @@ func TestSetups(t *testing.T) {
 	if p.Castling != 0x3|0x3<<6 {
 		t.Errorf("castling %08b", p.Castling)
 	}
-	if p.KingSquare(Blue) != cell(Blue, 0, 0) || p.KingSquare(Green) != cell(Green, 3, 2) {
+	if p.KingSquare(Blue) != Cross.Cell(Blue, 0, 0) || p.KingSquare(Green) != Cross.Cell(Green, 3, 2) {
 		t.Errorf("kings at %s %s", p.KingSquare(Blue), p.KingSquare(Green))
 	}
 	if g.Setups() != setups {
@@ -245,7 +245,7 @@ func TestSetups(t *testing.T) {
 		t.Error("no moves")
 	}
 	std := StartPosition(Rules{})
-	s, _ := SetupPosition(Rules{}, [4]string{StandardSetup, StandardSetup, StandardSetup, StandardSetup})
+	s, _ := SetupPosition(Rules{}, [4]string{Cross.StandardSetup(), Cross.StandardSetup(), Cross.StandardSetup(), Cross.StandardSetup()})
 	if s.Board != std.Board || s.Castling != std.Castling {
 		t.Error("the usual setup isn't the usual start")
 	}
@@ -254,8 +254,8 @@ func TestSetups(t *testing.T) {
 func TestBotSetup(t *testing.T) {
 	rng := rand.New(rand.NewPCG(1, 2))
 	for range 20 {
-		s := BotSetup(rng)
-		if CheckSetup(BackRow, s) != nil || CheckSetup(Battleship, s) != nil {
+		s := BotSetup(Cross, rng)
+		if CheckSetup(Cross, BackRow, s) != nil || CheckSetup(Cross, Battleship, s) != nil {
 			t.Fatalf("bad bot setup %q", s)
 		}
 	}

@@ -12,56 +12,131 @@ export type Seat = (typeof SEATS)[number]
 /** The piece colours, for swatches. Must match the fills in pieces/four. */
 export const SEAT_COLORS: Record<Seat, string> = { r: '#b65a40', b: '#4e6a9a', g: '#4e7f63', v: '#835482' }
 
-/** Board width and height. The corners, three by three, are cut off. */
-export const SIZE = 14
-const FILES = 'abcdefghijklmn'
+/**
+ * The board's shape: the usual cross, 14 by 14 with the corners cut off and
+ * three rows for each player, or the extended board, 16 by 16 with four rows
+ * each and neutral corners anyone may cross. Must match four.Shape.
+ */
+export type BoardShape = '' | 'extended'
 
-export const onBoard = (x: number, y: number) =>
-  x >= 0 && y >= 0 && x < SIZE && y < SIZE && !((x < 3 || x > 10) && (y < 3 || y > 10))
+const FILES = 'abcdefghijklmnop'
 
 export const squareName = (x: number, y: number) => FILES[x] + (y + 1)
 export const squareXY = (sq: string) => [FILES.indexOf(sq[0]), Number(sq.slice(1)) - 1] as const
-export const squareIdx = (sq: string) => {
-  const [x, y] = squareXY(sq)
-  return y * SIZE + x
-}
 
 /** A move as the server sends it: "e2e4", "g13g11", "e7e8q". */
 export function parseMove(uci: string) {
-  const m = /^([a-n]\d{1,2})([a-n]\d{1,2})([qrbn]?)$/.exec(uci)
+  const m = /^([a-p]\d{1,2})([a-p]\d{1,2})([qrbn]?)$/.exec(uci)
   return m ? { from: m[1], to: m[2], promo: m[3] } : null
 }
 
-/**
- * Where square (x, y) is drawn for a player sitting at seat: their own pieces
- * at the bottom, as they'd see the board from their chair.
- */
-export function cellFor(x: number, y: number, seat: Seat) {
-  switch (seat) {
-    case 'r':
-      return { col: x, row: SIZE - 1 - y }
-    case 'b':
-      return { col: SIZE - 1 - y, row: SIZE - 1 - x }
-    case 'g':
-      return { col: SIZE - 1 - x, row: y }
-    case 'v':
-      return { col: y, row: x }
+/** A board shape's geometry. */
+export type Geo = {
+  shape: BoardShape
+  /** Squares across. */
+  size: number
+  /** How many rows each player starts in. */
+  rows: number
+  onBoard: (x: number, y: number) => boolean
+  /** A corner square on the extended board, which belongs to nobody. */
+  neutral: (x: number, y: number) => boolean
+  /** The index of a square in the board array the server sends. */
+  squareIdx: (sq: string) => number
+  /** Where square (x, y) is drawn for a player at seat: their own pieces at the bottom, as they'd see it from their chair. */
+  cellFor: (x: number, y: number, seat: Seat) => { col: number; row: number }
+  /** seat's square at file f (0 to 7, from that player's left) and rank r (0 is their back row). Must match Shape.Cell in server/four. */
+  ownCell: (seat: Seat, f: number, r: number) => [number, number]
+  /** The seat whose own rows hold square (x, y), if any. */
+  homeOf: (x: number, y: number) => Seat | null
+  /** The middle four squares: the hill on the cross. */
+  centre: string[]
+  /** The squares that give seat centre vision. Must match Shape.Outposts. */
+  outposts: (seat: Seat) => string[]
+  /** The start position as a board array, for previews. Must match four.StartPosition. */
+  startBoard: () => string[]
+}
+
+function makeGeo(shape: BoardShape): Geo {
+  const size = shape === 'extended' ? 16 : 14
+  const a = shape === 'extended' ? 4 : 3
+  const last = size - 1
+  const corner = (x: number, y: number) => (x < a || x > last - a) && (y < a || y > last - a)
+  const onBoard = (x: number, y: number) =>
+    x >= 0 && y >= 0 && x < size && y < size && (shape === 'extended' || !corner(x, y))
+  const neutral = (x: number, y: number) => shape === 'extended' && corner(x, y)
+  const ownCell = (seat: Seat, f: number, r: number): [number, number] => {
+    switch (seat) {
+      case 'r':
+        return [a + f, r]
+      case 'b':
+        return [r, a + 7 - f]
+      case 'g':
+        return [a + 7 - f, last - r]
+      case 'v':
+        return [last - r, a + f]
+    }
+  }
+  const m = size / 2 - 1
+  // Bottom left, bottom right, top left, top right.
+  const centre = [squareName(m, m), squareName(m + 1, m), squareName(m, m + 1), squareName(m + 1, m + 1)]
+  // On the extended board each seat has the pair just past the middle on the far side.
+  const far: Record<Seat, number[]> = { r: [2, 3], b: [1, 3], g: [0, 1], v: [0, 2] }
+  return {
+    shape,
+    size,
+    rows: a,
+    onBoard,
+    neutral,
+    squareIdx: (sq) => {
+      const [x, y] = squareXY(sq)
+      return y * size + x
+    },
+    cellFor: (x, y, seat) => {
+      switch (seat) {
+        case 'r':
+          return { col: x, row: last - y }
+        case 'b':
+          return { col: last - y, row: last - x }
+        case 'g':
+          return { col: last - x, row: y }
+        case 'v':
+          return { col: y, row: x }
+      }
+    },
+    ownCell,
+    homeOf: (x, y) => {
+      if (corner(x, y)) return null
+      if (y < a) return 'r'
+      if (x < a) return 'b'
+      if (y > last - a) return 'g'
+      if (x > last - a) return 'v'
+      return null
+    },
+    centre,
+    outposts: (seat) => (shape === 'extended' ? far[seat].map((i) => centre[i]) : centre),
+    startBoard: () => {
+      const back = 'RNBQKBNR'
+      const b: string[] = []
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) b.push(onBoard(x, y) ? '.' : ' ')
+      for (const seat of SEATS)
+        for (let f = 0; f < 8; f++) {
+          const [bx, by] = ownCell(seat, f, 0)
+          const [px, py] = ownCell(seat, f, 1)
+          b[by * size + bx] = seat + back[f]
+          b[py * size + px] = seat + 'P'
+        }
+      return b
+    },
   }
 }
 
-/** seat's square at file f (0 to 7, from that player's left) and rank r (0 is their back row). Must match cell in server/four. */
-export function ownCell(seat: Seat, f: number, r: number): [number, number] {
-  switch (seat) {
-    case 'r':
-      return [3 + f, r]
-    case 'b':
-      return [r, 10 - f]
-    case 'g':
-      return [10 - f, SIZE - 1 - r]
-    case 'v':
-      return [SIZE - 1 - r, 3 + f]
-  }
-}
+const GEOS: Record<BoardShape, Geo> = { '': makeGeo(''), extended: makeGeo('extended') }
+
+/** The geometry for a game's board setting. */
+export const geo = (board?: string) => GEOS[board === 'extended' ? 'extended' : '']
+
+/** The geometry of a board array as the server sends it, by its length. */
+export const geoOf = (board: string[]) => GEOS[board.length === 256 ? 'extended' : '']
 
 /** The seats in the order they sit round the board for the viewer: bottom, left, top, right. */
 export function aroundFrom(seat: Seat): Seat[] {
@@ -75,7 +150,7 @@ export function aroundFrom(seat: Seat): Seat[] {
  */
 export type FourLook = Look & { seats?: Partial<Record<Seat, SeatSkin>> }
 
-/** A seat's pieces as a one-colour set (see sets.ts), and the tiles on its first three rows. */
+/** A seat's pieces as a one-colour set (see sets.ts), and the tiles on its own rows (three, or four on the extended board). */
 export type SeatSkin = { set?: string; lightTiles: string; darkTiles: string }
 
 /** The image for a piece code like "rK", drawn for the game's mods and the seat's skin. */
@@ -103,44 +178,13 @@ export function seatSkin(skin: Skin | undefined, half: 'w' | 'b' | undefined): S
   return { set: pick && concrete(pick[1], pick[0]), lightTiles: skin.lightTiles, darkTiles: skin.darkTiles }
 }
 
-/** The seat whose first three rows hold square (x, y), if any. */
-export function homeOf(x: number, y: number): Seat | null {
-  if (y <= 2) return 'r'
-  if (x <= 2) return 'b'
-  if (y >= SIZE - 3) return 'g'
-  if (x >= SIZE - 3) return 'v'
-  return null
-}
-
 /** The tile image for square (x, y), or undefined for a plain one. */
-export function tile4(look: FourLook | undefined, x: number, y: number) {
-  const home = homeOf(x, y)
+export function tile4(look: FourLook | undefined, g: Geo, x: number, y: number) {
+  const home = g.homeOf(x, y)
   const s = home && look?.seats?.[home]
   if (!s) return undefined
   const light = (x + y) % 2 === 1
   return tileImg(light ? s.lightTiles : s.darkTiles, light)
-}
-
-/** The four centre squares: the hill, and the squares that give centre vision. Must match four.Centre. */
-export const CENTRE = ['g7', 'h7', 'g8', 'h8']
-
-/** The start position as a board array, for previews. Must match four.StartPosition. */
-export function startBoard(): string[] {
-  const back = 'RNBQKBNR'
-  const b: string[] = []
-  for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) b.push(onBoard(x, y) ? '.' : ' ')
-  const put = (x: number, y: number, code: string) => (b[y * SIZE + x] = code)
-  for (let f = 0; f < 8; f++) {
-    put(3 + f, 0, 'r' + back[f])
-    put(3 + f, 1, 'rP')
-    put(0, 10 - f, 'b' + back[f])
-    put(1, 10 - f, 'bP')
-    put(10 - f, 13, 'g' + back[f])
-    put(10 - f, 12, 'gP')
-    put(13, 3 + f, 'v' + back[f])
-    put(12, 3 + f, 'vP')
-  }
-  return b
 }
 
 // Decode the images up front so the first board doesn't flash.
