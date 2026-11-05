@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { BugNote } from './BugReport'
 import { useT } from './i18n'
 
 /**
@@ -64,7 +65,7 @@ export function Cell({
   )
 }
 
-/** The site's footer: who made it. */
+/** The site's footer: who made it, and a way to report bugs. */
 export function Footer() {
   const t = useT()
   return (
@@ -75,6 +76,7 @@ export function Footer() {
           Streamline
         </a>
       </span>
+      <BugNote />
       <span className="text-accent">{t.common.appName}</span>
     </footer>
   )

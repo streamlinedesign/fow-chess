@@ -31,6 +31,7 @@ func main() {
 	addr := flag.String("addr", ":"+envOr("PORT", "4100"), "listen address (or set PORT); production uses -addr 127.0.0.1:4100 behind Caddy")
 	dbURL := flag.String("db", envOr("DATABASE_URL", defaultDatabaseURL), "Postgres connection URL for accounts and games (or set DATABASE_URL)")
 	migrateOnly := flag.Bool("migrate", false, "create the database if needed, apply migrations, and exit")
+	bugs := flag.Int("bugs", 0, "print the newest N bug reports and exit")
 	flag.Parse()
 	if *verbose {
 		log.Printf("verbose: logging every match action with timings")
@@ -43,6 +44,14 @@ func main() {
 	if *migrateOnly {
 		store.Close()
 		log.Printf("database %s is up to date", redactURL(*dbURL))
+		return
+	}
+	if *bugs > 0 {
+		err := printBugReports(os.Stdout, store, *bugs)
+		store.Close()
+		if err != nil {
+			log.Fatalf("reading bug reports: %v", err)
+		}
 		return
 	}
 	hub := NewHub(store)
@@ -60,6 +69,7 @@ func main() {
 	social.watchRoutes(mux)
 	social.queueRoutes(mux)
 	social.tournamentRoutes(mux, tournaments)
+	bugRoutes(mux, store, auth)
 
 	// playerFor is who a request comes from: the signed-in user, else the guest
 	// ID the browser sends. Nil if there's neither.
