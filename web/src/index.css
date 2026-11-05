@@ -2028,7 +2028,7 @@ a.tick:active {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 .home-r3 {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
 }
 
 /* A page's head cell: title at the left, actions at the right. */
@@ -2226,7 +2226,7 @@ a.tick:active {
   width: 1.2em;
   height: 1.2em;
   flex: none;
-  margin: 0 0.02em 0 -0.08em;
+  margin: -10px 0.02em 0 -0.08em;
   /* Lying on its side, crown away from the name, resting on the baseline. */
   transform: rotate(-90deg) translateX(-0.12em);
 }
