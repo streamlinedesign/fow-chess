@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -54,14 +55,16 @@ func TestBugReports(t *testing.T) {
 		}
 	}
 
-	// A browser gets a handful of reports, then has to wait.
+	// An address gets a handful of reports (two are in already), then has to
+	// wait, whatever browser ID it sends.
 	limited := 0
-	for range maxFails + 2 {
-		if code, _ := guest.do("POST", "/api/bugs", `{"category":"other","text":"again","player":"spammer"}`); code == http.StatusTooManyRequests {
+	for i := range maxFails + 2 {
+		body := fmt.Sprintf(`{"category":"other","text":"again","player":"spammer-%d"}`, i)
+		if code, _ := guest.do("POST", "/api/bugs", body); code == http.StatusTooManyRequests {
 			limited++
 		}
 	}
-	if limited != 2 {
+	if limited != 4 {
 		t.Errorf("%d reports refused, want 2", limited)
 	}
 }

@@ -85,20 +85,25 @@ func bugRoutes(mux *http.ServeMux, store *Store, auth *Auth) {
 			jsonError(w, "Reports are up to 2000 characters.", http.StatusBadRequest)
 			return
 		}
-		// Behind Caddy every request comes from 127.0.0.1, so count per
-		// account or browser as well as per address.
+		// Count per address, and per account too: a guest's browser ID is
+		// whatever it says, so it only labels the report.
 		var userID int64
-		key := "ip:" + clientIP(r)
+		keys := []string{"ip:" + clientIP(r)}
 		if u := auth.user(r); u != nil {
-			userID, rep.Username, key = u.ID, u.Username, fmt.Sprintf("user:%d", u.ID)
-		} else if req.Player != "" && len(req.Player) <= 64 {
-			rep.Player, key = req.Player, "player:"+req.Player
+			userID, rep.Username = u.ID, u.Username
+			keys = append(keys, fmt.Sprintf("user:%d", u.ID))
+		} else if guestIDRE.MatchString(req.Player) {
+			rep.Player = req.Player
 		}
-		if !limiter.allow(key) {
-			jsonError(w, "Too many reports. Try again later.", http.StatusTooManyRequests)
-			return
+		for _, key := range keys {
+			if !limiter.allow(key) {
+				jsonError(w, "Too many reports. Try again later.", http.StatusTooManyRequests)
+				return
+			}
 		}
-		limiter.fail(key)
+		for _, key := range keys {
+			limiter.fail(key)
+		}
 		if err := store.SaveBugReport(&rep, userID); err != nil {
 			log.Printf("saving bug report: %v", err)
 			jsonError(w, "Something went wrong.", http.StatusInternalServerError)

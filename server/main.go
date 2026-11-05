@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"regexp"
 	"strings"
 	"syscall"
 	"time"
@@ -55,7 +56,9 @@ func main() {
 		return
 	}
 	hub := NewHub(store)
-	auth := &Auth{store: store, limiter: newFailLimiter()}
+	auth := &Auth{store: store, limiter: newFailLimiter(), signups: newLimiter(maxSignups, time.Hour)}
+	creates := newLimiter(maxCreates, limitWindow)
+	misses := newLimiter(maxMisses, limitWindow)
 	live := NewLive(store)
 	social := &Social{store: store, live: live, hub: hub, auth: auth, queue: NewQueue()}
 	live.playing = hub.Playing
@@ -71,24 +74,12 @@ func main() {
 	social.tournamentRoutes(mux, tournaments)
 	bugRoutes(mux, store, auth)
 
-	// playerFor is who a request comes from: the signed-in user, else the guest
-	// ID the browser sends. Nil if there's neither.
-	playerFor := func(r *http.Request, u *User) *player {
-		browserID := r.URL.Query().Get("player")
-		if len(browserID) > 64 {
-			browserID = ""
-		}
-		if u != nil {
-			return userPlayer(u, browserID)
-		}
-		if browserID == "" {
-			return nil
-		}
-		return guestPlayer(browserID)
-	}
-
 	mux.HandleFunc("POST /api/matches", func(w http.ResponseWriter, r *http.Request) {
 		// The creator gets white even if the opponent's browser connects first.
+		if !creates.take(clientIP(r)) {
+			jsonError(w, "Too many attempts. Try again in a few minutes.", http.StatusTooManyRequests)
+			return
+		}
 		p := playerFor(r, auth.user(r))
 		if p == nil {
 			p = &player{}
@@ -129,18 +120,19 @@ func main() {
 	})
 
 	mux.HandleFunc("GET /api/matches/{id}", func(w http.ResponseWriter, r *http.Request) {
-		if hub.Get(strings.ToUpper(r.PathValue("id"))) == nil {
-			http.NotFound(w, r)
-			return
+		if findMatch(w, r, misses, hub.Get) != nil {
+			w.WriteHeader(http.StatusNoContent)
 		}
-		w.WriteHeader(http.StatusNoContent)
 	})
 
 	mux.HandleFunc("GET /ws/{id}", func(w http.ResponseWriter, r *http.Request) {
-		m := hub.Get(strings.ToUpper(r.PathValue("id")))
 		p := playerFor(r, auth.userForSocket(r))
-		if m == nil || p == nil {
+		if p == nil {
 			http.NotFound(w, r)
+			return
+		}
+		m := findMatch(w, r, misses, hub.Get)
+		if m == nil {
 			return
 		}
 		// Skip the library's same-origin check: dev proxies and LAN IPs (a phone
@@ -157,6 +149,10 @@ func main() {
 	// Four-player games, from the mods page.
 	fourHub := NewFourHub(store)
 	mux.HandleFunc("POST /api/four", func(w http.ResponseWriter, r *http.Request) {
+		if !creates.take(clientIP(r)) {
+			jsonError(w, "Too many attempts. Try again in a few minutes.", http.StatusTooManyRequests)
+			return
+		}
 		p := playerFor(r, auth.user(r))
 		if p == nil {
 			p = &player{}
@@ -172,17 +168,18 @@ func main() {
 		json.NewEncoder(w).Encode(map[string]string{"id": m.id})
 	})
 	mux.HandleFunc("GET /api/four/{id}", func(w http.ResponseWriter, r *http.Request) {
-		if fourHub.Get(strings.ToUpper(r.PathValue("id"))) == nil {
+		if findMatch(w, r, misses, fourHub.Get) != nil {
+			w.WriteHeader(http.StatusNoContent)
+		}
+	})
+	mux.HandleFunc("GET /ws/four/{id}", func(w http.ResponseWriter, r *http.Request) {
+		p := playerFor(r, auth.userForSocket(r))
+		if p == nil {
 			http.NotFound(w, r)
 			return
 		}
-		w.WriteHeader(http.StatusNoContent)
-	})
-	mux.HandleFunc("GET /ws/four/{id}", func(w http.ResponseWriter, r *http.Request) {
-		m := fourHub.Get(strings.ToUpper(r.PathValue("id")))
-		p := playerFor(r, auth.userForSocket(r))
-		if m == nil || p == nil {
-			http.NotFound(w, r)
+		m := findMatch(w, r, misses, fourHub.Get)
+		if m == nil {
 			return
 		}
 		conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{InsecureSkipVerify: true})
@@ -210,6 +207,53 @@ func main() {
 		log.Fatal(err)
 	}
 	store.Close()
+}
+
+// Rate limits per address (see clientIP), so the beta can't be flooded with
+// accounts or matches, and nobody finds open games by trying codes: there are
+// 31^6 codes, and an address gets maxMisses wrong ones per limitWindow.
+const (
+	maxSignups  = 10 // per hour
+	maxCreates  = 60
+	maxMisses   = 60
+	limitWindow = 10 * time.Minute
+)
+
+// findMatch looks up the match whose code is in the URL, answering 404 for
+// none and 429 for an address that has tried too many codes that don't exist.
+func findMatch[M any](w http.ResponseWriter, r *http.Request, misses *failLimiter, get func(string) *M) *M {
+	key := clientIP(r)
+	if !misses.allow(key) {
+		jsonError(w, "Too many attempts. Try again in a few minutes.", http.StatusTooManyRequests)
+		return nil
+	}
+	m := get(strings.ToUpper(r.PathValue("id")))
+	if m == nil {
+		misses.fail(key)
+		http.NotFound(w, r)
+	}
+	return m
+}
+
+// guestIDRE is what a browser's guest ID may look like. Seat keys of signed-in
+// players ("u:<id>") and bots ("bot:<level>") have a colon, so no guest ID can
+// name one of their seats and play it.
+var guestIDRE = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+
+// playerFor is who a request comes from: the signed-in user, else the guest
+// ID the browser sends. Nil if there's neither.
+func playerFor(r *http.Request, u *User) *player {
+	browserID := r.URL.Query().Get("player")
+	if !guestIDRE.MatchString(browserID) {
+		browserID = ""
+	}
+	if u != nil {
+		return userPlayer(u, browserID)
+	}
+	if browserID == "" {
+		return nil
+	}
+	return guestPlayer(browserID)
 }
 
 func envOr(key, fallback string) string {
