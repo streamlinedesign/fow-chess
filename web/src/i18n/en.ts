@@ -277,7 +277,7 @@ export const en = {
     ready: 'ready',
     pickMove: 'Pick your move',
     sent: 'Move sent. Waiting for the others',
-    sentHint: 'You can change it until everyone has sent theirs.',
+    sentHint: 'Your move is locked in. The round is played once everyone has sent theirs.',
     picking: 'Everyone is picking a move',
     sentTag: 'sent',
     round: (n: number) => `Round ${n}`,
