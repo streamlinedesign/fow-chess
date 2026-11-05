@@ -1,23 +1,33 @@
 import { useT } from './i18n'
 import { pieceImg, squareIndex } from './position'
+import type { Dict } from './i18n'
 import { HILL, OUTPOSTS, setupMode, type Settings } from './settings'
 
 const FILES = 'abcdefgh'
 const START = 'RNBQKBNRPPPPPPPP' + '.'.repeat(32) + 'pppppppprnbqkbnr'
 
+/** What the settings mean at the start, one sentence each: the fog, the layout, then the twists. */
+export function setupNotes(settings: Settings, t: Dict) {
+  const setup = setupMode(settings)
+  return [
+    settings.fog ? t.settingsBoard.fog : t.settingsBoard.fullBoard,
+    setup.value === 'backRow'
+      ? t.settingsBoard.backRow
+      : setup.value === 'battleship'
+        ? t.settingsBoard.battleship
+        : t.settingsBoard.standard,
+    ...(settings.hill ? [t.settingsBoard.hill] : []),
+    ...(settings.centerVision ? [t.settingsBoard.center] : []),
+    ...(settings.jesterPawns ? [t.settingsBoard.jester] : []),
+  ]
+}
+
 /**
  * A still board next to the match settings, showing what they mean from
  * White's seat at the start: the fog, the rows you'd arrange, and the hill.
+ * The words for it are setupNotes, shown by the page.
  */
-export function SettingsBoard({
-  settings,
-  boardClassName = '',
-  captionClassName = '',
-}: {
-  settings: Settings
-  boardClassName?: string
-  captionClassName?: string
-}) {
+export function SettingsBoard({ settings, boardClassName = '' }: { settings: Settings; boardClassName?: string }) {
   const t = useT()
   const setup = setupMode(settings)
   const squares = []
@@ -39,7 +49,13 @@ export function SettingsBoard({
           data-zone={setup.rows > 0 && rank < setup.rows && !(setup.pawnsFixed && rank === 1)}
           data-hill={settings.hill && HILL.includes(sq)}
           data-outpost={
-            !settings.centerVision ? undefined : OUTPOSTS.w.includes(sq) ? 'yours' : OUTPOSTS.b.includes(sq) ? 'theirs' : undefined
+            !settings.centerVision
+              ? undefined
+              : OUTPOSTS.w.includes(sq)
+                ? 'yours'
+                : OUTPOSTS.b.includes(sq)
+                  ? 'theirs'
+                  : undefined
           }
         >
           {col === 0 && <span className="coord top-[4%] left-[5%]">{sq[1]}</span>}
@@ -50,31 +66,15 @@ export function SettingsBoard({
     }
   }
 
-  const notes = [
-    settings.fog ? t.settingsBoard.fog : t.settingsBoard.fullBoard,
-    setup.value === 'backRow'
-      ? t.settingsBoard.backRow
-      : setup.value === 'battleship'
-        ? t.settingsBoard.battleship
-        : t.settingsBoard.standard,
-    ...(settings.hill ? [t.settingsBoard.hill] : []),
-    ...(settings.centerVision ? [t.settingsBoard.center] : []),
-    ...(settings.jesterPawns ? [t.settingsBoard.jester] : []),
-  ]
+  const notes = setupNotes(settings, t)
 
   return (
-    <>
-      <div
-        className={`board setup-board grid aspect-square w-full grid-cols-8 grid-rows-8 overflow-hidden rounded-md shadow-[0_0_0_2px_var(--color-fg)] ${boardClassName}`}
-        role="img"
-        aria-label={`${t.settingsBoard.aria} ${notes.join(' ')}`}
-      >
-        {squares}
-      </div>
-      <div className={`flex flex-col gap-1.5 ${captionClassName}`}>
-        <p className="text-[15px] font-semibold">{t.settingsBoard.yourView}</p>
-        <p className="text-sm text-accent">{notes.join(' ')}</p>
-      </div>
-    </>
+    <div
+      className={`board setup-board grid aspect-square w-full grid-cols-8 grid-rows-8 overflow-hidden rounded-md shadow-[0_0_0_2px_var(--color-fg)] ${boardClassName}`}
+      role="img"
+      aria-label={`${t.settingsBoard.aria} ${notes.join(' ')}`}
+    >
+      {squares}
+    </div>
   )
 }

@@ -4,6 +4,8 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Mods page: what the settings mean is in a Current setup card above the settings, not under the board.
+- Bot faces: Rex inutilis is a jester pawn, Ramesses II a prince, Solomon a king.
 - The home page no longer has the Live now panel; the top 100 takes the full row. The fallen king in the logo sits 10px higher.
 - Home page for the beta: a bigger board with the opponent and the moves beside it, and a bot picker. Solomon is the default bot (the server's demo game now takes any bot). The "How Ramesses plays" panel is gone. Play and New match stand alone with what you've picked written above them. "Mode" is now "Layout". New About the game section: Eat the King is the original game, everything else is a mod, and where the ideas came from.
 - The logo has a fallen king before the name and a beta tag after it.

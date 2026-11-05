@@ -40,12 +40,12 @@ export type Settings = {
 
 export type Bot = 'rex' | 'vercingetorix' | 'ramesses' | 'solomon'
 
-/** Each bot's face: a piece of its strength. */
+/** Each bot's face: a piece of its strength. J is the jester pawn, X the prince (see pieces.ts). */
 export const BOT_PIECE: Record<Bot, string> = {
-  rex: 'P',
+  rex: 'J',
   vercingetorix: 'N',
-  ramesses: 'K',
-  solomon: 'Q',
+  ramesses: 'X',
+  solomon: 'K',
 }
 
 /** The computer opponents, weakest first. Their names are the same in every language. */

@@ -158,7 +158,6 @@ export const en = {
   },
 
   settingsBoard: {
-    yourView: 'Your view at the start',
     aria: 'The board at the start with these settings.',
     fog: 'Fog covers everything your pieces can’t see.',
     fullBoard: 'No fog: the whole board is in view.',
@@ -215,6 +214,7 @@ export const en = {
 
   mods: {
     title: 'Mods',
+    currentSetup: 'Current setup',
     intro:
       'The game with the dials exposed. Turn the fog off, play with check, add a hill or a jumping king, or take the clock away. Mods games are for fun and never count for rating.',
   },

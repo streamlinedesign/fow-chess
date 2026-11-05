@@ -158,7 +158,6 @@ export const hr: Dict = {
   },
 
   settingsBoard: {
-    yourView: 'Tvoj pogled na početku',
     aria: 'Ploča na početku s ovim postavkama.',
     fog: 'Magla pokriva sve što tvoje figure ne vide.',
     fullBoard: 'Bez magle: vidi se cijela ploča.',
@@ -215,6 +214,7 @@ export const hr: Dict = {
 
   mods: {
     title: 'Modovi',
+    currentSetup: 'Trenutačne postavke',
     intro:
       'Igra s otkrivenim kotačićima. Isključi maglu, igraj sa šahom, dodaj brdo ili kralja koji skače, ili makni sat. Partije s modovima su za zabavu i nikad se ne računaju u rejting.',
   },
