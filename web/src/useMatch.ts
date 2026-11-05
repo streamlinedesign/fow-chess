@@ -47,7 +47,7 @@ export type MatchState = {
   /** During setup: who is ready, what you placed, and the opponent's setup once they're ready in a game without fog. */
   setup?: { ready: Record<Color, boolean>; mine?: string; theirs?: string }
   /** name is the username of a signed-in player, absent for a guest. */
-  players: Record<Color, { taken: boolean; online: boolean; name?: string }>
+  players: Record<Color, { taken: boolean; online: boolean; name?: string; bot?: boolean }>
   rematch: Record<Color, boolean>
   draw: Record<Color, boolean>
   /** Time left as of when this state was sent, and whose clock is ticking. Absent for No clock games. */
@@ -191,4 +191,10 @@ export function useMatch(id: string) {
   }, [])
 
   return { state, conn, send, rtt, chat }
+}
+
+/** The side a bot plays in this game, if one does. */
+export function botSide(s: MatchState | null): Color | null {
+  if (!s?.settings.bot) return null
+  return s.players.w.bot ? 'w' : s.players.b.bot ? 'b' : null
 }

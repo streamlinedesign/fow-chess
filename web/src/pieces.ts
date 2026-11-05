@@ -23,20 +23,30 @@ export const pieceSrc: Record<string, string> = {
   ...{ bK, bQ, bR, bB, bN, bP, bJ, bX },
 }
 
-/** The mods that change how pieces are drawn. A game's settings will do. */
-export type Look = { jesterPawns?: boolean; jumpKing?: boolean }
+// The coloured sets from four-player chess: r red, g green, v violet (b there is blue).
+const colored = import.meta.glob<string>('./pieces/four/[rgv]*.svg', { eager: true, import: 'default' })
+
+/** A set to draw one side in: w cream, b black, or a coloured set r, g or v. */
+export type PieceSet = 'w' | 'b' | 'r' | 'g' | 'v'
+
+/**
+ * The mods that change how pieces are drawn, and which set each side is drawn
+ * in when it isn't its own (a bot plays in its colour). A game's settings will do.
+ */
+export type Look = { jesterPawns?: boolean; jumpKing?: boolean; sets?: Partial<Record<'w' | 'b', PieceSet>> }
 
 /** The image for a FEN piece letter (uppercase is white), drawn for the game's mods. */
 export function pieceImg(letter: string, look?: Look) {
-  const white = letter === letter.toUpperCase()
+  const side = letter === letter.toUpperCase() ? 'w' : 'b'
   let kind = letter.toUpperCase()
   if (look?.jesterPawns && kind === 'P') kind = 'J'
   if (look?.jumpKing && kind === 'K') kind = 'X'
-  return pieceSrc[(white ? 'w' : 'b') + kind]
+  const set = look?.sets?.[side] ?? side
+  return set === 'w' || set === 'b' ? pieceSrc[set + kind] : colored[`./pieces/four/${set}${kind}.svg`]
 }
 
 // Decode the images up front so the first render of the board doesn't flash.
-for (const src of Object.values(pieceSrc)) {
+for (const src of [...Object.values(pieceSrc), ...Object.values(colored)]) {
   const img = new Image()
   img.src = src
 }
