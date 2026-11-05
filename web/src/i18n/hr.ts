@@ -89,8 +89,8 @@ export const hr: Dict = {
     botHints: {
       rex: 'Beskorisni kralj. Vuče nasumične poteze.',
       vercingetorix: 'Uzima što vidi i izbjegava očito.',
-      ramesses: 'Gleda tri poteza unaprijed i čuva kralja. On igra na ploči gore.',
-      solomon: 'Gleda dalje i voli vidjeti ploču.',
+      ramesses: 'Gleda tri poteza unaprijed i čuva kralja.',
+      solomon: 'Gleda najdalje i voli vidjeti ploču. Najjači bot.',
     },
     codePlaceholder: 'Zalijepi kod',
     codeLabel: 'Kod partije',
@@ -117,13 +117,14 @@ export const hr: Dict = {
     shortSub: 'Minute',
     long: 'Duge',
     longSub: 'Sati do dana',
-    mode: 'Način',
+    layout: 'Raspored',
+    layoutIs: (layout) => `Raspored: ${layout.toLowerCase()}`,
     play: 'Igraj',
     ranked: 'Rangirano',
     logInToPlay: 'Prijavi se za igru',
-    guestNote: 'Traženje protivnika je rangirano, pa treba račun. Ploča ovdje i botovi ne trebaju ništa.',
+    guestNote: 'Traženje protivnika je rangirano, pa treba račun. Ploča i botovi ne trebaju ništa.',
     codeTitle: 'Igraj s prijateljem preko koda',
-    codeSub: 'Isti sat i način kao gore. Pošalji kod ili poveznicu, a prijatelj se pridruži s njim.',
+    codeSub: 'Isti sat i raspored kao gore. Pošalji kod ili poveznicu, a prijatelj se pridruži s njim.',
     createCode: 'Napravi kod',
     modsSub: 'Svako pravilo po želji: bez magle, šah-mat, Kralj brda, bilo koji sat. Nikad rangirano.',
     demoBot: 'Bot za probu',
@@ -131,17 +132,12 @@ export const hr: Dict = {
     yourMove: 'tvoj potez',
     moves: 'Potezi',
     noMovesYet: 'Bijeli igra prvi.',
-    howItPlays: 'Kako Ramesses ovdje igra',
-    howItPlaysList: [
-      'Vidi samo ono što vide njegove figure. Bez virenja.',
-      'Gleda tri poteza unaprijed na ploči koju vidi.',
-      'Pokriva putove do svog kralja, jer većina kraljeva padne od figure koju vlasnik nije vidio.',
-    ],
+    opponent: 'Protivnik',
     newGame: 'Nova partija',
     playAs: (side) => `Igraj kao ${side}`,
     demoTip: 'Klikni figuru da je pomakneš. Ništa se ne postavlja i ništa se ne sprema: ovo je zagrijavanje.',
     youWon: 'Uzeo si kralja.',
-    youLost: 'Ramesses ti je uzeo kralja.',
+    youLost: (bot) => `${bot} ti je uzeo kralja.`,
     drawn: 'Remi.',
     noGames: 'Nema partija u tijeku. Pritisni Igraj za novu.',
     noArena: 'Trenutačno nema najavljene arene.',
@@ -178,7 +174,7 @@ export const hr: Dict = {
 
   panel: {
     title: 'Postavke partije',
-    mode: 'Način igre',
+    mode: 'Raspored',
     timeControl: 'Kontrola vremena',
     fog: 'Magla rata',
     fogOnHint: 'Vidiš samo ono što vide tvoje figure.',
@@ -192,11 +188,32 @@ export const hr: Dict = {
     twists: 'Začini',
     jumpHint: 'Tvoj kralj može skakati i kao skakač.',
     backPawnsHint: 'Pješaci mogu i jedno polje natrag, i vide iza sebe.',
-    jesterPawnsHint: 'Pješaci se kreću i uzimaju i jedno polje u bilo kojem smjeru, kao kralj. Zadržavaju dvostruki prvi korak, en passant i promociju.',
+    jesterPawnsHint:
+      'Pješaci se kreću i uzimaju i jedno polje u bilo kojem smjeru, kao kralj. Zadržavaju dvostruki prvi korak, en passant i promociju.',
     center: 'Pogled iz centra',
-    centerHint: 'Bilo koja figura na d5 ili e5 (d4 ili e4 za crnog) pokazuje ti cijelu ploču dok god stoji tamo. Uključeno u svakoj običnoj partiji.',
+    centerHint:
+      'Bilo koja figura na d5 ili e5 (d4 ili e4 za crnog) pokazuje ti cijelu ploču dok god stoji tamo. Uključeno u svakoj običnoj partiji.',
     modsNote: 'Partije s modovima nikad nisu rangirane.',
   },
+
+  about: {
+    title: 'O igri',
+    paras: [
+      'Eat the King je izvorna igra: šah u magli rata. Vidiš samo polja do kojih tvoje figure dosežu, nema šaha, a pobjeđuješ kad uzmeš kralja. Svaka partija koju pokreneš s ove stranice je ta igra.',
+      'Sve ostalo su modovi. Modovi okreću jedan po jedan kotačić: digni maglu, igraj do šah-mata, postavi figure u tajnosti, utrkuj se do brda ili dovedi četiri igrača za jednu ploču. Partije s modovima nikad nisu rangirane.',
+    ],
+    inspired: 'Inspiracija',
+    sources: [
+      ['Šah', 'Ploča, figure i kako se kreću.'],
+      ['Kriegspiel', 'Igra bez pogleda na drugu stranu.'],
+      ['Kralj brda', 'Pobjeda dovođenjem kralja u centar.'],
+      ['Potapanje brodova', 'Figure postavljene tamo gdje ih nitko ne vidi.'],
+      ['Gladni gladni nilski konji', 'Jesti je poanta. Uzmi kralja i gotovo je.'],
+      ['Šah za četvero', 'Svatko za sebe na ploči u obliku križa.'],
+    ],
+  },
+
+  beta: 'beta',
 
   mods: {
     title: 'Modovi',
@@ -218,7 +235,11 @@ export const hr: Dict = {
     openSeat: 'Slobodno mjesto',
     bot: 'bot',
     out: 'ispao',
-    outBy: { 'capturing the king': 'kralj pojeden', resignation: 'predao', time: 'isteklo vrijeme' } as Record<string, string>,
+    outBy: {
+      'capturing the king': 'kralj pojeden',
+      resignation: 'predao',
+      time: 'isteklo vrijeme',
+    } as Record<string, string>,
     waitingTitle: 'Čekamo igrače',
     waiting: (n: number) => `Čekamo igrače, ${n} od 4 sjedi`,
     sendCode: 'Pošalji ovaj kod do tri prijatelja ili popuni slobodna mjesta botovima.',
@@ -274,9 +295,18 @@ export const hr: Dict = {
   },
 
   setups: {
-    '': { label: 'Standardno', hint: 'Uobičajeni početak. Nitko ne počinje u opasnosti.' },
-    backRow: { label: 'Zadnji red', hint: 'Rasporedi svoj zadnji red kako god želiš.' },
-    battleship: { label: 'Potapanje brodova', hint: 'Postavi svih šesnaest figura bilo gdje u svoja četiri reda.' },
+    '': {
+      label: 'Standardno',
+      hint: 'Uobičajeni početak. Nitko ne počinje u opasnosti.',
+    },
+    backRow: {
+      label: 'Zadnji red',
+      hint: 'Rasporedi svoj zadnji red kako god želiš.',
+    },
+    battleship: {
+      label: 'Potapanje brodova',
+      hint: 'Postavi svih šesnaest figura bilo gdje u svoja četiri reda.',
+    },
   },
 
   match: {

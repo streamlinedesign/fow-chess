@@ -4,6 +4,10 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Home page for the beta: a bigger board with the opponent and the moves beside it, and a bot picker. Solomon is the default bot (the server's demo game now takes any bot). The "How Ramesses plays" panel is gone. Play and New match stand alone with what you've picked written above them. "Mode" is now "Layout". New About the game section: Eat the King is the original game, everything else is a mod, and where the ideas came from.
+- The logo has a fallen king before the name and a beta tag after it.
+- Mods page: a bigger board and the settings in two columns on wide screens.
+- Switches follow the Streamline design system: a square lever, hollow when off and filled when on, instead of the round pill.
 - Four-player chess under Mods: a cross-shaped board, Red, Blue, Green and Violet moving clockwise, last king standing wins. Works with fog, the hill, the twists, centre vision and any clock; empty seats can be filled with bots. New dusty red, blue, green and violet piece sets.
 - The prince (Jump King) now has the king's head under its coronet.
 - The Jump King piece is now a prince (a young king with a coronet) instead of a crowned knight.

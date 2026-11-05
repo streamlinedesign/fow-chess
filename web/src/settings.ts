@@ -40,6 +40,14 @@ export type Settings = {
 
 export type Bot = 'rex' | 'vercingetorix' | 'ramesses' | 'solomon'
 
+/** Each bot's face: a piece of its strength. */
+export const BOT_PIECE: Record<Bot, string> = {
+  rex: 'P',
+  vercingetorix: 'N',
+  ramesses: 'K',
+  solomon: 'Q',
+}
+
 /** The computer opponents, weakest first. Their names are the same in every language. */
 export const BOTS: { level: Bot; name: string }[] = [
   { level: 'rex', name: 'Rex inutilis' },

@@ -42,13 +42,13 @@ type Settings struct {
 	Bot string `json:"bot,omitempty"`
 	// Tournament is the arena this game is part of, if any.
 	Tournament int64 `json:"tournament,omitempty"`
-	// Demo is the home page's warm-up game against Ramesses II: no clock,
-	// kept only in memory, never listed or ranked.
+	// Demo is the home page's warm-up game against a bot (Solomon unless the
+	// player picks another): no clock, kept only in memory, never listed or ranked.
 	Demo bool `json:"demo,omitempty"`
 }
 
-// demoBot is who the home page's demo board plays.
-const demoBot = bots.Ramesses
+// demoBot is who the home page's demo board plays unless the player picks another bot.
+const demoBot = bots.Solomon
 
 func (s Settings) rules() engine.Rules {
 	return engine.Rules{KingCapture: s.KingCapture, JumpKing: s.JumpKing, BackPawns: s.BackPawns, Hill: s.Hill,
@@ -72,7 +72,11 @@ func (s Settings) valid() bool {
 func (s *Settings) normalize() {
 	s.Unrated = false
 	if s.Demo {
-		*s = Settings{Demo: true, Bot: string(demoBot)}
+		bot := bots.Level(s.Bot)
+		if !bot.Valid() {
+			bot = demoBot
+		}
+		*s = Settings{Demo: true, Bot: string(bot)}
 	}
 	if s.Bot != "" {
 		s.Unrated = true

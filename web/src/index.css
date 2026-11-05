@@ -593,10 +593,30 @@
 .setup.bare > div:first-of-type {
   display: none;
 }
-/* The mods board keeps up with the long list of dials beside it. */
+/* The mods page: a big board that keeps up with the dials beside it, which
+   spread into two columns on a wide screen. */
+.home-hero.mods-hero {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+}
 .mods-board {
   position: sticky;
   top: calc(var(--header) + 24px);
+}
+.demo.mods-board {
+  --demo-board: min(100%, 760px, calc(100dvh - 260px));
+  grid-template-columns: var(--demo-board);
+  justify-content: center;
+}
+.mods-board .demo-main {
+  width: var(--demo-board);
+}
+@media (min-width: 1081px) {
+  .mods-hero .setup-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+    gap: 24px 36px;
+  }
 }
 .setup.bare > div {
   padding: 0;
@@ -1993,7 +2013,13 @@ a.tick:active {
   pointer-events: none;
 }
 .home-hero {
-  grid-template-columns: minmax(0, 1fr) clamp(420px, 34vw, 520px);
+  grid-template-columns: minmax(0, 1fr) clamp(380px, 30vw, 480px);
+}
+.home-hero > .home-cell:first-child {
+  padding-block: 20px 24px;
+}
+.home-about {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
 }
 .home-r1 {
   grid-template-columns: 2fr 1fr 1fr;
@@ -2142,10 +2168,175 @@ a.tick:active {
   font-weight: 650;
   letter-spacing: -0.01em;
 }
-.home-play small {
-  font-size: 15px;
-  font-weight: 500;
-  opacity: 0.65;
+.home-summary {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--color-accent);
+}
+.home-summary b {
+  font-weight: 600;
+  color: var(--color-fg);
+}
+
+/* About the game. */
+.home-about-text {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 64ch;
+  margin-top: 14px;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--color-accent);
+}
+.home-about-text p:first-child {
+  color: var(--color-fg);
+}
+.home-inspo {
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.home-inspo > div {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.8fr) minmax(0, 1.4fr);
+  gap: 4px 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.home-inspo dt {
+  font-weight: 600;
+}
+.home-inspo dd {
+  color: var(--color-accent);
+}
+@media (max-width: 420px) {
+  .home-inspo > div {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The logo: a fallen king, the name, and a beta tag. */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18em;
+}
+.logo-king {
+  width: 1.2em;
+  height: 1.2em;
+  flex: none;
+  margin: 0 0.02em 0 -0.08em;
+  /* Lying on its side, crown away from the name, resting on the baseline. */
+  transform: rotate(-90deg) translateX(-0.12em);
+}
+.beta-tag {
+  margin: 0.1em 0 0 0.35em;
+  padding: 1px 6px;
+  border: 1px solid currentColor;
+  font:
+    500 12px/1.3 ui-monospace,
+    'SF Mono',
+    Menlo,
+    monospace;
+  letter-spacing: 0;
+}
+@media (max-width: 400px) {
+  .logo {
+    font-size: 19px;
+  }
+  .beta-tag {
+    padding: 0 4px;
+    font-size: 10px;
+  }
+}
+
+/* The switch, from the Streamline design system: a lever, not a pill. The
+   track is a square frame; the thumb is hollow when off and filled when on,
+   and stretches as it slides. A keyboard toggle flips at once. */
+.sl-switch {
+  --w: 52px;
+  --h: 28px;
+  --pad: 4px;
+  --thumb: 8px;
+  --lag: 35ms;
+  --dur: 180ms;
+  --ease: cubic-bezier(0.25, 1, 0.5, 1);
+  --track-stroke: 2px;
+  --thumb-stroke: 1px;
+  --far: calc(var(--w) - var(--thumb) - var(--pad) - 2 * var(--track-stroke));
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: var(--w);
+  height: var(--h);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.sl-switch-track {
+  position: absolute;
+  inset: 0;
+  border: var(--track-stroke) solid var(--color-fg);
+  background: var(--color-bg);
+  pointer-events: none;
+}
+.sl-switch-track::after {
+  content: '';
+  position: absolute;
+  top: var(--pad);
+  bottom: var(--pad);
+  left: var(--pad);
+  right: var(--far);
+  border: var(--thumb-stroke) solid var(--color-fg);
+  background: transparent;
+  transition:
+    left var(--dur) var(--ease),
+    right var(--dur) var(--ease) var(--lag),
+    background 90ms linear;
+}
+.sl-switch[data-state='checked'] .sl-switch-track::after {
+  left: var(--far);
+  right: var(--pad);
+  background: var(--color-fg);
+  transition:
+    right var(--dur) var(--ease),
+    left var(--dur) var(--ease) var(--lag),
+    background 90ms linear;
+}
+.sl-switch:disabled {
+  cursor: default;
+}
+.sl-switch:disabled .sl-switch-track {
+  opacity: 0.4;
+}
+.sl-switch:focus-visible {
+  outline: none;
+}
+.sl-switch:focus-visible .sl-switch-track {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 2px;
+}
+.sl-switch:focus-visible .sl-switch-track::after {
+  transition-duration: 0s;
+  transition-delay: 0s;
+}
+.sl-switch-lg {
+  --w: 66px;
+  --h: 36px;
+  --pad: 5px;
+  --thumb: 10px;
+  --lag: 40ms;
+}
+/* The hit area is at least 44px tall on touch screens. */
+.sl-switch::before {
+  content: '';
+  position: absolute;
+  inset: min(0px, (var(--h) - 44px) / 2) 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sl-switch-track::after {
+    transition: none !important;
+  }
 }
 .home-code {
   background: color-mix(in srgb, var(--color-muted) 60%, transparent);
@@ -2198,12 +2389,12 @@ a.tick:active {
   text-decoration-color: var(--color-fg);
 }
 
-/* The demo game: player strips around the board, moves and how the bot plays beside it. */
+/* The demo game: player strips around the board, the opponent and the moves beside it. */
 .demo {
   display: grid;
-  /* The board fits the screen below the header, strips included, and never dwarfs the menu. */
-  --demo-board: min(100%, 560px, calc(100dvh - 300px));
-  grid-template-columns: var(--demo-board) minmax(180px, 1fr);
+  /* The board fills the screen below the header, strips included, and leaves room for the panel beside it. */
+  --demo-board: min(100% - 292px, 760px, calc(100dvh - 228px));
+  grid-template-columns: var(--demo-board) minmax(260px, 1fr);
   gap: 32px;
   align-items: start;
 }
@@ -2316,28 +2507,47 @@ a.tick:active {
 .moves [data-hidden='true'] {
   color: var(--color-accent);
 }
-.demo-how {
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
+/* Pick the bot you play: a column of rows, the picked one filled. */
+.demo-side > * {
+  min-width: 0;
 }
-.demo-how ul {
+.demo-bots {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  border-top: 1px solid var(--line);
 }
-.demo-how li {
+.demo-bot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 8px 10px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  line-height: 1.25;
+}
+.demo-bot:hover .font-semibold {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.demo-bot-face {
   display: grid;
-  grid-template-columns: 14px 1fr;
-  gap: 6px;
-  font-size: 13.5px;
-  color: var(--color-accent);
+  flex: none;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1.5px var(--color-fg);
 }
-.demo-how li::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  margin-top: 7px;
+.demo-bot-face img {
+  width: 28px;
+  height: 28px;
+}
+.demo-bot[data-state='checked'] .demo-bot-face {
   background: var(--color-fg);
+}
+.demo-bot[data-state='checked'] {
+  box-shadow: inset 3px 0 0 var(--color-fg);
+  padding-left: 12px;
 }
 .demo-btn {
   display: inline-flex;
@@ -2433,24 +2643,9 @@ a.tick:active {
 }
 
 /* Wide screens: the panel beside the board spreads into two columns, so the cell has no empty corner. */
-@media (min-width: 1600px) {
-  .demo-side {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px 32px;
-    align-content: start;
-  }
-  .demo-how {
-    padding-top: 0;
-    border-top: 0;
-  }
-  .demo-side > .flex,
-  .demo-side > p {
-    grid-column: 1 / -1;
-  }
-}
-@media (max-width: 1320px) {
+@media (max-width: 1240px) {
   .demo {
+    --demo-board: min(100%, 760px, calc(100dvh - 228px));
     grid-template-columns: minmax(0, 1fr);
   }
   .demo-main {
@@ -2463,13 +2658,14 @@ a.tick:active {
     gap: 20px 24px;
     padding-top: 0;
   }
-  .demo-how {
-    padding-top: 0;
-    border-top: 0;
+  .demo-side > .flex,
+  .demo-side > p {
+    grid-column: 1 / -1;
   }
 }
 @media (max-width: 1080px) {
-  .home-hero {
+  .home-hero,
+  .home-hero.mods-hero {
     grid-template-columns: minmax(0, 1fr);
   }
   .mods-board {
@@ -2534,8 +2730,7 @@ a.tick:active {
     grid-template-columns: 1fr;
     gap: 14px;
   }
-  .demo-moves,
-  .demo-how {
+  .demo-moves {
     display: none;
   }
   .home-title {
@@ -2555,8 +2750,13 @@ a.tick:active {
   }
   .home-r1,
   .home-bots,
-  .home-r3 {
+  .home-r3,
+  .home-about {
     grid-template-columns: 1fr;
+  }
+  .home-about > .home-cell + .home-cell {
+    border-left: 0;
+    border-top: 1px solid var(--line);
   }
   .home-row > .home-cell + .home-cell {
     border-left: 0;

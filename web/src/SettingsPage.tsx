@@ -150,9 +150,9 @@ export function SettingsPage() {
                     <Switch.Root
                       checked={!privacy.hideOnline}
                       onCheckedChange={(on) => savePrivacy({ ...privacy, hideOnline: !on })}
-                      className="relative h-6 w-10 shrink-0 rounded-full bg-fg/10 shadow-[inset_0_0_0_1px_var(--color-border)] transition-colors data-[state=checked]:bg-fg"
+                      className="sl-switch"
                     >
-                      <Switch.Thumb className="block size-[18px] translate-x-[3px] rounded-full bg-fg transition-transform data-[state=checked]:translate-x-[19px] data-[state=checked]:bg-bg" />
+                      <span className="sl-switch-track" />
                     </Switch.Root>
                   </label>
                   <div className="set-row">

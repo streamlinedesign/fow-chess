@@ -5,7 +5,7 @@ import { useT } from './i18n'
 import { Page } from './Page'
 import { playerId } from './player'
 import { navigate } from './router'
-import { loadSettings, saveSettings, type Settings } from './settings'
+import { describeTime, loadSettings, modeName, saveSettings, type Settings } from './settings'
 import { SettingsBoard } from './SettingsBoard'
 import { SettingsPanel } from './SettingsPanel'
 import { Button } from './ui'
@@ -37,8 +37,19 @@ export function ModsPage() {
       saveSettings(settings)
       if (four) {
         const { fog, time, jumpKing, backPawns, jesterPawns, hill, centerVision } = settings
-        const body = { fog, time, jumpKing, backPawns, jesterPawns, hill, centerVision }
-        const res = await fetch(`/api/four?player=${playerId}`, { method: 'POST', body: JSON.stringify(body) })
+        const body = {
+          fog,
+          time,
+          jumpKing,
+          backPawns,
+          jesterPawns,
+          hill,
+          centerVision,
+        }
+        const res = await fetch(`/api/four?player=${playerId}`, {
+          method: 'POST',
+          body: JSON.stringify(body),
+        })
         if (!res.ok) throw new Error()
         const { id } = await res.json()
         navigate(`/f/${id}`)
@@ -60,7 +71,7 @@ export function ModsPage() {
 
   return (
     <Page>
-      <div className="home-row home-hero">
+      <div className="home-row home-hero mods-hero">
         <div className="home-cell cross">
           <div className="demo mods-board">
             <div className="demo-main">
@@ -80,9 +91,13 @@ export function ModsPage() {
           <section>
             <SettingsPanel value={settings} onChange={setSettings} className="bare" four={four} onFour={pickFour} />
           </section>
-          <section className="flex flex-col gap-3">
+          <section className="flex flex-col gap-2.5">
+            <p className="home-summary">
+              <b>{four ? t.four.four : modeName(settings, t)}</b> · {describeTime(settings.time, t)}
+              <span className="block">{t.panel.modsNote}</span>
+            </p>
             <Button variant="solid" className="home-play" onClick={create} loading={busy} disabled={busy}>
-              {t.common.newMatch} <small>{t.panel.modsNote}</small>
+              {t.common.newMatch}
             </Button>
             {error && (
               <p role="alert" className="text-danger">

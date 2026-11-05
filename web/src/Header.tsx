@@ -24,13 +24,15 @@ export function Header() {
       ? '/login'
       : `/login?next=${encodeURIComponent(here)}`
   return (
-    <header className="flex h-16 items-center justify-between gap-3 px-4 sm:h-20 sm:px-8">
+    <header className="flex h-16 items-center justify-between gap-2 px-3 min-[400px]:gap-3 min-[400px]:px-4 sm:h-20 sm:px-8">
       <a
         href="/"
         onClick={(e) => go(e, '/')}
-        className="text-[26px] font-semibold tracking-tight whitespace-nowrap sm:text-[34px]"
+        className="logo text-[26px] font-semibold tracking-tight whitespace-nowrap sm:text-[34px]"
       >
-        {t.common.appName}
+        <FallenKing />
+        <span>{t.common.appName}</span>
+        <span className="beta-tag">{t.beta}</span>
       </a>
       <div className="flex items-center gap-1.5">
         {me === undefined ? null : me ? (
@@ -80,7 +82,7 @@ export function Header() {
             <a
               href="/watch"
               onClick={(e) => go(e, '/watch')}
-              className="flex h-9 items-center rounded-md px-3 text-sm font-semibold transition-colors hover:bg-muted"
+              className="flex h-9 items-center rounded-md px-3 text-sm font-semibold transition-colors hover:bg-muted max-[479px]:hidden"
             >
               {t.common.watch}
             </a>
@@ -296,6 +298,33 @@ function MoonIcon({ className }: { className: string }) {
       strokeLinejoin="round"
     >
       <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z" />
+    </svg>
+  )
+}
+
+/** The king from the board, knocked over in front of the name. Ink on paper in either theme. */
+function FallenKing() {
+  const shape = (
+    <>
+      <rect x="22" y="78" width="56" height="10" rx="2.5" />
+      <path d="M32 78 C37 66 41 58 42 50 H58 C59 58 63 66 68 78 Z" />
+      <rect x="35" y="44" width="30" height="7" rx="2" />
+      <path d="M33 45 L29 29 C36 24 64 24 71 29 L67 45 Z" />
+      <path d="M46.75 27 V20 H40.5 V14 H46.75 V8 H53.25 V14 H59.5 V20 H53.25 V27 Z" />
+    </>
+  )
+  return (
+    <svg className="logo-king" viewBox="4 2 92 92" aria-hidden>
+      <g fill="currentColor" stroke="currentColor" strokeWidth="7" strokeLinejoin="round">
+        {shape}
+      </g>
+      <g fill="var(--color-bg)">{shape}</g>
+      <g fill="none" stroke="currentColor" strokeWidth="2.75" strokeLinecap="round">
+        <path d="M22 78 H78" />
+        <path d="M35 51 H65" />
+        <path d="M33 45 H67" />
+        <path d="M34 32.5 C41 29.5 59 29.5 66 32.5" />
+      </g>
     </svg>
   )
 }
