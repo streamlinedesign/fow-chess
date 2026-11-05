@@ -87,8 +87,6 @@ export function ModsPage() {
           <section>
             <h1 className="home-title">{t.mods.title}</h1>
             <p className="mt-2.5 text-[15px] text-accent">{t.mods.intro}</p>
-          </section>
-          <section>
             <CurrentSetup settings={settings} four={four} />
           </section>
           <section>
@@ -119,10 +117,8 @@ function CurrentSetup({ settings, four }: { settings: Settings; four: boolean })
   const t = useT()
   const notes = four ? [t.four.preview, ...(settings.fog ? [t.four.previewFog] : [])] : setupNotes(settings, t)
   return (
-    <div className="setup-card">
-      <h2 id="current-setup" className="text-lg font-semibold tracking-tight">
-        {t.mods.currentSetup}
-      </h2>
+    <div className="setup-now">
+      <h2 className="text-lg font-semibold tracking-tight">{t.mods.currentSetup}</h2>
       <p className="mt-0.5 text-sm font-medium">
         {four ? t.four.four : modeName(settings, t)} · {describeTime(settings.time, t)}
       </p>

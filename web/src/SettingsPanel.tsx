@@ -1,19 +1,21 @@
 import * as RadioGroup from '@radix-ui/react-radio-group'
 import * as Switch from '@radix-ui/react-switch'
-import { useId } from 'react'
+import { useId, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useT } from './i18n'
 import {
   clocked,
-  clocksFor,
   describeTime,
   modeName,
+  NO_CLOCK,
   sameTime,
   SETUPS,
   setupMode,
+  TIME_GROUPS,
   timeGroup,
   timeLabel,
   type Settings,
+  type TimeControl,
 } from './settings'
 
 /**
@@ -41,7 +43,6 @@ export function SettingsPanel({
   const id = useId()
   const t = useT()
   const mods = !!value.mods
-  const clocks = clocksFor(mods)
   return (
     <fieldset className={`setup flex min-w-0 flex-col overflow-hidden rounded-xl ${className}`}>
       <legend className="sr-only">{t.panel.title}</legend>
@@ -158,29 +159,89 @@ export function SettingsPanel({
           )}
 
           <Group id={`${id}-time`} label={t.panel.timeControl}>
-            <RadioGroup.Root
-              aria-labelledby={`${id}-time`}
-              value={String(clocks.findIndex((p) => sameTime(p, value.time)))}
-              onValueChange={(i) => onChange({ ...value, time: clocks[Number(i)] })}
-              className="grid grid-cols-2 gap-2 @xs:grid-cols-3"
-            >
-              {clocks.map((p, i) => (
-                <RadioGroup.Item
-                  key={i}
-                  value={String(i)}
-                  className="flex flex-col items-start gap-0.5 rounded-md border border-border px-3 py-2 text-left transition-colors hover:border-fg data-[state=checked]:border-fg data-[state=checked]:bg-fg data-[state=checked]:text-bg"
-                >
-                  <span className="text-[15px] leading-tight font-semibold">
-                    {clocked(p) ? t.time.groups[timeGroup(p)] : t.time.noClock}
-                  </span>
-                  <span className="text-[13px] leading-tight opacity-70">{clocked(p) ? timeLabel(p, t) : '∞'}</span>
-                </RadioGroup.Item>
-              ))}
-            </RadioGroup.Root>
+            <ClockPicker
+              labelledBy={`${id}-time`}
+              value={value.time}
+              noClock={mods}
+              onChange={(time) => onChange({ ...value, time })}
+            />
           </Group>
         </div>
       </div>
     </fieldset>
+  )
+}
+
+/** Clocks split by how long a game takes, the same way as on the home page: Short is Blitz and Rapid, Long the rest. */
+const SHORT_GROUPS = ['Blitz', 'Rapid']
+type Length = 'short' | 'long' | 'none'
+const lengthOf = (t: TimeControl): Length =>
+  !clocked(t) ? 'none' : SHORT_GROUPS.includes(timeGroup(t)) ? 'short' : 'long'
+const presetsFor = (l: Length) =>
+  l === 'none' ? [] : TIME_GROUPS.filter(([g]) => SHORT_GROUPS.includes(g) === (l === 'short')).flatMap(([, p]) => p)
+
+/** The clock: game length first (and No clock on the mods page), then a few presets of that length. */
+function ClockPicker({
+  labelledBy,
+  value,
+  noClock,
+  onChange,
+}: {
+  labelledBy: string
+  value: TimeControl
+  noClock: boolean
+  onChange: (t: TimeControl) => void
+}) {
+  const t = useT()
+  const length = lengthOf(value)
+  // Each length remembers the clock picked in it while the panel is open.
+  const [last, setLast] = useState<Record<'short' | 'long', TimeControl>>(() => ({
+    short: length === 'short' ? value : presetsFor('short')[0],
+    long: length === 'long' ? value : presetsFor('long')[0],
+  }))
+  const pickLength = (l: string) => {
+    if (l === length) return
+    onChange(l === 'none' ? NO_CLOCK : last[l as 'short' | 'long'])
+  }
+  const pick = (time: TimeControl) => {
+    if (length !== 'none') setLast({ ...last, [length]: time })
+    onChange(time)
+  }
+  const presets = presetsFor(length)
+  return (
+    <div className="flex flex-col gap-2.5">
+      <RadioGroup.Root aria-labelledby={labelledBy} value={length} onValueChange={pickLength} className="seg seg-lg">
+        <RadioGroup.Item value="short">
+          {t.home.short}
+          <small>{t.home.shortSub}</small>
+        </RadioGroup.Item>
+        <RadioGroup.Item value="long">
+          {t.home.long}
+          <small>{t.home.longSub}</small>
+        </RadioGroup.Item>
+        {noClock && (
+          <RadioGroup.Item value="none">
+            {t.time.noClock}
+            <small>∞</small>
+          </RadioGroup.Item>
+        )}
+      </RadioGroup.Root>
+      {presets.length > 0 && (
+        <RadioGroup.Root
+          aria-labelledby={labelledBy}
+          value={String(presets.findIndex((p) => sameTime(p, value)))}
+          onValueChange={(i) => pick(presets[Number(i)])}
+          className="home-times"
+        >
+          {presets.map((p, i) => (
+            <RadioGroup.Item key={i} value={String(i)} className="home-time">
+              <b>{p.perMove ? timeLabel(p, t).split(' ').slice(0, 2).join(' ') : timeLabel(p, t)}</b>
+              <span>{t.time.groups[timeGroup(p)]}</span>
+            </RadioGroup.Item>
+          ))}
+        </RadioGroup.Root>
+      )}
+    </div>
   )
 }
 
