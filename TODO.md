@@ -21,6 +21,9 @@
 
 ## Later
 
+- Set `BASE_URL` in `/etc/<name>/env` once the domain is picked, so link previews point at it
+- Link previews of War Mode games show the two-player board; draw the cross board for them
+
 - Set `BETA_ENDS` in `/etc/<name>/env` when the beta closes, so cyberpunk stays with beta accounts only
 - Unlocks: replays and Watch don't draw a bot's set or tiles yet
 - 1.0: desktop app downloads. Set the `GAME_URL` repository variable (Actions > Variables), `make release`, then turn on `DOWNLOADS` in `web/src/features.ts`
@@ -44,6 +47,7 @@
 
 ## Done
 
+- 0.39.0: link previews with pictures, share buttons, mods setups by link, installable app with a service worker, turned-king favicon
 - 0.38.1: title tags in Messages, the bell and friends; titles and sets refresh after a rated game
 - 0.38.0: titles from Club player to King, a set for each (bronze, silver, gold, grandmaster, king), holy at 1800, sets brought to one style
 - 0.36.0: Play a bot under Play with a friend; War Mode card clocks first

@@ -14,6 +14,8 @@ import { go } from './ProfilePage'
 import { PromotionDialog } from './Promotion'
 import { navigate } from './router'
 import { describeSettings, gameLook } from './settings'
+import { shareLink, siteURL } from './share'
+import { ShareButton } from './ShareButton'
 import { SetupBoard } from './SetupBoard'
 import { Button, Dialog, Spinner, Tip } from './ui'
 import { botSide, useMatch, type Color, type MatchState } from './useMatch'
@@ -133,7 +135,7 @@ export function MatchPage({ id }: { id: string }) {
     return () => clearTimeout(id)
   }, [over, overKey, state])
 
-  const link = `${location.origin}/m/${id}`
+  const link = siteURL(`/m/${id}`)
 
   if (conn === 'missing' || conn === 'outdated') {
     return (
@@ -344,7 +346,12 @@ export function MatchPage({ id }: { id: string }) {
               </Button>
             </Tip>
             <BugButton match={id} />
-            <CopyLink link={link} />
+            <ShareButton
+              variant="ghost"
+              title={t.match.shareTitle}
+              text={state ? describeSettings(state.settings, t).join(' · ') : undefined}
+              url={link}
+            />
           </div>
 
           {state && you && them && state.status !== 'waiting' && (
@@ -561,51 +568,25 @@ function WaitingCard({ id, link }: { id: string; link: string }) {
       <div className="flex w-full max-w-[320px] flex-col items-center gap-4 rounded-xl bg-bg p-6 text-center shadow-[0_0_0_1.5px_var(--color-fg)]">
         <p className="text-accent">{t.match.sendCode}</p>
         <p className="font-mono text-4xl font-bold tracking-[0.2em] select-all">{id}</p>
-        <CopyLink link={link} wide />
+        <CopyLink link={link} />
       </div>
     </div>
   )
 }
 
-function CopyLink({ link, wide }: { link: string; wide?: boolean }) {
+function CopyLink({ link }: { link: string }) {
   const t = useT()
   const [copied, setCopied] = useState(false)
   const share = async () => {
-    try {
-      if (wide && navigator.share && matchMedia('(pointer: coarse)').matches) {
-        await navigator.share({ title: t.match.shareTitle, url: link })
-        return
-      }
-      if (navigator.clipboard) await navigator.clipboard.writeText(link)
-      else copyFallback(link) // the clipboard API needs HTTPS, which a phone on the LAN won't have
+    if ((await shareLink({ title: t.match.shareTitle, url: link })) === 'copied') {
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
-    } catch {}
-  }
-  if (wide) {
-    return (
-      <Button variant="solid" className="w-full" onClick={share}>
-        {copied ? t.match.copied : t.match.shareLink}
-      </Button>
-    )
+    }
   }
   return (
-    <Tip label={copied ? t.match.copied : t.match.copyLink}>
-      <Button variant="ghost" icon aria-label={t.match.copyLink} onClick={share}>
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
-        </svg>
-      </Button>
-    </Tip>
+    <Button variant="solid" className="w-full" onClick={share}>
+      {copied ? t.match.copied : t.match.shareLink}
+    </Button>
   )
 }
 
@@ -633,15 +614,4 @@ function MoveList({ history }: { history: string[] }) {
       ))}
     </ol>
   )
-}
-
-function copyFallback(text: string) {
-  const el = document.createElement('textarea')
-  el.value = text
-  el.style.position = 'fixed'
-  el.style.opacity = '0'
-  document.body.append(el)
-  el.select()
-  document.execCommand('copy')
-  el.remove()
 }

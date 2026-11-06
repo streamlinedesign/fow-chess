@@ -208,7 +208,12 @@ func main() {
 		m.serve(r.Context(), conn, p)
 	})
 
-	mux.Handle("/", spa(dist))
+	// The web app manifest, so phones offer to install the site.
+	mime.AddExtensionType(".webmanifest", "application/manifest+json")
+	web, _ := fs.Sub(dist, "dist")
+	share := NewSharer(store, os.Getenv("BASE_URL"), indexHTML(web))
+	mux.HandleFunc("GET /og/", share.ServeImage)
+	mux.Handle("/", spa(web, share))
 
 	srv := &http.Server{Addr: *addr, Handler: mux}
 	go func() {
@@ -288,22 +293,4 @@ func redactURL(s string) string {
 		return u.Redacted()
 	}
 	return "(unparseable URL)"
-}
-
-// spa serves static files and falls back to index.html so /m/ABC123 deep links work.
-func spa(fsys embed.FS) http.Handler {
-	// The web app manifest, so phones offer to install the site.
-	mime.AddExtensionType(".webmanifest", "application/manifest+json")
-	sub, _ := fs.Sub(fsys, "dist")
-	files := http.FileServerFS(sub)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := strings.TrimPrefix(r.URL.Path, "/")
-		if _, err := fs.Stat(sub, path); path != "" && err != nil {
-			r.URL.Path = "/"
-		}
-		if strings.HasPrefix(path, "assets/") {
-			w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-		}
-		files.ServeHTTP(w, r)
-	})
 }

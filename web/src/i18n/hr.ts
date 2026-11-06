@@ -953,6 +953,20 @@ export const hr: Dict = {
     createAnAccount: 'Stvori račun',
   },
 
+  share: {
+    share: 'Podijeli',
+    copied: 'Poveznica kopirana',
+    shareGame: 'Podijeli partiju',
+    shareReplay: 'Podijeli snimku',
+    shareProfile: 'Podijeli profil',
+    shareSetup: 'Podijeli ove postavke',
+    gameText: (white: string, black: string, about: string) => `${white} protiv ${black} · ${about}`,
+    profileText: (name: string, rating: number) => `${name} na Eat the King, rejting ${rating}`,
+    setupTitle: 'Eat the King modovi',
+    setupText: (about: string) => `Isprobaj ove postavke: ${about}`,
+    linkedSetup: 'Otvoreno s podijeljene poveznice. Promijeni što god želiš.',
+  },
+
   titles: {
     names: {
       club: 'Klupski igrač',

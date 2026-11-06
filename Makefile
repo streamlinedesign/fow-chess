@@ -58,6 +58,12 @@ desktop-build: ## Installers for this system into desktop/target/release/bundle,
 	sed -i.bak 's/^version = ".*"/version = "$(VERSION)"/' desktop/Cargo.toml && rm desktop/Cargo.toml.bak
 	cd desktop && EATTHEKING_URL=$(GAME_URL) npx -y @tauri-apps/cli@2 build
 
+# Redraws the app icons (web/public) from the favicon, and the pieces and king
+# the link previews are drawn with (server/og). Needs Playwright once:
+# npm i -g playwright. The PNGs are committed, so builds don't need it.
+share-assets: ## Redraw the app icons and link preview pieces from the SVGs
+	NODE_PATH="$$(npm root -g)" node scripts/share-assets.mjs
+
 # The server and tests use DATABASE_URL, or else a database called chess in the
 # Postgres installed on this machine, which the server creates on first start.
 migrate: ## Create the database if needed and apply migrations
@@ -107,4 +113,4 @@ configure-repo: ## One-time GitHub settings: auto-merge, Actions may open PRs, m
 clean: ## Remove build output and the dev server binary
 	rm -rf web/dist server/dist/* .dev-server $(NAME) $(NAME)-linux-amd64 desktop/target
 
-.PHONY: help dev test build lint desktop desktop-build migrate db-reset db-seed bugs psql deploy release configure-repo clean
+.PHONY: help dev test build lint desktop desktop-build share-assets migrate db-reset db-seed bugs psql deploy release configure-repo clean

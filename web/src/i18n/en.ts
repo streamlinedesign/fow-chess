@@ -955,6 +955,20 @@ export const en = {
     createAnAccount: 'Create an account',
   },
 
+  share: {
+    share: 'Share',
+    copied: 'Link copied',
+    shareGame: 'Share game',
+    shareReplay: 'Share replay',
+    shareProfile: 'Share profile',
+    shareSetup: 'Share this setup',
+    gameText: (white: string, black: string, about: string) => `${white} vs ${black} · ${about}`,
+    profileText: (name: string, rating: number) => `${name} on Eat the King, rated ${rating}`,
+    setupTitle: 'Eat the King mods',
+    setupText: (about: string) => `Try this setup: ${about}`,
+    linkedSetup: 'Opened from a shared link. Change anything you like.',
+  },
+
   titles: {
     names: {
       club: 'Club player',
