@@ -4,6 +4,8 @@ import { Avatar, Who } from './Avatar'
 import { useMe } from './auth'
 import { DemoBoard } from './DemoBoard'
 import { TOURNAMENTS } from './features'
+import { BUILDS, detectOS, downloadUrl, OS_NAME } from './desktop'
+import { DownloadIcon } from './DownloadPage'
 import { useT } from './i18n'
 import { Icon } from './icons'
 import { Leaderboard } from './Leaderboard'
@@ -36,7 +38,7 @@ import { Button } from './ui'
 
 /** Clocks split by how long a game takes: Short is Blitz and Rapid, Long the rest. */
 const SHORT_GROUPS = ['Blitz', 'Rapid']
-const presets = (long: boolean) => TIME_GROUPS.filter(([g]) => SHORT_GROUPS.includes(g) !== long).flatMap(([, p]) => p)
+export const presets = (long: boolean) => TIME_GROUPS.filter(([g]) => SHORT_GROUPS.includes(g) !== long).flatMap(([, p]) => p)
 const isLong = (t: TimeControl) => !SHORT_GROUPS.includes(timeGroup(t))
 
 /**
@@ -84,6 +86,8 @@ export function Landing() {
         )}
         <div className="home-cell">{me ? <FriendsOnline /> : <WatchTeaser />}</div>
       </div>
+
+      <AppStrip />
 
       <Bots settings={settings} />
 
@@ -197,7 +201,7 @@ function PlayMenu({
 }
 
 /** A custom game: make a code to share, or join one. Quieter than matchmaking. */
-function CodeGame({ settings, busy, setBusy }: { settings: Settings; busy: boolean; setBusy: (b: boolean) => void }) {
+export function CodeGame({ settings, busy, setBusy }: { settings: Settings; busy: boolean; setBusy: (b: boolean) => void }) {
   const t = useT()
   const [code, setCode] = useState('')
   const [doing, setDoing] = useState<'create' | 'join' | null>(null)
@@ -343,16 +347,19 @@ function Bots({ settings }: { settings: Settings }) {
  * Find match: wait in the server's queue for the player nearest your rating
  * who wants the same game. Guests can't, since they have no rating.
  */
-function FindMatch({
+export function FindMatch({
   settings,
   signedIn,
   busy,
   summary,
+  bare,
 }: {
   settings: Settings
   signedIn: boolean
   busy: boolean
   summary: string[]
+  /** Just the button: the desktop app's home says what the game is itself. */
+  bare?: boolean
 }) {
   const [botBusy, setBotBusy] = useState(false)
   const t = useT()
@@ -409,7 +416,7 @@ function FindMatch({
   // Leaving the page leaves the queue.
   useEffect(() => () => void (since !== null && api('DELETE', '/api/queue').catch(() => {})), [since])
 
-  const about = (
+  const about = bare ? null : (
     <p className="home-summary">
       <b>{summary[0]}</b> · {summary[1]}
       <span className="block">{summary[2]}</span>
@@ -479,7 +486,7 @@ function FindMatch({
  * The ranked four-player game: one fixed game (extended board, Battleship,
  * Sync Move, no fog), found in its own queue of four.
  */
-function FindFour({ signedIn }: { signedIn: boolean }) {
+export function FindFour({ signedIn, bare }: { signedIn: boolean; bare?: boolean }) {
   const t = useT()
   const [since, setSince] = useState<number | null>(null)
   const [now, setNow] = useState(0)
@@ -536,13 +543,17 @@ function FindFour({ signedIn }: { signedIn: boolean }) {
 
   return (
     <section className="flex flex-col gap-2.5">
-      <h2 className="text-[22px] font-semibold tracking-tight">{t.home.fourTitle}</h2>
-      <p className="home-summary">
-        <b>{t.home.fourAbout}</b>
-        <span className="block">{signedIn ? t.home.fourRanked : t.home.fourGuest}</span>
-      </p>
+      {!bare && (
+        <>
+          <h2 className="text-[22px] font-semibold tracking-tight">{t.home.fourTitle}</h2>
+          <p className="home-summary">
+            <b>{t.home.fourAbout}</b>
+            <span className="block">{signedIn ? t.home.fourRanked : t.home.fourGuest}</span>
+          </p>
+        </>
+      )}
       {!signedIn ? (
-        <Button className="home-play" onClick={() => navigate('/login')}>
+        <Button variant={bare ? 'solid' : 'outline'} className="home-play" onClick={() => navigate('/login')}>
           {t.home.logInToPlay}
         </Button>
       ) : waiting ? (
@@ -562,8 +573,8 @@ function FindFour({ signedIn }: { signedIn: boolean }) {
           </Button>
         </div>
       ) : (
-        <Button className="home-play" onClick={start}>
-          {t.home.fourPlay}
+        <Button variant={bare ? 'solid' : 'outline'} className="home-play" onClick={start}>
+          {bare ? t.home.play : t.home.fourPlay}
         </Button>
       )}
       {error && (
@@ -587,7 +598,7 @@ function Heading({ title, href, link }: { title: string; href: string; link: str
 }
 
 /** Your games in progress, the ones waiting on you first. */
-function YourGames({ username }: { username: string }) {
+export function YourGames({ username }: { username: string }) {
   const t = useT()
   const [games, setGames] = useState<GameSummary[] | null>(null)
 
@@ -778,7 +789,7 @@ function About() {
 }
 
 /** Why a guest might sign in. */
-function GuestPitch() {
+export function GuestPitch() {
   const t = useT()
   return (
     <section className="flex flex-col gap-4">
@@ -804,5 +815,30 @@ function WatchTeaser() {
       <Heading title={t.common.watch} href="/watch" link={t.landing.allGames} />
       <p className="text-accent">{t.watch.intro}</p>
     </section>
+  )
+}
+
+/** On a computer: the desktop app, one click for this system. Hidden on phones by CSS. */
+function AppStrip() {
+  const t = useT()
+  const os = detectOS()
+  const build = BUILDS.find((b) => b.os === os)
+  if (!build) return null
+  return (
+    <div className="home-row home-app">
+      <div className="home-cell">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-[22px] font-semibold tracking-tight">{t.desktop.strip}</h2>
+          <a href="/download" onClick={(e) => go(e, '/download')} className="text-sm font-medium text-accent hover:text-fg">
+            {t.desktop.otherSystems}
+          </a>
+        </div>
+        <p className="mt-2 mb-5 text-accent">{t.desktop.stripAbout}</p>
+        <a href={downloadUrl(build.file)} className="home-app-get">
+          <DownloadIcon />
+          {t.desktop.downloadFor(OS_NAME[build.os])}
+        </a>
+      </div>
+    </div>
   )
 }

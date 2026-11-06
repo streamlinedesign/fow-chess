@@ -151,6 +151,54 @@ export const en = {
     cantStart: 'Couldn’t start the board. Reload to try again.',
   },
 
+  desktop: {
+    download: 'Download',
+    original: 'Eat the King',
+    originalAbout: 'The original. Two players in the fog of war, no check, capture the king to win.',
+    war: 'War Mode',
+    warAbout: 'Four players, everyone moves at once. The fog is lifted and pawns are jesters. Last king standing wins.',
+    modded: 'Modded',
+    moddedAbout: 'Every switch: fog, checkmate, King of the Hill, Sync Move, any clock, two or four players.',
+    place: (rank: number, of: number) => {
+      const s = rank % 100 >= 11 && rank % 100 <= 13 ? 'th' : (['th', 'st', 'nd', 'rd'][rank % 10] ?? 'th')
+      return `${rank}${s} of ${of.toLocaleString('en')} · ranked`
+    },
+    noRankYet: 'No ranked games yet',
+    logInForRating: 'Log in for a rating',
+    neverRanked: 'Never ranked',
+    chooseMods: 'Choose mods',
+    warClock: '10 min each',
+    clock: 'Clock',
+    title: 'Play on your computer.',
+    about: 'The same game in its own window, for Windows, Mac and Linux. It keeps you signed in and starts on a home with the three ways to play.',
+    downloadFor: (os: string) => `Download for ${os}`,
+    firstTitle: 'The first time you open it.',
+    firstText:
+      'The app isn’t signed yet, so Windows may say it doesn’t know the publisher: choose More info, then Run anyway. On a Mac, right-click the app and choose Open.',
+    all: 'All downloads',
+    kinds: {
+      windows: 'Installer',
+      mac: 'Apple silicon and Intel',
+      appimage: 'Any distribution',
+      deb: 'Debian and Ubuntu',
+    } as Record<string, string>,
+    older: 'Older versions and the source are on GitHub.',
+    phone: 'On a phone',
+    phoneAbout:
+      'No app to install. Open this site on your phone, then add it to your home screen: on an iPhone, Share and then Add to Home Screen; on Android, the menu and then Install app. It opens full screen, like an app.',
+    phoneTitle: 'Play on your phone.',
+    phoneHero: 'No app to install. Add this site to your home screen and it opens full screen, like an app.',
+    addToHome: 'Add to home screen',
+    iphoneHint: 'On an iPhone: Share, then Add to Home Screen.',
+    onComputer: 'On a computer',
+    different: 'What’s different in the app',
+    differentAbout:
+      'Nothing about the game: the same server, the same account and the same rules. The app gives the game a window of its own and starts on a home with Eat the King, War Mode and Modded side by side.',
+    strip: 'Play on your computer',
+    stripAbout: 'The same game in its own window, for Windows, Mac and Linux.',
+    otherSystems: 'Other systems',
+  },
+
   showcase: {
     fogLifted: 'Fog lifted',
     view: (side: string) => `${side}'s view`,

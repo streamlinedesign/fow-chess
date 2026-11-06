@@ -190,7 +190,7 @@ func TestRating(t *testing.T) {
 	if len(top) != 2 || top[0].Username != "ann" || top[0].Games != 1 || top[1].Rank != 2 {
 		t.Errorf("leaderboard %+v", top)
 	}
-	if me, _ := store.Rank(ben.ID, false); me == nil || me.Rank != 2 {
+	if me, _ := store.Rank(ben.ID, false); me == nil || me.Rank != 2 || me.Of != 2 {
 		t.Errorf("ben's rank %+v", me)
 	}
 }

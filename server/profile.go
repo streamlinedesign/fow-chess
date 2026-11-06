@@ -196,6 +196,29 @@ func profileRoutes(mux *http.ServeMux, store *Store, auth *Auth, live *Live) {
 		writeJSON(w, resp)
 	})
 
+	// Where the signed-in player stands on both ranked games, for the desktop
+	// app's home: null for a game they haven't played rated yet.
+	mux.HandleFunc("GET /api/ranks", func(w http.ResponseWriter, r *http.Request) {
+		u := auth.user(r)
+		if u == nil {
+			jsonError(w, "Log in first.", http.StatusUnauthorized)
+			return
+		}
+		var resp struct {
+			One  *leader `json:"one"`
+			Four *leader `json:"four"`
+		}
+		var err error
+		if resp.One, err = store.Rank(u.ID, false); err == nil {
+			resp.Four, err = store.Rank(u.ID, true)
+		}
+		if err != nil {
+			jsonError(w, "Couldn't load the leaderboard.", http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, resp)
+	})
+
 	// The Top 100, plus where the signed-in player stands if they're further
 	// down; ?four=1 for ranked four-player games.
 	mux.HandleFunc("GET /api/leaderboard", func(w http.ResponseWriter, r *http.Request) {

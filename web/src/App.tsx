@@ -20,6 +20,9 @@ import { RulesPage } from './RulesPage'
 import { ModsPage } from './ModsPage'
 import { TournamentsPage } from './TournamentsPage'
 import { TOURNAMENTS } from './features'
+import { AppHome } from './AppHome'
+import { DESKTOP } from './desktop'
+import { DownloadPage } from './DownloadPage'
 import { navigate, usePath } from './router'
 import { WatchPage } from './WatchPage'
 import { SettingsPage } from './SettingsPage'
@@ -79,8 +82,14 @@ export function App() {
     <ModsPage />
   ) : TOURNAMENTS && path === '/tournaments' ? (
     <TournamentsPage />
+  ) : path === '/download' ? (
+    <DownloadPage />
   ) : path === '/' ? (
-    <Landing />
+    DESKTOP ? (
+      <AppHome />
+    ) : (
+      <Landing />
+    )
   ) : (
     <NotFound />
   )
@@ -91,7 +100,7 @@ export function App() {
         <Header />
         <ErrorBoundary key={path}>{page}</ErrorBoundary>
         {/* Game pages and chats fill the screen; the rest end with the footer. */}
-        {!match && !game && !chat && <Footer />}
+        {!match && !game && !chat && !DESKTOP && <Footer />}
         <OfferDialog />
         <Toaster />
       </div>
