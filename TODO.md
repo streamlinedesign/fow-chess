@@ -31,14 +31,16 @@
 - Side preference for games shared by code (the creator always plays White for now)
 
 - chess-bots: copy `server/engine` (Sync Move, jester pawns and more are missing there)
-- Four-player: drag pieces in the setup (taps only for now); bots that think about Sync Move rounds (they play as if in turns, and bot-only games can go on for a very long time)
-- Four-player: show these games on profiles, Watch and the bell; rematch and draw offers; a stronger bot
+- Four-player: drag pieces in the setup (taps only for now)
+- Four-player: show these games on profiles, Watch and the bell; rematch and draw offers
 - Four-player extended board: the seat names and clocks aren't drawn in the corners (they're playable there), only in the list beside the board; find a place for them on the board
-- War Mode: bot levels for four players (every bot but Rex inutilis plays `four.BotMove` on the home page board for now); a bot or friendlier wait when fewer than four are in the queue; show War Mode games in the profile's game lists
+- Four-player bots: Solomon only matches Ramesses II against itself (it beats the old bot clearly); a two-round look ahead might separate them. A smarter Battleship arrangement (two tried, neither beat the shuffled back row)
+- War Mode: a bot or friendlier wait when fewer than four are in the queue; show War Mode games in the profile's game lists
 - Decide what else the hub should show
 
 ## Done
 
+- 0.19.0: stronger bots for both games; four-player bot levels that play Sync Move
 - 0.17.0: cyberpunk pieces and tiles for beta players
 - 0.16.1: avatar framing, logo on phones, match-not-found crash, knocked-out four-player players kept behind and out of the chat, release date on the home page
 - 0.11.0: White and Black sets that opponents see, light and dark lines for colours, tiles on your half (three rows with four players), faster settings, head avatars

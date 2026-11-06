@@ -5,57 +5,259 @@ import "math/rand/v2"
 // pieceValue is what a piece is worth to the bot.
 var pieceValue = [...]float64{0, 1, 3, 3, 5, 9, 1000}
 
-// BotMove picks a move for the player to move, using only what that player
-// can see: eat a king when it can, take what it can without losing more,
-// keep its pieces out of reach of the pieces it sees, and push towards the
-// middle. It's a sparring partner for filling empty seats, not a strong player.
+// BotMove picks a move for the player to move, seeing the whole board, at
+// the strongest level.
 func BotMove(p *Position, rng *rand.Rand) (Move, bool) {
+	return BotMoveSeeing(p, nil, Strongest, rng)
+}
+
+// Strength is how well a four-player bot plays.
+type Strength int
+
+const (
+	// Greedy takes what it can and keeps its pieces out of reach of what it
+	// sees, one move at a time: the bot of before 2026-11.
+	Greedy Strength = iota + 1
+	// Careful weighs everything that can happen in the round (see
+	// BotMoveSeeing), but not always well.
+	Careful
+	// Strongest weighs it all every move.
+	Strongest
+)
+
+// BotMoveSeeing picks a move for the player to move, who sees the squares in
+// seen (nil for the whole board): pieces of other players it can't see are
+// left out of its thinking, so it never cheats.
+//
+// It looks one round ahead and weighs what can happen in it. In Sync Move the
+// others choose their moves from the same position at the same time, so a
+// piece is in danger on any square another player could move to now, and a
+// piece that moves away dodges. Played in turns, the danger is whatever the
+// others could take after the bot's move. For every move it adds up what it
+// takes (less likely to work against a piece its owner can see coming), what
+// it puts or leaves in danger (less when another piece covers it), the safety
+// of its king above all, and a little for heading to the middle and pushing
+// pawns towards promotion.
+func BotMoveSeeing(p *Position, seen *[NumSquares]bool, strength Strength, rng *rand.Rand) (Move, bool) {
+	if strength <= Greedy {
+		return greedyMove(p, seen, rng)
+	}
 	moves := p.LegalMoves()
 	if len(moves) == 0 {
 		return Move{}, false
 	}
 	us := p.Turn
-	seen := p.Vision(us)
-	kingSq := p.KingSquare(us)
-	kingInDanger := kingSq != NoSquare && p.Attacked(kingSq, us, nil)
-	best, bestScore := moves[0], -1e9
-	for _, m := range moves {
-		pc := p.Board[m.From]
-		score := rng.Float64() * 0.3
-		target := p.Board[m.To]
-		if m.Is(FlagEnPassant) {
-			target = NewPiece(Red, Pawn)
-		}
-		score += pieceValue[target.Kind()]
-		if p.HillOn() && pc.Kind() == King && p.Shape.InCentre(m.To) {
-			score += 1000
-		}
-		if m.Promo != NoKind {
-			score += pieceValue[m.Promo] - 1
-		}
-		after, _ := p.Apply(m)
-		mover := after.Board[m.To]
-		if after.Attacked(m.To, us, &seen) {
-			score -= pieceValue[mover.Kind()] * 0.9
-		}
-		if kingInDanger {
-			if k := after.KingSquare(us); k != NoSquare && !after.Attacked(k, us, &seen) {
-				score += 50
+	known := *p
+	if seen != nil {
+		for sq, pc := range known.Board {
+			if !pc.IsEmpty() && pc.Color() != us && !seen[sq] {
+				known.Board[sq] = NoPiece
 			}
 		}
-		// Head for the middle, pawns most of all.
-		dx, dy := float64(m.To.X())-6.5, float64(m.To.Y())-6.5
-		fx, fy := float64(m.From.X())-6.5, float64(m.From.Y())-6.5
-		closer := (fx*fx + fy*fy - dx*dx - dy*dy) / 40
-		if pc.Kind() == Pawn {
-			closer += 0.15
-		}
-		if pc.Kind() != King {
-			score += closer
-		}
-		if score > bestScore {
-			best, bestScore = m, score
+	}
+	b := bot{us: us, known: &known, w: careful}
+	if strength >= Strongest {
+		b.w = strongest
+	}
+	if known.Sync {
+		b.reach = b.reaches(&known)
+	}
+	scores := make([]float64, len(moves))
+	for i, m := range moves {
+		scores[i] = b.score(m) + rng.Float64()*b.w.noise
+	}
+	best := 0
+	for i := range moves {
+		if scores[i] > scores[best] {
+			best = i
 		}
 	}
-	return best, true
+	return moves[best], true
+}
+
+// weights are what a bot cares about, in pawns.
+type weights struct {
+	// hit is how likely another player is to take a piece of ours they can
+	// reach, and dodge how likely a piece we attack is moved away.
+	hit, dodge float64
+	// king is what the bot's own king is worth when it weighs danger, and
+	// take what taking another king is worth to it.
+	king, take float64
+	// threat is what lining up a capture for next round is worth, as a share
+	// of the piece's value; centre what heading for the middle is worth, and
+	// pawn each step a pawn takes forward.
+	threat, centre, pawn float64
+	// noise is how much chance goes into each move's score.
+	noise float64
+}
+
+// strongest was tuned in bot matches (see TestFourLadder): changing any one
+// weight by half or double made no clear difference against itself. Lining
+// up next round's captures (threat) made no difference against itself
+// either, but against the Greedy bot it won 85% of games instead of 62%, and
+// it ends games: a third as many were still going after 400 rounds. careful
+// is the same bot without it and with more chance in what it plays.
+var (
+	strongest = weights{hit: 0.4, dodge: 0.45, king: 60, take: 40, centre: 1.0 / 60, pawn: 0.1, threat: 0.3, noise: 0.05}
+	careful   = weights{hit: 0.4, dodge: 0.45, king: 60, take: 40, centre: 1.0 / 60, pawn: 0.1, noise: 4}
+)
+
+type bot struct {
+	us    Color
+	known *Position
+	w     weights
+	// reach counts, for each square, how many other players could move a
+	// piece there this round, and cheapest is the least valuable such piece.
+	reach *reachMap
+}
+
+type reachMap struct {
+	count    [NumSquares]uint8
+	cheapest [NumSquares]float64
+	players  [NumSquares]uint8 // a bit per player
+}
+
+// reaches maps where the other players still in could move to in p.
+func (b *bot) reaches(p *Position) *reachMap {
+	r := &reachMap{}
+	for sq, pc := range p.Board {
+		if pc.IsEmpty() || pc.Color() == b.us || p.Out[pc.Color()] {
+			continue
+		}
+		v := pieceValue[pc.Kind()]
+		if pc.Kind() == King {
+			v = 50
+		}
+		for _, m := range p.PieceMoves(Square(sq)) {
+			bit := uint8(1) << pc.Color()
+			if r.players[m.To]&bit == 0 {
+				r.players[m.To] |= bit
+				r.count[m.To]++
+			}
+			if r.cheapest[m.To] == 0 || v < r.cheapest[m.To] {
+				r.cheapest[m.To] = v
+			}
+		}
+	}
+	return r
+}
+
+func (b *bot) worth(k Kind) float64 {
+	if k == King {
+		return b.w.king
+	}
+	return pieceValue[k]
+}
+
+func (b *bot) score(m Move) float64 {
+	p := b.known
+	pc := p.Board[m.From]
+	score := 0.0
+
+	// What it takes.
+	target := p.Board[m.To]
+	if m.Is(FlagEnPassant) {
+		target = p.Board[p.EPPawn]
+	}
+	if !target.IsEmpty() {
+		gain := pieceValue[target.Kind()]
+		if target.Kind() == King {
+			gain = b.w.take
+		}
+		if p.Sync {
+			// The owner sees it coming and may move it away.
+			gain *= 1 - b.w.dodge
+		}
+		score += gain
+	}
+	if m.Promo != NoKind {
+		score += pieceValue[m.Promo] - 1
+	}
+	if p.HillOn() && pc.Kind() == King && p.Shape.InCentre(m.To) {
+		score += 1000
+	}
+
+	after, _ := p.Apply(m)
+	after.Turn = b.us
+	reach := b.reach
+	if !p.Sync {
+		reach = b.reaches(&after)
+	}
+	cover := b.cover(&after)
+
+	// What it leaves in danger: every piece of ours on a square someone else
+	// could reach. In Sync Move landing on the same square as someone else
+	// knocks both out, so the moved piece counts even on an empty square.
+	for sq, own := range after.Board {
+		if !own.Is(b.us) {
+			continue
+		}
+		n := reach.count[sq]
+		if n == 0 {
+			continue
+		}
+		chance := 1.0
+		for range n {
+			chance *= 1 - b.w.hit
+		}
+		chance = 1 - chance
+		loss := b.worth(own.Kind())
+		if cover[sq] && own.Kind() != King {
+			// We'd take back: lose the difference, if any.
+			loss = max(loss-reach.cheapest[sq], loss*0.15)
+		}
+		score -= loss * chance
+	}
+
+	// What the moved piece threatens next: worth a little, a king most.
+	if b.w.threat > 0 {
+		for _, t := range after.PieceMoves(m.To) {
+			if v := after.Board[t.To]; t.Is(FlagCapture) && !v.IsEmpty() {
+				if v.Kind() == King {
+					score += b.w.threat * 10
+				} else {
+					score += b.w.threat * pieceValue[v.Kind()]
+				}
+			}
+		}
+	}
+
+	// Heading for the middle, and pawns forward.
+	if pc.Kind() != King {
+		w := float64(p.Shape.Width())/2 - 0.5
+		dx, dy := float64(m.To.X())-w, float64(m.To.Y())-w
+		fx, fy := float64(m.From.X())-w, float64(m.From.Y())-w
+		score += (fx*fx + fy*fy - dx*dx - dy*dy) * b.w.centre
+	}
+	if pc.Kind() == Pawn {
+		score += b.w.pawn * float64(p.Shape.RankOf(b.us, m.To)-p.Shape.RankOf(b.us, m.From))
+	}
+	return score
+}
+
+// cover marks the squares our pieces could take back on in p.
+func (b *bot) cover(p *Position) *[NumSquares]bool {
+	var c [NumSquares]bool
+	q := *p
+	// Make every square of ours look like someone else's so our moves onto
+	// them show up as captures.
+	other := NewPiece((b.us+1)%4, Pawn)
+	for sq, pc := range q.Board {
+		if pc.Is(b.us) {
+			q.Board[sq] = other
+		}
+	}
+	for sq, pc := range p.Board {
+		if !pc.Is(b.us) {
+			continue
+		}
+		q.Board[sq] = pc
+		for _, m := range q.PieceMoves(Square(sq)) {
+			if p.Board[m.To].Is(b.us) {
+				c[m.To] = true
+			}
+		}
+		q.Board[sq] = other
+	}
+	return &c
 }
