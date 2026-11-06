@@ -75,13 +75,14 @@ export function botFor(theme: string): Bot | undefined {
  * and each player's own skin as the server passes it on.
  */
 export function gameLook(
-  settings: (Look & { bot?: Bot }) | undefined,
+  settings: (Look & { bot?: Bot; demo?: boolean }) | undefined,
   botSide?: 'w' | 'b' | null,
   players?: Partial<Record<'w' | 'b', { skin?: Skin }>>,
 ): Look | undefined {
   if (!settings) return settings
   const look: Look = { ...settings }
-  const botSet = settings.bot && BOT_SET[settings.bot]
+  // The home page board's Solomon plays the default pieces; bots wear their set only in a game started from their card.
+  const botSet = settings.bot && !settings.demo && BOT_SET[settings.bot]
   if (botSet && botSide) {
     look.sets = { [botSide]: botSet }
     look.tiles = { [botSide]: botSet }
@@ -133,11 +134,15 @@ export const TIME_GROUPS: [string, TimeControl[]][] = [
 ]
 
 /**
- * War Mode's clocks: 30 minutes plus 10 seconds a move, 2 hours plus 30
- * seconds a move, and a day for each move. Must match warTimes in
- * server/four_match.go.
+ * War Mode's clocks: 30 minutes plus 10 seconds a move (the default), 2 hours
+ * plus 30 seconds a move, a day for each move, and 10 minutes plus 5 seconds
+ * a move. Must match warTimes in server/four_match.go, order included.
  */
-export const WAR_TIMES: TimeControl[] = [tc(1800, 10), tc(7200, 30), tc(0, 0, DAY)]
+export const WAR_TIMES: TimeControl[] = [tc(1800, 10), tc(7200, 30), tc(0, 0, DAY), tc(600, 5)]
+
+/** War Mode's clocks split like Eat the King's: Short is 10 and 30 minutes, Long 2 hours and a day (indexes into WAR_TIMES). */
+export const WAR_SHORT = [3, 0]
+export const WAR_LONG = [1, 2]
 
 /** The War Mode clock last picked, for the queue and for games with friends. */
 export function loadWarTime(): TimeControl {

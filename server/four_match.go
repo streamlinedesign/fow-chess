@@ -59,10 +59,11 @@ type fourSettings struct {
 var warMode = fourSettings{Setup: "battleship", JesterPawns: true, War: true,
 	Fog: true, CenterVision: "any", Time: warTimes[0]}
 
-// warTimes are War Mode's clocks: 30 minutes plus 10 seconds a move, 2 hours
-// plus 30 seconds a move, and a day for each move. Must match WAR_TIMES in
+// warTimes are War Mode's clocks: 30 minutes plus 10 seconds a move (the
+// default), 2 hours plus 30 seconds a move, a day for each move, and 10
+// minutes plus 5 seconds a move. Must match WAR_TIMES in
 // web/src/settings.ts.
-var warTimes = []TimeControl{{Base: 1800, Inc: 10}, {Base: 7200, Inc: 30}, {PerMove: 24 * 60 * 60}}
+var warTimes = []TimeControl{{Base: 1800, Inc: 10}, {Base: 7200, Inc: 30}, {PerMove: 24 * 60 * 60}, {Base: 600, Inc: 5}}
 
 // warFour is War Mode with clock t, or with the default clock if t isn't one
 // of warTimes.
@@ -195,7 +196,14 @@ func (h *FourHub) Create(creator *player, settings fourSettings) *FourMatch {
 // in the order given, with their four-player ratings as they start, on War
 // Mode clock t.
 func (h *FourHub) CreateRanked(ps [4]*player, ratings [4]int, t TimeControl) *FourMatch {
-	settings := rankedWar(t)
+	return h.CreateSeated(ps, rankedWar(t), ratings)
+}
+
+// CreateSeated starts a game for four players already chosen, seated in the
+// order given, with their ratings as they start (zero for an unranked game).
+// Ranked games come from the four-player queue, unranked ones from the
+// guest queue.
+func (h *FourHub) CreateSeated(ps [4]*player, settings fourSettings, ratings [4]int) *FourMatch {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	for {

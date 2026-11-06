@@ -2146,10 +2146,6 @@ a.tick:active {
 .home-bots {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
-/* The home page's bots below the board: everyone but Solomon, who plays on the board. */
-.home-bots.three {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
 .home-r3 {
   grid-template-columns: 1fr;
 }
@@ -2222,7 +2218,7 @@ a.tick:active {
   .home-menu-grid > section:nth-child(3) {
     border-left: 1px solid var(--line);
   }
-  .home-menu-grid > section:nth-child(4) {
+  .home-menu-grid > section:nth-child(n + 4) {
     grid-column: 1 / -1;
   }
   .home-menu-grid > section:nth-child(n + 2) {
@@ -2231,6 +2227,17 @@ a.tick:active {
 }
 /* The two official, ranked games: a solid ink bar down the side, an Official
    tag beside the title and your rating on the right. */
+/* The two official games side by side are the same height, with Play at the bottom of each. */
+.home-official {
+  display: flex;
+  flex-direction: column;
+}
+.home-official-body {
+  flex: 1;
+}
+.home-play-at {
+  margin-top: auto;
+}
 .home-menu > .home-official,
 .home-menu-grid > .home-official {
   box-shadow: inset 4px 0 0 var(--color-fg);
@@ -2334,6 +2341,9 @@ a.tick:active {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
+}
+.home-times.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 .home-time {
   display: flex;
@@ -2844,6 +2854,37 @@ a.tick:active {
   align-self: flex-start;
   margin-top: auto;
 }
+/* The bots under Play with a friend: one card each, side by side when there's room. */
+.home-bot-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.home-bot-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1.5px var(--color-border);
+}
+.home-bot-item .home-bot-face {
+  width: 44px;
+  height: 44px;
+}
+.home-bot-item .home-bot-face img {
+  width: 34px;
+  height: 34px;
+}
+.home-bot-item h3 {
+  margin-top: 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.home-bot-item .home-bot-play {
+  margin-top: 6px;
+}
 
 @media (max-width: 1080px) {
   .home-hero,
@@ -2882,20 +2923,37 @@ a.tick:active {
   .home-bots > .home-cell:nth-child(n + 3) {
     border-top: 1px solid var(--line);
   }
-  /* Three bots stay side by side until the phone layout. */
-  .home-bots.three {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .home-bots.three > .home-cell:nth-child(3) {
-    border-left: 1px solid var(--line);
-    border-top: 0;
-  }
   .home .cross::after {
     display: none;
   }
 }
-/* Phone: one column, and the board goes edge to edge, first. */
+/* Phone: one column. The title and the two official games come first, then
+   the board (edge to edge), then Play a friend. */
 @media (max-width: 760px) {
+  .home-hero {
+    display: flex;
+    flex-direction: column;
+  }
+  .home-hero > .home-menu,
+  .home-menu-grid {
+    display: contents;
+  }
+  .home-menu-grid > section:first-child {
+    order: 1;
+  }
+  .home-menu-grid > .home-official {
+    order: 2;
+  }
+  .home-hero > .home-cell:first-child {
+    order: 3;
+    border-top: 1px solid var(--line);
+  }
+  .home-menu-grid > .home-code {
+    order: 4;
+  }
+  .home-menu-grid > .home-bot-section {
+    order: 5;
+  }
   .home {
     --gut: 16px;
   }
@@ -2960,49 +3018,7 @@ a.tick:active {
   .home-r1 > .home-cell:first-child {
     border-bottom: 0;
   }
-  .home-bots.three {
-    grid-template-columns: 1fr;
-  }
-  .home-bots.three > .home-cell:nth-child(3) {
-    border-left: 0;
-    border-top: 1px solid var(--line);
-  }
-  .home-bot {
-    display: grid;
-    grid-template-columns: 56px 1fr auto;
-    align-items: center;
-    gap: 4px 14px;
-    min-height: 0;
-    padding-top: 18px;
-    padding-bottom: 18px;
-  }
-  .home-bot-top {
-    display: contents;
-  }
-  .home-bot-face {
-    grid-row: 1 / span 2;
-  }
-  .home-bot-top .strength {
-    grid-column: 3;
-    grid-row: 1;
-  }
-  .home-bot h3 {
-    grid-column: 2;
-    grid-row: 1;
-    font-size: 17px;
-  }
-  .home-bot p {
-    grid-column: 2 / span 2;
-    grid-row: 2;
-    font-size: 13px;
-  }
-  .home-bot p + p {
-    grid-row: 3;
-  }
-  .home-bot-play {
-    grid-column: 1 / -1;
-    margin-top: 8px;
-  }
+
 }
 
 .strength {
