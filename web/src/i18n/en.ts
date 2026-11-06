@@ -250,6 +250,18 @@ export const en = {
   },
 
   about: {
+    plansHeading: 'Plans for v1.0',
+    plansSub: (date: string) => `Coming with the full release, ${date}.`,
+    plans: [
+      'The rules of both games may still change',
+      'Hand-drawn pieces and skins',
+      'Apps for Windows, Linux, Mac, iOS and Android',
+      'A separate game engine for self-hosting',
+      'More skins',
+      'Tournaments',
+      'More mods',
+      'Security and anti-cheat',
+    ],
     title: 'About the game',
     paras: [
       'Eat the King is the original game: chess in the fog of war. You see only the squares your pieces can reach, there is no check, and you win by capturing the king. It always starts from the usual position. War Mode is the second official game: four players in the fog on a cross-shaped board, with Battleship and jester pawns, taking turns.',
@@ -519,18 +531,6 @@ export const en = {
     warSub: 'Four players, everyone for themselves. Ranked on a rating of its own.',
     modsNote:
       'Everything else, from checkmate to King of the Hill, is a mod. Each one is explained where you pick it, on the Mods page.',
-    plansHeading: 'Plans for v1.0',
-    plansSub: (date: string) => `The full release, ${date}.`,
-    plans: [
-      ['Rules may change', 'The rules of both games are still subject to change during the beta.'],
-      ['Hand-drawn pieces and skins', 'Every set and tile drawn by hand.'],
-      ['Apps', 'Dedicated apps for Windows, Linux, Mac, iOS and Android.'],
-      ['Self-hosting', 'The game engine as its own project, so you can run a server yourself.'],
-      ['More skins', 'New sets and tiles to unlock.'],
-      ['Tournaments', 'Arenas and events with their own standings.'],
-      ['More mods', 'More dials to turn on the Mods page.'],
-      ['Security and anti-cheat', 'Hardening the server and catching players who get help.'],
-    ] as [string, string][],
     cards: {
       fog: {
         kind: 'What you see',

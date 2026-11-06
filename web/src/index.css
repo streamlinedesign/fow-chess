@@ -548,20 +548,31 @@
 /* Plans for 1.0 on the rules page: a numbered list in two columns. */
 .plans {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: 1fr;
   gap: 0 32px;
+  margin-top: 14px;
   font-size: 15px;
+}
+@media (min-width: 640px) {
+  .plans {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1100px) {
+  .plans {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 .plans li {
   display: flex;
-  gap: 14px;
-  padding: 14px 0;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
   border-top: 1px solid var(--line);
   line-height: 1.4;
 }
 .plans-n {
   flex: none;
-  padding-top: 1px;
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 13px;
   color: var(--color-accent);
