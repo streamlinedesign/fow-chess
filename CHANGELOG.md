@@ -4,6 +4,9 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Fog has two looks, picked in Settings: Smoke (the default), one soft cloud with grain over what you can't see, and Dusk, a dark veil that keeps each hidden square's colour and tile. Both take the colour of the tile skin underneath. Vision squares and the hill stay ringed above the fog. The fog style is kept with your preferences (`fog` in `/api/prefs`) and only shows on your screen.
+- A crisper board: a double rule frame, square corners, slightly brighter squares, an outlined last move, darker move dots, corner wedges for captures and a small shadow under pieces.
+- Settings has a live preview beside every setting (inside Pieces on narrower screens): a full board in both your sets on your tiles, with Swap sides and a Fog button to see your fog style.
 - Tap an enemy piece you can see to see where it could move, in both games. The server works it out from the board as you see it (hidden squares count as empty, no castling or en passant), so it tells you nothing new. New `reach` field in the game state.
 - The rules page has "Plans for v1.0" (rules may change, hand-drawn pieces and skins, apps for Windows, Linux, Mac, iOS and Android, self-hosting, more skins, tournaments, more mods, security and anti-cheat) in place of the Opera Game replay, which is gone along with its data and test.
 - War Mode's Play button is solid, like Eat the King's.

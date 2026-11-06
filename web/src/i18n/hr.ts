@@ -875,6 +875,17 @@ export const hr: Dict = {
   },
 
   pieces: {
+    livePreview: 'Pregled uživo',
+    showFog: 'Magla',
+    swapSides: 'Zamijeni strane',
+    previewWhite: 'Kao bijeli: tvoj bijeli set dolje, tvoj crni set gore, na tvojim poljima.',
+    previewBlack: 'Kao crni: tvoj crni set dolje, tvoj bijeli set gore, na tvojim poljima.',
+    fog: 'Magla',
+    fogHint: {
+      smoke: 'Dim: jedan mekani oblak nad onim što ne vidiš. Samo na tvom ekranu.',
+      dusk: 'Sumrak: skrivena polja ostaju pod tamnim velom, pa im još vidiš boju. Samo na tvom ekranu.',
+    } as Record<string, string>,
+    fogStyles: { smoke: 'Dim', dusk: 'Sumrak' } as Record<string, string>,
     link: 'Figure',
     section: 'Figure i avatar',
     preview: 'Tvoj set za bijele dolje, za crne gore, na tvojim poljima',

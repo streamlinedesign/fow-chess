@@ -7,8 +7,8 @@
   --color-bg: light-dark(#fffabd, #050505);
   --color-fg: light-dark(#050505, #fffabd);
   --color-accent: var(--accent-color);
-  --color-sq-light: light-dark(#f7f1b5, #cfcaa0);
-  --color-sq-dark: light-dark(#a3a38b, #6b6b58);
+  --color-sq-light: light-dark(#fbf5bf, #d6d1a6);
+  --color-sq-dark: light-dark(#aeab8c, #5f5f4e);
   --color-danger: light-dark(#c2410c, #fb923c);
   --color-fog: light-dark(#2f2f2a, #1b1b17);
   /* Quiet fills and hairlines, from the Streamline homepage tokens. */
@@ -88,6 +88,7 @@
 
 /* Board */
 .board {
+  position: relative;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -105,15 +106,28 @@
   background: var(--color-sq-dark);
 }
 
+/* The crisp frame: a double rule, like a printed diagram. */
+.board-crisp {
+  border-radius: 2px;
+  box-shadow:
+    0 0 0 1.5px var(--color-fg),
+    0 0 0 5px var(--color-bg),
+    0 0 0 6.5px var(--color-fg);
+}
+
+/* The last move is tinted and outlined; the piece you picked up is tinted deeper. */
 .sq[data-last='true']::before,
 .sq[data-selected='true']::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: color-mix(in srgb, var(--color-fg) 22%, transparent);
+  background: color-mix(in srgb, var(--color-fg) 13%, transparent);
+  box-shadow: inset 0 0 0 max(1.5px, calc(var(--board, 400px) / 160))
+    color-mix(in srgb, var(--color-fg) 55%, transparent);
 }
 .sq[data-selected='true']::before {
-  background: color-mix(in srgb, var(--color-fg) 34%, transparent);
+  background: color-mix(in srgb, var(--color-fg) 26%, transparent);
+  box-shadow: none;
 }
 
 .sq[data-check='true'] {
@@ -129,18 +143,25 @@
 .sq[data-target='move']::after {
   content: '';
   position: absolute;
-  inset: 36%;
+  inset: 40%;
   border-radius: 9999px;
-  background: color-mix(in srgb, var(--color-fg) 30%, transparent);
+  background: color-mix(in srgb, var(--color-fg) 55%, transparent);
   pointer-events: none;
+  z-index: 1;
 }
+/* A capture: four corner wedges around the piece. */
 .sq[data-target='capture']::after {
+  --c: color-mix(in srgb, var(--color-fg) 60%, transparent);
   content: '';
   position: absolute;
-  inset: 3%;
-  border-radius: 9999px;
-  border: calc(var(--board) / 80) solid color-mix(in srgb, var(--color-fg) 30%, transparent);
+  inset: 0;
+  background:
+    linear-gradient(135deg, var(--c) 22%, transparent 22%) top left / 50% 50% no-repeat,
+    linear-gradient(225deg, var(--c) 22%, transparent 22%) top right / 50% 50% no-repeat,
+    linear-gradient(45deg, var(--c) 22%, transparent 22%) bottom left / 50% 50% no-repeat,
+    linear-gradient(315deg, var(--c) 22%, transparent 22%) bottom right / 50% 50% no-repeat;
   pointer-events: none;
+  z-index: 1;
 }
 /* An enemy piece you tapped, and where it could go: hollow, dashed marks, so
    they never read as your own moves. */
@@ -170,6 +191,10 @@
   pointer-events: none;
   will-change: transform;
 }
+.board .piece {
+  /* A small hard shadow, the same direction everywhere. */
+  filter: drop-shadow(0 calc(var(--board, 400px) / 240) 0 rgb(5 5 5 / 0.22));
+}
 .piece[data-dragging='true'] {
   z-index: 10;
   transform-origin: center;
@@ -177,8 +202,9 @@
 
 .coord {
   position: absolute;
-  font-size: calc(var(--board) / 42);
-  font-weight: 700;
+  font-size: calc(var(--board) / 44);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   line-height: 1;
   pointer-events: none;
   z-index: 2;
@@ -374,13 +400,70 @@
   touch-action: none;
 }
 
-/* Fog: squares the viewer's pieces can't see. */
+/*
+ * Fog: squares the viewer's pieces can't see, in the style they picked (the
+ * root's data-fog-style, from prefs.ts). Each hidden square carries
+ * --fog-tint, a deep shade of its tile skin (FOG_TINT in sets.ts).
+ *
+ * Smoke, the default: the squares go dark and Fog.tsx lays one blurred cloud
+ * over them, with grain on top. The cloud sits above the squares and below
+ * the pieces, so its soft edge spills a little onto what you can see.
+ */
 .sq[data-fog='true'] {
-  background: repeating-linear-gradient(135deg, transparent 0 6px, rgb(255 250 189 / 0.05) 6px 7px), var(--color-fog);
-  transition: background-color 200ms ease;
+  background: color-mix(in srgb, var(--fog-tint, #34342c) 80%, #050505);
 }
 .sq[data-fog='true'] .coord {
   color: color-mix(in srgb, #fffabd 40%, transparent);
+}
+.fog-smoke,
+.fog-grain {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  pointer-events: none;
+  z-index: 0;
+}
+.fog-smoke {
+  filter: blur(calc(var(--board, 400px) / 80));
+}
+.fog-smoke i[style] {
+  background: var(--fog-tint);
+}
+.fog-grain i[data-on] {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02' numOctaves='4' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 0.98  0 0 0 0 0.74  0 0 0 1.6 -0.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: calc(var(--fog-n) * 100%) calc(var(--fog-n) * 100%);
+  mix-blend-mode: soft-light;
+  opacity: 0.4;
+}
+/* Rings on hidden squares (the hill, the vision squares) are drawn again above the cloud. */
+.sq[data-fog='true'][data-outpost]::before,
+.sq[data-fog='true'][data-hill='true']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  outline: inherit;
+  outline-offset: inherit;
+  box-shadow: inherit;
+}
+
+/* Dusk: the squares stay, colour and tile, under a dark veil tinted by the skin. */
+:root[data-fog-style='dusk'] .fog-smoke,
+:root[data-fog-style='dusk'] .fog-grain {
+  display: none;
+}
+:root[data-fog-style='dusk'] .sq[data-fog='true'] {
+  --veil: color-mix(in srgb, color-mix(in srgb, var(--fog-tint, #34342c) 45%, #0a0a08) 76%, transparent);
+  background: linear-gradient(var(--veil), var(--veil)), var(--color-sq-dark);
+}
+:root[data-fog-style='dusk'] .sq[data-fog='true'][data-light='true'] {
+  background: linear-gradient(var(--veil), var(--veil)), var(--color-sq-light);
+}
+:root[data-fog-style='dusk'] .sq[data-fog='true'][data-tile] {
+  background:
+    linear-gradient(var(--veil), var(--veil)),
+    var(--tile) center / cover;
 }
 
 /* Whose move it is. The side to move gets a filled bar; on your move the board gets a ring too. */
@@ -411,12 +494,13 @@
   animation: turn-pulse 1.6s ease-out infinite;
 }
 .board-turn {
+  border-radius: 2px;
   transition: box-shadow 200ms ease;
 }
 .board-turn[data-your-move='true'] {
   box-shadow:
-    0 0 0 3px var(--color-bg),
-    0 0 0 6px var(--color-fg);
+    0 0 0 9px var(--color-bg),
+    0 0 0 11px var(--color-fg);
   animation: turn-ring 1.6s ease-out 2;
 }
 @keyframes turn-pulse {
@@ -430,15 +514,15 @@
 @keyframes turn-ring {
   0% {
     box-shadow:
-      0 0 0 3px var(--color-bg),
-      0 0 0 6px var(--color-fg),
-      0 0 0 6px color-mix(in srgb, var(--color-fg) 40%, transparent);
+      0 0 0 9px var(--color-bg),
+      0 0 0 11px var(--color-fg),
+      0 0 0 11px color-mix(in srgb, var(--color-fg) 40%, transparent);
   }
   100% {
     box-shadow:
-      0 0 0 3px var(--color-bg),
-      0 0 0 6px var(--color-fg),
-      0 0 0 18px transparent;
+      0 0 0 9px var(--color-bg),
+      0 0 0 11px var(--color-fg),
+      0 0 0 22px transparent;
   }
 }
 /* Chat: new lines and the unread pill ease in. */
@@ -3007,6 +3091,7 @@ a.tick:active {
   }
 }
 .board4 {
+  position: relative;
   --board: calc(var(--board4, 400px) * 8 / 14);
   /* Dragging a piece must not select the squares it passes. */
   user-select: none;
@@ -3125,17 +3210,6 @@ a.tick:active {
   align-items: stretch;
   gap: 12px;
 }
-.set-preview {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  width: min(100%, 360px);
-  overflow: hidden;
-  border-radius: 4px;
-  box-shadow: 0 0 0 1.5px var(--color-fg);
-}
-.set-preview .sq {
-  aspect-ratio: 1;
-}
 .set-pick {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -3240,6 +3314,56 @@ a.tick:active {
     width: 36px;
     height: 36px;
     padding: 4px;
+  }
+}
+
+/* Settings: the live preview, in its own column on wide screens and in the Pieces section otherwise. */
+.set-split {
+  grid-template-columns: minmax(0, 1fr) 480px;
+}
+.set-live .live-preview {
+  --board: calc(480px - 2 * var(--gut) - 14px);
+  position: sticky;
+  top: calc(var(--header) + 24px);
+}
+.live-preview {
+  --board: min(100vw - 2 * var(--gut) - 14px, 400px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: calc(var(--board) + 14px);
+  max-width: 100%;
+}
+.live-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.live-head b {
+  font-size: 15px;
+  font-weight: 650;
+}
+.live-head button[data-on] {
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
+.live-board {
+  width: var(--board);
+  margin: 7px;
+}
+.live-inline {
+  display: none;
+}
+@media (max-width: 1180px) {
+  .set-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .set-live {
+    display: none;
+  }
+  .live-inline {
+    display: flex;
   }
 }
 
