@@ -40,6 +40,17 @@ func TestPrefsAndAvatars(t *testing.T) {
 		t.Errorf("saved: %v", me)
 	}
 
+	// Themes are locked until you beat the bot that wears them.
+	themes := `{"white":"holy","black":"galaxy","lightTiles":"holy","darkTiles":"galaxy","plain":true,"avatar":"ancient-dark/N"}`
+	if code, _ := ann.do("PUT", "/api/prefs", themes); code != 403 {
+		t.Fatalf("locked themes: %d", code)
+	}
+	for _, bot := range []string{"rex", "solomon", "ramesses"} {
+		if err := site.store.Unlock(ann.id(t), "bot:"+bot); err != nil {
+			t.Fatal(err)
+		}
+	}
+
 	// Themes, tiles per square colour, and no skins at all.
 	if code, _ := ann.do("PUT", "/api/prefs", `{"white":"holy","black":"galaxy","lightTiles":"holy","darkTiles":"galaxy","plain":true,"avatar":"ancient-dark/N"}`); code != 200 {
 		t.Fatalf("themes: %d", code)
@@ -101,11 +112,16 @@ func TestMatchSkins(t *testing.T) {
 		}
 		return st.Players
 	}
+	// A guest hasn't beaten any bot: the galaxy and holy parts are dropped.
 	m.handle(cw, inMsg{Type: "skin", Skin: &skin{White: "galaxy", Black: "red", LightTiles: "holy"}})
-	m.handle(cs, inMsg{Type: "skin", Skin: &skin{White: "holy", Black: "holy"}}) // spectators have no seat
+	if p := seen(cs); p["w"].Skin == nil || p["w"].Skin.White != "classic" || p["w"].Skin.LightTiles != "" || p["w"].Skin.Black != "red" {
+		t.Errorf("locked parts kept: %+v", p["w"].Skin)
+	}
+	m.handle(cw, inMsg{Type: "skin", Skin: &skin{White: "blue", Black: "red"}})
+	m.handle(cs, inMsg{Type: "skin", Skin: &skin{White: "green", Black: "green"}}) // spectators have no seat
 	m.handle(cb, inMsg{Type: "skin", Skin: &skin{White: "gold", Black: "red"}})
 	p := seen(cs)
-	if s := p["w"].Skin; s == nil || s.White != "galaxy" || s.LightTiles != "holy" {
+	if s := p["w"].Skin; s == nil || s.White != "blue" || s.Black != "red" {
 		t.Errorf("white's skin: %+v", s)
 	}
 	if p["b"].Skin != nil {
@@ -121,7 +137,7 @@ func TestMatchSkins(t *testing.T) {
 	if s := p["w"].Skin; s == nil || s.Black != "violet" {
 		t.Errorf("after the rematch bob (white) has %+v", s)
 	}
-	if s := p["b"].Skin; s == nil || s.White != "galaxy" {
+	if s := p["b"].Skin; s == nil || s.White != "blue" {
 		t.Errorf("after the rematch alice (black) has %+v", s)
 	}
 

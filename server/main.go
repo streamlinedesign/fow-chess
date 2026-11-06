@@ -74,6 +74,7 @@ func main() {
 	social.queueRoutes(mux)
 	social.tournamentRoutes(mux, tournaments)
 	bugRoutes(mux, store, auth)
+	unlockRoutes(mux, store, auth)
 
 	mux.HandleFunc("POST /api/matches", func(w http.ResponseWriter, r *http.Request) {
 		// The creator gets white even if the opponent's browser connects first.
@@ -163,6 +164,9 @@ func main() {
 		var settings fourSettings
 		json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&settings)
 		settings.Rated = false // only the queue starts ranked games
+		if settings.Demo {
+			settings = demoFour(bots.Level(settings.Bot))
+		}
 		if !settings.valid() {
 			jsonError(w, "Those match settings aren't available.", http.StatusBadRequest)
 			return

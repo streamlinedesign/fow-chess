@@ -2604,6 +2604,32 @@ a.tick:active {
 .demo-btn:hover {
   box-shadow: inset 0 0 0 1.5px var(--color-fg);
 }
+/* The War Mode setup on the home page board: its tray sized as on the game page. */
+.war-setup {
+  --board4: 480px;
+}
+/* Eat the King or War Mode on the home page board. */
+.demo-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--color-muted);
+}
+.demo-mode {
+  height: 34px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.demo-mode:hover {
+  background: color-mix(in srgb, var(--color-fg) 10%, transparent);
+}
+.demo-mode[data-state='checked'] {
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
 
 /* Lists and cells below the hero. */
 .home-list {
@@ -3462,4 +3488,44 @@ a.tick:active {
   .home-bots.stats > .stat:nth-child(n + 3) {
     border-top: 1px solid var(--line);
   }
+}
+
+/* A themed set you haven't unlocked yet: beat its bot (PiecesSettings.tsx). */
+.set-opt[data-locked] {
+  cursor: not-allowed;
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+.set-opt[data-locked] .set-face,
+.set-opt[data-locked] .set-name,
+.ava-opt[data-locked] > * {
+  opacity: 0.45;
+}
+.set-opt[data-locked]:hover,
+.ava-opt[data-locked]:hover {
+  background: none;
+}
+.ava-opt[data-locked] {
+  cursor: not-allowed;
+}
+.set-lock {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-accent);
+}
+.ava-opt[data-locked] > .ava-lock {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  opacity: 1;
 }

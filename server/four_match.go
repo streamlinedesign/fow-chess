@@ -13,6 +13,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"chess/bots"
 	"chess/four"
 	"github.com/coder/websocket"
 )
@@ -41,12 +42,30 @@ type fourSettings struct {
 	// Rated is a ranked game: only the four-player queue starts one, always
 	// with rankedFour's settings.
 	Rated bool `json:"rated,omitempty"`
+	// Demo is War Mode from the home page board: you against three copies of
+	// Bot, with no clock. It lives only in memory and is never saved or ranked.
+	Demo bool   `json:"demo,omitempty"`
+	Bot  string `json:"bot,omitempty"`
 }
 
-// rankedFour is the one ranked four-player game: the extended board,
-// Battleship, Sync Move, jester pawns and no fog, ten minutes each.
-var rankedFour = fourSettings{Board: "extended", Setup: "battleship", Sync: true, JesterPawns: true,
-	Time: TimeControl{Base: 600}, Rated: true}
+// warMode is War Mode: the extended board, Battleship, Sync Move, jester
+// pawns and no fog, half an hour each plus ten seconds a move.
+var warMode = fourSettings{Board: "extended", Setup: "battleship", Sync: true, JesterPawns: true,
+	Time: TimeControl{Base: 1800, Inc: 10}}
+
+// rankedFour is the one ranked four-player game, War Mode.
+var rankedFour = func() fourSettings { s := warMode; s.Rated = true; return s }()
+
+// demoFour is War Mode against three copies of a bot from the home page
+// board: no clock, as on the one-against-one demo board.
+func demoFour(bot bots.Level) fourSettings {
+	if !bot.Valid() {
+		bot = demoBot
+	}
+	s := warMode
+	s.Time, s.Demo, s.Bot = TimeControl{}, true, string(bot)
+	return s
+}
 
 // fourArrangeTime is how long players of a ranked game have to place their
 // pieces; anyone still arranging then gets a bot's arrangement.
@@ -88,6 +107,7 @@ type FourHub struct {
 	mu      sync.Mutex
 	matches map[string]*FourMatch
 	db      *sql.DB // nil keeps games only in memory, as in tests
+	store   *Store  // nil in tests: then only what everyone has is unlocked
 	writes  chan fourRecord
 	// botPause is how long a bot waits before moving, so its moves can be
 	// seen one by one. Tests set it to nothing.
@@ -98,7 +118,7 @@ func NewFourHub(store *Store) *FourHub {
 	h := &FourHub{matches: map[string]*FourMatch{}, writes: make(chan fourRecord, 1024),
 		botPause: func() time.Duration { return time.Duration(350+rand.IntN(500)) * time.Millisecond }}
 	if store != nil {
-		h.db = store.db
+		h.db, h.store = store.db, store
 	}
 	go h.writer()
 	go h.sweep()
@@ -121,6 +141,16 @@ func (h *FourHub) Create(creator *player, settings fourSettings) *FourMatch {
 			clients: map[*client]struct{}{}, created: now, touched: now}
 		m.resetClock()
 		m.seat(four.Red, creator)
+		if settings.Demo {
+			// The bots take the other seats and place their pieces now; the
+			// game begins once you've placed yours.
+			bot := bots.Level(settings.Bot)
+			rng := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+			for _, c := range four.Colors[1:] {
+				m.seat(c, &player{key: "bot:" + string(bot) + ":" + c.String(), name: bot.Name()})
+				m.start.Setups[c] = four.BotSetup(settings.shape(), rng)
+			}
+		}
 		m.save()
 		h.matches[id] = m
 		return m
@@ -181,6 +211,8 @@ func (h *FourHub) sweep() {
 		for id, m := range h.matches {
 			m.mu.Lock()
 			idle := len(m.clients) == 0 && time.Since(m.touched) > 2*time.Hour && h.db != nil
+			// A demo game isn't saved, and nobody comes back to one.
+			idle = idle || (m.settings.Demo && len(m.clients) == 0 && time.Since(m.touched) > 10*time.Minute)
 			if idle {
 				m.stopTimer()
 			}
@@ -423,6 +455,9 @@ func (m *FourMatch) online(c int) bool {
 // save queues the match for the database, and rates a ranked game that has
 // just ended. Callers hold m.mu.
 func (m *FourMatch) save() {
+	if m.settings.Demo {
+		return
+	}
 	m.hub.writes <- fourRecord{ID: m.id, Settings: m.settings, Seats: m.seats, Users: m.users, Names: m.names,
 		Moves: m.game.Tokens(), Result: m.game.Result(), Reason: m.game.Method().String(), Start: m.start,
 		Clock: m.clock, TurnStart: m.turnStart, Created: m.created, Updated: time.Now()}
@@ -746,6 +781,9 @@ type fourIn struct {
 }
 
 func (m *FourMatch) handle(c *client, msg fourIn) {
+	if msg.Type == "skin" && !m.hub.store.stripLocked(c.playerID, msg.Skin) {
+		return
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	color := m.colorOf(c.playerID)
@@ -933,7 +971,7 @@ func (m *FourMatch) pokeBot() {
 		for _, c := range bots {
 			pos := m.game.Position()
 			pos.Turn = c
-			mv, _ := four.BotMove(&pos, rng)
+			mv, _ := fourBotMove(m.seats[c], &pos, rng)
 			moves = append(moves, mv.UCI())
 		}
 		for i, c := range bots {
@@ -949,6 +987,19 @@ func (m *FourMatch) pokeBot() {
 		m.pokeBot()
 		m.broadcast()
 	}()
+}
+
+// fourBotMove is the move of the bot in a seat. Rex inutilis plays at random,
+// as in one-against-one; every other bot plays four.BotMove for now.
+func fourBotMove(seat string, pos *four.Position, rng *rand.Rand) (four.Move, bool) {
+	if strings.HasPrefix(seat, "bot:"+string(bots.Rex)+":") {
+		moves := pos.LegalMoves()
+		if len(moves) == 0 {
+			return four.Move{}, false
+		}
+		return moves[rng.IntN(len(moves))], true
+	}
+	return four.BotMove(pos, rng)
 }
 
 func (m *FourMatch) chatJSON(reset bool, lines []chatLine) []byte {

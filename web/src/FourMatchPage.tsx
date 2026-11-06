@@ -409,7 +409,7 @@ function Seats({ state, you, toMove }: { state: FourState | null; you: Seat | nu
   )
 }
 
-function Moves({ state }: { state: FourState }) {
+export function Moves({ state }: { state: FourState }) {
   const t = useT()
   const list = useRef<HTMLOListElement>(null)
   useEffect(() => {
@@ -579,7 +579,7 @@ function WaitingCard({
  * and on their own tiles (yours as you pick them now), everyone else in the
  * seat colour. On a no-skins screen every seat is in its colour.
  */
-function fourLook(state: FourState | null, you: Seat | null, prefs: Prefs): FourLook | undefined {
+export function fourLook(state: FourState | null, you: Seat | null, prefs: Prefs): FourLook | undefined {
   if (!state || prefs.plain) return state?.settings
   const seats: FourLook['seats'] = {}
   for (const s of SEATS) {

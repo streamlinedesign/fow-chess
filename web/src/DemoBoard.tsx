@@ -11,6 +11,7 @@ import { PromotionDialog } from './Promotion'
 import { AvatarImg } from './Avatar'
 import { BOT_FACE, BOTS, gameLook, type Bot } from './settings'
 import { botSide, useMatch, type Color, type MatchState } from './useMatch'
+import { WarDemo } from './WarDemo'
 
 /** Your view of the start under fog: your four rows, the rest hidden. Drawn until the game connects. */
 const startView = (side: Color) => {
@@ -20,6 +21,17 @@ const startView = (side: Color) => {
 
 /** The demo board's opponent unless the player picked another. */
 export const DEMO_BOT: Bot = 'solomon'
+
+/** Which game the home page board plays: Eat the King, or War Mode against three bots. */
+export type DemoMode = 'etk' | 'war'
+
+export function savedDemoMode(): DemoMode {
+  try {
+    return localStorage.getItem('demoMode') === 'war' ? 'war' : 'etk'
+  } catch {
+    return 'etk'
+  }
+}
 
 function savedBot(): Bot {
   try {
@@ -31,10 +43,12 @@ function savedBot(): Bot {
 
 /**
  * The home page's board: a game against a bot (Solomon unless you pick
- * another) that's playable the moment the page loads. The server keeps it in
- * memory only, with no clock, and never saves, lists or ranks it.
+ * another) that's playable the moment the page loads, or in War Mode you
+ * against three copies of it, starting with your Battleship setup. The
+ * server keeps it in memory only, with no clock, and never saves, lists or
+ * ranks it.
  */
-export function DemoBoard({ me }: { me?: string }) {
+export function DemoBoard({ me, mode, onMode }: { me?: string; mode: DemoMode; onMode: (m: DemoMode) => void }) {
   const t = useT()
   const [side, setSide] = useState<Color>(() => getPrefs().side || 'w')
   const [bot, setBot] = useState<Bot>(savedBot)
@@ -58,8 +72,29 @@ export function DemoBoard({ me }: { me?: string }) {
       .catch(() => setFailed(true))
   }, [])
 
+  const [warId, setWarId] = useState<string | null>(null)
+  const startWar = useCallback((b: Bot) => {
+    setBot(b)
+    setWarId(null)
+    setFailed(false)
+    try {
+      localStorage.setItem('demoBot', b)
+    } catch {}
+    fetch(`/api/four?player=${playerId}`, { method: 'POST', body: JSON.stringify({ demo: true, bot: b }) })
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((b) => setWarId(b.id))
+      .catch(() => setFailed(true))
+  }, [])
+
   // You start on the side you prefer (White unless you picked Black in settings).
-  useEffect(() => start(getPrefs().side || 'w', savedBot()), [start])
+  // War Mode starts a fresh table each time you switch to it.
+  useEffect(() => {
+    try {
+      localStorage.setItem('demoMode', mode)
+    } catch {}
+    if (mode === 'war') startWar(savedBot())
+    else start(getPrefs().side || 'w', savedBot())
+  }, [mode, start, startWar])
 
   const other: Color = side === 'w' ? 'b' : 'w'
   const actions = (
@@ -82,36 +117,69 @@ export function DemoBoard({ me }: { me?: string }) {
       </a>
     </div>
   )
+  const war = mode === 'war'
   const picker = (
-    <div className="demo-opp">
-      <h3 id="demo-opp">{t.home.opponent}</h3>
-      <RadioGroup.Root
-        aria-labelledby="demo-opp"
-        value={bot}
-        onValueChange={(b) => start(side, b as Bot)}
-        className="demo-bots"
-      >
-        {BOTS.map((b, i) => (
-          <RadioGroup.Item key={b.level} value={b.level} className="demo-bot">
-            <span className="demo-bot-face" aria-hidden>
-              <img src={BOT_FACE[b.level]} alt="" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block font-semibold">{b.name}</span>
-              <span className="block truncate text-[13px] text-accent">{t.landing.botHints[b.level]}</span>
-            </span>
-            <span className="strength" aria-label={`${i + 1}/4`}>
-              {BOTS.map((_, j) => (
-                <i key={j} data-on={j <= i} />
-              ))}
-            </span>
+    <>
+      <div className="demo-opp">
+        <h3 id="demo-mode">{t.home.boardMode}</h3>
+        <RadioGroup.Root
+          aria-labelledby="demo-mode"
+          value={mode}
+          onValueChange={(m) => onMode(m as DemoMode)}
+          className="demo-modes"
+        >
+          <RadioGroup.Item value="etk" className="demo-mode">
+            {t.home.etkTitle}
           </RadioGroup.Item>
-        ))}
-      </RadioGroup.Root>
-    </div>
+          <RadioGroup.Item value="war" className="demo-mode">
+            {t.home.fourTitle}
+          </RadioGroup.Item>
+        </RadioGroup.Root>
+      </div>
+      <div className="demo-opp">
+        <h3 id="demo-opp">{war ? t.home.opponents : t.home.opponent}</h3>
+        <RadioGroup.Root
+          aria-labelledby="demo-opp"
+          value={bot}
+          onValueChange={(b) => (war ? startWar(b as Bot) : start(side, b as Bot))}
+          className="demo-bots"
+        >
+          {BOTS.map((b, i) => (
+            <RadioGroup.Item key={b.level} value={b.level} className="demo-bot">
+              <span className="demo-bot-face" aria-hidden>
+                <img src={BOT_FACE[b.level]} alt="" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold">{b.name}</span>
+                <span className="block truncate text-[13px] text-accent">{t.landing.botHints[b.level]}</span>
+              </span>
+              <span className="strength" aria-label={`${i + 1}/4`}>
+                {BOTS.map((_, j) => (
+                  <i key={j} data-on={j <= i} />
+                ))}
+              </span>
+            </RadioGroup.Item>
+          ))}
+        </RadioGroup.Root>
+      </div>
+    </>
   )
   const name = BOTS.find((b) => b.level === bot)!.name
   const extra = { bot, name, picker }
+
+  if (war)
+    return (
+      <WarDemo
+        key={warId ?? 'none'}
+        id={warId}
+        failed={failed}
+        me={me}
+        bot={bot}
+        name={name}
+        picker={picker}
+        onNew={() => startWar(bot)}
+      />
+    )
 
   return id ? (
     <Live key={id} id={id} side={side} me={me} actions={actions} {...extra} />
@@ -202,6 +270,7 @@ function over(state: MatchState, you: Color, t: ReturnType<typeof useT>, bot: st
   if (state.status !== 'over') return null
   if (state.result === '1/2-1/2') return t.home.drawn
   const won = (state.result === '1-0') === (you === 'w')
+  if (won && state.unlocked) return `${t.home.youWon} ${t.home.unlockedSkin(t.pieces.sets[state.unlocked] ?? state.unlocked)}`
   return won ? t.home.youWon : t.home.youLost(bot.split(' ')[0])
 }
 
