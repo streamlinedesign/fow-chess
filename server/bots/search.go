@@ -34,6 +34,8 @@ type plan struct {
 	nodes int
 	// guarded scores the ways into its king from the fog (see exposure).
 	guarded bool
+	// think, when set, is a shorter limit than ThinkTime.
+	think time.Duration
 }
 
 // In 400-game matches under Eat the King's rules each level beat its old self
@@ -44,6 +46,26 @@ var plans = map[Level]plan{
 	Vercingetorix: {fogDepth: 1, nodes: 5000},
 	Ramesses:      {fogDepth: 3, nodes: 40000, guarded: true},
 	Solomon:       {fogDepth: 2, samples: 32, nodes: 300000, guarded: true},
+}
+
+// thinkTime is the most time a search with plan pl may take.
+func thinkTime(pl plan) time.Duration {
+	if ThinkTime > 0 && pl.think > 0 {
+		return min(ThinkTime, pl.think)
+	}
+	return ThinkTime
+}
+
+// busy is the plan with a quarter of the boards and positions, and at most
+// 150 ms to think, for a server
+// with other bots waiting to think (see ChooseBusy).
+func (pl plan) busy() plan {
+	if pl.samples > 0 {
+		pl.samples = max(pl.samples/4, 4)
+	}
+	pl.nodes /= 4
+	pl.think = 150 * time.Millisecond
+	return pl
 }
 
 // ThinkTime is the most time any bot takes for a move, whatever the server
@@ -158,7 +180,7 @@ func chooseDeep(pl plan, pos engine.Position, seen *[64]bool, warning bool, rng 
 		me:       pos.Turn,
 		guarded:  pl.guarded && seen != nil,
 		budget:   pl.nodes,
-		deadline: time.Now().Add(ThinkTime),
+		deadline: time.Now().Add(thinkTime(pl)),
 		tt:       make([]ttEntry, ttSize),
 	}
 	for _, c := range []engine.Color{engine.White, engine.Black} {

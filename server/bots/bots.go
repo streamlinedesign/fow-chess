@@ -60,10 +60,25 @@ func Choose(level Level, pos engine.Position, seen *[64]bool, rng *rand.Rand) (e
 // works that out from pos, as the server does for a person, and uses only
 // that one fact.
 func ChooseWarned(level Level, pos engine.Position, seen *[64]bool, warning bool, rng *rand.Rand) (engine.Move, bool) {
+	return choose(level, pos, seen, warning, false, rng)
+}
+
+// ChooseBusy is ChooseWarned for a server with other bots waiting to think:
+// Solomon imagines a quarter of the boards and every searching bot looks at a
+// quarter of the positions within 150 ms, so a crowd of bots doesn't hold up everyone else.
+// It plays weaker, but answers in a fraction of the time.
+func ChooseBusy(level Level, pos engine.Position, seen *[64]bool, warning bool, rng *rand.Rand) (engine.Move, bool) {
+	return choose(level, pos, seen, warning, true, rng)
+}
+
+func choose(level Level, pos engine.Position, seen *[64]bool, warning, busy bool, rng *rand.Rand) (engine.Move, bool) {
 	if rng == nil {
 		rng = rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
 	}
 	if pl, ok := plans[level]; ok {
+		if busy {
+			pl = pl.busy()
+		}
 		return chooseDeep(pl, pos, seen, warning, rng)
 	}
 	moves := pos.LegalMoves()
