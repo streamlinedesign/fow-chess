@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- The rules page has two sections: Eat the King rules (fog, eating the king, the king-in-danger warning, starting a match, clocks and rating, draws) and War Mode rules (the extended board, Battleship setup, Sync Move, jester pawns, last king standing, clock and rating). Back row, Battleship, Sniper Win and jester pawns as mods are explained where you pick them on the Mods page; the setup hints there now mention the Sniper Win.
 - Home page: Eat the King and War Mode are marked as the official games, with an Official tag, an ink bar down the side and your rating in each. War Mode's button just says Play.
 - Your ratings moved from the header into your menu, both of them: Eat the King and War Mode. `/api/me` returns `fourRating`.
 - Settings has a cog icon; Mods has a dial.
