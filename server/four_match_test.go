@@ -426,3 +426,45 @@ func TestFourBotsAloneWait(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 }
+
+// War Mode takes turns: the home page game against three bots goes Red,
+// Blue, Green, Violet, one move each, and Red is to move again. A bot whose
+// king starts in danger may be eaten first, and then its turn is skipped.
+func TestFourWarModeTurns(t *testing.T) {
+	if warMode.Sync || rankedFour.Sync {
+		t.Fatal("War Mode is Sync Move")
+	}
+	hub := NewFourHub(nil)
+	hub.botPause = func() time.Duration { return 0 }
+	ann := guestPlayer("ann-browser")
+	m := hub.Create(ann, demoFour(""))
+	c := newClient(ann.key)
+	m.join(c, ann)
+	m.handle(c, fourIn{Type: "setup", Board: "RNBQKBNR" + "................" + "PPPPPPPP"})
+	if s := lastFour(t, c); s.Status != "playing" || s.Turn != "r" || s.Settings.Sync {
+		t.Fatalf("status %s turn %s sync %v", s.Status, s.Turn, s.Settings.Sync)
+	}
+	m.handle(c, fourIn{Type: "move", UCI: "e4e5"})
+	deadline := time.Now().Add(5 * time.Second)
+	for {
+		m.mu.Lock()
+		hist, turn, over := m.game.History(), m.game.Turn(), m.game.Over()
+		m.mu.Unlock()
+		n := len(hist)
+		if over {
+			return // a bot may take a king that starts in danger
+		}
+		if n >= 2 && turn == four.Red {
+			for i, e := range hist {
+				if e.Round != 0 || (i > 0 && e.By <= hist[i-1].By) {
+					t.Fatalf("not in turn: %+v", hist)
+				}
+			}
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("bots stuck after %d moves, %s to move", n, turn)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}

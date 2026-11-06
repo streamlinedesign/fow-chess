@@ -48,10 +48,11 @@ type fourSettings struct {
 	Bot  string `json:"bot,omitempty"`
 }
 
-// warMode is War Mode: the extended board, Battleship, Sync Move, jester
-// pawns, fog of war with centre vision (any piece, as in Eat the King), half
-// an hour each plus ten seconds a move.
-var warMode = fourSettings{Board: "extended", Setup: "battleship", Sync: true, JesterPawns: true,
+// warMode is War Mode: the extended board, Battleship, jester pawns, fog of
+// war with centre vision (any piece, as in Eat the King), half an hour each
+// plus ten seconds a move. Players take turns, Red, Blue, Green, Violet; Sync
+// Move is a mod (Mods, Four players), not part of War Mode.
+var warMode = fourSettings{Board: "extended", Setup: "battleship", JesterPawns: true,
 	Fog: true, CenterVision: "any", Time: TimeControl{Base: 1800, Inc: 10}}
 
 // rankedFour is the one ranked four-player game, War Mode.

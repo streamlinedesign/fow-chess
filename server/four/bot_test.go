@@ -153,7 +153,7 @@ func TestFourFog(t *testing.T) {
 	}
 }
 
-var warMode = Rules{Shape: Extended, Sync: true, JesterPawns: true}
+var warMode = Rules{Shape: Extended, JesterPawns: true}
 
 // TestFourBotStrength seats today's bot against three of the one that shipped
 // before, in War Mode. It takes a while, so it runs only when asked:

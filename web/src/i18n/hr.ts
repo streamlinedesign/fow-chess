@@ -144,7 +144,7 @@ export const hr: Dict = {
     noArena: 'Trenutačno nema najavljene arene.',
     fourTitle: 'Ratni način',
     fourAbout:
-      'Četiri igrača · Proširena ploča · Potapanje brodova · Istodobni potez · Pješaci lakrdijaši · Magla rata',
+      'Četiri igrača · Proširena ploča · Potapanje brodova · Pješaci lakrdijaši · Magla rata',
     fourRanked: 'Rangira se na zasebnom rejtingu Ratnog načina. 30 minuta svakome, plus 10 sekundi po potezu.',
     official: 'Službeno',
     yourRating: 'tvoj rejting',
@@ -160,7 +160,7 @@ export const hr: Dict = {
     opponents: 'Protivnici',
     threeBots: (bot) => `${bot} ×3`,
     demoBots: 'Tri bota za probu',
-    warTip: 'Postavi figure u svoja četiri reda, a onda svi igraju istodobno. Bez sata, i ništa se ne sprema.',
+    warTip: 'Postavi figure u svoja četiri reda, a onda igraj na red s botovima. Bez sata, i ništa se ne sprema.',
     placing: 'Postavi figure',
   },
 
@@ -169,7 +169,7 @@ export const hr: Dict = {
     original: 'Eat the King',
     originalAbout: 'Izvorna igra. Dva igrača u magli rata, bez šaha, pojedi kralja za pobjedu.',
     war: 'Ratni način',
-    warAbout: 'Četiri igrača, svi igraju istodobno, u magli, a pješaci su lakrdijaši. Pobjeđuje posljednji kralj.',
+    warAbout: 'Četiri igrača igraju na red, u magli, a pješaci su lakrdijaši. Pobjeđuje posljednji kralj.',
     modded: 'Modovi',
     moddedAbout: 'Svaki prekidač: magla, šah-mat, Kralj brda, istodobni potez, bilo koji sat, dva ili četiri igrača.',
     place: (rank, of) => `${rank}. od ${of.toLocaleString('hr')} · rangirano`,
@@ -250,7 +250,7 @@ export const hr: Dict = {
   about: {
     title: 'O igri',
     paras: [
-      'Eat the King je izvorna igra: šah u magli rata. Vidiš samo polja do kojih tvoje figure dosežu, nema šaha, a pobjeđuješ kad uzmeš kralja. Uvijek počinje iz uobičajenog položaja. Ratni način je druga službena igra: četiri igrača na proširenoj ploči, potapanje brodova, istodobni potez i pješaci lakrdijaši, u magli rata.',
+      'Eat the King je izvorna igra: šah u magli rata. Vidiš samo polja do kojih tvoje figure dosežu, nema šaha, a pobjeđuješ kad uzmeš kralja. Uvijek počinje iz uobičajenog položaja. Ratni način je druga službena igra: četiri igrača na proširenoj ploči, potapanje brodova i pješaci lakrdijaši, na red, u magli rata.',
       'Sve ostalo su modovi. Modovi okreću jedan po jedan kotačić: digni maglu, igraj do šah-mata, postavi figure u tajnosti, utrkuj se do brda ili probaj druge partije za četiri igrača. Partije s modovima nikad nisu rangirane.',
     ],
     inspired: 'Inspiracija',
@@ -585,12 +585,12 @@ export const hr: Dict = {
           'Imaš **dvije minute**. Tko do tada nije spreman, dobiva raspored bota. Kralj može početi u opasnosti.',
         ],
       },
-      warSync: {
+      warTurns: {
         kind: 'Kako ide krug',
-        title: 'Istodobni potez',
+        title: 'Na red',
         p: [
-          '**Svi igraju odjednom.** Svaki krug odabereš potez, a potezi se odigraju zajedno kad sva četiri stignu.',
-          '**Uzimanja dolaze zadnja**, pa figura koja se u istom krugu makne izbjegne uzimanje.',
+          '**Jedan po jedan potez**, u smjeru kazaljke na satu: Crveni, Plavi, Zeleni, pa Ljubičasti. Teče samo sat igrača na potezu.',
+          'Igrač koji je ispao se preskače. Istodobni potez, gdje svi igraju odjednom, je mod na stranici Modovi.',
         ],
       },
       warJester: {
