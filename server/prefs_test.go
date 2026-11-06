@@ -40,13 +40,14 @@ func TestPrefsAndAvatars(t *testing.T) {
 		t.Errorf("saved: %v", me)
 	}
 
-	// Themes are locked until you beat the bot that wears them.
+	// Themes are locked until you beat the bot that wears them (holy: until
+	// you reach a 2000 rating).
 	themes := `{"white":"holy","black":"galaxy","lightTiles":"holy","darkTiles":"galaxy","plain":true,"avatar":"ancient-dark/N"}`
 	if code, _ := ann.do("PUT", "/api/prefs", themes); code != 403 {
 		t.Fatalf("locked themes: %d", code)
 	}
-	for _, bot := range []string{"rex", "solomon", "ramesses"} {
-		if err := site.store.Unlock(ann.id(t), "bot:"+bot); err != nil {
+	for _, reason := range []string{lockRating, "bot:solomon", "bot:ramesses"} {
+		if err := site.store.Unlock(ann.id(t), reason); err != nil {
 			t.Fatal(err)
 		}
 	}

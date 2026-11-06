@@ -96,6 +96,9 @@ func (h *FourHub) rateFour(matchID string, users [4]int64, places []int) (*[4]in
 			users[c], after.Rating, after.Deviation, after.Volatility); err != nil {
 			return nil, err
 		}
+		if err := rateUnlock(tx, users[c], after.Rating); err != nil {
+			return nil, err
+		}
 	}
 	js, _ := json.Marshal(diff)
 	if _, err := tx.Exec(`UPDATE four_games SET rating_diff = $2 WHERE match_id = $1`, matchID, string(js)); err != nil {

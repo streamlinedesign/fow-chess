@@ -94,6 +94,7 @@ export const en = {
     } as Record<string, string>,
     skinToWin: (set: string) => `Plays ${set.toLowerCase()}. Beat it to unlock the set.`,
     skinWon: (set: string) => `${set} unlocked.`,
+    noSkin: 'Plays the classic pieces. Nothing to unlock.',
     codePlaceholder: 'Paste a code',
     codeLabel: 'Match code',
     join: 'Join',
@@ -911,8 +912,11 @@ export const en = {
     plainTiles: 'Plain',
     lockedBy: (bot: string) => `Beat ${bot}`,
     lockedBeta: 'Beta players',
-    unlockHint: 'Colours are yours. Each themed set belongs to a bot: beat it to unlock its pieces, tiles and avatars.',
-    unlockGuest: 'Colours are yours. Each themed set belongs to a bot: sign in and beat it to unlock it.',
+    lockedRating: 'Reach 2000',
+    unlockHint:
+      'Colours are yours. Most themed sets belong to a bot: beat it to unlock its pieces, tiles and avatars. Holy is for reaching a 2000 rating.',
+    unlockGuest:
+      'Colours are yours. Most themed sets belong to a bot: sign in and beat it to unlock it. Holy is for reaching a 2000 rating.',
     sets: {
       classic: 'Classic',
       cream: 'Cream',

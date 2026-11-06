@@ -320,9 +320,11 @@ function Bots({ settings }: { settings: Settings }) {
           <h3>{b.name}</h3>
           <p className="text-sm text-accent">{t.landing.botHints[b.level]}</p>
           <p className="home-bot-skin text-sm">
-            {unlocked?.has(BOT_SET[b.level])
-              ? t.landing.skinWon(t.pieces.sets[BOT_SET[b.level]])
-              : t.landing.skinToWin(t.pieces.sets[BOT_SET[b.level]])}
+            {(() => {
+              const set = BOT_SET[b.level]
+              if (!set) return t.landing.noSkin
+              return unlocked?.has(set) ? t.landing.skinWon(t.pieces.sets[set]) : t.landing.skinToWin(t.pieces.sets[set])
+            })()}
           </p>
           <Button
             variant={b.level === 'solomon' ? 'solid' : 'outline'}

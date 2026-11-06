@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"slices"
@@ -12,19 +14,27 @@ import (
 	"chess/engine"
 )
 
-// Themed skins are earned: each is worn by a bot, and beating that bot
-// unlocks its piece set, its tiles and its avatars. The plain colours are
-// never locked.
+// Themed skins are earned: most are worn by a bot, and beating that bot
+// unlocks its piece set, its tiles and its avatars. Holy is earned by
+// reaching a 2000 rating. The plain colours are never locked. Rex inutilis,
+// the weakest bot, plays the classic pieces and unlocks nothing.
 
 // lockBeta is the reason for a theme everyone has during the beta, and keeps
 // after it if their account was made before BETA_ENDS.
 const lockBeta = "beta"
 
-// themeLocks is what unlocks each locked theme: "bot:<level>" or lockBeta. A
-// theme that isn't here is free. Must match THEME_LOCK in web/src/sets.ts and
-// BOT_SET in web/src/settings.ts.
+// lockRating is the reason for a theme earned by reaching ratingUnlock in
+// either rating, Eat the King or War Mode. Once reached it is kept.
+const lockRating = "rating:2000"
+
+// ratingUnlock is the rating, as shown, that earns lockRating.
+const ratingUnlock = 2000
+
+// themeLocks is what unlocks each locked theme: "bot:<level>", lockRating or
+// lockBeta. A theme that isn't here is free. Must match THEME_LOCK in
+// web/src/sets.ts and BOT_SET in web/src/settings.ts.
 var themeLocks = map[string]string{
-	"holy":      "bot:rex",
+	"holy":      lockRating,
 	"blueprint": "bot:vercingetorix",
 	"ancient":   "bot:ramesses",
 	"galaxy":    "bot:solomon",
@@ -110,8 +120,15 @@ func (s *Store) Unlocks(id int64) (unlocks, error) {
 	if id == 0 || s == nil {
 		return u, nil
 	}
-	if err := s.db.QueryRow(`SELECT created_at FROM users WHERE id = $1`, id).Scan(&u.created); err != nil {
+	var peak float64
+	if err := s.db.QueryRow(`SELECT created_at, GREATEST(rating, four_rating) FROM users WHERE id = $1`, id).
+		Scan(&u.created, &peak); err != nil {
 		return u, err
+	}
+	// A rating at the mark right now counts even before a rated game has
+	// recorded it (rateUnlock keeps it once reached).
+	if math.Round(peak) >= ratingUnlock {
+		u.reasons = append(u.reasons, lockRating)
 	}
 	rows, err := s.db.Query(`SELECT reason FROM unlocks WHERE user_id = $1`, id)
 	if err != nil {
@@ -123,7 +140,9 @@ func (s *Store) Unlocks(id int64) (unlocks, error) {
 		if err := rows.Scan(&r); err != nil {
 			return u, err
 		}
-		u.reasons = append(u.reasons, r)
+		if !slices.Contains(u.reasons, r) {
+			u.reasons = append(u.reasons, r)
+		}
 	}
 	return u, rows.Err()
 }
@@ -145,6 +164,17 @@ func (s *Store) stripLocked(playerID string, sk *skin) bool {
 	}
 	u.strip(sk)
 	return true
+}
+
+// rateUnlock records lockRating for a player whose rating has just reached
+// ratingUnlock, in the transaction that rated them, so it stays theirs if the
+// rating falls again.
+func rateUnlock(tx *sql.Tx, id int64, rating float64) error {
+	if math.Round(rating) < ratingUnlock {
+		return nil
+	}
+	_, err := tx.Exec(`INSERT INTO unlocks (user_id, reason, created_at) VALUES ($1, $2, now()) ON CONFLICT DO NOTHING`, id, lockRating)
+	return err
 }
 
 // Unlock records a reason for a player; a second time does nothing.
@@ -171,9 +201,9 @@ func (m *Match) botWinner() int64 {
 }
 
 // rewardBotWin unlocks the bot's theme for a signed-in player who beat it,
-// once a round. Callers hold m.mu.
+// once a round. A bot that wears no theme unlocks nothing. Callers hold m.mu.
 func (m *Match) rewardBotWin() {
-	if m.rewarded == m.round+1 {
+	if m.rewarded == m.round+1 || botTheme(m.settings.Bot) == "" {
 		return
 	}
 	id := m.botWinner()

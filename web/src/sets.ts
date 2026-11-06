@@ -24,11 +24,12 @@ export const THEMES = ['galaxy', 'blueprint', 'holy', 'ancient', 'cyberpunk'] as
 
 /**
  * What unlocks each themed set and its tiles and avatars: beating the bot that
- * wears it ("bot:<level>"), or "beta" for everyone during the beta. Plain
- * colours are never locked. Must match themeLocks in server/unlocks.go.
+ * wears it ("bot:<level>"), reaching a 2000 rating in either mode
+ * ("rating:2000"), or "beta" for everyone during the beta. Plain colours are
+ * never locked. Must match themeLocks in server/unlocks.go.
  */
 export const THEME_LOCK: Record<string, string> = {
-  holy: 'bot:rex',
+  holy: 'rating:2000',
   blueprint: 'bot:vercingetorix',
   ancient: 'bot:ramesses',
   galaxy: 'bot:solomon',

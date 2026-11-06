@@ -248,6 +248,9 @@ func (s *Store) rate(r gameRecord) (*[2]int, error) {
 			r.Users[c], after[c].Rating, after[c].Deviation, after[c].Volatility); err != nil {
 			return nil, err
 		}
+		if err := rateUnlock(tx, r.Users[c], after[c].Rating); err != nil {
+			return nil, err
+		}
 	}
 	if _, err := tx.Exec(`UPDATE games SET white_rating_diff = $3, black_rating_diff = $4 WHERE match_id = $1 AND round = $2`,
 		r.MatchID, r.Round, diff[white], diff[black]); err != nil {
