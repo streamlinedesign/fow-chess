@@ -145,7 +145,8 @@ export const hr: Dict = {
     noGames: 'Nema partija u tijeku. Pritisni Igraj za novu.',
     noArena: 'Trenutačno nema najavljene arene.',
     fourTitle: 'Ratni način',
-    fourAbout: 'Četiri igrača · Proširena ploča · Potapanje brodova · Istodobni potez · Pješaci lakrdijaši · Bez magle',
+    fourAbout:
+      'Četiri igrača · Proširena ploča · Potapanje brodova · Istodobni potez · Pješaci lakrdijaši · Magla rata',
     fourRanked: 'Rangira se na zasebnom rejtingu Ratnog načina. 30 minuta svakome, plus 10 sekundi po potezu.',
     official: 'Službeno',
     yourRating: 'tvoj rejting',
@@ -170,8 +171,7 @@ export const hr: Dict = {
     original: 'Eat the King',
     originalAbout: 'Izvorna igra. Dva igrača u magli rata, bez šaha, pojedi kralja za pobjedu.',
     war: 'Ratni način',
-    warAbout:
-      'Četiri igrača, svi igraju istodobno. Magla je podignuta, a pješaci su lakrdijaši. Pobjeđuje posljednji kralj.',
+    warAbout: 'Četiri igrača, svi igraju istodobno, u magli, a pješaci su lakrdijaši. Pobjeđuje posljednji kralj.',
     modded: 'Modovi',
     moddedAbout: 'Svaki prekidač: magla, šah-mat, Kralj brda, istodobni potez, bilo koji sat, dva ili četiri igrača.',
     place: (rank, of) => `${rank}. od ${of.toLocaleString('hr')} · rangirano`,
@@ -265,7 +265,7 @@ export const hr: Dict = {
   about: {
     title: 'O igri',
     paras: [
-      'Eat the King je izvorna igra: šah u magli rata. Vidiš samo polja do kojih tvoje figure dosežu, nema šaha, a pobjeđuješ kad uzmeš kralja. Uvijek počinje iz uobičajenog položaja. Ratni način je druga službena igra: četiri igrača na proširenoj ploči, potapanje brodova, istodobni potez i pješaci lakrdijaši, bez magle.',
+      'Eat the King je izvorna igra: šah u magli rata. Vidiš samo polja do kojih tvoje figure dosežu, nema šaha, a pobjeđuješ kad uzmeš kralja. Uvijek počinje iz uobičajenog položaja. Ratni način je druga službena igra: četiri igrača na proširenoj ploči, potapanje brodova, istodobni potez i pješaci lakrdijaši, u magli rata.',
       'Sve ostalo su modovi. Modovi okreću jedan po jedan kotačić: digni maglu, igraj do šah-mata, postavi figure u tajnosti, utrkuj se do brda ili probaj druge partije za četiri igrača. Partije s modovima nikad nisu rangirane.',
     ],
     inspired: 'Inspiracija',
@@ -528,7 +528,8 @@ export const hr: Dict = {
     etkSub: 'Jedan na jedan, u magli, iz uobičajenog početnog položaja. Rangirano.',
     warHeading: 'Pravila Ratnog načina',
     warSub: 'Četiri igrača, svatko za sebe. Rangira se po vlastitom rejtingu.',
-    modsNote: 'Sve ostalo, od šah-mata do Kralja brda, je mod. Svaki je objašnjen tamo gdje ga biraš, na stranici Modovi.',
+    modsNote:
+      'Sve ostalo, od šah-mata do Kralja brda, je mod. Svaki je objašnjen tamo gdje ga biraš, na stranici Modovi.',
     cards: {
       fog: {
         kind: 'Što vidiš',
@@ -576,7 +577,7 @@ export const hr: Dict = {
         title: 'Četiri igrača, proširena ploča',
         p: [
           'Ploča **16 puta 16** s **četiri reda za svakoga** i **otvorenim kutovima** koje svatko smije prijeći. Oko nje sjede Crveni, Plavi, Zeleni i Ljubičasti.',
-          '**Nema magle**: svi vide cijelu ploču. Pješaci se promoviraju **iza sredine** ili na **bočnim zidovima** igrača do tebe.',
+          'Igra se u **magli rata**, kao Pojedi kralja: vidiš samo ono što vide tvoje figure. Dovedi bilo koju figuru na jedno od svoja **dva polja vida** u sredini (par odmah iza središta, na suprotnoj strani od tebe) i **vidiš cijelu ploču** dok ondje stoji. Pješaci se promoviraju **iza sredine** ili na **bočnim zidovima** igrača do tebe.',
         ],
       },
       warSetup: {
@@ -906,7 +907,8 @@ export const hr: Dict = {
     plainTiles: 'Obična',
     lockedBy: (bot: string) => `Pobijedi: ${bot}`,
     lockedBeta: 'Za beta igrače',
-    unlockHint: 'Boje su tvoje. Svaki tematski komplet pripada jednom botu: pobijedi ga i otključaš figure, polja i avatare.',
+    unlockHint:
+      'Boje su tvoje. Svaki tematski komplet pripada jednom botu: pobijedi ga i otključaš figure, polja i avatare.',
     unlockGuest: 'Boje su tvoje. Svaki tematski komplet pripada jednom botu: prijavi se i pobijedi ga da ga otključaš.',
     sets: {
       classic: 'Klasične',

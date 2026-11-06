@@ -145,7 +145,7 @@ export const en = {
     noGames: 'Nothing in progress. Press Play to start a game.',
     noArena: 'No arena coming up right now.',
     fourTitle: 'War Mode',
-    fourAbout: 'Four players · Extended board · Battleship · Sync Move · Jester pawns · No fog',
+    fourAbout: 'Four players · Extended board · Battleship · Sync Move · Jester pawns · Fog of war',
     fourRanked: 'Ranked on a War Mode rating of its own. 30 minutes each, plus 10 seconds a move.',
     official: 'Official',
     yourRating: 'your rating',
@@ -170,7 +170,7 @@ export const en = {
     original: 'Eat the King',
     originalAbout: 'The original. Two players in the fog of war, no check, capture the king to win.',
     war: 'War Mode',
-    warAbout: 'Four players, everyone moves at once. The fog is lifted and pawns are jesters. Last king standing wins.',
+    warAbout: 'Four players, everyone moves at once, in the fog, and pawns are jesters. Last king standing wins.',
     modded: 'Modded',
     moddedAbout: 'Every switch: fog, checkmate, King of the Hill, Sync Move, any clock, two or four players.',
     place: (rank: number, of: number) => {
@@ -266,7 +266,7 @@ export const en = {
   about: {
     title: 'About the game',
     paras: [
-      'Eat the King is the original game: chess in the fog of war. You see only the squares your pieces can reach, there is no check, and you win by capturing the king. It always starts from the usual position. War Mode is the second official game: four players on the extended board, Battleship, Sync Move and jester pawns, with no fog.',
+      'Eat the King is the original game: chess in the fog of war. You see only the squares your pieces can reach, there is no check, and you win by capturing the king. It always starts from the usual position. War Mode is the second official game: four players in the fog on the extended board, with Battleship, Sync Move and jester pawns.',
       'Everything else is a mod. Mods turn one dial at a time: lift the fog, play to checkmate, set your pieces up in secret, race to the hill, or try other four-player games. Mods games are never ranked.',
     ],
     inspired: 'Inspired by',
@@ -531,7 +531,8 @@ export const en = {
     etkSub: 'One against one, in the fog, from the usual position. Ranked.',
     warHeading: 'War Mode rules',
     warSub: 'Four players, everyone for themselves. Ranked on a rating of its own.',
-    modsNote: 'Everything else, from checkmate to King of the Hill, is a mod. Each one is explained where you pick it, on the Mods page.',
+    modsNote:
+      'Everything else, from checkmate to King of the Hill, is a mod. Each one is explained where you pick it, on the Mods page.',
     cards: {
       fog: {
         kind: 'What you see',
@@ -579,7 +580,7 @@ export const en = {
         title: 'Four players, extended board',
         p: [
           'A **16 by 16** board with **four rows each** and **open corners** anyone can cross. Red, Blue, Green and Violet sit round it.',
-          'There is **no fog**: everyone sees the whole board. Pawns promote **past the middle**, or on the **side walls** of the players beside you.',
+          'It’s played in the **fog of war**, as Eat the King is: you see only what your pieces see. Get any piece onto one of your **two vision squares** in the middle (the pair just past the centre, on the far side from you) and you **see the whole board** while it stays there. Pawns promote **past the middle**, or on the **side walls** of the players beside you.',
         ],
       },
       warSetup: {

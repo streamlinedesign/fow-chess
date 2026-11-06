@@ -12,8 +12,6 @@ import (
 // Beating a bot unlocks the theme it wears; losing to it, or a guest beating
 // it, unlocks nothing.
 func TestBeatingABotUnlocksItsTheme(t *testing.T) {
-	// Long after the beta, so beta themes (cyberpunk) don't count for this new account.
-	t.Setenv("BETA_ENDS", "2000-01-01")
 	site := newTestSite(t)
 	ann := site.signup("ann")
 	u, _ := site.store.UserByName("ann")

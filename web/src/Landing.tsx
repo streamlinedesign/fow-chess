@@ -492,7 +492,7 @@ export function FindMatch({
 
 /**
  * War Mode, the ranked four-player game: one fixed game (extended board,
- * Battleship, Sync Move, jester pawns, no fog), found in its own queue of four.
+ * Battleship, Sync Move, jester pawns, fog of war), found in its own queue of four.
  */
 export function FindFour({
   signedIn,
@@ -596,7 +596,11 @@ export function FindFour({
         </Button>
       )}
       {onTry && (
-        <Button variant="ghost" className="self-start !px-0 underline-offset-4 hover:bg-transparent hover:underline" onClick={onTry}>
+        <Button
+          variant="ghost"
+          className="self-start !px-0 underline-offset-4 hover:bg-transparent hover:underline"
+          onClick={onTry}
+        >
           {t.home.tryWar}
         </Button>
       )}
