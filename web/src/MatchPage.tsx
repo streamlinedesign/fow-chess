@@ -406,6 +406,11 @@ export function MatchPage({ id }: { id: string }) {
         description={
           <>
             {over?.detail}
+            {state?.unlocked && you && state.players[you === 'w' ? 'b' : 'w'].bot && (
+              <span className="mt-3 block text-fg">
+                {t.home.unlockedSkin(t.pieces.sets[state.unlocked] ?? state.unlocked)}
+              </span>
+            )}
             {state?.rated && you && (
               <span className="mt-3 block font-mono text-fg tabular-nums">
                 {state.ratingDiff ? t.match.rating(signed(state.ratingDiff[you])) : t.match.updatingRating}

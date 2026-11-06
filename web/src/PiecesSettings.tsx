@@ -1,9 +1,10 @@
 import * as Switch from '@radix-ui/react-switch'
-import { memo, useId, useState } from 'react'
+import { memo, useId, useMemo, useState } from 'react'
 import { AvatarImg } from './Avatar'
 import { useT } from './i18n'
-import { setPrefs, usePrefs, type Prefs } from './prefs'
-import { AVATAR_GROUPS, CLASSIC, concrete, familyOf, KINDS, SET_IDS, setImg, TILE_IDS, tileImg } from './sets'
+import { setPrefs, usePrefs, useUnlocked, type Prefs } from './prefs'
+import { AVATAR_GROUPS, CLASSIC, concrete, familyOf, KINDS, SET_IDS, setImg, THEME_LOCK, TILE_IDS, tileImg } from './sets'
+import { BOTS } from './settings'
 
 // The pickers are plain radio buttons, not Radix: a page of them stays quick
 // to open on a phone, and the arrow keys move through each group for free.
@@ -11,11 +12,15 @@ import { AVATAR_GROUPS, CLASSIC, concrete, familyOf, KINDS, SET_IDS, setImg, TIL
 
 type Opt = { value: string; label: string; face: React.ReactNode }
 
+/** Why an option can't be picked yet ("Beat Solomon"), or undefined when it can. */
+type LockOf = (value: string) => string | undefined
+
 const Radios = memo(function Radios({
   label,
   value,
   options,
   onChange,
+  lockOf,
   className = 'set-pick',
   optClass = 'set-opt',
 }: {
@@ -23,29 +28,77 @@ const Radios = memo(function Radios({
   value: string
   options: Opt[]
   onChange: (v: string) => void
+  lockOf?: LockOf
   className?: string
   optClass?: string
 }) {
   const name = useId()
   return (
     <div role="radiogroup" aria-label={label} className={className}>
-      {options.map((o) => (
-        <label key={o.value} className={optClass} data-state={o.value === value ? 'checked' : 'unchecked'}>
-          <input
-            type="radio"
-            name={name}
-            value={o.value}
-            checked={o.value === value}
-            onChange={() => onChange(o.value)}
-            className="sr-only"
-            aria-label={o.label}
-          />
-          {o.face}
-        </label>
-      ))}
+      {options.map((o) => {
+        const lock = lockOf?.(o.value)
+        return (
+          <label
+            key={o.value}
+            className={optClass}
+            data-state={o.value === value ? 'checked' : 'unchecked'}
+            data-locked={lock ? true : undefined}
+            title={lock}
+          >
+            <input
+              type="radio"
+              name={name}
+              value={o.value}
+              checked={o.value === value}
+              onChange={() => onChange(o.value)}
+              disabled={!!lock}
+              className="sr-only"
+              aria-label={lock ? `${o.label}, ${lock}` : o.label}
+            />
+            {o.face}
+            {lock && optClass === 'set-opt' && (
+              <span className="set-lock" aria-hidden>
+                <LockIcon />
+                {lock}
+              </span>
+            )}
+            {lock && optClass !== 'set-opt' && (
+              <span className="ava-lock" aria-hidden>
+                <LockIcon />
+              </span>
+            )}
+          </label>
+        )
+      })}
     </div>
   )
 })
+
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden>
+      <rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor" />
+      <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  )
+}
+
+/** Why each locked theme can't be worn yet, for this viewer; plain colours and unlocked themes have none. */
+function useLockOf(): LockOf {
+  const t = useT()
+  const unlocked = useUnlocked()
+  return useMemo(
+    () => (value: string) => {
+      const family = familyOf(value.split('/')[0])
+      const reason = THEME_LOCK[family]
+      if (!reason || !unlocked || unlocked.has(family)) return undefined
+      if (reason === 'beta') return t.pieces.lockedBeta
+      const bot = BOTS.find((b) => 'bot:' + b.level === reason)
+      return bot ? t.pieces.lockedBy(bot.name.split(' ')[0]) : t.pieces.lockedBeta
+    },
+    [t, unlocked],
+  )
+}
 
 /** A family's face in a picker: its knight in the half that side plays. */
 function setOptions(t: ReturnType<typeof useT>, color: 'w' | 'b'): Opt[] {
@@ -159,7 +212,7 @@ export function PawnFace() {
  * White half and its Black half. Sixteen choices at a time instead of every
  * piece of every set.
  */
-const AvatarPicker = memo(function AvatarPicker({ avatar }: { avatar: string }) {
+const AvatarPicker = memo(function AvatarPicker({ avatar, lockOf }: { avatar: string; lockOf: LockOf }) {
   const t = useT()
   const current = avatar ? familyOf(avatar.split('/')[0]) : 'pawn'
   const [family, setFamily] = useState(current)
@@ -182,10 +235,11 @@ const AvatarPicker = memo(function AvatarPicker({ avatar }: { avatar: string }) 
           setFamily(f)
           if (f === 'pawn') setPrefs({ avatar: '' })
         }}
+        lockOf={lockOf}
         className="ava-line"
         optClass="ava-opt"
       />
-      {group && (
+      {group && !lockOf(group.id) && (
         <Radios
           label={t.pieces.avatarPiece}
           value={avatar}
@@ -210,10 +264,12 @@ export function PiecesSettings({ signedIn }: { signedIn: boolean }) {
   const t = useT()
   const p = usePrefs()
   const o = useOptions()
+  const lockOf = useLockOf()
   return (
     <>
       <div className="set-row stack">
         <Preview white={p.white} black={p.black} lightTiles={p.lightTiles} darkTiles={p.darkTiles} plain={p.plain} />
+        <p className="text-sm text-accent">{signedIn ? t.pieces.unlockHint : t.pieces.unlockGuest}</p>
       </div>
       <label className="set-row cursor-pointer">
         <div className="row-l">
@@ -229,14 +285,14 @@ export function PiecesSettings({ signedIn }: { signedIn: boolean }) {
           <b>{t.pieces.whiteSet}</b>
           <span>{t.pieces.whiteSetHint}</span>
         </div>
-        <Radios label={t.pieces.whiteSet} value={p.white} options={o.w} onChange={onWhite} />
+        <Radios label={t.pieces.whiteSet} value={p.white} options={o.w} onChange={onWhite} lockOf={lockOf} />
       </div>
       <div className="set-row stack">
         <div className="row-l">
           <b>{t.pieces.blackSet}</b>
           <span>{t.pieces.blackSetHint}</span>
         </div>
-        <Radios label={t.pieces.blackSet} value={p.black} options={o.b} onChange={onBlack} />
+        <Radios label={t.pieces.blackSet} value={p.black} options={o.b} onChange={onBlack} lockOf={lockOf} />
       </div>
       <div className="set-row stack">
         <div className="row-l">
@@ -248,6 +304,7 @@ export function PiecesSettings({ signedIn }: { signedIn: boolean }) {
           value={p.lightTiles || 'plain'}
           options={o.lightTiles}
           onChange={onLight}
+          lockOf={lockOf}
         />
       </div>
       <div className="set-row stack">
@@ -255,7 +312,13 @@ export function PiecesSettings({ signedIn }: { signedIn: boolean }) {
           <b>{t.pieces.darkTiles}</b>
           <span>{t.pieces.tilesHint}</span>
         </div>
-        <Radios label={t.pieces.darkTiles} value={p.darkTiles || 'plain'} options={o.darkTiles} onChange={onDark} />
+        <Radios
+          label={t.pieces.darkTiles}
+          value={p.darkTiles || 'plain'}
+          options={o.darkTiles}
+          onChange={onDark}
+          lockOf={lockOf}
+        />
       </div>
       <div className="set-row">
         <div className="row-l">
@@ -287,7 +350,7 @@ export function PiecesSettings({ signedIn }: { signedIn: boolean }) {
           <b>{t.pieces.avatar}</b>
           <span>{signedIn ? t.pieces.avatarHint : t.pieces.avatarGuest}</span>
         </div>
-        <AvatarPicker avatar={p.avatar} />
+        <AvatarPicker avatar={p.avatar} lockOf={lockOf} />
       </div>
     </>
   )

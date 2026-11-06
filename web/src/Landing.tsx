@@ -11,11 +11,12 @@ import { Icon } from './icons'
 import { Leaderboard } from './Leaderboard'
 import { useLive } from './live'
 import { playerId } from './player'
-import { getPrefs } from './prefs'
+import { getPrefs, useUnlocked } from './prefs'
 import { ago, go, type GameSummary } from './ProfilePage'
 import { navigate } from './router'
 import {
   BOT_FACE,
+  BOT_SET,
   BOTS,
   describeTime,
   loadSettings,
@@ -271,6 +272,7 @@ async function playBot(settings: Settings, bot: Bot) {
 /** The computer opponents, a row of cells. They play with the mode and clock set above. */
 function Bots({ settings }: { settings: Settings }) {
   const t = useT()
+  const unlocked = useUnlocked()
   const [starting, setStarting] = useState<Bot | null>(null)
   const [error, setError] = useState('')
   const start = (bot: Bot) => {
@@ -297,6 +299,11 @@ function Bots({ settings }: { settings: Settings }) {
           </span>
           <h3>{b.name}</h3>
           <p className="text-sm text-accent">{t.landing.botHints[b.level]}</p>
+          <p className="home-bot-skin text-sm">
+            {unlocked?.has(BOT_SET[b.level])
+              ? t.landing.skinWon(t.pieces.sets[BOT_SET[b.level]])
+              : t.landing.skinToWin(t.pieces.sets[BOT_SET[b.level]])}
+          </p>
           <Button
             variant={b.level === 'solomon' ? 'solid' : 'outline'}
             className="home-bot-play h-10 px-4"

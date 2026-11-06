@@ -202,6 +202,7 @@ function over(state: MatchState, you: Color, t: ReturnType<typeof useT>, bot: st
   if (state.status !== 'over') return null
   if (state.result === '1/2-1/2') return t.home.drawn
   const won = (state.result === '1-0') === (you === 'w')
+  if (won && state.unlocked) return `${t.home.youWon} ${t.home.unlockedSkin(t.pieces.sets[state.unlocked] ?? state.unlocked)}`
   return won ? t.home.youWon : t.home.youLost(bot.split(' ')[0])
 }
 
