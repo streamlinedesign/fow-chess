@@ -88,6 +88,7 @@ type FourHub struct {
 	mu      sync.Mutex
 	matches map[string]*FourMatch
 	db      *sql.DB // nil keeps games only in memory, as in tests
+	store   *Store  // nil in tests: then only what everyone has is unlocked
 	writes  chan fourRecord
 	// botPause is how long a bot waits before moving, so its moves can be
 	// seen one by one. Tests set it to nothing.
@@ -98,7 +99,7 @@ func NewFourHub(store *Store) *FourHub {
 	h := &FourHub{matches: map[string]*FourMatch{}, writes: make(chan fourRecord, 1024),
 		botPause: func() time.Duration { return time.Duration(350+rand.IntN(500)) * time.Millisecond }}
 	if store != nil {
-		h.db = store.db
+		h.db, h.store = store.db, store
 	}
 	go h.writer()
 	go h.sweep()
@@ -746,6 +747,9 @@ type fourIn struct {
 }
 
 func (m *FourMatch) handle(c *client, msg fourIn) {
+	if msg.Type == "skin" && !m.hub.store.stripLocked(c.playerID, msg.Skin) {
+		return
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	color := m.colorOf(c.playerID)

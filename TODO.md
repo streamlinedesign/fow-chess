@@ -20,6 +20,7 @@
 
 ## Later
 
+- Unlocks: a guest who beats a bot keeps nothing; decide whether to hold the win until they sign up. Replays and Watch don't draw a bot's set or tiles yet
 - 1.0: desktop app downloads. Set the `GAME_URL` repository variable (Actions > Variables), `make release`, then turn on `DOWNLOADS` in `web/src/features.ts`
 - 1.0: split the rules engine into its own Go repo (`streamlinedesign/chess-engine`) shared by the server and chess-bots
 - Desktop app: code signing (Apple Developer account, Windows certificate), a notification when it's your move, `eattheking://` game links, auto-update

@@ -276,6 +276,8 @@ type Match struct {
 	hooks     matchHooks
 	// overNotified is the round whose result has gone to the players' bells.
 	overNotified int
+	// rewarded is one more than the round whose bot win has been unlocked, so it's done once.
+	rewarded int
 	// botThinking is set while a bot's move is being worked out, so a bot
 	// is poked once per turn.
 	botThinking bool
@@ -405,6 +407,7 @@ func (m *Match) seat(color int, p *player) {
 
 // save queues this round for the store. A demo game is never saved. Callers hold m.mu.
 func (m *Match) save() {
+	m.rewardBotWin() // demo games too: beating the home page's bot counts
 	if m.settings.Demo {
 		return
 	}
@@ -641,6 +644,8 @@ type stateMsg struct {
 	Ticking []string `json:"ticking,omitempty"`
 	// Planned is the move this player has sent for the Sync Move round.
 	Planned string `json:"planned,omitempty"`
+	// Unlocked is the theme a signed-in player won by beating the bot.
+	Unlocked string `json:"unlocked,omitempty"`
 }
 
 // setupState is the setup as one viewer may know it.
@@ -786,6 +791,9 @@ func (m *Match) online(color int) bool {
 }
 
 func (m *Match) handle(c *client, msg inMsg) {
+	if msg.Type == "skin" && !m.store.stripLocked(c.playerID, msg.Skin) {
+		return
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	color := m.colorOf(c.playerID)
@@ -1057,6 +1065,9 @@ func (m *Match) base() stateMsg {
 	}
 	if status == "over" {
 		base.Sniper = sniperWin(result, reason, len(m.game.History()))
+		if m.botWinner() != 0 {
+			base.Unlocked = botTheme(m.settings.Bot)
+		}
 	}
 	bot := m.botColor()
 	for i, name := range colorNames {

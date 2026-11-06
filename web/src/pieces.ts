@@ -36,6 +36,8 @@ export type Look = {
   jesterPawns?: boolean
   jumpKing?: boolean
   sets?: Partial<Record<'w' | 'b', string>>
+  /** A bot's tile skin on its half ("" for plain), seen by everyone. */
+  tiles?: Partial<Record<'w' | 'b', string>>
   skins?: Partial<Record<'w' | 'b', Skin>>
 }
 

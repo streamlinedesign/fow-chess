@@ -36,6 +36,7 @@ func newTestSite(t *testing.T) *testSite {
 	social.routes(mux)
 	social.watchRoutes(mux)
 	bugRoutes(mux, store, auth)
+	unlockRoutes(mux, store, auth)
 	srv := httptest.NewServer(mux)
 	t.Cleanup(srv.Close)
 	return &testSite{t, srv, store, hub}

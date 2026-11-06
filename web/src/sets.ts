@@ -22,6 +22,18 @@ const LETTER: Record<string, string> = { red: 'r', blue: 'b', green: 'g', violet
 /** The themed sets: each has a light side for White and a dark side for Black, and tiles to match. */
 export const THEMES = ['galaxy', 'blueprint', 'holy', 'ancient'] as const
 
+/**
+ * What unlocks each themed set and its tiles and avatars: beating the bot that
+ * wears it ("bot:<level>"), or "beta" for everyone during the beta. Plain
+ * colours are never locked. Must match themeLocks in server/unlocks.go.
+ */
+export const THEME_LOCK: Record<string, string> = {
+  holy: 'bot:rex',
+  blueprint: 'bot:vercingetorix',
+  ancient: 'bot:ramesses',
+  galaxy: 'bot:solomon',
+}
+
 /** The pieces a set has: the usual six, the jester pawn (J) and the prince (X). */
 export const KINDS = ['K', 'Q', 'R', 'B', 'N', 'P', 'J', 'X'] as const
 

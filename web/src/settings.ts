@@ -1,6 +1,6 @@
-import { pieceImg4 } from './four'
 import type { Dict } from './i18n'
-import { pieceImg, type Look, type Skin } from './pieces'
+import type { Look, Skin } from './pieces'
+import { setImg } from './sets'
 
 /** A clock setting. All zero means no clock. Must match timeControls in server/view.go. */
 export type TimeControl = {
@@ -46,25 +46,28 @@ export type Settings = {
 export type Bot = 'rex' | 'vercingetorix' | 'ramesses' | 'solomon'
 
 /**
- * Each bot's face: a piece of its strength, in its own colour. J is the jester
- * pawn, X the prince (see pieces.ts); the coloured sets are the four-player ones.
- */
-export const BOT_FACE: Record<Bot, string> = {
-  rex: pieceImg4('vJ'), // Rex inutilis: violet
-  vercingetorix: pieceImg4('gN'), // green
-  ramesses: pieceImg('X'), // cream
-  solomon: pieceImg4('rK'), // red
-}
-
-/**
- * The set each bot plays with, the colour of its face: light lines as White,
- * dark lines as Black (see concrete in sets.ts). Ramesses II plays classic.
+ * The themed set each bot plays with, on its own tiles: the light half as
+ * White, the dark half as Black (see concrete in sets.ts). Beating a bot
+ * unlocks its theme (THEME_LOCK in sets.ts).
  */
 export const BOT_SET: Record<Bot, string> = {
-  rex: 'violet',
-  vercingetorix: 'green',
-  ramesses: 'classic',
-  solomon: 'red',
+  rex: 'holy',
+  vercingetorix: 'blueprint',
+  ramesses: 'ancient',
+  solomon: 'galaxy',
+}
+
+/** Each bot's face: a piece of its strength from its own set. J is the jester pawn, X the prince. */
+export const BOT_FACE: Record<Bot, string> = {
+  rex: setImg('holy-dark', 'J'), // Rex inutilis
+  vercingetorix: setImg('blueprint-dark', 'N'),
+  ramesses: setImg('ancient-dark', 'X'),
+  solomon: setImg('galaxy-dark', 'K'),
+}
+
+/** The bot that unlocks a theme, if a bot does. */
+export function botFor(theme: string): Bot | undefined {
+  return (Object.keys(BOT_SET) as Bot[]).find((b) => BOT_SET[b] === theme)
 }
 
 /**
@@ -78,7 +81,10 @@ export function gameLook(
 ): Look | undefined {
   if (!settings) return settings
   const look: Look = { ...settings }
-  if (settings.bot && botSide) look.sets = { [botSide]: BOT_SET[settings.bot] }
+  if (settings.bot && botSide) {
+    look.sets = { [botSide]: BOT_SET[settings.bot] }
+    look.tiles = { [botSide]: BOT_SET[settings.bot] }
+  }
   const w = players?.w?.skin
   const b = players?.b?.skin
   if (w || b) look.skins = { w, b }

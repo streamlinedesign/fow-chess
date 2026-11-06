@@ -3420,3 +3420,43 @@ a.tick:active {
     box-shadow: none;
   }
 }
+
+/* A themed set you haven't unlocked yet: beat its bot (PiecesSettings.tsx). */
+.set-opt[data-locked] {
+  cursor: not-allowed;
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+.set-opt[data-locked] .set-face,
+.set-opt[data-locked] .set-name,
+.ava-opt[data-locked] > * {
+  opacity: 0.45;
+}
+.set-opt[data-locked]:hover,
+.ava-opt[data-locked]:hover {
+  background: none;
+}
+.ava-opt[data-locked] {
+  cursor: not-allowed;
+}
+.set-lock {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-accent);
+}
+.ava-opt[data-locked] > .ava-lock {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  opacity: 1;
+}

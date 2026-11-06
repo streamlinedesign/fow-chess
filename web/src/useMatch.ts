@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Skin } from './pieces'
 import { playerId } from './player'
-import { skinOf, usePrefs } from './prefs'
+import { refreshUnlocks, skinOf, usePrefs } from './prefs'
 import type { Settings } from './settings'
 
 export type Color = 'w' | 'b'
@@ -58,6 +58,8 @@ export type MatchState = {
   rated: boolean
   /** Each side's rating change, once a rated game is over and saved. */
   ratingDiff?: Record<Color, number>
+  /** The theme a signed-in player unlocked by beating the bot in this game. */
+  unlocked?: string
   /** The side a spectator sees the game as. Absent for players. */
   watching?: Color
   /** How many moves a spectator of a fog game is kept behind the players. */
@@ -119,6 +121,8 @@ export function useMatch(id: string) {
             sock.close()
             return setConn('outdated')
           }
+          // A win over a bot unlocked its skin: the pickers hear of it at once.
+          if (msg.unlocked) refreshUnlocks()
           setState({ ...msg, receivedAt: performance.now() })
         } else if (msg.type === 'chat') {
           // Players get the whole chat on (re)connecting and at a rematch, then each new line.

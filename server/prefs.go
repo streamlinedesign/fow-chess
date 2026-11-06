@@ -156,6 +156,15 @@ func (s *Store) Look(id int64) (lookResponse, error) {
 	if !validAvatar(l.Avatar) {
 		l.Avatar = ""
 	}
+	// What's still locked falls back to the default too.
+	u, err := s.Unlocks(id)
+	if err != nil {
+		return l, err
+	}
+	u.strip(&l.skin)
+	if !u.avatar(l.Avatar) {
+		l.Avatar = ""
+	}
 	return l, nil
 }
 
@@ -203,6 +212,14 @@ func (s *Social) prefRoutes(mux *http.ServeMux) {
 		l.fill()
 		if !l.prefs.valid() || !validAvatar(l.Avatar) {
 			jsonError(w, "Those settings aren't allowed.", http.StatusBadRequest)
+			return
+		}
+		u, err := s.store.Unlocks(me.ID)
+		if serverError(w, err) {
+			return
+		}
+		if !u.allows(l) {
+			jsonError(w, "Beat the bot that wears that skin to unlock it.", http.StatusForbidden)
 			return
 		}
 		if serverError(w, s.store.SetLook(me.ID, l)) {
