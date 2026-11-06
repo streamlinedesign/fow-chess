@@ -75,13 +75,14 @@ export function botFor(theme: string): Bot | undefined {
  * and each player's own skin as the server passes it on.
  */
 export function gameLook(
-  settings: (Look & { bot?: Bot }) | undefined,
+  settings: (Look & { bot?: Bot; demo?: boolean }) | undefined,
   botSide?: 'w' | 'b' | null,
   players?: Partial<Record<'w' | 'b', { skin?: Skin }>>,
 ): Look | undefined {
   if (!settings) return settings
   const look: Look = { ...settings }
-  const botSet = settings.bot && BOT_SET[settings.bot]
+  // The home page board's Solomon plays the default pieces; bots wear their set only in a game started from their card.
+  const botSet = settings.bot && !settings.demo && BOT_SET[settings.bot]
   if (botSet && botSide) {
     look.sets = { [botSide]: botSet }
     look.tiles = { [botSide]: botSet }

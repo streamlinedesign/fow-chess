@@ -195,7 +195,14 @@ func (h *FourHub) Create(creator *player, settings fourSettings) *FourMatch {
 // in the order given, with their four-player ratings as they start, on War
 // Mode clock t.
 func (h *FourHub) CreateRanked(ps [4]*player, ratings [4]int, t TimeControl) *FourMatch {
-	settings := rankedWar(t)
+	return h.CreateSeated(ps, rankedWar(t), ratings)
+}
+
+// CreateSeated starts a game for four players already chosen, seated in the
+// order given, with their ratings as they start (zero for an unranked game).
+// Ranked games come from the four-player queue, unranked ones from the
+// guest queue.
+func (h *FourHub) CreateSeated(ps [4]*player, settings fourSettings, ratings [4]int) *FourMatch {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	for {

@@ -2231,6 +2231,17 @@ a.tick:active {
 }
 /* The two official, ranked games: a solid ink bar down the side, an Official
    tag beside the title and your rating on the right. */
+/* The two official games side by side are the same height, with Play at the bottom of each. */
+.home-official {
+  display: flex;
+  flex-direction: column;
+}
+.home-official-body {
+  flex: 1;
+}
+.home-play-at {
+  margin-top: auto;
+}
 .home-menu > .home-official,
 .home-menu-grid > .home-official {
   box-shadow: inset 4px 0 0 var(--color-fg);

@@ -34,7 +34,7 @@ type Settings struct {
 	Sync bool `json:"sync,omitempty"`
 	// Unrated keeps a game from counting. Players can't ask for it: every
 	// game of the one game is ranked when it can be, and normalize sets it
-	// for bot and mods games, which never are.
+	// for bot and mods games, which never are. Guest queue games set it too.
 	Unrated bool `json:"unrated,omitempty"`
 	// Mods is a game from the mods page: any of the options above, any clock,
 	// never ranked.

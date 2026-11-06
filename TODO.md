@@ -44,6 +44,7 @@
 
 ## Done
 
+- 0.34.0: play as guest (unranked queue for guests), card buttons aligned, home board Solomon in default pieces
 - 0.32.0: home page board without the side column; Eat the King and War Mode side by side
 - 0.30.0: Mods band and skins showcase on the home page; Survey set for Vercingetorix; blueprint at a 1150 rating
 - 0.29.0: War Mode clocks of 30 minutes, 2 hours and a day; War Mode with friends by code

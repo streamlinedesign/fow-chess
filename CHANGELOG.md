@@ -4,6 +4,9 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Play as guest: guests can queue for an unranked game against other guests, Eat the King at Rapid 10+0 or War Mode at 30 min +10s (`/api/guest/queue?player=…`, body `{"game":"etk"|"war"}`). Whoever has waited longest is seated first. The cards show no clock picker to guests, and a link to log in for ranked games.
+- Home page: Eat the King and War Mode cards keep Play at the bottom, so the buttons line up side by side. "Try it against the bots" is gone from War Mode, and its clocks read +10s and +30s.
+- Solomon plays the default pieces and tiles on the home page board; beating him there still unlocks galaxy for a signed-in player. Bots wear their set in games started from their cards.
 - War Mode: second place counts as a win and gains half of what the winner gets (what third normally loses); only third and fourth count as a loss for the first-loss-of-the-day rule.
 - The Sniper Win is gone: a game won on the first move is an ordinary win, worth full points, with no special title in the game, profile, replay or bell.
 - Home page: the column beside the board is gone. New game, Play as Black and Pieces sit above the board on the left, the Eat the King / War Mode switch on the right; Solomon's line under the board says what beating him unlocks. The move list is no longer shown there. Where the menu has room (wide screens, tablets), Eat the King and War Mode sit side by side, and so do Play a friend and Mods below them.
