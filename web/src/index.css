@@ -2119,7 +2119,16 @@ a.tick:active {
   pointer-events: none;
 }
 .home-hero {
-  grid-template-columns: minmax(0, 1fr) clamp(380px, 30vw, 480px);
+  /* The board as big as the screen allows (bar, strips and note included), leaving the menu at least 440px. */
+  --home-board: max(360px, min(760px, calc(100dvh - 300px), calc(100vw - 4 * var(--gut) - 440px)));
+  grid-template-columns: calc(var(--home-board) + 2 * var(--gut)) minmax(0, 1fr);
+}
+.home-hero .demo {
+  grid-template-columns: minmax(0, var(--home-board));
+}
+.home-hero .demo-main {
+  width: var(--home-board);
+  max-width: 100%;
 }
 .home-hero > .home-cell:first-child {
   padding-block: 20px 24px;
@@ -2185,15 +2194,45 @@ a.tick:active {
   flex-direction: column;
   padding: 0;
 }
-.home-menu > section {
+.home-menu > section,
+.home-menu-grid > section {
   padding: 22px var(--gut);
 }
-.home-menu > section + section {
+.home-menu > section + section,
+.home-menu-grid > section + section {
   border-top: 1px solid var(--line);
+}
+/* With the room the board leaves (wide screens, or full width on a tablet), the
+   two official games sit side by side, with Play a friend across both below. */
+.home-menu {
+  container-type: inline-size;
+}
+@container (min-width: 700px) {
+  .home-menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-content: start;
+  }
+  .home-menu-grid > section:first-child {
+    grid-column: 1 / -1;
+  }
+  .home-menu-grid .home-time {
+    padding: 0 10px;
+  }
+  .home-menu-grid > section:nth-child(3) {
+    border-left: 1px solid var(--line);
+  }
+  .home-menu-grid > section:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+  .home-menu-grid > section:nth-child(n + 2) {
+    border-top: 1px solid var(--line);
+  }
 }
 /* The two official, ranked games: a solid ink bar down the side, an Official
    tag beside the title and your rating on the right. */
-.home-menu > .home-official {
+.home-menu > .home-official,
+.home-menu-grid > .home-official {
   box-shadow: inset 4px 0 0 var(--color-fg);
 }
 .official-head {
@@ -2669,54 +2708,6 @@ a.tick:active {
   white-space: nowrap;
   pointer-events: none;
 }
-.demo-side {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  padding-top: 56px;
-}
-.demo-side h3 {
-  margin-bottom: 10px;
-  font-size: 15px;
-  font-weight: 600;
-}
-.moves li {
-  display: grid;
-  grid-template-columns: 28px 1fr 1fr;
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 14px;
-  line-height: 1.9;
-}
-.moves .n,
-.moves [data-hidden='true'] {
-  color: var(--color-accent);
-}
-/* Pick the bot you play: a column of rows, the picked one filled. */
-.demo-side > * {
-  min-width: 0;
-}
-.demo-bot {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 8px 10px 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  line-height: 1.25;
-}
-.demo-bot-face {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 6px;
-  background: var(--color-fg);
-}
-.demo-bot-face img {
-  width: 28px;
-  height: 28px;
-}
 .demo-btn {
   display: inline-flex;
   align-items: center;
@@ -2735,6 +2726,23 @@ a.tick:active {
 .war-setup {
   --board4: 480px;
 }
+/* Above the home page board: New game and the rest on the left, the game switch on the right. */
+.demo-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.demo-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.demo-note {
+  font-size: 13.5px;
+  color: var(--color-accent);
+}
 /* Eat the King or War Mode on the home page board. */
 .demo-modes {
   display: grid;
@@ -2745,7 +2753,8 @@ a.tick:active {
   background: var(--color-muted);
 }
 .demo-mode {
-  height: 34px;
+  height: 28px;
+  padding: 0 12px;
   border-radius: 6px;
   font-size: 14px;
   font-weight: 600;
@@ -2836,31 +2845,13 @@ a.tick:active {
   margin-top: auto;
 }
 
-/* Wide screens: the panel beside the board spreads into two columns, so the cell has no empty corner. */
-@media (max-width: 1240px) {
-  .demo {
-    --demo-board: min(100%, 760px, calc(100dvh - 228px));
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .demo-main {
-    width: var(--demo-board);
-    max-width: 100%;
-  }
-  .demo-side {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px 24px;
-    padding-top: 0;
-  }
-  .demo-side > .flex,
-  .demo-side > p {
-    grid-column: 1 / -1;
-  }
-}
 @media (max-width: 1080px) {
   .home-hero,
   .home-hero.mods-hero {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .home-hero {
+    --home-board: min(100vw - 2 * var(--gut), 760px, calc(100dvh - 300px));
   }
   .mods-board {
     position: static;
@@ -2918,7 +2909,8 @@ a.tick:active {
     padding: 12px 0 20px;
   }
   .home-hero .strip,
-  .demo-side {
+  .home-hero .demo-bar,
+  .home-hero .demo-note {
     padding: 0 var(--gut);
   }
   .home-hero .board {
@@ -2928,20 +2920,18 @@ a.tick:active {
   .demo {
     gap: 16px;
   }
-  .demo-main {
+  .demo-main,
+  .home-hero .demo-main {
     width: 100%;
   }
-  .demo-side {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-  .demo-moves {
-    display: none;
+  .home-hero .demo {
+    grid-template-columns: minmax(0, 1fr);
   }
   .home-title {
     font-size: 40px;
   }
-  .home-menu > section {
+  .home-menu > section,
+  .home-menu-grid > section {
     padding: 24px var(--gut);
   }
   .home-time {
