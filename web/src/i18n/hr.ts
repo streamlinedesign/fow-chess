@@ -94,6 +94,7 @@ export const hr: Dict = {
     },
     skinToWin: (set: string) => `Igra kompletom ${set.toLowerCase()}. Pobijedi ga i otključaj ga.`,
     skinWon: (set: string) => `${set}: otključano.`,
+    noSkin: 'Igra klasičnim figurama. Nema što otključati.',
     codePlaceholder: 'Zalijepi kod',
     codeLabel: 'Kod partije',
     join: 'Pridruži se',
@@ -909,9 +910,11 @@ export const hr: Dict = {
     plainTiles: 'Obična',
     lockedBy: (bot: string) => `Pobijedi: ${bot}`,
     lockedBeta: 'Za beta igrače',
+    lockedRating: 'Dosegni 2000',
     unlockHint:
-      'Boje su tvoje. Svaki tematski komplet pripada jednom botu: pobijedi ga i otključaš figure, polja i avatare.',
-    unlockGuest: 'Boje su tvoje. Svaki tematski komplet pripada jednom botu: prijavi se i pobijedi ga da ga otključaš.',
+      'Boje su tvoje. Većina tematskih kompleta pripada nekom botu: pobijedi ga i otključaš figure, polja i avatare. Sveti komplet je za rejting 2000.',
+    unlockGuest:
+      'Boje su tvoje. Većina tematskih kompleta pripada nekom botu: prijavi se i pobijedi ga da ga otključaš. Sveti komplet je za rejting 2000.',
     sets: {
       classic: 'Klasične',
       cream: 'Krem',

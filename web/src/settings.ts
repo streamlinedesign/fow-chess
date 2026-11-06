@@ -48,10 +48,10 @@ export type Bot = 'rex' | 'vercingetorix' | 'ramesses' | 'solomon'
 /**
  * The themed set each bot plays with, on its own tiles: the light half as
  * White, the dark half as Black (see concrete in sets.ts). Beating a bot
- * unlocks its theme (THEME_LOCK in sets.ts).
+ * unlocks its theme (THEME_LOCK in sets.ts). Rex inutilis has none: he plays
+ * the classic pieces and unlocks nothing.
  */
-export const BOT_SET: Record<Bot, string> = {
-  rex: 'holy',
+export const BOT_SET: Partial<Record<Bot, string>> = {
   vercingetorix: 'blueprint',
   ramesses: 'ancient',
   solomon: 'galaxy',
@@ -59,7 +59,7 @@ export const BOT_SET: Record<Bot, string> = {
 
 /** Each bot's face: a piece of its strength from its own set. J is the jester pawn, X the prince. */
 export const BOT_FACE: Record<Bot, string> = {
-  rex: setImg('holy-dark', 'J'), // Rex inutilis
+  rex: setImg('ink', 'J'), // Rex inutilis: the classic jester pawn
   vercingetorix: setImg('blueprint-dark', 'N'),
   ramesses: setImg('ancient-dark', 'X'),
   solomon: setImg('galaxy-dark', 'K'),
@@ -81,9 +81,10 @@ export function gameLook(
 ): Look | undefined {
   if (!settings) return settings
   const look: Look = { ...settings }
-  if (settings.bot && botSide) {
-    look.sets = { [botSide]: BOT_SET[settings.bot] }
-    look.tiles = { [botSide]: BOT_SET[settings.bot] }
+  const botSet = settings.bot && BOT_SET[settings.bot]
+  if (botSet && botSide) {
+    look.sets = { [botSide]: botSet }
+    look.tiles = { [botSide]: botSet }
   }
   const w = players?.w?.skin
   const b = players?.b?.skin

@@ -9,8 +9,8 @@ import (
 	"chess/bots"
 )
 
-// Beating a bot unlocks the theme it wears; losing to it, or a guest beating
-// it, unlocks nothing.
+// Beating a bot unlocks the theme it wears; losing to it, beating Rex (who
+// wears none), or a guest beating it, unlocks nothing.
 func TestBeatingABotUnlocksItsTheme(t *testing.T) {
 	site := newTestSite(t)
 	ann := site.signup("ann")
@@ -38,7 +38,13 @@ func TestBeatingABotUnlocksItsTheme(t *testing.T) {
 		return m
 	}
 
-	play(bots.Rex, false)
+	rex := play(bots.Rex, true)
+	rex.mu.Lock()
+	if st := rex.base(); st.Unlocked != "" {
+		t.Errorf("beating Rex unlocked %q", st.Unlocked)
+	}
+	rex.mu.Unlock()
+	play(bots.Vercingetorix, false)
 	m := play(bots.Solomon, true)
 	m.mu.Lock()
 	if st := m.base(); st.Unlocked != "galaxy" {
@@ -55,7 +61,7 @@ func TestBeatingABotUnlocksItsTheme(t *testing.T) {
 		if th := un.themes(); slices.Equal(th, []string{"galaxy", "cyberpunk"}) {
 			break
 		} else if time.Now().After(deadline) {
-			t.Fatalf("after beating Solomon and losing to Rex: %v", th)
+			t.Fatalf("after beating Rex and Solomon and losing to Vercingetorix: %v", th)
 		}
 		time.Sleep(20 * time.Millisecond)
 	}
@@ -81,6 +87,67 @@ func TestBeatingABotUnlocksItsTheme(t *testing.T) {
 		t.Errorf("a guest unlocked %q", st.Unlocked)
 	}
 	g.mu.Unlock()
+}
+
+// Rex inutilis plays the classic pieces; holy, the set he used to wear, is
+// earned by reaching 2000 in either rating, and kept if the rating falls.
+func TestRatingUnlocksHoly(t *testing.T) {
+	if botTheme(string(bots.Rex)) != "" {
+		t.Errorf("Rex wears %q", botTheme(string(bots.Rex)))
+	}
+	if themeLocks["holy"] != lockRating {
+		t.Fatalf("holy is locked by %q", themeLocks["holy"])
+	}
+	store := openTestStore(t, filepath.Join(t.TempDir(), "x"))
+	has := func(name string) bool {
+		t.Helper()
+		u, err := store.UserByName(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		un, err := store.Unlocks(u.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return un.has("holy")
+	}
+	set := func(name, column string, rating float64) {
+		t.Helper()
+		if _, err := store.db.Exec(`UPDATE users SET `+column+` = $2 WHERE username = $1`, name, rating); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, name := range []string{"ann", "ben", "cy"} {
+		if _, err := store.CreateUser(name, []byte("x")); err != nil {
+			t.Fatal(err)
+		}
+	}
+	set("ann", "rating", 1999.4)
+	if has("ann") {
+		t.Error("1999 is not 2000")
+	}
+	set("ann", "rating", 1999.6) // shown as 2000
+	set("ben", "four_rating", 2100)
+	if !has("ann") || !has("ben") || has("cy") {
+		t.Error("2000 in either rating unlocks holy")
+	}
+
+	// A rated game that takes cy to 2000 records it, so it stays.
+	cy, _ := store.UserByName("cy")
+	tx, err := store.db.Begin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := rateUnlock(tx, cy.ID, 2003); err != nil {
+		t.Fatal(err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	set("cy", "rating", 1980)
+	if !has("cy") {
+		t.Error("holy went away when the rating fell")
+	}
 }
 
 // A beta theme is everyone's while the beta is open, and afterwards only
