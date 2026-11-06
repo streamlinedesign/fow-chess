@@ -902,6 +902,9 @@ export const hr: Dict = {
       ancient: 'Antički',
       'ancient-light': 'Antički, svijetle',
       'ancient-dark': 'Antički, tamne',
+      cyberpunk: 'Cyberpunk',
+      'cyberpunk-light': 'Cyberpunk, svijetle',
+      'cyberpunk-dark': 'Cyberpunk, tamne',
     },
   },
 

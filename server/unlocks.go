@@ -28,6 +28,7 @@ var themeLocks = map[string]string{
 	"blueprint": "bot:vercingetorix",
 	"ancient":   "bot:ramesses",
 	"galaxy":    "bot:solomon",
+	"cyberpunk": lockBeta,
 }
 
 // betaEnds is when the beta closed, from BETA_ENDS (2006-01-02 or RFC 3339);

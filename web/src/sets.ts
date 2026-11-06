@@ -9,7 +9,7 @@ const classic = import.meta.glob<string>('./pieces/*.svg', { eager: true, import
 const coloured = import.meta.glob<string>('./pieces/four/*.svg', { eager: true, import: 'default' })
 const lightLines = import.meta.glob<string>('./pieces/light/*.svg', { eager: true, import: 'default' })
 const inkLines = import.meta.glob<string>('./pieces/ink/*.svg', { eager: true, import: 'default' })
-const themed = import.meta.glob<string>('./pieces/{galaxy,blueprint,holy,ancient}/*.svg', {
+const themed = import.meta.glob<string>('./pieces/{galaxy,blueprint,holy,ancient,cyberpunk}/*.svg', {
   eager: true,
   import: 'default',
 })
@@ -20,7 +20,7 @@ export const COLOURS = ['red', 'blue', 'green', 'violet'] as const
 const LETTER: Record<string, string> = { red: 'r', blue: 'b', green: 'g', violet: 'v' }
 
 /** The themed sets: each has a light side for White and a dark side for Black, and tiles to match. */
-export const THEMES = ['galaxy', 'blueprint', 'holy', 'ancient'] as const
+export const THEMES = ['galaxy', 'blueprint', 'holy', 'ancient', 'cyberpunk'] as const
 
 /**
  * What unlocks each themed set and its tiles and avatars: beating the bot that
@@ -32,6 +32,7 @@ export const THEME_LOCK: Record<string, string> = {
   blueprint: 'bot:vercingetorix',
   ancient: 'bot:ramesses',
   galaxy: 'bot:solomon',
+  cyberpunk: 'beta',
 }
 
 /** The pieces a set has: the usual six, the jester pawn (J) and the prince (X). */

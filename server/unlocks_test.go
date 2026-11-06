@@ -103,3 +103,28 @@ func TestBetaThemes(t *testing.T) {
 		t.Error("colours are free, themes are not")
 	}
 }
+
+// Cyberpunk is the beta set: every player has it now, guests included, and
+// after BETA_ENDS the accounts made before then keep it.
+func TestCyberpunkIsBeta(t *testing.T) {
+	if themeLocks["cyberpunk"] != lockBeta {
+		t.Fatalf("cyberpunk is locked by %q", themeLocks["cyberpunk"])
+	}
+	for _, list := range [][]string{setFamilies, tileSkins} {
+		if !slices.Contains(list, "cyberpunk") {
+			t.Error("cyberpunk missing from a pick list")
+		}
+	}
+	if !slices.Contains(pieceSets, "cyberpunk-light") || !slices.Contains(pieceSets, "cyberpunk-dark") {
+		t.Error("cyberpunk avatars missing")
+	}
+	t.Setenv("BETA_ENDS", "")
+	if !(unlocks{}).has("cyberpunk") {
+		t.Error("a guest should have cyberpunk during the beta")
+	}
+	t.Setenv("BETA_ENDS", "2026-06-01")
+	early := unlocks{created: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)}
+	if (unlocks{}).has("cyberpunk") || !early.has("cyberpunk") {
+		t.Error("after the beta only beta accounts keep cyberpunk")
+	}
+}
