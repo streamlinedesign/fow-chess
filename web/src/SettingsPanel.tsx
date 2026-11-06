@@ -69,6 +69,20 @@ export function SettingsPanel({
             </Group>
           )}
 
+          {mods && four && (
+            <Group id={`${id}-board`} label={t.four.board}>
+              <RadioGroup.Root
+                aria-labelledby={`${id}-board`}
+                value={value.fourBoard || 'cross'}
+                onValueChange={(v) => onChange({ ...value, fourBoard: v === 'extended' ? 'extended' : '' })}
+                className="grid grid-cols-2 gap-2.5"
+              >
+                <Choice value="cross" label={t.four.boardCross} hint={t.four.boardCrossHint} />
+                <Choice value="extended" label={t.four.boardExtended} hint={t.four.boardExtendedHint} />
+              </RadioGroup.Root>
+            </Group>
+          )}
+
           {mods && (
             <>
               <Toggle
@@ -92,12 +106,16 @@ export function SettingsPanel({
                     <Choice value="mate" label={t.panel.mate} hint={t.panel.mateHint} />
                   </RadioGroup.Root>
                 )}
-                <Toggle
-                  label={t.legacy.hill}
-                  hint={t.panel.hillHint}
-                  checked={!!value.hill}
-                  onChange={(hill) => onChange({ ...value, hill })}
-                />
+                {four && value.fourBoard === 'extended' ? (
+                  <p className="text-sm text-accent">{t.four.noHill}</p>
+                ) : (
+                  <Toggle
+                    label={t.legacy.hill}
+                    hint={t.panel.hillHint}
+                    checked={!!value.hill}
+                    onChange={(hill) => onChange({ ...value, hill })}
+                  />
+                )}
               </Group>
             </>
           )}
@@ -119,7 +137,11 @@ export function SettingsPanel({
                   key={m.value}
                   value={m.value || 'standard'}
                   label={t.setups[m.value].label}
-                  hint={four && m.value === 'battleship' ? t.four.battleshipHint : t.setups[m.value].hint}
+                  hint={
+                    four && m.value === 'battleship'
+                      ? t.four.battleshipHint(value.fourBoard === 'extended' ? 4 : 3)
+                      : t.setups[m.value].hint
+                  }
                 />
               ))}
             </RadioGroup.Root>
@@ -149,7 +171,13 @@ export function SettingsPanel({
               />
               <Toggle
                 label={t.panel.center}
-                hint={four ? t.four.centerHint : t.panel.centerHint}
+                hint={
+                  four
+                    ? value.fourBoard === 'extended'
+                      ? t.four.centerHintExtended
+                      : t.four.centerHint
+                    : t.panel.centerHint
+                }
                 checked={!!value.centerVision}
                 onChange={(on) => onChange({ ...value, centerVision: on ? 'any' : '' })}
               />
@@ -176,10 +204,15 @@ export function SettingsPanel({
   )
 }
 
-/** A four-player game's name: Four players, and its setup and Sync Move when they're on. */
+/** A four-player game's name: Four players, and its board, setup and Sync Move when they're not the usual. */
 export function fourName(s: Settings, t: Dict) {
   const setup = setupMode(s).value
-  return [t.four.four, ...(setup ? [t.setups[setup].label] : []), ...(s.sync ? [t.four.sync] : [])].join(' · ')
+  return [
+    t.four.four,
+    ...(s.fourBoard === 'extended' ? [t.four.boardExtended] : []),
+    ...(setup ? [t.setups[setup].label] : []),
+    ...(s.sync ? [t.four.sync] : []),
+  ].join(' · ')
 }
 
 /** Clocks split by how long a game takes, the same way as on the home page: Short is Blitz and Rapid, Long the rest. */

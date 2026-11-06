@@ -4,8 +4,47 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
-- Eat the King is now exactly fog of war, no check or checkmate, and no warning when your king is attacked. Centre vision and the king-in-danger ring are mods (Centre vision, and the new King warning switch); arenas and ranked games have neither. Games already saved keep what they were played with.
+- Eat the King is now exactly fog of war, no check or checkmate, and no warning when your king is attacked. Centre vision and the king-in-danger ring are mods (Centre vision, and the new King warning switch); arenas and ranked Eat the King games have neither; War Mode keeps the warning. Games already saved keep what they were played with.
 - Rules page split in two: `/rules` is Eat the King (the game, layouts, playing a match, the Opera Game replay) and `/rules/mods` has one card per mod. The mods page links to it.
+- Cyberpunk pieces and tiles, for everyone in the beta: ice white with dark lines for White, deep violet with neon cyan lines for Black, a pink and cyan glitch edge, and a glitched star on the king, queen and prince; flat cyan and violet squares with neon corners. Everyone has them while the beta is open, guests included; after `BETA_ENDS` accounts made before then keep them. Drawn by `scripts/cyberpunk.py`.
+- Fixed: opening a match link that no longer exists (a mistyped code, or a game from before a server restart) crashed the page with "Something broke" instead of saying the match wasn't found.
+- Security: a player knocked out of a four-player fog game no longer sees the board live (they watch a few moves behind, like spectators), and while the game goes on only other players who are out read what they write.
+- Avatars show the whole head of the piece inside the circle, centred, for every kind and set; the menu button's avatar sits in the middle of its ring.
+- The fallen king in the logo lines up with the name on phones (its offset now scales with the type size).
+- Profile on a phone: each rating keeps its label beside it ("Eat the King rating", "War Mode rating"), and the numbers sit two by two.
+- The home page says when the full game ships: 2 February 2027.
+- War Mode is 30 minutes each plus 10 seconds a move (was 10 minutes); placing your pieces still has two minutes. The home page board has a War Mode toggle: you against three copies of the bot you pick, starting on your Battleship setup, no clock, nothing saved.
+- Themed skins are earned: each bot plays a theme on its own tiles (Rex inutilis holy, Vercingetorix blueprint, Ramesses II ancient, Solomon galaxy), and beating it while signed in unlocks that set, its tiles and its avatars. Plain colours stay free. Locked skins show in Pieces with the bot to beat; the server refuses them in settings and drops them from live games. Themed avatars picked before go back to the pawn. `GET /api/unlocks` lists what you have. A "beta" lock is ready for skins everyone gets during the beta (`BETA_ENDS`).
+- The desktop app's downloads are hidden until 1.0: no Download link, menu item or home page strip, and /download shows not found. Switch them back on with `DOWNLOADS` in `web/src/features.ts`. The app can still be installed on a phone from the browser.
+- Desktop app for Windows, Mac and Linux (`desktop/`, Rust and Tauri): the game in its own window, with a loading screen while it connects and a "can't reach the game" screen that retries by itself. Its home has three ways to play side by side: Eat the King, War Mode (the ranked four-player game) and Modded, with your rating and place under the two ranked ones. Installers are built for each release tag and attached to the GitHub release.
+- The site has a Download link and a /download page (the build for your system, every build, and how to add the site to a phone's home screen), and a strip on the home page on computers.
+- The site can be installed on a phone: it has a web app manifest and icons.
+- `GET /api/ranks`: your place on both leaderboards and how many players are on each.
+- Two official games on the home page, each ranked on its own: Eat the King (one against one, fog, always the usual starting position; Back row and Battleship are only under Mods now) and War Mode (the ranked four-player game: extended board, Battleship, Sync Move, jester pawns, no fog).
+- Tournaments are hidden for now: no links in the header, the menu or the home page, and /tournaments shows not found. Switch them back on with `TOURNAMENTS` in `web/src/features.ts`.
+- Ranked four-player games are played with jester pawns, rules and pieces.
+- Ranked four-player games: one fixed game (extended board, Battleship, Sync Move, no fog, 10 minutes each), found from the home page in a queue of four by rating. It has its own Glicko-2 rating and its own leaderboard tab; each game counts as a result against each of the other three by finishing order. Players have two minutes to place their pieces, then get a bot's arrangement.
+- Four players, extended board: pawns promote past the middle, as on the cross (the ninth rank from their side on), or on the side walls where the players beside them sit.
+- Four players, extended board: pawns promote on any edge but their own side (the side edges count past your own rows), not just the far edge. Fixed the board jumping while a move was being sent on the extended board.
+- Security: a guest ID can no longer name a signed-in player's or a bot's seat, which let anyone play, resign or see the fog view of any signed-in player's game. Rate limits now count the real address behind Caddy, so a few wrong passwords no longer lock everyone out of signing in. New limits per address on sign-ups, new matches and match codes that don't exist; bug reports count per address whatever browser ID they send.
+- Four players: an extended board under Mods, 16 by 16 with four rows each and neutral corners anyone can cross. Centre vision comes from your two centre squares on the far side, pawns promote on the far edge, Battleship uses all four rows, and there's no hill.
+- Your look is yours to show: you pick a set for when you play White and one for when you play Black, and your opponent and spectators see your pieces and tiles as you picked them. Watch and replays show them too. Same set on both sides is fine: colours have light lines as White and dark lines as Black, themes their light and dark halves.
+- Coloured sets now come with light lines and with dark lines instead of mixed outlines; bots play theirs the same way.
+- Tiles cover your whole half of the board in a two-player game, and your own rows (three, or four on the extended board) with four players.
+- No skins means classic pieces and the plain board for every player on your screen; bots and the four-player colours stay.
+- Four players: a player with a skin plays in one of their two sets, picked at random per game; everyone else keeps their seat colour.
+- Settings opens about six times faster on a phone: plain radio buttons, and the avatar is picked by set, then piece.
+- Avatars are zoomed on the head of the piece.
+- Ancient tiles: a Greek key border on all four sides of each square that joins up with the next square, in place of the single band along the bottom.
+- Themed piece sets: galaxy, blueprint, holy and ancient, light for White and dark for Black, for your pieces or your opponent's. Their light and dark pieces are avatars too.
+- Tile skins: pick a skin for the light squares and one for the dark squares (galaxy, blueprint, holy, ancient or plain). They cover only your half of the board.
+- Skins switch: off draws classic pieces (bots included) and the plain board everywhere, keeping your picks for when you turn it back on.
+- Your pieces: Settings has a Pieces and avatar section, for guests too. Pick a set for your own pieces and one for your opponent's (classic, cream, ink, red, blue, green, violet, and the four colours with black lines), and the side you play on the home board and against bots. Signed-in players keep them on the account; guests in the browser. The home board has a Pieces link.
+- Avatars: the pawn stays the default, and every piece of every one-colour set can be your avatar. Others see it next to your name in lists, profiles, the bell and Watch.
+- Black-lined versions of the red, blue, green and violet sets.
+- Bots play with their own coloured sets, on the home board and in bot games: Solomon red, Vercingetorix green, Rex inutilis violet, Ramesses II cream. Against Ramesses as Black, your White pieces are drawn black so the two sides differ.
+- Home page board: pawns that reach the last rank ask what to become (queen, rook, bishop or knight) instead of always turning into a queen, and the centre vision squares are ringed and light up as in a real game.
+- Bot faces have their own colours: Solomon red, Vercingetorix green, Rex inutilis violet, Ramesses II cream.
 - Sync Move for two-player mods games: both players send a move each round without seeing the other's, then both happen at once, with captures last, as in four-player Sync Move. A sent move is locked in. Both clocks run until each side sends. Sync Move games are always Eat the King.
 - Backward pawns are gone: the mod, its rule in the engine (two- and four-player) and its strings.
 - Dragging a piece on the four-player board no longer selects (and highlights) the squares it passes.

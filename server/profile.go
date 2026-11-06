@@ -47,6 +47,10 @@ type profileResponse struct {
 	// FormWith is the visitor's last results against a friend, newest first: W, L or D.
 	FormWith []string `json:"formWith,omitempty"`
 	Rank     int      `json:"rank,omitempty"` // place on the leaderboard, once rated
+	// FourRating and FourRank are the ranked four-player rating and place,
+	// once the player has a ranked four-player game.
+	FourRating int `json:"fourRating,omitempty"`
+	FourRank   int `json:"fourRank,omitempty"`
 	// HideOnline is only sent to the player themselves.
 	HideOnline bool `json:"hideOnline,omitempty"`
 }
@@ -125,6 +129,9 @@ type replayResponse struct {
 	Frames   []replayFrame     `json:"frames"`
 	Ended    int64             `json:"ended"` // unix milliseconds
 	Sniper   bool              `json:"sniper,omitempty"`
+	// Skins are the signed-in players' looks as they are now, so a replay
+	// draws each player's pieces and squares the way they like them.
+	Skins map[string]*skin `json:"skins,omitempty"`
 }
 
 const profileGames = 200
@@ -161,8 +168,11 @@ func profileRoutes(mux *http.ServeMux, store *Store, auth *Auth, live *Live) {
 			Online: card.Online, LastSeen: card.LastSeen, Playing: card.Playing, Stats: stats,
 			Current: []gameSummary{}, Finished: []gameSummary{},
 		}
-		if rank, err := store.Rank(u.ID); err == nil && rank != nil {
+		if rank, err := store.Rank(u.ID, false); err == nil && rank != nil {
 			resp.Rank = rank.Rank
+		}
+		if rank, err := store.Rank(u.ID, true); err == nil && rank != nil {
+			resp.FourRating, resp.FourRank = rank.Rating, rank.Rank
 		}
 		me := auth.user(r)
 		if me != nil && me.ID == u.ID {
@@ -186,9 +196,34 @@ func profileRoutes(mux *http.ServeMux, store *Store, auth *Auth, live *Live) {
 		writeJSON(w, resp)
 	})
 
-	// The Top 100, plus where the signed-in player stands if they're further down.
+	// Where the signed-in player stands on both ranked games, for the desktop
+	// app's home: null for a game they haven't played rated yet.
+	mux.HandleFunc("GET /api/ranks", func(w http.ResponseWriter, r *http.Request) {
+		u := auth.user(r)
+		if u == nil {
+			jsonError(w, "Log in first.", http.StatusUnauthorized)
+			return
+		}
+		var resp struct {
+			One  *leader `json:"one"`
+			Four *leader `json:"four"`
+		}
+		var err error
+		if resp.One, err = store.Rank(u.ID, false); err == nil {
+			resp.Four, err = store.Rank(u.ID, true)
+		}
+		if err != nil {
+			jsonError(w, "Couldn't load the leaderboard.", http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, resp)
+	})
+
+	// The Top 100, plus where the signed-in player stands if they're further
+	// down; ?four=1 for ranked four-player games.
 	mux.HandleFunc("GET /api/leaderboard", func(w http.ResponseWriter, r *http.Request) {
-		top, err := store.Leaderboard(100)
+		four := r.URL.Query().Get("four") == "1"
+		top, err := store.Leaderboard(100, four)
 		if err != nil {
 			jsonError(w, "Couldn't load the leaderboard.", http.StatusInternalServerError)
 			return
@@ -198,7 +233,7 @@ func profileRoutes(mux *http.ServeMux, store *Store, auth *Auth, live *Live) {
 			Me  *leader  `json:"me"`
 		}{Top: top}
 		if u := auth.user(r); u != nil {
-			if resp.Me, err = store.Rank(u.ID); err != nil {
+			if resp.Me, err = store.Rank(u.ID, four); err != nil {
 				jsonError(w, "Couldn't load the leaderboard.", http.StatusInternalServerError)
 				return
 			}
@@ -231,6 +266,19 @@ func profileRoutes(mux *http.ServeMux, store *Store, auth *Auth, live *Live) {
 		if err != nil {
 			jsonError(w, "Couldn't load the game.", http.StatusInternalServerError)
 			return
+		}
+		for i, id := range rec.Users {
+			if id == 0 {
+				continue
+			}
+			if l, err := store.Look(id); err == nil {
+				if s := cleanSkin(&l.skin); s != nil {
+					if resp.Skins == nil {
+						resp.Skins = map[string]*skin{}
+					}
+					resp.Skins[colorNames[i]] = s
+				}
+			}
 		}
 		writeJSON(w, resp)
 	})

@@ -280,11 +280,24 @@ type leader struct {
 	Username string `json:"username"`
 	Rating   int    `json:"rating"`
 	Games    int    `json:"games"`
+	// Of is how many players are on the leaderboard; only Rank fills it.
+	Of int `json:"of,omitempty"`
 }
 
-// Leaderboard lists the best-rated players who have played a rated game.
-func (s *Store) Leaderboard(limit int) ([]leader, error) {
-	rows, err := s.db.Query(`SELECT username, rating, rated_games FROM users WHERE rated_games > 0 ORDER BY rating DESC, id LIMIT $1`, limit)
+// ratingColumns are the rating and game count columns for the
+// one-against-one leaderboard, or with four the four-player one.
+func ratingColumns(four bool) (rating, games string) {
+	if four {
+		return "four_rating", "four_rated_games"
+	}
+	return "rating", "rated_games"
+}
+
+// Leaderboard lists the best-rated players who have played a rated game:
+// one against one, or with four, ranked four-player games.
+func (s *Store) Leaderboard(limit int, four bool) ([]leader, error) {
+	rc, gc := ratingColumns(four)
+	rows, err := s.db.Query(`SELECT username, `+rc+`, `+gc+` FROM users WHERE `+gc+` > 0 ORDER BY `+rc+` DESC, id LIMIT $1`, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -302,14 +315,16 @@ func (s *Store) Leaderboard(limit int) ([]leader, error) {
 	return out, rows.Err()
 }
 
-// Rank is a user's place on the leaderboard, or nil if they haven't played a rated game.
-func (s *Store) Rank(userID int64) (*leader, error) {
+// Rank is a user's place on a leaderboard, or nil if they haven't played a rated game there.
+func (s *Store) Rank(userID int64, four bool) (*leader, error) {
 	var l leader
 	var rating float64
+	rc, gc := ratingColumns(four)
 	err := s.db.QueryRow(`
-		SELECT u.username, u.rating, u.rated_games,
-			(SELECT count(*) FROM users o WHERE o.rated_games > 0 AND (o.rating > u.rating OR (o.rating = u.rating AND o.id < u.id))) + 1
-		FROM users u WHERE u.id = $1 AND u.rated_games > 0`, userID).Scan(&l.Username, &rating, &l.Games, &l.Rank)
+		SELECT u.username, u.`+rc+`, u.`+gc+`,
+			(SELECT count(*) FROM users o WHERE o.`+gc+` > 0 AND (o.`+rc+` > u.`+rc+` OR (o.`+rc+` = u.`+rc+` AND o.id < u.id))) + 1,
+			(SELECT count(*) FROM users o WHERE o.`+gc+` > 0)
+		FROM users u WHERE u.id = $1 AND u.`+gc+` > 0`, userID).Scan(&l.Username, &rating, &l.Games, &l.Rank, &l.Of)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

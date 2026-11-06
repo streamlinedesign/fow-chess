@@ -3,7 +3,9 @@ import { Avatar } from './Avatar'
 import { useT } from './i18n'
 import { Page, PageHead } from './Page'
 import { Icon } from './icons'
-import { pieceImg, type Look } from './position'
+import type { Look } from './position'
+import type { Skin } from './pieces'
+import { usePieces } from './prefs'
 import { navigate } from './router'
 import { describeTime, modeName, NO_CLOCK, type Settings } from './settings'
 import { api } from './social'
@@ -13,7 +15,7 @@ import type { Color } from './useMatch'
 export type LiveGame = {
   id: string
   settings: Settings
-  players: Record<Color, { name?: string; rating?: number }>
+  players: Record<Color, { name?: string; rating?: number; skin?: Skin }>
   /** 64 chars a1..h8, as a spectator seeing it as White sees it. */
   board: string
   ply: number
@@ -116,7 +118,7 @@ export function GameCard({ g }: { g: LiveGame }) {
         <b>{modeName(g.settings, t)}</b>
         <span>{describeTime(g.settings.time ?? NO_CLOCK, t)}</span>
       </div>
-      <MiniBoard board={g.board} look={g.settings} />
+      <MiniBoard board={g.board} look={{ ...g.settings, skins: { w: g.players.w.skin, b: g.players.b.skin } }} />
       <div className="flex flex-col gap-1.5">
         <Seat color="b" g={g} />
         <Seat color="w" g={g} />
@@ -143,7 +145,7 @@ function Seat({ color, g }: { color: Color; g: LiveGame }) {
   const p = g.players[color]
   return (
     <div className="flex min-w-0 items-center gap-2 text-[14.5px]">
-      <Avatar size={24} />
+      <Avatar size={24} name={p.name || undefined} />
       <span className={`truncate ${p.name ? 'font-semibold' : 'text-accent'}`}>{p.name || t.common.guest}</span>
       {p.rating ? <span className="font-mono text-[13px] text-accent tabular-nums">{p.rating}</span> : null}
       {g.turn === color && <span className="turn-tag ml-auto">{t.common.toMove}</span>}
@@ -153,13 +155,14 @@ function Seat({ color, g }: { color: Color; g: LiveGame }) {
 
 /** A small board from White's side, with fog where that view has it. */
 export function MiniBoard({ board, look }: { board: string; look?: Look }) {
+  const img = usePieces()
   const squares = []
   for (let row = 7; row >= 0; row--) {
     for (let col = 0; col < 8; col++) {
       const c = board[row * 8 + col]
       squares.push(
         <span key={row * 8 + col} className="sq" data-light={(row + col) % 2 === 1} data-fog={c === '?'}>
-          {c !== '.' && c !== '?' && <img className="piece" src={pieceImg(c, look)} alt="" draggable={false} />}
+          {c !== '.' && c !== '?' && <img className="piece" src={img(c, look)} alt="" draggable={false} />}
         </span>,
       )
     }

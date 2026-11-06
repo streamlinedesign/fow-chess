@@ -1,18 +1,23 @@
 import { useT } from './i18n'
-import { pieceImg, type Look } from './position'
+import type { Look } from './position'
+import { usePieces } from './prefs'
 
 /** The pieces one side has taken, as FEN letters (most valuable first), drawn as overlapping icons. */
 export function Captured({
   pieces,
   look,
+  mine,
   className = '',
 }: {
   pieces: string
+  /** The side the viewer plays, drawn in their own set as they pick it (see prefs.ts). */
+  mine?: 'w' | 'b'
   /** The mods that change how pieces are drawn. */
   look?: Look
   className?: string
 }) {
   const t = useT()
+  const img = usePieces(mine)
   if (!pieces) return null
   const groups: string[][] = []
   for (const p of pieces) {
@@ -27,7 +32,7 @@ export function Captured({
           {g.map((p, j) => (
             <img
               key={j}
-              src={pieceImg(p, look)}
+              src={img(p, look)}
               alt={p}
               draggable={false}
               className="captured-piece size-[1.15em] first:ml-0 -ml-[0.6em]"

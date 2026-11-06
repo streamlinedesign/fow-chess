@@ -19,6 +19,10 @@ import { ReplayPage } from './ReplayPage'
 import { RulesPage } from './RulesPage'
 import { ModsPage } from './ModsPage'
 import { TournamentsPage } from './TournamentsPage'
+import { DOWNLOADS, TOURNAMENTS } from './features'
+import { AppHome } from './AppHome'
+import { DESKTOP } from './desktop'
+import { DownloadPage } from './DownloadPage'
 import { navigate, usePath } from './router'
 import { WatchPage } from './WatchPage'
 import { SettingsPage } from './SettingsPage'
@@ -51,6 +55,7 @@ export function App() {
       )
     // Find match or an arena paired you: go to the game, wherever you are.
     if (e.type === 'match' && e.matchId) navigate(`/m/${e.matchId}`)
+    if (e.type === 'four' && e.matchId) navigate(`/f/${e.matchId}`)
   })
 
   const page = match ? (
@@ -75,10 +80,16 @@ export function App() {
     <RulesPage mods={path === '/rules/mods'} />
   ) : path === '/mods' ? (
     <ModsPage />
-  ) : path === '/tournaments' ? (
+  ) : TOURNAMENTS && path === '/tournaments' ? (
     <TournamentsPage />
+  ) : DOWNLOADS && path === '/download' ? (
+    <DownloadPage />
   ) : path === '/' ? (
-    <Landing />
+    DESKTOP ? (
+      <AppHome />
+    ) : (
+      <Landing />
+    )
   ) : (
     <NotFound />
   )
@@ -89,7 +100,7 @@ export function App() {
         <Header />
         <ErrorBoundary key={path}>{page}</ErrorBoundary>
         {/* Game pages and chats fill the screen; the rest end with the footer. */}
-        {!match && !game && !chat && <Footer />}
+        {!match && !game && !chat && !DESKTOP && <Footer />}
         <OfferDialog />
         <Toaster />
       </div>

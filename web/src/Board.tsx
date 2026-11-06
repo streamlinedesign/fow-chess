@@ -1,5 +1,6 @@
 import { memo, useRef, useState } from 'react'
-import { pieceAt, pieceImg, squareIndex, type Look } from './position'
+import { pieceAt, squareIndex, type Look } from './position'
+import { usePieces, useTiles } from './prefs'
 import { HILL, OUTPOSTS } from './settings'
 import type { Color } from './useMatch'
 
@@ -9,6 +10,8 @@ type Props = {
   /** 64 characters from a1 to h8, as sent by the server (see position.ts). */
   board: string
   orientation: Color
+  /** The player's own side, drawn in their own set; the bottom side when not given. */
+  you?: Color | null
   /** UCI moves the viewer may play right now; empty when it isn't their turn. */
   legal: string[]
   lastMove?: { from: string; to: string } | null
@@ -74,8 +77,11 @@ export const Board = memo(function Board({
   hill,
   center,
   look,
+  you,
   onMove,
 }: Props) {
+  const img = usePieces(you ?? undefined)
+  const tile = useTiles(you ?? undefined, look)
   const boardRef = useRef<HTMLDivElement>(null)
   const drag = useRef<Drag | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
@@ -159,6 +165,8 @@ export const Board = memo(function Board({
       const i = squareIndex(sq)
       const piece = pieceAt(board, sq)
       const fog = board[i] === '?'
+      const light = ((i & 7) + (i >> 3)) % 2 === 1
+      const skin = fog ? undefined : tile(i >> 3, light)
       const target = targets.has(sq)
       // A pawn moving diagonally onto an empty square is capturing en passant.
       const capture = target && (piece !== null || (pieceAt(board, sel!)?.toLowerCase() === 'p' && sel![0] !== sq[0]))
@@ -167,7 +175,9 @@ export const Board = memo(function Board({
           key={sq}
           className="sq"
           data-square={sq}
-          data-light={((i & 7) + (i >> 3)) % 2 === 1}
+          data-light={light}
+          data-tile={skin ? true : undefined}
+          style={skin ? ({ '--tile': `url("${skin}")` } as React.CSSProperties) : undefined}
           // Under fog the square your piece left is often out of sight; a highlight there would read as visible.
           data-last={
             !fog && (lastMove?.from === sq || lastMove?.to === sq || alsoMove?.from === sq || alsoMove?.to === sq)
@@ -184,7 +194,7 @@ export const Board = memo(function Board({
         >
           {col === 0 && <span className="coord top-[4%] left-[5%]">{sq[1]}</span>}
           {row === 7 && <span className="coord right-[5%] bottom-[4%]">{sq[0]}</span>}
-          {piece && <img className="piece" src={pieceImg(piece, look)} alt={piece} draggable={false} />}
+          {piece && <img className="piece" src={img(piece, look)} alt={piece} draggable={false} />}
         </div>,
       )
     }

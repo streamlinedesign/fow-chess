@@ -276,6 +276,8 @@ type Match struct {
 	hooks     matchHooks
 	// overNotified is the round whose result has gone to the players' bells.
 	overNotified int
+	// rewarded is one more than the round whose bot win has been unlocked, so it's done once.
+	rewarded int
 	// botThinking is set while a bot's move is being worked out, so a bot
 	// is poked once per turn.
 	botThinking bool
@@ -285,6 +287,10 @@ type Match struct {
 	chatID int
 	// pending is each side's move for the Sync Move round in play, "" until sent.
 	pending [2]string
+	// skins is how each seat's player likes their pieces and squares drawn,
+	// as their browser last said; everyone in the match sees them. Kept only
+	// in memory: a seat with none draws in the default set.
+	skins [2]*skin
 }
 
 const (
@@ -297,6 +303,9 @@ type chatLine struct {
 	From string `json:"from"` // "w" or "b"
 	Text string `json:"text"`
 	At   int64  `json:"at"` // unix milliseconds
+	// outOnly marks a four-player line sent by a player who was already out
+	// while the game ran: only other players who are out may read it.
+	outOnly bool
 }
 
 type chatMsg struct {
@@ -401,6 +410,7 @@ func (m *Match) seat(color int, p *player) {
 
 // save queues this round for the store. A demo game is never saved. Callers hold m.mu.
 func (m *Match) save() {
+	m.rewardBotWin() // demo games too: beating the home page's bot counts
 	if m.settings.Demo {
 		return
 	}
@@ -595,11 +605,15 @@ type seatState struct {
 	Taken  bool   `json:"taken"`
 	Online bool   `json:"online"`
 	Name   string `json:"name,omitempty"` // username; empty for a guest
+	// Bot is set on the seat a bot holds, so the board can draw its own set.
+	Bot bool `json:"bot,omitempty"`
+	// Skin is how the player in the seat likes their pieces and squares drawn.
+	Skin *skin `json:"skin,omitempty"`
 }
 
 // protocolVersion changes whenever the state message changes shape, so a web app
 // talking to a server from another version can say so instead of breaking.
-const protocolVersion = 11
+const protocolVersion = 12
 
 type stateMsg struct {
 	Type     string   `json:"type"`
@@ -633,6 +647,8 @@ type stateMsg struct {
 	Ticking []string `json:"ticking,omitempty"`
 	// Planned is the move this player has sent for the Sync Move round.
 	Planned string `json:"planned,omitempty"`
+	// Unlocked is the theme a signed-in player won by beating the bot.
+	Unlocked string `json:"unlocked,omitempty"`
 }
 
 // setupState is the setup as one viewer may know it.
@@ -660,6 +676,8 @@ type inMsg struct {
 	Board string  `json:"board"`
 	Side  string  `json:"side"` // "w" or "b": the side a spectator wants to see the game as
 	T     float64 `json:"t"`    // ping timestamp, echoed back
+	// Skin is the player's own look, sent on joining and whenever they change it.
+	Skin *skin `json:"skin,omitempty"`
 }
 
 // join seats the player if a seat is free (white first); anyone else watches.
@@ -776,6 +794,9 @@ func (m *Match) online(color int) bool {
 }
 
 func (m *Match) handle(c *client, msg inMsg) {
+	if msg.Type == "skin" && !m.store.stripLocked(c.playerID, msg.Skin) {
+		return
+	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	color := m.colorOf(c.playerID)
@@ -789,6 +810,13 @@ func (m *Match) handle(c *client, msg inMsg) {
 				c.side = side
 				c.push(m.state(c))
 			}
+		}
+		return
+	}
+	if msg.Type == "skin" {
+		if s := cleanSkin(msg.Skin); s != m.skins[color] && (s == nil || m.skins[color] == nil || *s != *m.skins[color]) {
+			m.skins[color] = s
+			m.broadcast()
 		}
 		return
 	}
@@ -948,6 +976,7 @@ func (m *Match) startRematch(now time.Time) {
 	m.seats[white], m.seats[black] = m.seats[black], m.seats[white]
 	m.users[white], m.users[black] = m.users[black], m.users[white]
 	m.names[white], m.names[black] = m.names[black], m.names[white]
+	m.skins[white], m.skins[black] = m.skins[black], m.skins[white]
 	m.rematch = [2]bool{}
 	m.draw = [2]bool{}
 	m.pending = [2]string{}
@@ -1039,9 +1068,13 @@ func (m *Match) base() stateMsg {
 	}
 	if status == "over" {
 		base.Sniper = sniperWin(result, reason, len(m.game.History()))
+		if m.botWinner() != 0 {
+			base.Unlocked = botTheme(m.settings.Bot)
+		}
 	}
+	bot := m.botColor()
 	for i, name := range colorNames {
-		base.Players[name] = seatState{Taken: m.seats[i] != "", Online: m.seats[i] != "" && m.online(i), Name: m.names[i]}
+		base.Players[name] = seatState{Taken: m.seats[i] != "", Online: m.seats[i] != "" && m.online(i), Name: m.names[i], Bot: i == bot, Skin: m.skins[i]}
 	}
 	return base
 }

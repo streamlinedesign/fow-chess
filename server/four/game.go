@@ -26,10 +26,10 @@ func (p *Position) Vision(c Color) [NumSquares]bool {
 		seen[sq] = true
 		if pc.Kind() == Pawn {
 			fx, fy := forward[c][0], forward[c][1]
-			if ahead, ok := sq.Offset(fx, fy); ok {
+			if ahead, ok := p.Shape.Offset(sq, fx, fy); ok {
 				seen[ahead] = true
-				if rankOf(c, sq) == 1 {
-					if two, ok := ahead.Offset(fx, fy); ok {
+				if p.Shape.RankOf(c, sq) == 1 {
+					if two, ok := p.Shape.Offset(ahead, fx, fy); ok {
 						seen[two] = true
 					}
 				}
@@ -42,13 +42,13 @@ func (p *Position) Vision(c Color) [NumSquares]bool {
 	return seen
 }
 
-// Outpost is the centre square holding c's piece that gives c the whole board
+// Outpost is the outpost (see Shape.Outposts) holding c's piece that gives c the whole board
 // under centre vision, or NoSquare.
 func (p *Position) Outpost(c Color) Square {
 	if p.CenterVision == CenterOff {
 		return NoSquare
 	}
-	for _, sq := range Centre {
+	for _, sq := range p.Shape.Outposts(c) {
 		pc := p.Board[sq]
 		if pc.Is(c) && (p.CenterVision == CenterAny || pc.Kind() == Pawn) {
 			return sq
@@ -117,7 +117,12 @@ type Game struct {
 	// rounds is how many Sync Move rounds have been played.
 	rounds int
 	// fell is how each player went out, NoMethod while they're in.
-	fell   [4]Method
+	fell [4]Method
+	// outAt is when each player went out, counting from 1; players who
+	// went out together, like two kings taken in one Sync Move round, share
+	// a number. 0 while in.
+	outAt  [4]int
+	outs   int
 	over   bool
 	winner Color
 	drawn  bool
@@ -170,11 +175,13 @@ func (g *Game) PlayUCI(uci string) (Event, error) {
 	g.pos = next
 	if captured.Kind() == King {
 		g.fell[captured.Color()] = KingCaptured
+		g.outs++
+		g.outAt[captured.Color()] = g.outs
 		san += "#"
 	}
 	e := Event{By: us, Move: m, SAN: san, Captured: captured}
 	g.history = append(g.history, e)
-	if g.pos.Hill && g.pos.Board[m.To].Kind() == King && InCentre(m.To) {
+	if g.pos.HillOn() && g.pos.Board[m.To].Kind() == King && g.pos.Shape.InCentre(m.To) {
 		g.end(us, KingOfTheHill)
 		return e, nil
 	}
@@ -189,6 +196,8 @@ func (g *Game) Leave(c Color, why Method) {
 	}
 	g.pos.Eliminate(c)
 	g.fell[c] = why
+	g.outs++
+	g.outAt[c] = g.outs
 	g.history = append(g.history, Event{By: c, Out: why})
 	g.evaluate(why)
 }
@@ -303,7 +312,7 @@ func (g *Game) san(m Move) string { return sanAt(&g.pos, m) }
 // sanAt writes m as played from p.
 func sanAt(p *Position, m Move) string {
 	if m.Is(FlagCastle) {
-		if cell(p.Board[m.From].Color(), 6, 0) == m.To {
+		if p.Shape.Cell(p.Board[m.From].Color(), 6, 0) == m.To {
 			return "O-O"
 		}
 		return "O-O-O"
@@ -324,4 +333,35 @@ func sanAt(p *Position, m Move) string {
 		b.WriteByte(m.Promo.Letter())
 	}
 	return b.String()
+}
+
+// Places is where each player finished once the game is over, 1 for the
+// best: the winner first, then the players who went out, the last to go out
+// best placed. Players who finished level share a place, like everyone still
+// in at a draw, or two kings taken in the same Sync Move round. Nil while
+// the game is on.
+func (g *Game) Places() []int {
+	if !g.over {
+		return nil
+	}
+	// rank orders players: higher is better.
+	rank := func(c Color) int {
+		switch {
+		case !g.drawn && c == g.winner:
+			return g.outs + 2
+		case g.outAt[c] == 0:
+			return g.outs + 1
+		}
+		return g.outAt[c]
+	}
+	places := make([]int, 4)
+	for _, c := range Colors {
+		places[c] = 1
+		for _, o := range Colors {
+			if rank(o) > rank(c) {
+				places[c]++
+			}
+		}
+	}
+	return places
 }

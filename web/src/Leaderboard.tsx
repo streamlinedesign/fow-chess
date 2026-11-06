@@ -1,3 +1,4 @@
+import * as RadioGroup from '@radix-ui/react-radio-group'
 import { useEffect, useState } from 'react'
 import { Avatar } from './Avatar'
 import { errorText, useT } from './i18n'
@@ -14,10 +15,12 @@ export function Leaderboard({ me }: { me?: string }) {
   const [data, setData] = useState<{ top: Leader[]; me: Leader | null } | null>(null)
   const [error, setError] = useState('')
   const [all, setAll] = useState(false)
+  const [four, setFour] = useState(false)
 
   useEffect(() => {
     let live = true
-    fetch('/api/leaderboard')
+    setData(null)
+    fetch(four ? '/api/leaderboard?four=1' : '/api/leaderboard')
       .then(async (res) => {
         const body = await res.json()
         if (!live) return
@@ -29,7 +32,7 @@ export function Leaderboard({ me }: { me?: string }) {
       live = false
     }
     // Refetch when you sign in or out, so your own row follows.
-  }, [me])
+  }, [me, four])
 
   const rows = data ? (all ? data.top : data.top.slice(0, SHORT)) : []
   const pinned = data?.me && !rows.some((r) => r.username === data.me!.username) ? data.me : null
@@ -40,12 +43,21 @@ export function Leaderboard({ me }: { me?: string }) {
         <h2 className="text-[22px] font-semibold tracking-tight">{t.leaderboard.title}</h2>
         <span className="text-[13px] text-accent">{t.leaderboard.updated}</span>
       </div>
+      <RadioGroup.Root
+        aria-label={t.leaderboard.title}
+        value={four ? 'four' : 'one'}
+        onValueChange={(v) => setFour(v === 'four')}
+        className="seg self-start"
+      >
+        <RadioGroup.Item value="one">{t.leaderboard.oneOnOne}</RadioGroup.Item>
+        <RadioGroup.Item value="four">{t.leaderboard.fourPlayers}</RadioGroup.Item>
+      </RadioGroup.Root>
       {error ? (
         <p className="text-accent">{error}</p>
       ) : !data ? (
         <Spinner label={t.leaderboard.loading} />
       ) : data.top.length === 0 ? (
-        <p className="text-accent">{t.leaderboard.nobodyRated}</p>
+        <p className="text-accent">{four ? t.leaderboard.nobodyRatedFour : t.leaderboard.nobodyRated}</p>
       ) : (
         <>
           <table className="lb">
@@ -105,7 +117,7 @@ function Row({ leader, you }: { leader: Leader; you: boolean }) {
           }}
           className="flex min-w-0 items-center gap-2.5"
         >
-          <Avatar size={30} />
+          <Avatar size={30} name={leader.username} />
           <span className="flex min-w-0 flex-col leading-tight">
             <span className="truncate font-semibold">{leader.username}</span>
             {you && <span className="text-[13px] text-accent">{t.common.you}</span>}

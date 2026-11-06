@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { logout, useMe } from './auth'
 import { Avatar } from './Avatar'
 import { Bell } from './Bell'
+import { DOWNLOADS, TOURNAMENTS } from './features'
+import { DESKTOP } from './desktop'
+import { DownloadIcon } from './DownloadPage'
 import { LANGS, setLang, useLang, useT } from './i18n'
 import { Icon } from './icons'
 import { useCounts } from './live'
@@ -72,13 +75,15 @@ export function Header() {
             >
               {t.landing.howToPlay}
             </a>
-            <a
-              href="/tournaments"
-              onClick={(e) => go(e, '/tournaments')}
-              className="flex h-9 items-center rounded-md px-3 text-sm font-semibold transition-colors hover:bg-muted max-sm:hidden"
-            >
-              {t.common.tournaments}
-            </a>
+            {TOURNAMENTS && (
+              <a
+                href="/tournaments"
+                onClick={(e) => go(e, '/tournaments')}
+                className="flex h-9 items-center rounded-md px-3 text-sm font-semibold transition-colors hover:bg-muted max-sm:hidden"
+              >
+                {t.common.tournaments}
+              </a>
+            )}
             <a
               href="/watch"
               onClick={(e) => go(e, '/watch')}
@@ -86,6 +91,16 @@ export function Header() {
             >
               {t.common.watch}
             </a>
+            {DOWNLOADS && !DESKTOP && (
+              <a
+                href="/download"
+                onClick={(e) => go(e, '/download')}
+                className="flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-semibold transition-colors hover:bg-muted max-md:hidden"
+              >
+                <DownloadIcon size={15} />
+                {t.desktop.download}
+              </a>
+            )}
             <LangMenu />
             <button
               onClick={toggleTheme}
@@ -181,10 +196,10 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
       trigger={
         <button
           aria-label={t.header.yourMenu}
-          className="rounded-full p-0.5 transition-shadow outline-none hover:shadow-[0_0_0_2px_var(--color-fg)] focus-visible:shadow-[0_0_0_2px_var(--color-fg)] data-[state=open]:shadow-[0_0_0_2px_var(--color-fg)]"
+          className="flex rounded-full p-0.5 transition-shadow outline-none hover:shadow-[0_0_0_2px_var(--color-fg)] focus-visible:shadow-[0_0_0_2px_var(--color-fg)] data-[state=open]:shadow-[0_0_0_2px_var(--color-fg)]"
         >
-          <span className="relative block">
-            <Avatar size={34} />
+          <span className="relative flex">
+            <Avatar size={34} name={username} />
             {unreadChats > 0 && (
               <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-fg shadow-[0_0_0_2px_var(--color-bg)]" />
             )}
@@ -193,7 +208,7 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
       }
     >
       <div className="flex items-center gap-3 px-2.5 pt-3 pb-3.5">
-        <Avatar size={44} />
+        <Avatar size={44} name={username} />
         <div className="flex min-w-0 flex-col">
           <span className="truncate text-[17px] font-semibold">{username}</span>
           <span className="font-mono text-sm text-accent tabular-nums">{rating}</span>
@@ -225,10 +240,18 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
         <Icon name="book" />
         {t.landing.howToPlay}
       </MenuItem>
-      <MenuItem onSelect={() => navigate('/tournaments')}>
-        <Icon name="swords" />
-        {t.common.tournaments}
-      </MenuItem>
+      {DOWNLOADS && !DESKTOP && (
+        <MenuItem onSelect={() => navigate('/download')}>
+          <DownloadIcon size={16} />
+          {t.desktop.download}
+        </MenuItem>
+      )}
+      {TOURNAMENTS && (
+        <MenuItem onSelect={() => navigate('/tournaments')}>
+          <Icon name="swords" />
+          {t.common.tournaments}
+        </MenuItem>
+      )}
       <MenuItem onSelect={() => navigate('/mods')}>
         <Icon name="gear" />
         {t.common.mods}

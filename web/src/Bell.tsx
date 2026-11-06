@@ -122,7 +122,7 @@ function Note({ n, onChange, onGo }: { n: Notification; onChange: () => void; on
   }
   const game = n.matchId ? `/m/${n.matchId}` : ''
 
-  let icon: ReactNode = <Avatar size={36} />
+  let icon: ReactNode = <Avatar size={36} name={n.actor || undefined} />
   let text: ReactNode
   let actions: ReactNode = null
   switch (n.kind) {

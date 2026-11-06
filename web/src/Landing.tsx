@@ -2,17 +2,21 @@ import * as RadioGroup from '@radix-ui/react-radio-group'
 import { useEffect, useState } from 'react'
 import { Avatar, Who } from './Avatar'
 import { useMe } from './auth'
-import { DemoBoard } from './DemoBoard'
+import { DemoBoard, savedDemoMode, type DemoMode } from './DemoBoard'
+import { DOWNLOADS, TOURNAMENTS } from './features'
+import { BUILDS, detectOS, downloadUrl, OS_NAME } from './desktop'
+import { DownloadIcon } from './DownloadPage'
 import { useT } from './i18n'
 import { Icon } from './icons'
 import { Leaderboard } from './Leaderboard'
 import { useLive } from './live'
-import { pieceImg } from './position'
 import { playerId } from './player'
+import { getPrefs, useUnlocked } from './prefs'
 import { ago, go, type GameSummary } from './ProfilePage'
 import { navigate } from './router'
 import {
-  BOT_PIECE,
+  BOT_FACE,
+  BOT_SET,
   BOTS,
   describeTime,
   loadSettings,
@@ -20,8 +24,6 @@ import {
   NO_CLOCK,
   sameTime,
   saveSettings,
-  SETUPS,
-  setupMode,
   TIME_GROUPS,
   timeGroup,
   timeLabel,
@@ -33,9 +35,13 @@ import { api, openOffer, type UserCard } from './social'
 import { countdown, type Tournament } from './TournamentsPage'
 import { Button } from './ui'
 
+/** The day the beta ends and the full game ships. */
+const RELEASE = '2027-02-02'
+
 /** Clocks split by how long a game takes: Short is Blitz and Rapid, Long the rest. */
 const SHORT_GROUPS = ['Blitz', 'Rapid']
-const presets = (long: boolean) => TIME_GROUPS.filter(([g]) => SHORT_GROUPS.includes(g) !== long).flatMap(([, p]) => p)
+export const presets = (long: boolean) =>
+  TIME_GROUPS.filter(([g]) => SHORT_GROUPS.includes(g) !== long).flatMap(([, p]) => p)
 const isLong = (t: TimeControl) => !SHORT_GROUPS.includes(timeGroup(t))
 
 /**
@@ -49,18 +55,33 @@ export function Landing() {
   const t = useT()
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const [busy, setBusy] = useState(false)
+  const [demo, setDemo] = useState<DemoMode>(savedDemoMode)
 
   return (
     <main className="home">
       <div className="home-row home-hero">
         <div className="home-cell cross">
-          <DemoBoard me={me?.username} />
+          <DemoBoard me={me?.username} mode={demo} onMode={setDemo} />
         </div>
         <div className="home-cell home-menu">
           <section>
             <h1 className="home-title">{t.landing.tagline}</h1>
+            <p className="home-release">
+              {t.landing.release(
+                new Intl.DateTimeFormat(t.locale, { day: 'numeric', month: 'long', year: 'numeric' }).format(
+                  new Date(`${RELEASE}T12:00:00`),
+                ),
+              )}
+            </p>
           </section>
           <PlayMenu settings={settings} onChange={setSettings} signedIn={!!me} busy={busy} />
+          <FindFour
+            signedIn={!!me}
+            onTry={() => {
+              setDemo('war')
+              document.querySelector('.home-hero')?.scrollIntoView({ behavior: 'smooth' })
+            }}
+          />
           <CodeGame settings={settings} busy={busy} setBusy={setBusy} />
           <section>
             <a href="/mods" onClick={(e) => go(e, '/mods')} className="home-mods">
@@ -73,13 +94,17 @@ export function Landing() {
 
       <About />
 
-      <div className="home-row home-r1">
+      <div className={`home-row home-r1 ${TOURNAMENTS ? '' : 'two'}`}>
         <div className="home-cell cross">{me ? <YourGames username={me.username} /> : <GuestPitch />}</div>
-        <div className="home-cell cross">
-          <NextArena />
-        </div>
+        {TOURNAMENTS && (
+          <div className="home-cell cross">
+            <NextArena />
+          </div>
+        )}
         <div className="home-cell">{me ? <FriendsOnline /> : <WatchTeaser />}</div>
       </div>
+
+      {DOWNLOADS && <AppStrip />}
 
       <Bots settings={settings} />
 
@@ -92,7 +117,7 @@ export function Landing() {
   )
 }
 
-/** Matchmaking: game length, clock and mode, then one big Play. */
+/** Eat the King matchmaking: game length and clock, then one big Play. Always the usual start; layouts are mods. */
 function PlayMenu({
   settings,
   onChange,
@@ -124,13 +149,12 @@ function PlayMenu({
     set({ ...settings, time })
   }
   const clocks = presets(long)
-  const layout = t.setups[setupMode(settings).value].label
-  const summary = [describeTime(settings.time, t), t.home.layoutIs(layout), signedIn ? t.home.ranked : t.home.guestNote]
+  const summary = [describeTime(settings.time, t), t.home.etkAbout, signedIn ? t.home.ranked : t.home.guestNote]
 
   return (
     <section>
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-[22px] font-semibold tracking-tight">{t.home.findOpponent}</h2>
+        <h2 className="text-[22px] font-semibold tracking-tight">{t.home.etkTitle}</h2>
       </div>
       <div className="mt-4 flex flex-col gap-3.5">
         <RadioGroup.Root
@@ -163,29 +187,6 @@ function PlayMenu({
           ))}
         </RadioGroup.Root>
 
-        <div>
-          <div id="home-mode" className="mb-2 text-sm font-semibold">
-            {t.home.layout}
-          </div>
-          <RadioGroup.Root
-            aria-labelledby="home-mode"
-            value={setupMode(settings).value || 'standard'}
-            onValueChange={(v) =>
-              set({
-                ...settings,
-                setup: v === 'standard' ? '' : (v as Settings['setup']),
-              })
-            }
-            className="seg"
-          >
-            {SETUPS.map((m) => (
-              <RadioGroup.Item key={m.value} value={m.value || 'standard'} title={t.setups[m.value].hint}>
-                {t.setups[m.value].label}
-              </RadioGroup.Item>
-            ))}
-          </RadioGroup.Root>
-        </div>
-
         <FindMatch settings={settings} signedIn={signedIn} busy={busy} summary={summary} />
       </div>
     </section>
@@ -193,7 +194,15 @@ function PlayMenu({
 }
 
 /** A custom game: make a code to share, or join one. Quieter than matchmaking. */
-function CodeGame({ settings, busy, setBusy }: { settings: Settings; busy: boolean; setBusy: (b: boolean) => void }) {
+export function CodeGame({
+  settings,
+  busy,
+  setBusy,
+}: {
+  settings: Settings
+  busy: boolean
+  setBusy: (b: boolean) => void
+}) {
   const t = useT()
   const [code, setCode] = useState('')
   const [doing, setDoing] = useState<'create' | 'join' | null>(null)
@@ -276,7 +285,7 @@ const NOBODY_AFTER_S = 20
 
 /** Starts a game against a bot with the current mode and clock, and goes there. Never ranked. */
 async function playBot(settings: Settings, bot: Bot) {
-  const body = { ...settings, bot }
+  const body = { ...settings, bot, side: getPrefs().side }
   const res = await fetch(`/api/matches?player=${playerId}`, {
     method: 'POST',
     body: JSON.stringify(body),
@@ -289,6 +298,7 @@ async function playBot(settings: Settings, bot: Bot) {
 /** The computer opponents, a row of cells. They play with the mode and clock set above. */
 function Bots({ settings }: { settings: Settings }) {
   const t = useT()
+  const unlocked = useUnlocked()
   const [starting, setStarting] = useState<Bot | null>(null)
   const [error, setError] = useState('')
   const start = (bot: Bot) => {
@@ -305,7 +315,7 @@ function Bots({ settings }: { settings: Settings }) {
         <div key={b.level} className={`home-cell home-bot ${i < 3 ? 'cross' : ''}`}>
           <span className="home-bot-top">
             <span className="home-bot-face" aria-hidden>
-              <img src={pieceImg(BOT_PIECE[b.level])} alt="" />
+              <img src={BOT_FACE[b.level]} alt="" />
             </span>
             <span className="strength" aria-label={`${i + 1}/4`}>
               {BOTS.map((_, j) => (
@@ -315,6 +325,11 @@ function Bots({ settings }: { settings: Settings }) {
           </span>
           <h3>{b.name}</h3>
           <p className="text-sm text-accent">{t.landing.botHints[b.level]}</p>
+          <p className="home-bot-skin text-sm">
+            {unlocked?.has(BOT_SET[b.level])
+              ? t.landing.skinWon(t.pieces.sets[BOT_SET[b.level]])
+              : t.landing.skinToWin(t.pieces.sets[BOT_SET[b.level]])}
+          </p>
           <Button
             variant={b.level === 'solomon' ? 'solid' : 'outline'}
             className="home-bot-play h-10 px-4"
@@ -339,16 +354,19 @@ function Bots({ settings }: { settings: Settings }) {
  * Find match: wait in the server's queue for the player nearest your rating
  * who wants the same game. Guests can't, since they have no rating.
  */
-function FindMatch({
+export function FindMatch({
   settings,
   signedIn,
   busy,
   summary,
+  bare,
 }: {
   settings: Settings
   signedIn: boolean
   busy: boolean
   summary: string[]
+  /** Just the button: the desktop app's home says what the game is itself. */
+  bare?: boolean
 }) {
   const [botBusy, setBotBusy] = useState(false)
   const t = useT()
@@ -405,7 +423,7 @@ function FindMatch({
   // Leaving the page leaves the queue.
   useEffect(() => () => void (since !== null && api('DELETE', '/api/queue').catch(() => {})), [since])
 
-  const about = (
+  const about = bare ? null : (
     <p className="home-summary">
       <b>{summary[0]}</b> · {summary[1]}
       <span className="block">{summary[2]}</span>
@@ -471,6 +489,115 @@ function FindMatch({
   )
 }
 
+/**
+ * War Mode, the ranked four-player game: one fixed game (extended board,
+ * Battleship, Sync Move, jester pawns, no fog), found in its own queue of four.
+ */
+export function FindFour({ signedIn, bare, onTry }: { signedIn: boolean; bare?: boolean; onTry?: () => void }) {
+  const t = useT()
+  const [since, setSince] = useState<number | null>(null)
+  const [now, setNow] = useState(0)
+  const [size, setSize] = useState(1)
+  const [error, setError] = useState('')
+  const waiting = since !== null
+
+  const found = (matchId: string) => {
+    setSince(null)
+    navigate(`/f/${matchId}`)
+  }
+  type QueueReply = { matchId?: string; waiting?: boolean; size?: number }
+
+  const start = async () => {
+    setError('')
+    try {
+      const b = await api<QueueReply>('POST', '/api/four/queue')
+      if (b.matchId) return found(b.matchId)
+      setSize(b.size ?? 1)
+      setSince(Date.now())
+    } catch (e) {
+      setError((e as Error).message)
+    }
+  }
+  const stop = () => {
+    setSince(null)
+    api('DELETE', '/api/four/queue').catch(() => {})
+  }
+
+  useEffect(() => {
+    if (!waiting) return
+    let live = true
+    const poll = () =>
+      api<QueueReply>('GET', '/api/four/queue')
+        .then((b) => {
+          if (!live) return
+          if (b.matchId) found(b.matchId)
+          else if (!b.waiting) setSince(null)
+          else setSize(b.size ?? 1)
+        })
+        .catch(() => {})
+    const timer = setInterval(poll, QUEUE_POLL_MS)
+    const tick = setInterval(() => setNow(Date.now()), 1000)
+    return () => {
+      live = false
+      clearInterval(timer)
+      clearInterval(tick)
+    }
+  }, [waiting])
+  useLive((e) => {
+    if (waiting && e.type === 'four' && e.matchId) found(e.matchId)
+  })
+  useEffect(() => () => void (since !== null && api('DELETE', '/api/four/queue').catch(() => {})), [since])
+
+  return (
+    <section className="flex flex-col gap-2.5">
+      {!bare && (
+        <>
+          <h2 className="text-[22px] font-semibold tracking-tight">{t.home.fourTitle}</h2>
+          <p className="home-summary">
+            <b>{t.home.fourAbout}</b>
+            <span className="block">{signedIn ? t.home.fourRanked : t.home.fourGuest}</span>
+          </p>
+        </>
+      )}
+      {!signedIn ? (
+        <Button variant={bare ? 'solid' : 'outline'} className="home-play" onClick={() => navigate('/login')}>
+          {t.home.logInToPlay}
+        </Button>
+      ) : waiting ? (
+        <div className="tick flex items-center gap-3 p-3.5" role="status">
+          <span className="spinner" aria-hidden />
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="font-semibold">{t.home.fourFinding}</span>
+            <span className="text-sm text-accent">
+              {t.home.fourWaiting(
+                Math.min(4, Math.max(1, size)),
+                Math.max(0, Math.round(((now || since) - since) / 1000)),
+              )}
+            </span>
+          </span>
+          <Button className="h-9 px-3.5 text-sm" onClick={stop}>
+            {t.common.cancel}
+          </Button>
+        </div>
+      ) : (
+        <Button variant={bare ? 'solid' : 'outline'} className="home-play" onClick={start}>
+          {bare ? t.home.play : t.home.fourPlay}
+        </Button>
+      )}
+      {onTry && (
+        <Button variant="ghost" className="self-start px-0 underline-offset-4 hover:underline" onClick={onTry}>
+          {t.home.tryWar}
+        </Button>
+      )}
+      {error && (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </section>
+  )
+}
+
 function Heading({ title, href, link }: { title: string; href: string; link: string }) {
   return (
     <div className="mb-[18px] flex items-baseline justify-between gap-3">
@@ -483,7 +610,7 @@ function Heading({ title, href, link }: { title: string; href: string; link: str
 }
 
 /** Your games in progress, the ones waiting on you first. */
-function YourGames({ username }: { username: string }) {
+export function YourGames({ username }: { username: string }) {
   const t = useT()
   const [games, setGames] = useState<GameSummary[] | null>(null)
 
@@ -512,7 +639,7 @@ function YourGames({ username }: { username: string }) {
             const href = `/m/${g.matchId}`
             return (
               <a key={`${g.matchId}-${g.round}`} href={href} onClick={(e) => go(e, href)} className="home-li">
-                <Avatar size={36} />
+                <Avatar size={36} name={g.waiting ? undefined : g.opponent || undefined} />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold">
                     {g.waiting ? t.match.waitingOpponent : g.opponent || t.common.guest}
@@ -674,7 +801,7 @@ function About() {
 }
 
 /** Why a guest might sign in. */
-function GuestPitch() {
+export function GuestPitch() {
   const t = useT()
   return (
     <section className="flex flex-col gap-4">
@@ -700,5 +827,34 @@ function WatchTeaser() {
       <Heading title={t.common.watch} href="/watch" link={t.landing.allGames} />
       <p className="text-accent">{t.watch.intro}</p>
     </section>
+  )
+}
+
+/** On a computer: the desktop app, one click for this system. Hidden on phones by CSS. */
+function AppStrip() {
+  const t = useT()
+  const os = detectOS()
+  const build = BUILDS.find((b) => b.os === os)
+  if (!build) return null
+  return (
+    <div className="home-row home-app">
+      <div className="home-cell">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-[22px] font-semibold tracking-tight">{t.desktop.strip}</h2>
+          <a
+            href="/download"
+            onClick={(e) => go(e, '/download')}
+            className="text-sm font-medium text-accent hover:text-fg"
+          >
+            {t.desktop.otherSystems}
+          </a>
+        </div>
+        <p className="mt-2 mb-5 text-accent">{t.desktop.stripAbout}</p>
+        <a href={downloadUrl(build.file)} className="home-app-get">
+          <DownloadIcon />
+          {t.desktop.downloadFor(OS_NAME[build.os])}
+        </a>
+      </div>
+    </div>
   )
 }

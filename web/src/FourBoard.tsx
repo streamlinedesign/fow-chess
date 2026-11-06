@@ -1,9 +1,8 @@
 import { memo, useMemo, useRef, useState } from 'react'
-import { CENTRE, cellFor, onBoard, parseMove, pieceImg4, SIZE, squareName, type Seat } from './four'
-import type { Look } from './pieces'
+import { geoOf, parseMove, pieceImg4, squareName, tile4, type FourLook, type Seat } from './four'
 
 type Props = {
-  /** 196 squares from the bottom left, as the server sends them. */
+  /** Every square from the bottom left, as the server sends them: 196 on the cross, 256 on the extended board. */
   board: string[]
   /** Whose seat is drawn at the bottom. */
   seat: Seat
@@ -16,11 +15,11 @@ type Props = {
   planned?: { from: string; to: string } | null
   /** Your king's square while something attacks it. */
   danger?: string
-  /** King of the Hill: ring the four centre squares. */
+  /** King of the Hill: ring the four centre squares. Only on the cross. */
   hill?: boolean
-  /** Centre vision: ring the four centre squares, lit while you hold one. */
+  /** Centre vision: ring the squares that give it to you, lit while you hold one. */
   center?: { live?: boolean }
-  look?: Look
+  look?: FourLook
   onMove?: (from: string, to: string) => void
   /** A still board, for previews. */
   still?: boolean
@@ -28,7 +27,7 @@ type Props = {
 
 type Drag = { from: string; el: HTMLElement; x: number; y: number; moved: boolean; wasSelected: boolean }
 
-/** The cross-shaped board, turned so the viewer's pieces are at the bottom. */
+/** The four-player board, cross or extended, turned so the viewer's pieces are at the bottom. */
 export const FourBoard = memo(function FourBoard({
   board,
   seat,
@@ -46,18 +45,22 @@ export const FourBoard = memo(function FourBoard({
   const boardRef = useRef<HTMLDivElement>(null)
   const drag = useRef<Drag | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
+  const geo = geoOf(board)
+  const SIZE = geo.size
+  const outposts = center ? geo.outposts(seat) : []
+  const isHill = (sq: string) => !!hill && geo.shape === '' && geo.centre.includes(sq)
 
   // The square drawn in each cell, for this seat.
   const grid = useMemo(() => {
-    const g: (string | null)[][] = Array.from({ length: SIZE }, () => Array(SIZE).fill(null))
-    for (let y = 0; y < SIZE; y++)
-      for (let x = 0; x < SIZE; x++) {
-        if (!onBoard(x, y)) continue
-        const { col, row } = cellFor(x, y, seat)
+    const g: (string | null)[][] = Array.from({ length: geo.size }, () => Array(geo.size).fill(null))
+    for (let y = 0; y < geo.size; y++)
+      for (let x = 0; x < geo.size; x++) {
+        if (!geo.onBoard(x, y)) continue
+        const { col, row } = geo.cellFor(x, y, seat)
         g[row][col] = squareName(x, y)
       }
     return g
-  }, [seat])
+  }, [seat, geo])
 
   const moves = useMemo(() => legal.map(parseMove).filter((m) => m !== null), [legal])
   const canMoveFrom = (sq: string) => moves.some((m) => m.from === sq)
@@ -137,12 +140,15 @@ export const FourBoard = memo(function FourBoard({
       // A pawn moving onto an empty square sideways is taking en passant.
       const capture = target && (!!piece || (at(sel!)?.[1] === 'P' && isDiagonal(sel!, sq)))
       const [x, y] = [sq.charCodeAt(0) - 97, Number(sq.slice(1)) - 1]
+      const tileSrc = fog ? undefined : tile4(look, geo, x, y)
       cells.push(
         <div
           key={sq}
           className="sq"
           data-square={sq}
           data-light={(x + y) % 2 === 1}
+          data-tile={tileSrc ? true : undefined}
+          style={tileSrc ? ({ '--tile': `url("${tileSrc}")` } as React.CSSProperties) : undefined}
           data-last={
             !fog &&
             (lastMove?.from === sq || lastMove?.to === sq || !!lastMoves?.some((m) => m.from === sq || m.to === sq))
@@ -152,8 +158,9 @@ export const FourBoard = memo(function FourBoard({
           data-danger={danger === sq}
           data-target={target ? (capture ? 'capture' : 'move') : undefined}
           data-fog={fog}
-          data-hill={hill && CENTRE.includes(sq)}
-          data-outpost={center && CENTRE.includes(sq) ? (center.live ? 'live' : 'both') : undefined}
+          data-neutral={geo.neutral(x, y) || undefined}
+          data-hill={isHill(sq)}
+          data-outpost={center && outposts.includes(sq) ? (center.live ? 'live' : 'both') : undefined}
         >
           {piece && <img className="piece" src={pieceImg4(piece, look)} alt={piece} draggable={false} />}
         </div>,
@@ -165,6 +172,7 @@ export const FourBoard = memo(function FourBoard({
     <div
       ref={boardRef}
       className="board4 grid aspect-square w-full"
+      data-shape={geo.shape || 'cross'}
       data-still={still}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}

@@ -1,5 +1,7 @@
 // Package four is the rules engine for four-player chess: a 14 by 14 board with
 // the corners cut off (a full 8 by 8 in the middle and three rows on each side),
+// or the extended 16 by 16 board (four rows on each side, and the corners filled
+// with neutral squares); see Shape.
 // four players moving clockwise, and the game won by eating kings. A player
 // whose king is eaten, who resigns or who runs out of time is out, and their
 // pieces leave the board. The last king standing wins.
@@ -14,8 +16,129 @@ import (
 	"strconv"
 )
 
-// Size is the width and height of the board.
-const Size = 14
+// Size is the width and height of the largest board; squares are indexed on
+// a grid this size whatever the board's shape.
+const Size = 16
+
+// Shape is the board's shape.
+type Shape uint8
+
+const (
+	// Cross is the 14 by 14 board with the corners cut off: an 8 by 8 middle
+	// and three rows for each player.
+	Cross Shape = iota
+	// Extended is 16 by 16: four rows for each player, and the corners, four by
+	// four, are neutral squares anyone may cross.
+	Extended
+)
+
+// Width is how many squares across the board is.
+func (s Shape) Width() int { return [...]int{14, 16}[s] }
+
+// Rows is how many rows each player starts in.
+func (s Shape) Rows() int { return [...]int{3, 4}[s] }
+
+// Contains reports whether (x, y) is a square of the board.
+func (s Shape) Contains(x, y int) bool {
+	w, a := s.Width(), s.Rows()
+	if x < 0 || y < 0 || x >= w || y >= w {
+		return false
+	}
+	return s == Extended || !((x < a || x >= w-a) && (y < a || y >= w-a))
+}
+
+// Valid reports whether sq is a square of the board.
+func (s Shape) Valid(sq Square) bool { return sq >= 0 && sq < NumSquares && s.Contains(sq.X(), sq.Y()) }
+
+// Offset is the square dx, dy away from sq, if it's on the board.
+func (s Shape) Offset(sq Square, dx, dy int) (Square, bool) {
+	x, y := sq.X()+dx, sq.Y()+dy
+	if !s.Contains(x, y) {
+		return NoSquare, false
+	}
+	return At(x, y), true
+}
+
+// Cell is c's square at file f (0 to 7, from that player's left) and rank r.
+func (s Shape) Cell(c Color, f, r int) Square {
+	w, a := s.Width(), s.Rows()
+	switch c {
+	case Red:
+		return At(a+f, r)
+	case Blue:
+		return At(r, a+7-f)
+	case Green:
+		return At(a+7-f, w-1-r)
+	}
+	return At(w-1-r, a+f)
+}
+
+// RankOf is how far forward from c's back rank sq is: 0 on the back rank, 1
+// where the pawns start.
+func (s Shape) RankOf(c Color, sq Square) int {
+	w := s.Width()
+	switch c {
+	case Red:
+		return sq.Y()
+	case Blue:
+		return sq.X()
+	case Green:
+		return w - 1 - sq.Y()
+	}
+	return w - 1 - sq.X()
+}
+
+// Promotes reports whether c's pawn arriving on sq promotes. On the cross
+// that's the eighth rank from its own side, just past the middle. On the
+// extended board it's the same idea: any square past the middle (the ninth
+// rank on), plus the side walls where the players to the left and right
+// sit, from just past the player's own rows (a5 to a12 and p5 to p12 for
+// Red). The walls matter for pawns that move sideways, like jester pawns.
+func (s Shape) Promotes(c Color, sq Square) bool {
+	r := s.RankOf(c, sq)
+	if s == Cross {
+		return r >= 7
+	}
+	if r >= s.Width()/2 {
+		return true
+	}
+	side := s.RankOf((c+1)%4, sq) == 0 || s.RankOf((c+3)%4, sq) == 0
+	return side && r >= s.Rows()
+}
+
+// Centre is the four middle squares.
+func (s Shape) Centre() [4]Square {
+	m := s.Width()/2 - 1
+	return [4]Square{At(m, m), At(m+1, m), At(m, m+1), At(m+1, m+1)}
+}
+
+// InCentre reports whether sq is one of the four middle squares.
+func (s Shape) InCentre(sq Square) bool {
+	for _, c := range s.Centre() {
+		if c == sq {
+			return true
+		}
+	}
+	return false
+}
+
+// Outposts are the squares that give c the whole board under centre vision.
+// On the cross every player shares the four middle squares. On the extended
+// board each player has two of them, like d5 and e5 in a two-player game:
+// the pair just past the middle on the far side, side by side as that player
+// sees the board.
+func (s Shape) Outposts(c Color) []Square {
+	ctr := s.Centre() // bottom left, bottom right, top left, top right
+	if s == Cross {
+		return ctr[:]
+	}
+	return [4][]Square{
+		Red:    {ctr[2], ctr[3]},
+		Blue:   {ctr[1], ctr[3]},
+		Green:  {ctr[0], ctr[1]},
+		Violet: {ctr[0], ctr[2]},
+	}[c]
+}
 
 // Color is a seat, in turn order: Red at the bottom, Blue on the left, Green at
 // the top and Violet on the right, so play goes clockwise.
@@ -91,8 +214,8 @@ func (p Piece) Code() string {
 	return string([]byte{colorLetters[p.Color()], p.Kind().Letter()})
 }
 
-// Square indexes the board row by row from the bottom left: x + y*Size. Some
-// indexes are the cut-off corners; see Valid.
+// Square indexes a Size by Size grid row by row from the bottom left:
+// x + y*Size. Which of them are on the board is the Shape's to say.
 type Square int16
 
 const NoSquare Square = -1
@@ -105,27 +228,9 @@ func At(x, y int) Square { return Square(y*Size + x) }
 func (s Square) X() int { return int(s) % Size }
 func (s Square) Y() int { return int(s) / Size }
 
-// onBoard reports whether (x, y) is a playable square.
-func onBoard(x, y int) bool {
-	if x < 0 || y < 0 || x >= Size || y >= Size {
-		return false
-	}
-	return !((x < 3 || x > 10) && (y < 3 || y > 10))
-}
-
-// Valid reports whether s is a playable square and not a cut-off corner.
-func (s Square) Valid() bool { return s >= 0 && s < NumSquares && onBoard(s.X(), s.Y()) }
-
-func (s Square) Offset(dx, dy int) (Square, bool) {
-	x, y := s.X()+dx, s.Y()+dy
-	if !onBoard(x, y) {
-		return NoSquare, false
-	}
-	return At(x, y), true
-}
-
-// String names the square with a file letter a to n and a rank 1 to 14, so
-// the bottom left playable square is d1 and the top right k14.
+// String names the square with a file letter a to p and a rank 1 to 16: on the
+// cross the bottom left playable square is d1 and the top right k14; on the
+// extended board a1 to p16.
 func (s Square) String() string {
 	if s == NoSquare {
 		return "-"
@@ -133,7 +238,8 @@ func (s Square) String() string {
 	return string(rune('a'+s.X())) + strconv.Itoa(s.Y()+1)
 }
 
-// ParseSquare reads a square name, like "d1" or "k14".
+// ParseSquare reads a square name, like "d1" or "k14". Whether the square is
+// on a given board is the board's to say; see Shape.Valid.
 func ParseSquare(str string) (Square, error) {
 	if len(str) < 2 || len(str) > 3 || str[0] < 'a' || str[0] >= 'a'+Size {
 		return NoSquare, fmt.Errorf("bad square %q", str)
@@ -142,46 +248,11 @@ func ParseSquare(str string) (Square, error) {
 	if err != nil || n < 1 || n > Size || str[1] == '0' {
 		return NoSquare, fmt.Errorf("bad square %q", str)
 	}
-	sq := At(int(str[0]-'a'), n-1)
-	if !sq.Valid() {
-		return NoSquare, fmt.Errorf("bad square %q", str)
-	}
-	return sq, nil
+	return At(int(str[0]-'a'), n-1), nil
 }
 
 // forward is the direction each colour's pawns move in.
 var forward = [4][2]int{{0, 1}, {1, 0}, {0, -1}, {-1, 0}}
-
-// rankOf is how far forward from c's back rank the square is: 0 on the back
-// rank, 1 where the pawns start.
-func rankOf(c Color, s Square) int {
-	switch c {
-	case Red:
-		return s.Y()
-	case Blue:
-		return s.X()
-	case Green:
-		return Size - 1 - s.Y()
-	}
-	return Size - 1 - s.X()
-}
-
-// PromotionRank is how far up the board a pawn promotes: the eighth rank
-// from its own side, just past the middle.
-const PromotionRank = 7
-
-// cell is c's square at file f (0 to 7, from that player's left) and rank r.
-func cell(c Color, f, r int) Square {
-	switch c {
-	case Red:
-		return At(3+f, r)
-	case Blue:
-		return At(r, 10-f)
-	case Green:
-		return At(10-f, Size-1-r)
-	}
-	return At(Size-1-r, 3+f)
-}
 
 // backRank is how every player's pieces stand, from their own left.
 var backRank = [8]Kind{Rook, Knight, Bishop, Queen, King, Bishop, Knight, Rook}

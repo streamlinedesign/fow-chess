@@ -7,13 +7,15 @@ import { Chat } from './Chat'
 import { Clock } from './Clock'
 import { useT, type Dict } from './i18n'
 import { Icon } from './icons'
-import { applyLocal, pieceImg } from './position'
+import { applyLocal } from './position'
+import { usePieces } from './prefs'
 import { go } from './ProfilePage'
+import { PromotionDialog } from './Promotion'
 import { navigate } from './router'
-import { describeSettings } from './settings'
+import { describeSettings, gameLook } from './settings'
 import { SetupBoard } from './SetupBoard'
 import { Button, Dialog, Spinner, Tip } from './ui'
-import { useMatch, type Color, type MatchState } from './useMatch'
+import { botSide, useMatch, type Color, type MatchState } from './useMatch'
 
 const other = (c: Color): Color => (c === 'w' ? 'b' : 'w')
 const sideName = (t: Dict, c: Color) => (c === 'w' ? t.common.white : t.common.black)
@@ -77,6 +79,8 @@ export function MatchPage({ id }: { id: string }) {
   const you = state?.you || null
   const them = you ? other(you) : null
   const orientation: Color = you ? ((you === 'b') !== flipped ? 'b' : 'w') : side
+  const img = usePieces(you ?? undefined)
+  const look = gameLook(state?.settings, botSide(state), state?.players)
   const playing = state?.status === 'playing'
   const ply = state?.ply ?? 0
   const turn = state && (predicting ? other(state.turn) : state.turn)
@@ -122,6 +126,17 @@ export function MatchPage({ id }: { id: string }) {
     lastPly.current = ply
   }, [ply])
 
+  const overKey = state ? `${state.round}:${state.ply}` : ''
+  const over = state?.status === 'over' ? resultText(state, t) : null
+  // The fog lifts and the last move shows for a moment before the dialog covers the board,
+  // so a player sees what took their king.
+  const [showOver, setShowOver] = useState('')
+  useEffect(() => {
+    if (!over) return
+    const id = setTimeout(() => setShowOver(overKey), state!.last && state!.ply > 0 ? 1400 : 0)
+    return () => clearTimeout(id)
+  }, [over, overKey, state])
+
   const link = `${location.origin}/m/${id}`
 
   if (conn === 'missing' || conn === 'outdated') {
@@ -140,16 +155,6 @@ export function MatchPage({ id }: { id: string }) {
     )
   }
 
-  const overKey = state ? `${state.round}:${state.ply}` : ''
-  const over = state?.status === 'over' ? resultText(state, t) : null
-  // The fog lifts and the last move shows for a moment before the dialog covers the board,
-  // so a player sees what took their king.
-  const [showOver, setShowOver] = useState('')
-  useEffect(() => {
-    if (!over) return
-    const id = setTimeout(() => setShowOver(overKey), state!.last && state!.ply > 0 ? 1400 : 0)
-    return () => clearTimeout(id)
-  }, [over, overKey, state])
   const danger = !!you && playing && !predicting && !!state?.danger
 
   const status = (() => {
@@ -202,6 +207,7 @@ export function MatchPage({ id }: { id: string }) {
                 <Board
                   board={board}
                   orientation={orientation}
+                  you={you}
                   legal={legal}
                   lastMove={last}
                   alsoMove={predicting ? undefined : state?.also}
@@ -210,7 +216,7 @@ export function MatchPage({ id }: { id: string }) {
                   danger={predicting ? undefined : state?.danger}
                   unsafe={state?.unsafe}
                   hill={state?.settings.hill}
-                  look={state?.settings}
+                  look={look}
                   center={
                     state?.settings.centerVision
                       ? { you: you ?? undefined, live: !predicting && !!state.fullVision }
@@ -365,24 +371,12 @@ export function MatchPage({ id }: { id: string }) {
         </aside>
       </div>
 
-      <Dialog open={!!promotion} onOpenChange={(o) => !o && setPromotion(null)} title={t.match.promoteTo}>
-        <div className="grid grid-cols-4 gap-2">
-          {(['q', 'r', 'b', 'n'] as const).map((p) => (
-            <button
-              key={p}
-              autoFocus={p === 'q'}
-              aria-label={{ q: t.match.queen, r: t.match.rook, b: t.match.bishop, n: t.match.knight }[p]}
-              className="aspect-square rounded-lg bg-sq-light p-1 shadow-[inset_0_0_0_1.5px_var(--color-fg)] transition-transform hover:scale-105 active:scale-95"
-              onClick={() => {
-                sendMove(promotion!.from + promotion!.to + p)
-                setPromotion(null)
-              }}
-            >
-              <img src={pieceImg(you === 'b' ? p : p.toUpperCase())} alt="" draggable={false} className="size-full" />
-            </button>
-          ))}
-        </div>
-      </Dialog>
+      <PromotionDialog
+        open={!!promotion}
+        img={(p) => img(you === 'b' ? p : p.toUpperCase(), look)}
+        onPick={(p) => sendMove(promotion!.from + promotion!.to + p)}
+        onClose={() => setPromotion(null)}
+      />
 
       <Dialog
         open={confirmResign}
@@ -413,6 +407,11 @@ export function MatchPage({ id }: { id: string }) {
         description={
           <>
             {over?.detail}
+            {state?.unlocked && you && state.players[you === 'w' ? 'b' : 'w'].bot && (
+              <span className="mt-3 block text-fg">
+                {t.home.unlockedSkin(t.pieces.sets[state.unlocked] ?? state.unlocked)}
+              </span>
+            )}
             {state?.rated && you && (
               <span className="mt-3 block font-mono text-fg tabular-nums">
                 {state.ratingDiff ? t.match.rating(signed(state.ratingDiff[you])) : t.match.updatingRating}
@@ -478,7 +477,8 @@ function PlayerBar({ color, state, you, active }: PlayerBarProps) {
         {seat?.taken && !seat.online && <span className="text-sm text-danger">{t.match.offline}</span>}
         <Captured
           pieces={state?.captured[color] ?? ''}
-          look={state?.settings}
+          look={gameLook(state?.settings, botSide(state), state?.players)}
+          mine={you ?? undefined}
           className="text-[clamp(16px,calc(var(--board)/30),22px)]"
         />
         {state?.clock && (

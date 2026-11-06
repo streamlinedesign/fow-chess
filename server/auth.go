@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -30,6 +31,8 @@ var usernameRE = regexp.MustCompile(`^[A-Za-z0-9_-]{3,20}$`)
 type Auth struct {
 	store   *Store
 	limiter *failLimiter
+	// signups limits new accounts per address; nil for none (tests).
+	signups *failLimiter
 }
 
 type credentials struct {
@@ -41,6 +44,8 @@ type credentials struct {
 type meResponse struct {
 	Username string `json:"username"`
 	Rating   int    `json:"rating"`
+	// The player's avatar and look preferences, so they follow them to every device.
+	lookResponse
 }
 
 func (a *Auth) routes(mux *http.ServeMux) {
@@ -57,7 +62,7 @@ func (a *Auth) routes(mux *http.ServeMux) {
 			writeJSON(w, nil)
 			return
 		}
-		writeJSON(w, meResponse{u.Username, int(u.Rating + 0.5)})
+		writeJSON(w, a.me(u))
 	})
 }
 
@@ -72,6 +77,10 @@ func (a *Auth) signup(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(c.Password) < minPassword || len(c.Password) > maxPassword {
 		jsonError(w, "Passwords are 8 to 72 characters.", http.StatusBadRequest)
+		return
+	}
+	if a.signups != nil && !a.signups.take(clientIP(r)) {
+		jsonError(w, "Too many attempts. Try again in a few minutes.", http.StatusTooManyRequests)
 		return
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(c.Password), bcrypt.DefaultCost)
@@ -229,7 +238,16 @@ func (a *Auth) startSession(w http.ResponseWriter, r *http.Request, u *User) {
 		Name: sessionCookie, Value: token, Path: "/", Expires: expires,
 		HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: isHTTPS(r),
 	})
-	writeJSON(w, meResponse{u.Username, int(u.Rating + 0.5)})
+	writeJSON(w, a.me(u))
+}
+
+func (a *Auth) me(u *User) meResponse {
+	look, err := a.store.Look(u.ID)
+	if err != nil {
+		log.Printf("me: %v", err)
+	}
+	look.fill()
+	return meResponse{u.Username, int(u.Rating + 0.5), look}
 }
 
 // user returns the signed-in user for a request, or nil for a guest.
@@ -266,18 +284,42 @@ func isHTTPS(r *http.Request) bool {
 	return r.TLS != nil || r.Header.Get("X-Forwarded-Proto") == "https"
 }
 
+// clientIP is the address a request comes from, the key for rate limits. In
+// production Caddy on the same machine forwards every request, so for a
+// request from loopback the client is the last address in X-Forwarded-For
+// (Caddy sets it, and drops what clients send unless told to trust them).
+// An IPv6 client counts as its /64, since one home or phone usually gets a
+// whole /64 and could otherwise change address for every try.
 func clientIP(r *http.Request) string {
 	host, _, err := net.SplitHostPort(r.RemoteAddr)
 	if err != nil {
-		return r.RemoteAddr
+		host = r.RemoteAddr
 	}
-	return host
+	ip := net.ParseIP(host)
+	if ip != nil && ip.IsLoopback() {
+		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+			hops := strings.Split(xff, ",")
+			if fwd := net.ParseIP(strings.TrimSpace(hops[len(hops)-1])); fwd != nil {
+				ip = fwd
+			}
+		}
+	}
+	if ip == nil {
+		return host
+	}
+	if ip.To4() == nil && !ip.IsLoopback() {
+		return (&net.IPNet{IP: ip.Mask(net.CIDRMask(64, 128)), Mask: net.CIDRMask(64, 128)}).String()
+	}
+	return ip.String()
 }
 
-// failLimiter allows a handful of failed logins per address before making it wait.
+// failLimiter allows up to max events per key within window, then makes it
+// wait. Logins count failures; the other limits count every request.
 type failLimiter struct {
-	mu    sync.Mutex
-	fails map[string][]time.Time
+	mu     sync.Mutex
+	max    int
+	window time.Duration
+	fails  map[string][]time.Time
 }
 
 const (
@@ -285,25 +327,55 @@ const (
 	failWindow = 15 * time.Minute
 )
 
-func newFailLimiter() *failLimiter { return &failLimiter{fails: map[string][]time.Time{}} }
+// newFailLimiter is the limit on failed logins and password checks per address.
+func newFailLimiter() *failLimiter { return newLimiter(maxFails, failWindow) }
+
+func newLimiter(max int, window time.Duration) *failLimiter {
+	return &failLimiter{max: max, window: window, fails: map[string][]time.Time{}}
+}
 
 func (l *failLimiter) allow(key string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return len(l.recent(key)) < maxFails
+	return len(l.recent(key)) < l.max
 }
 
 func (l *failLimiter) fail(key string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	l.prune()
 	l.fails[key] = append(l.recent(key), time.Now())
 }
 
-// recent drops failures older than the window. Callers hold l.mu.
+// take counts one event for key if it's allowed, and says whether it was.
+func (l *failLimiter) take(key string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.prune()
+	ts := l.recent(key)
+	if len(ts) >= l.max {
+		return false
+	}
+	l.fails[key] = append(ts, time.Now())
+	return true
+}
+
+// prune forgets keys with nothing recent once there are many, so a flood
+// from changing addresses can't grow the map without end. Callers hold l.mu.
+func (l *failLimiter) prune() {
+	if len(l.fails) < 10000 {
+		return
+	}
+	for key := range l.fails {
+		l.recent(key)
+	}
+}
+
+// recent drops events older than the window. Callers hold l.mu.
 func (l *failLimiter) recent(key string) []time.Time {
 	ts := l.fails[key]
 	i := 0
-	for i < len(ts) && time.Since(ts[i]) > failWindow {
+	for i < len(ts) && time.Since(ts[i]) > l.window {
 		i++
 	}
 	if i == len(ts) {

@@ -2044,6 +2044,10 @@ a.tick:active {
 .home-r1 {
   grid-template-columns: 2fr 1fr 1fr;
 }
+/* Without the arena cell (tournaments hidden): your games, then friends or Watch. */
+.home-r1.two {
+  grid-template-columns: 2fr 1fr;
+}
 .home-bots {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -2102,6 +2106,12 @@ a.tick:active {
   line-height: 1.1;
   font-weight: 650;
   letter-spacing: -0.03em;
+}
+.home-release {
+  margin-top: 10px;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 13px;
+  color: var(--color-accent);
 }
 .seg {
   display: grid;
@@ -2272,7 +2282,7 @@ a.tick:active {
   width: 1.2em;
   height: 1.2em;
   flex: none;
-  margin: -10px 0.02em 0 -0.08em;
+  margin: -0.3em 0.02em 0 -0.08em;
   /* Lying on its side, crown away from the name, resting on the baseline. */
   transform: rotate(-90deg) translateX(-0.12em);
 }
@@ -2468,12 +2478,17 @@ a.tick:active {
 .strip-ava.bot {
   background: var(--color-fg);
 }
-.strip-ava.bot img {
+.strip-ava.bot > img,
+.strip-ava.you > img {
   width: 32px;
   height: 32px;
 }
 .strip-ava.you {
+  position: relative;
   box-shadow: inset 0 0 0 1.5px var(--color-fg);
+}
+.strip-ava .ava-head {
+  border-radius: inherit;
 }
 .strip-who {
   display: flex;
@@ -2609,6 +2624,32 @@ a.tick:active {
 .demo-btn:hover {
   box-shadow: inset 0 0 0 1.5px var(--color-fg);
 }
+/* The War Mode setup on the home page board: its tray sized as on the game page. */
+.war-setup {
+  --board4: 480px;
+}
+/* Eat the King or War Mode on the home page board. */
+.demo-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--color-muted);
+}
+.demo-mode {
+  height: 34px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.demo-mode:hover {
+  background: color-mix(in srgb, var(--color-fg) 10%, transparent);
+}
+.demo-mode[data-state='checked'] {
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
 
 /* Lists and cells below the hero. */
 .home-list {
@@ -2730,6 +2771,9 @@ a.tick:active {
   }
   .home-r1 > .home-cell:nth-child(2) {
     border-left: 0;
+  }
+  .home-r1.two > .home-cell:nth-child(2) {
+    grid-column: 1 / -1;
   }
   .home-bots {
     grid-template-columns: 1fr 1fr;
@@ -2887,6 +2931,19 @@ a.tick:active {
   grid-template-rows: repeat(14, minmax(0, 1fr));
   touch-action: none;
 }
+.board4[data-shape='extended'] {
+  --board: calc(var(--board4, 400px) * 8 / 16);
+  grid-template-columns: repeat(16, minmax(0, 1fr));
+  grid-template-rows: repeat(16, minmax(0, 1fr));
+}
+/* The extended board's corners belong to nobody: hatched, so they read apart from the players' rows. */
+.board4 .sq[data-neutral='true']:not([data-fog='true']) {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    color-mix(in srgb, var(--color-fg) 14%, transparent) 0 1px,
+    transparent 1px 5px
+  );
+}
 .board4[data-still='true'] {
   touch-action: auto;
 }
@@ -2930,4 +2987,565 @@ a.tick:active {
 /* A hairline on fogged squares keeps the cross readable on the dark background. */
 .board4 .sq[data-fog='true']:not([data-hill='true']) {
   box-shadow: inset 0 0 0 0.5px rgb(255 250 189 / 0.07);
+}
+
+/*
+ * A piece as an avatar, zoomed on its head. The avatar is a square window onto
+ * the piece image, sized and placed per kind so the head sits inside the
+ * circle with room around it: --s is the window's side, --t its top and --x
+ * its centre, as fractions of the image (the pieces share one drawing grid).
+ */
+.ava-head {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 999px;
+}
+.ava-head img {
+  --s: 0.74;
+  --t: -0.05;
+  --x: 0.5;
+  position: absolute;
+  left: calc((var(--s) / 2 - var(--x)) / var(--s) * 100%);
+  top: calc(var(--t) / var(--s) * -100%);
+  width: calc(100% / var(--s));
+  height: calc(100% / var(--s));
+  max-width: none;
+  user-select: none;
+}
+.ava-head img[data-kind='Q'] {
+  --s: 0.8;
+  --t: -0.07;
+}
+.ava-head img[data-kind='X'] {
+  --s: 0.78;
+  --t: -0.07;
+}
+.ava-head img[data-kind='B'] {
+  --t: -0.06;
+}
+.ava-head img[data-kind='N'] {
+  --s: 0.76;
+  --t: -0.04;
+  --x: 0.48;
+}
+.ava-head img[data-kind='R'] {
+  --s: 0.8;
+  --t: 0.04;
+}
+.ava-head img[data-kind='J'] {
+  --s: 0.78;
+  --t: 0.03;
+}
+.ava-head img[data-kind='P'] {
+  --s: 0.62;
+  --t: 0.13;
+}
+
+/* Settings: pieces and avatar. */
+.set-row.stack {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 12px;
+}
+.set-preview {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  width: min(100%, 360px);
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow: 0 0 0 1.5px var(--color-fg);
+}
+.set-preview .sq {
+  aspect-ratio: 1;
+}
+.set-pick {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+}
+.set-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 6px 10px 6px 6px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  text-align: left;
+  font-size: 14px;
+}
+.set-opt:hover {
+  background: var(--color-muted);
+}
+.set-opt[data-state='checked'] {
+  box-shadow: inset 0 0 0 2px var(--color-fg);
+  font-weight: 600;
+}
+.set-opt:focus-visible,
+.ava-opt:focus-visible,
+.set-opt:has(input:focus-visible),
+.ava-opt:has(input:focus-visible) {
+  outline: 2px solid var(--color-fg);
+  outline-offset: 2px;
+}
+.set-face {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  background: var(--color-sq-dark);
+}
+.set-face img {
+  width: 30px;
+  height: 30px;
+}
+.set-face.pair img {
+  width: 22px;
+  height: 22px;
+}
+.set-face.pair img + img {
+  margin-left: -6px;
+}
+.set-name {
+  min-width: 0;
+  line-height: 1.2;
+}
+.ava-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ava-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.ava-opt {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 5px;
+  border-radius: 999px;
+  background: var(--color-muted);
+  cursor: pointer;
+}
+.ava-pieces {
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border);
+}
+.set-opt {
+  cursor: pointer;
+}
+.ava-opt:hover {
+  background: var(--color-muted-2);
+}
+.ava-opt[data-state='checked'] {
+  box-shadow:
+    0 0 0 2px var(--color-bg),
+    0 0 0 4px var(--color-fg);
+}
+.ava-opt > svg {
+  width: 100%;
+  height: 100%;
+}
+@media (max-width: 420px) {
+  .ava-line {
+    gap: 4px;
+  }
+  .ava-opt {
+    width: 36px;
+    height: 36px;
+    padding: 4px;
+  }
+}
+
+/* A tile skin on your half of the board (see prefs.ts). */
+.sq[data-tile] {
+  background: var(--tile) center / cover;
+}
+.sq[data-tile][data-check='true'] {
+  background:
+    radial-gradient(circle, #ef4444 0%, #ef444499 35%, transparent 75%),
+    var(--tile) center / cover;
+}
+.set-face.tile {
+  background: var(--color-sq-dark) center / cover;
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+.set-face.tile[data-light='true'] {
+  background-color: var(--color-sq-light);
+}
+
+/* ---- Desktop app: the home with three ways to play (AppHome.tsx) ---- */
+.app-modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-bottom: 1px solid var(--line);
+}
+.app-mode {
+  display: flex;
+  flex-direction: column;
+  padding: 32px var(--gut);
+  min-width: 0;
+}
+.app-mode + .app-mode {
+  border-left: 1px solid var(--line);
+}
+.app-mode h2 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.app-art {
+  height: 220px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 24px;
+  border-radius: 8px;
+  background: var(--color-muted);
+}
+.app-about {
+  margin: 8px 0 20px;
+  min-height: 4.5em;
+  color: var(--color-accent);
+}
+.app-rank {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 14px 0;
+  border-block: 1px solid var(--color-border);
+  font-size: 14px;
+  color: var(--color-accent);
+}
+.app-rank .num {
+  font: 600 26px var(--font-mono, ui-monospace, monospace);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-fg);
+}
+.app-go {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.app-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 54px;
+  padding: 0 14px;
+  border-radius: 6px;
+  background: var(--color-muted-2);
+  font: 500 14px ui-monospace, 'SF Mono', Menlo, monospace;
+  white-space: nowrap;
+}
+.app-chip-btn:hover {
+  background: color-mix(in srgb, var(--color-fg) 16%, transparent);
+}
+.app-below {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.app-below > .home-cell + .home-cell {
+  border-left: 1px solid var(--line);
+}
+.app-fog {
+  display: grid;
+  grid-template-columns: repeat(8, 22px);
+  border: 1.5px solid var(--color-fg);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.app-fog > div {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+}
+.app-fog img {
+  width: 90%;
+  height: 90%;
+}
+.app-fog .l {
+  background: var(--color-sq-light);
+}
+.app-fog .d {
+  background: var(--color-sq-dark);
+}
+.app-fog .f {
+  background: var(--color-fog);
+}
+.app-war {
+  display: grid;
+  grid-template-columns: repeat(16, 11px);
+}
+.app-war > div {
+  display: grid;
+  place-items: center;
+  width: 11px;
+  height: 11px;
+}
+.app-war .l {
+  background: var(--color-sq-light);
+}
+.app-war .d {
+  background: var(--color-sq-dark);
+}
+.app-war i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid #050505;
+}
+.app-dials {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 220px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.app-dials > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.app-dials i {
+  position: relative;
+  width: 34px;
+  height: 18px;
+  border: 1.5px solid currentColor;
+}
+.app-dials i::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid currentColor;
+}
+.app-dials i[data-on='true']::after {
+  left: auto;
+  right: 3px;
+  background: currentColor;
+}
+@media (max-width: 1023px) {
+  .app-modes {
+    grid-template-columns: 1fr;
+  }
+  .app-mode + .app-mode {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+  .app-below {
+    grid-template-columns: 1fr;
+  }
+  .app-below > .home-cell + .home-cell {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* ---- The website's download strip on the home page, and /download ---- */
+.home-app {
+  grid-template-columns: 1fr;
+}
+.home-app-get,
+.dl-big {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 22px;
+  border-radius: 6px;
+  background: var(--color-fg);
+  color: var(--color-bg);
+  font-size: 16px;
+  font-weight: 600;
+}
+.home-app-get:hover,
+.dl-big:hover {
+  opacity: 0.88;
+}
+@media (max-width: 767px) {
+  .home-app {
+    display: none;
+  }
+}
+.dl {
+  flex: 1;
+}
+.dl h1 {
+  font-size: clamp(34px, 5vw, 48px);
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.dl h2 {
+  margin-bottom: 14px;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.dl-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 56px 32px 48px;
+  border-bottom: 1px solid var(--color-border);
+}
+.dl-lead {
+  max-width: 34em;
+  font-size: 17px;
+  color: var(--color-accent);
+}
+.dl-big {
+  height: 60px;
+  padding: 0 28px;
+  font-size: 20px;
+  border-radius: 8px;
+}
+.dl-note {
+  max-width: 40em;
+  padding: 16px 18px;
+  border-radius: 8px;
+  background: var(--color-muted);
+  font-size: 14px;
+}
+.dl-two {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.dl-cell {
+  padding: 40px 32px;
+}
+.dl-two > .dl-cell + .dl-cell {
+  border-left: 1px solid var(--color-border);
+}
+.dl-list {
+  border-top: 1px solid var(--color-border);
+}
+.dl-row {
+  display: grid;
+  grid-template-columns: 130px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.dl-row:focus-visible {
+  outline-offset: -2px;
+}
+.dl-os {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+.dl-get {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1.5px var(--color-fg);
+  font-size: 14px;
+  font-weight: 600;
+}
+.dl-row:hover .dl-get {
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
+@media (max-width: 767px) {
+  .dl-hero,
+  .dl-cell {
+    padding: 32px 16px;
+  }
+  .dl-two {
+    grid-template-columns: 1fr;
+  }
+  .dl-two > .dl-cell + .dl-cell {
+    border-left: 0;
+    border-top: 1px solid var(--color-border);
+  }
+  .dl-row {
+    grid-template-columns: 1fr auto auto;
+  }
+  .dl-get {
+    padding: 0 10px;
+    box-shadow: none;
+  }
+}
+
+/* Profile numbers on a phone: two by two, each cell padded the same. */
+@media (max-width: 760px) {
+  .home-bots.stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .home-bots.stats > .stat {
+    padding: 18px var(--gut);
+  }
+  .home-bots.stats > .stat:nth-child(odd) {
+    border-left: 0;
+  }
+  .home-bots.stats > .stat:nth-child(even) {
+    border-left: 1px solid var(--line);
+    border-top: 0;
+  }
+  .home-bots.stats > .stat:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
+  }
+}
+
+/* A themed set you haven't unlocked yet: beat its bot (PiecesSettings.tsx). */
+.set-opt[data-locked] {
+  cursor: not-allowed;
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+.set-opt[data-locked] .set-face,
+.set-opt[data-locked] .set-name,
+.ava-opt[data-locked] > * {
+  opacity: 0.45;
+}
+.set-opt[data-locked]:hover,
+.ava-opt[data-locked]:hover {
+  background: none;
+}
+.ava-opt[data-locked] {
+  cursor: not-allowed;
+}
+.set-lock {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-accent);
+}
+.ava-opt[data-locked] > .ava-lock {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-fg);
+  opacity: 1;
 }

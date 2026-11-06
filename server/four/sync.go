@@ -67,10 +67,10 @@ func (g *Game) PlayRound(ucis [4]string) ([]Event, error) {
 		}
 		movers = append(movers, mover{by: c, from: m.From, to: m.To, pc: pc, event: len(events)})
 		if m.Is(FlagCastle) {
-			_, kr, qr := castleSquares(c)
-			rook, to := kr, cell(c, 5, 0)
-			if m.To != cell(c, 6, 0) {
-				rook, to = qr, cell(c, 3, 0)
+			_, kr, qr := start.Shape.castleSquares(c)
+			rook, to := kr, start.Shape.Cell(c, 5, 0)
+			if m.To != start.Shape.Cell(c, 6, 0) {
+				rook, to = qr, start.Shape.Cell(c, 3, 0)
 			}
 			movers = append(movers, mover{by: c, from: rook, to: to, pc: start.Board[rook], event: -1})
 		}
@@ -80,7 +80,7 @@ func (g *Game) PlayRound(ucis [4]string) ([]Event, error) {
 	p := start
 	for _, mv := range movers {
 		p.Board[mv.from] = NoPiece
-		p.Castling &^= castleMask(mv.from) | castleMask(mv.to)
+		p.Castling &^= p.Shape.castleMask(mv.from) | p.Shape.castleMask(mv.to)
 	}
 	arriving := map[Square][]int{}
 	for i, mv := range movers {
@@ -131,16 +131,22 @@ func (g *Game) PlayRound(ucis [4]string) ([]Event, error) {
 	g.pos = p
 	g.history = append(g.history, events...)
 
+	stamped := false
 	for _, pc := range lost {
 		if pc.Kind() == King && !g.pos.Out[pc.Color()] {
+			if !stamped {
+				g.outs++
+				stamped = true
+			}
 			g.pos.Eliminate(pc.Color())
 			g.fell[pc.Color()] = KingCaptured
+			g.outAt[pc.Color()] = g.outs
 		}
 	}
-	if g.pos.Hill {
+	if g.pos.HillOn() {
 		var on []Color
 		for _, c := range Colors {
-			if k := g.pos.KingSquare(c); !g.pos.Out[c] && k != NoSquare && InCentre(k) {
+			if k := g.pos.KingSquare(c); !g.pos.Out[c] && k != NoSquare && g.pos.Shape.InCentre(k) {
 				on = append(on, c)
 			}
 		}

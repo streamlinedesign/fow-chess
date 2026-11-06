@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { onBoard, SIZE, startBoard } from './four'
+import { geo } from './four'
 import { FourBoard } from './FourBoard'
 import { useT } from './i18n'
 import { Page } from './Page'
 import { playerId } from './player'
+import { getPrefs } from './prefs'
 import { navigate } from './router'
 import { describeTime, loadSettings, modeName, saveSettings, setupMode, type Settings } from './settings'
 import { SettingsBoard, setupNotes } from './SettingsBoard'
@@ -36,17 +37,19 @@ export function ModsPage() {
     try {
       saveSettings(settings)
       if (four) {
-        const { fog, time, jumpKing, jesterPawns, hill, centerVision, setup, sync, kingWarning } = settings
+        const { fog, time, jumpKing, jesterPawns, hill, centerVision, setup, sync, kingWarning, fourBoard } = settings
         const body = {
           fog,
           time,
           jumpKing,
           jesterPawns,
-          hill,
+          // The extended board has no hill.
+          hill: hill && fourBoard !== 'extended',
           centerVision,
           setup,
           sync,
           kingWarning,
+          board: fourBoard || '',
         }
         const res = await fetch(`/api/four?player=${playerId}`, {
           method: 'POST',
@@ -57,7 +60,13 @@ export function ModsPage() {
         navigate(`/f/${id}`)
         return
       }
-      const body = { ...settings, kingCapture: settings.kingCapture || !!settings.sync, mods: true, unrated: true }
+      const body = {
+        ...settings,
+        kingCapture: settings.kingCapture || !!settings.sync,
+        mods: true,
+        unrated: true,
+        side: getPrefs().side,
+      }
       const res = await fetch(`/api/matches?player=${playerId}`, {
         method: 'POST',
         body: JSON.stringify(body),
@@ -134,8 +143,15 @@ function CurrentSetup({ settings, four }: { settings: Settings; four: boolean })
   const notes = four
     ? [
         t.four.preview,
+        ...(settings.fourBoard === 'extended' ? [t.four.previewExtended] : []),
         ...(settings.fog ? [t.four.previewFog] : []),
-        ...(setup ? [setup === 'backRow' ? t.four.previewBackRow : t.four.previewBattleship] : []),
+        ...(setup
+          ? [
+              setup === 'backRow'
+                ? t.four.previewBackRow
+                : t.four.previewBattleship(settings.fourBoard === 'extended' ? 4 : 3),
+            ]
+          : []),
         ...(settings.sync ? [t.four.previewSync] : []),
       ]
     : setupNotes(settings, t)
@@ -158,22 +174,24 @@ function CurrentSetup({ settings, four }: { settings: Settings; four: boolean })
 function FourPreview({ settings }: { settings: Settings }) {
   const t = useT()
   const board = useMemo(() => {
-    const b = startBoard()
+    const g = geo(settings.fourBoard)
+    const b = g.startBoard()
     if (!settings.fog) return b
     // At the start Red's pieces see their own two rows and the two ahead.
+    const [left] = g.ownCell('r', 0, 0)
     return b.map((v, i) => {
-      const x = i % SIZE
-      const y = Math.floor(i / SIZE)
-      return onBoard(x, y) && !(y <= 3 && x >= 3 && x <= 10) ? '?' : v
+      const x = i % g.size
+      const y = Math.floor(i / g.size)
+      return g.onBoard(x, y) && !(y <= 3 && x >= left && x <= left + 7) ? '?' : v
     })
-  }, [settings.fog])
+  }, [settings.fog, settings.fourBoard])
   return (
     <div className="four-preview" role="img" aria-label={t.four.preview}>
       <FourBoard
         board={board}
         seat="r"
         legal={[]}
-        hill={settings.hill}
+        hill={settings.hill && settings.fourBoard !== 'extended'}
         center={settings.centerVision ? {} : undefined}
         look={settings}
         still

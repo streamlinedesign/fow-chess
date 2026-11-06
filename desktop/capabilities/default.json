@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The bundled loading page needs nothing from the app. The game site is remote and gets no access at all.",
+  "windows": ["main"],
+  "permissions": []
+}

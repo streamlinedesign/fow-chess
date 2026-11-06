@@ -26,6 +26,8 @@ type liveGame struct {
 type liveSeat struct {
 	Name   string `json:"name,omitempty"` // empty for a guest
 	Rating int    `json:"rating,omitempty"`
+	// Skin is how the player likes their pieces and squares drawn.
+	Skin *skin `json:"skin,omitempty"`
 }
 
 // matchList is the matches in memory, so callers can lock each one without holding h.mu.
@@ -49,7 +51,7 @@ func (h *Hub) LiveGames() []liveGame {
 			out = append(out, liveGame{
 				ID: m.id, Settings: m.settings, Board: v.Board, Ply: v.Ply, Turn: v.Turn,
 				Spectators: m.spectators(), Rated: m.rated(), users: m.users,
-				Players: map[string]liveSeat{"w": {Name: m.names[white]}, "b": {Name: m.names[black]}},
+				Players: map[string]liveSeat{"w": {Name: m.names[white], Skin: m.skins[white]}, "b": {Name: m.names[black], Skin: m.skins[black]}},
 			})
 		}
 		m.mu.Unlock()

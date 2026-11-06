@@ -1,11 +1,24 @@
 import { BugButton } from './BugReport'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Clock } from './Clock'
-import { aroundFrom, parseMove, pieceImg4, SEAT_COLORS, SEATS, type Seat } from './four'
+import {
+  aroundFrom,
+  geo,
+  geoOf,
+  parseMove,
+  pieceImg4,
+  SEAT_COLORS,
+  SEATS,
+  seatSkin,
+  type FourLook,
+  type Seat,
+} from './four'
 import { FourBoard } from './FourBoard'
 import { FourSetup } from './FourSetup'
 import { useT, type Dict } from './i18n'
 import { how } from './MatchPage'
+import { PromotionDialog } from './Promotion'
+import { skinOf, usePrefs, type Prefs } from './prefs'
 import { navigate } from './router'
 import { Button, Dialog, Spinner } from './ui'
 import { useFourMatch, type FourState } from './useFourMatch'
@@ -38,6 +51,7 @@ export function FourMatchPage({ id }: { id: string }) {
 
   const you = state?.you || null
   const seat: Seat = you ?? side
+  const look = fourLook(state, you, usePrefs())
   const playing = state?.status === 'playing'
   // A move sent in Sync Move is locked in.
   const legal = state && !predicting && !(sync && sentNow) && conn === 'open' ? state.legal : []
@@ -53,7 +67,7 @@ export function FourMatchPage({ id }: { id: string }) {
     if (!predicting) return state.board
     const m = parseMove(pending!.uci)!
     const b = [...state.board]
-    const idx = (sq: string) => (Number(sq.slice(1)) - 1) * 14 + sq.charCodeAt(0) - 97
+    const idx = geoOf(state.board).squareIdx
     b[idx(m.to)] = m.promo ? b[idx(m.from)][0] + m.promo.toUpperCase() : b[idx(m.from)]
     b[idx(m.from)] = '.'
     return b
@@ -136,7 +150,8 @@ export function FourMatchPage({ id }: { id: string }) {
             <FourSetup
               seat={you}
               layout={state.settings.setup === 'backRow' ? 'backRow' : 'battleship'}
-              look={state.settings}
+              board={state.settings.board}
+              look={look}
               mine={state.arranged}
               onReady={(board) => send({ type: 'setup', board })}
               onChange={() => send({ type: 'setup', board: '' })}
@@ -144,7 +159,7 @@ export function FourMatchPage({ id }: { id: string }) {
           ) : (
             <div className="board-turn relative rounded-md" data-your-move={yourMove}>
               <FourBoard
-                board={board.length ? board : emptyBoard}
+                board={board.length ? board : emptyBoard(state?.settings.board)}
                 seat={seat}
                 legal={legal}
                 lastMove={last}
@@ -153,10 +168,10 @@ export function FourMatchPage({ id }: { id: string }) {
                 danger={predicting ? undefined : state?.danger}
                 hill={state?.settings.hill}
                 center={state?.settings.centerVision ? { live: !predicting && !!state.fullVision } : undefined}
-                look={state?.settings}
+                look={look}
                 onMove={onMove}
               />
-              <SeatLabels state={state} seat={seat} />
+              {state?.settings.board !== 'extended' && <SeatLabels state={state} seat={seat} />}
               {state?.status === 'waiting' && (
                 <WaitingCard
                   id={id}
@@ -223,6 +238,9 @@ export function FourMatchPage({ id }: { id: string }) {
             </div>
           )}
 
+          {youOut && playing && !!state?.behind && (
+            <p className="text-sm text-accent">{t.four.outBehind(state.behind)}</p>
+          )}
           <div className="flex flex-wrap gap-2">
             {you && (playing || arranging) && !youOut && (
               <Button onClick={() => setConfirmResign(true)}>{t.match.resign}</Button>
@@ -240,23 +258,12 @@ export function FourMatchPage({ id }: { id: string }) {
         </aside>
       </div>
 
-      <Dialog open={!!promotion} onOpenChange={(o) => !o && setPromotion(null)} title={t.match.promoteTo}>
-        <div className="grid grid-cols-4 gap-2">
-          {(['q', 'r', 'b', 'n'] as const).map((p) => (
-            <button
-              key={p}
-              onClick={() => {
-                sendMove(promotion!.from + promotion!.to + p)
-                setPromotion(null)
-              }}
-              className="aspect-square rounded-lg bg-sq-light p-1 shadow-[inset_0_0_0_1.5px_var(--color-fg)] transition-transform hover:scale-105 active:scale-95"
-              aria-label={p}
-            >
-              <img src={pieceImg4((you ?? 'r') + p.toUpperCase())} alt="" draggable={false} className="size-full" />
-            </button>
-          ))}
-        </div>
-      </Dialog>
+      <PromotionDialog
+        open={!!promotion}
+        img={(p) => pieceImg4((you ?? 'r') + p.toUpperCase(), look)}
+        onPick={(p) => sendMove(promotion!.from + promotion!.to + p)}
+        onClose={() => setPromotion(null)}
+      />
 
       <Dialog
         open={confirmResign}
@@ -295,11 +302,11 @@ function waitingOn(state: FourState, s: Seat) {
 const ticking = (state: FourState, s: Seat) =>
   state.settings.sync ? !!state.ticking?.includes(s) : state.clock?.running === s
 
-const emptyBoard: string[] = Array.from({ length: 196 }, (_, i) => {
-  const x = i % 14
-  const y = Math.floor(i / 14)
-  return (x < 3 || x > 10) && (y < 3 || y > 10) ? ' ' : '.'
-})
+/** The board with nothing on it, while the game loads. */
+const emptyBoard = (board?: string) =>
+  geo(board)
+    .startBoard()
+    .map((v) => (v === ' ' ? ' ' : '.'))
 
 /** Each player's name in the empty corner nearest their pieces. */
 function SeatLabels({ state, seat }: { state: FourState | null; seat: Seat }) {
@@ -362,6 +369,16 @@ function Seats({ state, you, toMove }: { state: FourState | null; you: Seat | nu
             </span>
             {s === you && <span className="text-accent">{t.match.youTag}</span>}
             {p.bot && <span className="text-accent">{t.four.bot}</span>}
+            {!!p.rating && (
+              <span className="font-mono text-sm text-accent tabular-nums">
+                {p.rating}
+                {p.ratingDiff !== undefined && (
+                  <b className="ml-1 font-semibold text-fg">
+                    {p.ratingDiff >= 0 ? `+${p.ratingDiff}` : `−${-p.ratingDiff}`}
+                  </b>
+                )}
+              </span>
+            )}
             <span className="ml-auto flex min-w-0 items-center gap-2">
               {p.out ? (
                 <span className="text-sm text-accent">{t.four.outBy[p.out] ?? t.four.out}</span>
@@ -392,7 +409,7 @@ function Seats({ state, you, toMove }: { state: FourState | null; you: Seat | nu
   )
 }
 
-function Moves({ state }: { state: FourState }) {
+export function Moves({ state }: { state: FourState }) {
   const t = useT()
   const list = useRef<HTMLOListElement>(null)
   useEffect(() => {
@@ -555,4 +572,19 @@ function WaitingCard({
       </div>
     </div>
   )
+}
+
+/**
+ * How the board draws each seat: a player with a skin in one of their own sets
+ * and on their own tiles (yours as you pick them now), everyone else in the
+ * seat colour. On a no-skins screen every seat is in its colour.
+ */
+export function fourLook(state: FourState | null, you: Seat | null, prefs: Prefs): FourLook | undefined {
+  if (!state || prefs.plain) return state?.settings
+  const seats: FourLook['seats'] = {}
+  for (const s of SEATS) {
+    const p = state.players[s]
+    seats[s] = seatSkin(s === you ? skinOf(prefs) : p?.skin, p?.half)
+  }
+  return { ...state.settings, seats }
 }

@@ -45,6 +45,10 @@ func TestBotPlaysItsSeat(t *testing.T) {
 	if !m.online(white) || m.names[white] != "Vercingetorix" || m.rated() {
 		t.Errorf("bot seat: online %v name %q rated %v", m.online(white), m.names[white], m.rated())
 	}
+	// The state says which seat is the bot's, so the board draws it in the bot's set.
+	if p := m.base().Players; !p["w"].Bot || p["b"].Bot {
+		t.Errorf("bot seat in the state: %+v", p)
+	}
 	m.mu.Unlock()
 	m.handle(c, inMsg{Type: "move", UCI: "e7e5"})
 	waitFor(t, m, "the bot's reply", func() bool { return len(m.game.History()) == 3 })

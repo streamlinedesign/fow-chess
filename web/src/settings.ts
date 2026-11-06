@@ -1,4 +1,6 @@
 import type { Dict } from './i18n'
+import type { Look, Skin } from './pieces'
+import { setImg } from './sets'
 
 /** A clock setting. All zero means no clock. Must match timeControls in server/view.go. */
 export type TimeControl = {
@@ -31,6 +33,8 @@ export type Settings = {
   kingWarning?: boolean
   /** Sync Move: everyone moves at once each round. Always Eat the King. Mods only. */
   sync?: boolean
+  /** Four players only: the extended board, 16 by 16 with neutral corners. Sent as board. */
+  fourBoard?: '' | 'extended'
   /** Never ranked: set by the server for bot and mods games. Players can't ask for it. */
   unrated?: boolean
   /** From the mods page: any option, any clock, never ranked. */
@@ -43,12 +47,50 @@ export type Settings = {
 
 export type Bot = 'rex' | 'vercingetorix' | 'ramesses' | 'solomon'
 
-/** Each bot's face: a piece of its strength. J is the jester pawn, X the prince (see pieces.ts). */
-export const BOT_PIECE: Record<Bot, string> = {
-  rex: 'J',
-  vercingetorix: 'N',
-  ramesses: 'X',
-  solomon: 'K',
+/**
+ * The themed set each bot plays with, on its own tiles: the light half as
+ * White, the dark half as Black (see concrete in sets.ts). Beating a bot
+ * unlocks its theme (THEME_LOCK in sets.ts).
+ */
+export const BOT_SET: Record<Bot, string> = {
+  rex: 'holy',
+  vercingetorix: 'blueprint',
+  ramesses: 'ancient',
+  solomon: 'galaxy',
+}
+
+/** Each bot's face: a piece of its strength from its own set. J is the jester pawn, X the prince. */
+export const BOT_FACE: Record<Bot, string> = {
+  rex: setImg('holy-dark', 'J'), // Rex inutilis
+  vercingetorix: setImg('blueprint-dark', 'N'),
+  ramesses: setImg('ancient-dark', 'X'),
+  solomon: setImg('galaxy-dark', 'K'),
+}
+
+/** The bot that unlocks a theme, if a bot does. */
+export function botFor(theme: string): Bot | undefined {
+  return (Object.keys(BOT_SET) as Bot[]).find((b) => BOT_SET[b] === theme)
+}
+
+/**
+ * How a game's pieces are drawn: its mods, a bot's pieces in the bot's set,
+ * and each player's own skin as the server passes it on.
+ */
+export function gameLook(
+  settings: (Look & { bot?: Bot }) | undefined,
+  botSide?: 'w' | 'b' | null,
+  players?: Partial<Record<'w' | 'b', { skin?: Skin }>>,
+): Look | undefined {
+  if (!settings) return settings
+  const look: Look = { ...settings }
+  if (settings.bot && botSide) {
+    look.sets = { [botSide]: BOT_SET[settings.bot] }
+    look.tiles = { [botSide]: BOT_SET[settings.bot] }
+  }
+  const w = players?.w?.skin
+  const b = players?.b?.skin
+  if (w || b) look.skins = { w, b }
+  return look
 }
 
 /** The computer opponents, weakest first. Their names are the same in every language. */
@@ -159,6 +201,8 @@ export function loadSettings(mods = false): Settings {
       delete saved.jesterPawns
       delete saved.hill
       delete saved.sync
+      delete saved.fourBoard
+      saved.setup = ''
       saved.centerVision = ''
       delete saved.kingWarning
       delete saved.mods

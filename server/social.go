@@ -17,6 +17,9 @@ type Social struct {
 	hub   *Hub
 	auth  *Auth
 	queue *Queue
+	// fours and fourQueue are the four-player games and their ranked queue.
+	fours     *FourHub
+	fourQueue *FourQueue
 }
 
 // notify stores a notification for the bell and tells the player's open tabs.
@@ -70,6 +73,7 @@ const (
 )
 
 func (s *Social) routes(mux *http.ServeMux) {
+	s.prefRoutes(mux)
 	mux.HandleFunc("GET /api/live", func(w http.ResponseWriter, r *http.Request) {
 		if me := s.signedIn(w, r); me != nil {
 			s.live.serve(w, r, me)
