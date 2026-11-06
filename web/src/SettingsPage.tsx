@@ -1,57 +1,58 @@
-import * as Switch from '@radix-ui/react-switch'
-import { useEffect, useState } from 'react'
-import { logout, refreshMe, useMe } from './auth'
-import { go } from './ProfilePage'
-import { LANGS, setLang, useLang, useT } from './i18n'
-import { Page, PageHead } from './Page'
-import { PiecesSettings } from './PiecesSettings'
-import { navigate } from './router'
-import { api } from './social'
-import { setThemeMode, themeMode, type ThemeMode } from './theme'
-import { Button, Dialog } from './ui'
+import * as Switch from "@radix-ui/react-switch";
+import { useEffect, useState } from "react";
+import { logout, refreshMe, useMe } from "./auth";
+import { go } from "./ProfilePage";
+import { LANGS, setLang, useLang, useT } from "./i18n";
+import { Page, PageHead } from "./Page";
+import { LivePreview, PiecesSettings } from "./PiecesSettings";
+import { navigate } from "./router";
+import { api } from "./social";
+import { setThemeMode, themeMode, type ThemeMode } from "./theme";
+import { Button, Dialog } from "./ui";
 
 type Privacy = {
-  hideOnline: boolean
-  offersFrom: 'anyone' | 'friends'
-  requestsFrom: 'anyone' | 'nobody'
-}
+  hideOnline: boolean;
+  offersFrom: "anyone" | "friends";
+  requestsFrom: "anyone" | "nobody";
+};
 
-const SECTIONS = ['look', 'pieces', 'account', 'privacy'] as const
+const SECTIONS = ["look", "pieces", "account", "privacy"] as const;
 
 /** Your look, pieces, account and privacy. Changes save as you make them. Guests get the first two. */
 export function SettingsPage() {
-  const me = useMe()
-  const t = useT()
-  const lang = useLang()
-  const [privacy, setPrivacy] = useState<Privacy | null>(null)
-  const [mode, setMode] = useState(themeMode)
-  const [saved, setSaved] = useState('')
+  const me = useMe();
+  const t = useT();
+  const lang = useLang();
+  const [privacy, setPrivacy] = useState<Privacy | null>(null);
+  const [mode, setMode] = useState(themeMode);
+  const [saved, setSaved] = useState("");
 
   useEffect(() => {
     if (me)
-      api<Privacy>('GET', '/api/settings')
+      api<Privacy>("GET", "/api/settings")
         .then(setPrivacy)
-        .catch(() => {})
-  }, [me?.username])
+        .catch(() => {});
+  }, [me?.username]);
 
   // A link to a section, like the home board's Pieces, scrolls to it.
-  const ready = me !== undefined
+  const ready = me !== undefined;
   useEffect(() => {
-    if (ready && location.hash) document.getElementById(location.hash.slice(1))?.scrollIntoView()
-  }, [ready])
+    if (ready && location.hash)
+      document.getElementById(location.hash.slice(1))?.scrollIntoView();
+  }, [ready]);
 
-  if (me === undefined) return null
-  const sections = me ? SECTIONS : SECTIONS.slice(0, 2)
+  if (me === undefined) return null;
+  const sections = me ? SECTIONS : SECTIONS.slice(0, 2);
 
   const savePrivacy = async (p: Privacy) => {
-    setPrivacy(p)
+    setPrivacy(p);
     try {
-      setPrivacy(await api<Privacy>('PUT', '/api/settings', p))
-      setSaved(t.account.saved)
+      setPrivacy(await api<Privacy>("PUT", "/api/settings", p));
+      setSaved(t.account.saved);
     } catch (e) {
-      setSaved((e as Error).message)
+      setSaved((e as Error).message);
     }
-  }
+  };
 
   return (
     <Page>
@@ -64,7 +65,7 @@ export function SettingsPage() {
           </span>
         }
       />
-      <div className="home-row">
+      <div className="home-row set-split">
         <div className="home-cell set-grid">
           <nav className="set-nav" aria-label={t.account.sections}>
             {sections.map((id) => (
@@ -72,11 +73,13 @@ export function SettingsPage() {
                 key={id}
                 href={`#s-${id}`}
                 onClick={(e) => {
-                  e.preventDefault()
-                  document.getElementById(`s-${id}`)?.scrollIntoView({ behavior: 'smooth' })
+                  e.preventDefault();
+                  document
+                    .getElementById(`s-${id}`)
+                    ?.scrollIntoView({ behavior: "smooth" });
                 }}
               >
-                {id === 'pieces' ? t.pieces.link : t.account[id]}
+                {id === "pieces" ? t.pieces.link : t.account[id]}
               </a>
             ))}
           </nav>
@@ -92,13 +95,13 @@ export function SettingsPage() {
                   label={t.header.theme}
                   value={mode}
                   options={[
-                    ['light', t.header.light],
-                    ['dark', t.header.dark],
-                    ['system', t.header.system],
+                    ["light", t.header.light],
+                    ["dark", t.header.dark],
+                    ["system", t.header.system],
                   ]}
                   onChange={(m, e) => {
-                    setThemeMode(m as ThemeMode, e)
-                    setMode(m as ThemeMode)
+                    setThemeMode(m as ThemeMode, e);
+                    setMode(m as ThemeMode);
                   }}
                 />
               </div>
@@ -111,7 +114,7 @@ export function SettingsPage() {
                   label={t.header.language}
                   value={lang}
                   options={LANGS.map((l) => [l.code, l.name])}
-                  onChange={(l) => setLang(l as (typeof LANGS)[number]['code'])}
+                  onChange={(l) => setLang(l as (typeof LANGS)[number]["code"])}
                 />
               </div>
             </section>
@@ -124,7 +127,11 @@ export function SettingsPage() {
             {!me ? (
               <section className="set-sec">
                 <p className="pt-2 text-accent">
-                  <a href="/login?next=/settings" onClick={(e) => go(e, '/login?next=/settings')} className="underline">
+                  <a
+                    href="/login?next=/settings"
+                    onClick={(e) => go(e, "/login?next=/settings")}
+                    className="underline"
+                  >
                     {t.pieces.guestNote}
                   </a>
                 </p>
@@ -149,9 +156,11 @@ export function SettingsPage() {
                     <Button
                       className="h-9 px-3.5 text-sm"
                       onClick={async () => {
-                        await api('POST', '/api/logout-everywhere').catch(() => {})
-                        await refreshMe()
-                        navigate('/login')
+                        await api("POST", "/api/logout-everywhere").catch(
+                          () => {},
+                        );
+                        await refreshMe();
+                        navigate("/login");
                       }}
                     >
                       {t.account.logOutEverywhere}
@@ -167,11 +176,17 @@ export function SettingsPage() {
                       <label className="set-row cursor-pointer">
                         <div className="row-l">
                           <b>{t.account.showOnline}</b>
-                          <span>{privacy.hideOnline ? t.account.hiddenHint : t.account.shownHint}</span>
+                          <span>
+                            {privacy.hideOnline
+                              ? t.account.hiddenHint
+                              : t.account.shownHint}
+                          </span>
                         </div>
                         <Switch.Root
                           checked={!privacy.hideOnline}
-                          onCheckedChange={(on) => savePrivacy({ ...privacy, hideOnline: !on })}
+                          onCheckedChange={(on) =>
+                            savePrivacy({ ...privacy, hideOnline: !on })
+                          }
                           className="sl-switch"
                         >
                           <span className="sl-switch-track" />
@@ -186,13 +201,13 @@ export function SettingsPage() {
                           label={t.account.whoOffers}
                           value={privacy.offersFrom}
                           options={[
-                            ['friends', t.common.friends],
-                            ['anyone', t.account.anyone],
+                            ["friends", t.common.friends],
+                            ["anyone", t.account.anyone],
                           ]}
                           onChange={(v) =>
                             savePrivacy({
                               ...privacy,
-                              offersFrom: v as Privacy['offersFrom'],
+                              offersFrom: v as Privacy["offersFrom"],
                             })
                           }
                         />
@@ -206,13 +221,13 @@ export function SettingsPage() {
                           label={t.account.whoRequests}
                           value={privacy.requestsFrom}
                           options={[
-                            ['anyone', t.account.anyone],
-                            ['nobody', t.account.nobody],
+                            ["anyone", t.account.anyone],
+                            ["nobody", t.account.nobody],
                           ]}
                           onChange={(v) =>
                             savePrivacy({
                               ...privacy,
-                              requestsFrom: v as Privacy['requestsFrom'],
+                              requestsFrom: v as Privacy["requestsFrom"],
                             })
                           }
                         />
@@ -224,9 +239,13 @@ export function SettingsPage() {
             )}
           </div>
         </div>
+        {/* Wide screens: the preview beside every setting, so each change shows at once. */}
+        <aside className="home-cell set-live">
+          <LivePreview />
+        </aside>
       </div>
     </Page>
-  )
+  );
 }
 
 function Seg({
@@ -235,46 +254,53 @@ function Seg({
   options,
   onChange,
 }: {
-  label: string
-  value: string
-  options: [string, string][]
-  onChange: (v: string, e: React.MouseEvent) => void
+  label: string;
+  value: string;
+  options: [string, string][];
+  onChange: (v: string, e: React.MouseEvent) => void;
 }) {
   return (
     <div role="radiogroup" aria-label={label} className="seg">
       {options.map(([v, text]) => (
-        <button key={v} type="button" role="radio" aria-checked={value === v} onClick={(e) => onChange(v, e)}>
+        <button
+          key={v}
+          type="button"
+          role="radio"
+          aria-checked={value === v}
+          onClick={(e) => onChange(v, e)}
+        >
           {text}
         </button>
       ))}
     </div>
-  )
+  );
 }
 
 function PasswordForm() {
-  const t = useT()
-  const [current, setCurrent] = useState('')
-  const [next, setNext] = useState('')
-  const [confirm, setConfirm] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null)
+  const t = useT();
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
 
   const submit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (next !== confirm) return setNote({ ok: false, text: t.account.newMismatch })
-    setBusy(true)
-    setNote(null)
+    e.preventDefault();
+    if (next !== confirm)
+      return setNote({ ok: false, text: t.account.newMismatch });
+    setBusy(true);
+    setNote(null);
     try {
-      await api('POST', '/api/password', { current, new: next })
-      setCurrent('')
-      setNext('')
-      setConfirm('')
-      setNote({ ok: true, text: t.account.passwordChanged })
+      await api("POST", "/api/password", { current, new: next });
+      setCurrent("");
+      setNext("");
+      setConfirm("");
+      setNote({ ok: true, text: t.account.passwordChanged });
     } catch (err) {
-      setNote({ ok: false, text: (err as Error).message })
+      setNote({ ok: false, text: (err as Error).message });
     }
-    setBusy(false)
-  }
+    setBusy(false);
+  };
 
   return (
     <form className="pw" onSubmit={submit}>
@@ -320,7 +346,10 @@ function PasswordForm() {
         </label>
       </div>
       {note && (
-        <p role="status" className={`text-sm ${note.ok ? 'text-accent' : 'text-danger'}`}>
+        <p
+          role="status"
+          className={`text-sm ${note.ok ? "text-accent" : "text-danger"}`}
+        >
           {note.text}
         </p>
       )}
@@ -330,15 +359,15 @@ function PasswordForm() {
         </Button>
       </div>
     </form>
-  )
+  );
 }
 
 function DeleteAccount() {
-  const t = useT()
-  const [open, setOpen] = useState(false)
-  const [password, setPassword] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
 
   return (
     <div className="set-row">
@@ -352,20 +381,25 @@ function DeleteAccount() {
       >
         {t.account.deleteAccount}
       </Button>
-      <Dialog open={open} onOpenChange={setOpen} title={t.account.deleteTitle} description={t.account.deleteDesc}>
+      <Dialog
+        open={open}
+        onOpenChange={setOpen}
+        title={t.account.deleteTitle}
+        description={t.account.deleteDesc}
+      >
         <form
           className="flex flex-col gap-4"
           onSubmit={async (e) => {
-            e.preventDefault()
-            setBusy(true)
-            setError('')
+            e.preventDefault();
+            setBusy(true);
+            setError("");
             try {
-              await api('POST', '/api/account/delete', { password })
-              await logout()
-              navigate('/')
+              await api("POST", "/api/account/delete", { password });
+              await logout();
+              navigate("/");
             } catch (err) {
-              setError((err as Error).message)
-              setBusy(false)
+              setError((err as Error).message);
+              setBusy(false);
             }
           }}
         >
@@ -381,15 +415,24 @@ function DeleteAccount() {
           />
           {error && <p className="text-sm text-danger">{error}</p>}
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setOpen(false)}
+            >
               {t.account.keepIt}
             </Button>
-            <Button type="submit" variant="solid" className="bg-danger" loading={busy}>
+            <Button
+              type="submit"
+              variant="solid"
+              className="bg-danger"
+              loading={busy}
+            >
               {t.account.delete}
             </Button>
           </div>
         </form>
       </Dialog>
     </div>
-  )
+  );
 }

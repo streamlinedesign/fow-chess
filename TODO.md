@@ -40,6 +40,7 @@
 
 ## Done
 
+- 0.23.0: crisp board, Smoke and Dusk fog tinted by tile skin, live preview in settings
 - 0.19.0: stronger bots for both games; four-player bot levels that play Sync Move
 - 0.17.0: cyberpunk pieces and tiles for beta players
 - 0.16.1: avatar framing, logo on phones, match-not-found crash, knocked-out four-player players kept behind and out of the chat, release date on the home page

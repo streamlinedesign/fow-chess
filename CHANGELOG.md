@@ -4,6 +4,9 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Fog has two looks, picked in Settings: Smoke (the default), one soft cloud with grain over what you can't see, and Dusk, a dark veil that keeps each hidden square's colour and tile. Both take the colour of the tile skin underneath. Vision squares and the hill stay ringed above the fog. The fog style is kept with your preferences (`fog` in `/api/prefs`) and only shows on your screen.
+- A crisper board: a double rule frame, square corners, slightly brighter squares, an outlined last move, darker move dots, corner wedges for captures and a small shadow under pieces.
+- Settings has a live preview beside every setting (inside Pieces on narrower screens): a full board in both your sets on your tiles, with Swap sides and a Fog button to see your fog style.
 - Four-player bots under fog: they guard their king against squares they can't see and take and hold their vision squares. With fog and vision squares, War Mode's bot won 30% of games against three that don't (25% is level).
 - War Mode is played in the fog of war again, with centre vision: a piece on one of your two vision squares in the middle shows you the whole board. Ranked games and the home page board both.
 - Four players: the extended board's neutral corners are plain squares, no stripes. Back row and Battleship setups take drags as well as clicks: drag from the tray onto a square, from square to square, or back onto the tray.
