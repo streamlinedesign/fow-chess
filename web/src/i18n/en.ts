@@ -110,6 +110,8 @@ export const en = {
 
   home: {
     findOpponent: 'Find an opponent',
+    etkTitle: 'Eat the King',
+    etkAbout: 'One against one, in the fog',
     length: 'Game length',
     short: 'Short',
     shortSub: 'Minutes',
@@ -122,7 +124,7 @@ export const en = {
     logInToPlay: 'Log in to play',
     guestNote: 'Matchmaking is ranked, so it needs an account. The board and the bots need nothing.',
     codeTitle: 'Play a friend with a code',
-    codeSub: 'Same clock and layout as above. Share the code or the link, and they join with it.',
+    codeSub: 'Same clock as above. Share the code or the link, and they join with it.',
     createCode: 'Create a code',
     modsSub: 'Every rule switch: no fog, checkmate, King of the Hill, any clock. Never ranked.',
     demoBot: 'Demo bot',
@@ -139,10 +141,10 @@ export const en = {
     drawn: 'A draw.',
     noGames: 'Nothing in progress. Press Play to start a game.',
     noArena: 'No arena coming up right now.',
-    fourTitle: 'Four players, ranked',
-    fourAbout: 'Extended board · Battleship · Sync Move · Jester pawns · No fog',
-    fourRanked: 'Ranked on a four-player rating of its own. 10 minutes each.',
-    fourPlay: 'Find a four-player game',
+    fourTitle: 'War Mode',
+    fourAbout: 'Four players · Extended board · Battleship · Sync Move · Jester pawns · No fog',
+    fourRanked: 'Ranked on a War Mode rating of its own. 10 minutes each.',
+    fourPlay: 'Find a War Mode game',
     fourFinding: 'Finding three players…',
     fourWaiting: (n: number, secs: number) => `${n} of 4 waiting, ${secs} s`,
     fourGuest: 'Ranked games need an account.',
@@ -203,8 +205,8 @@ export const en = {
   about: {
     title: 'About the game',
     paras: [
-      'Eat the King is the original game: chess in the fog of war. You see only the squares your pieces can reach, there is no check, and you win by capturing the king. Every game you start from this page is that game.',
-      'Everything else is a mod. Mods turn one dial at a time: lift the fog, play to checkmate, set your pieces up in secret, race to the hill, or bring four players to one board. Mods games are never ranked.',
+      'Eat the King is the original game: chess in the fog of war. You see only the squares your pieces can reach, there is no check, and you win by capturing the king. It always starts from the usual position. War Mode is the second official game: four players on the extended board, Battleship, Sync Move and jester pawns, with no fog.',
+      'Everything else is a mod. Mods turn one dial at a time: lift the fog, play to checkmate, set your pieces up in secret, race to the hill, or try other four-player games. Mods games are never ranked.',
     ],
     inspired: 'Inspired by',
     sources: [
@@ -534,7 +536,7 @@ export const en = {
         title: 'Clocks and rating',
         p: [
           "Clocks run on the server, so closing the tab doesn't stop them. Run out and you lose, unless your opponent can't win with what's left. **Daily** gives you 24 hours per move and **Weekly** 7 days, reset after every move.",
-          'Every game between two signed-in players is **ranked**, and every mode shares one rating, starting at 1500. Press **Play** on the home page to be paired with the player nearest your rating. **Mods** games and games against a bot never count.',
+          'Every game between two signed-in players is **ranked**, with a rating of its own for Eat the King and for War Mode, each starting at 1500. Press **Play** on the home page to be paired with the player nearest your rating. **Mods** games and games against a bot never count.',
         ],
       },
       draws: {
@@ -551,7 +553,7 @@ export const en = {
   profile: {
     loading: 'Loading profile',
     ratingLabel: 'rating',
-    fourRatingLabel: 'four-player rating',
+    fourRatingLabel: 'War Mode rating',
     onBoard: (rank: number) => `#${rank} on the board`,
     joined: (date: string) => `Joined ${date}`,
     hidden: 'Hidden from others',
@@ -891,9 +893,9 @@ export const en = {
 
   leaderboard: {
     title: 'Top 100',
-    oneOnOne: 'One on one',
-    fourPlayers: 'Four players',
-    nobodyRatedFour: "Nobody's ranked yet. Play a ranked four-player game and you'll show up here.",
+    oneOnOne: 'Eat the King',
+    fourPlayers: 'War Mode',
+    nobodyRatedFour: "Nobody's ranked yet. Play a War Mode game and you'll show up here.",
     updated: 'Updated after every ranked game',
     loading: 'Loading the leaderboard',
     nobodyRated: "Nobody's ranked yet. Play a ranked game against someone signed in, and you'll both show up here.",

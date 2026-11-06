@@ -109,6 +109,8 @@ export const hr: Dict = {
   },
 
   home: {
+    etkTitle: 'Pojedi kralja',
+    etkAbout: 'Jedan na jedan, u magli',
     findOpponent: 'Nađi protivnika',
     length: 'Trajanje partije',
     short: 'Kratke',
@@ -122,7 +124,7 @@ export const hr: Dict = {
     logInToPlay: 'Prijavi se za igru',
     guestNote: 'Traženje protivnika je rangirano, pa treba račun. Ploča i botovi ne trebaju ništa.',
     codeTitle: 'Igraj s prijateljem preko koda',
-    codeSub: 'Isti sat i raspored kao gore. Pošalji kod ili poveznicu, a prijatelj se pridruži s njim.',
+    codeSub: 'Isti sat kao gore. Pošalji kod ili poveznicu, a prijatelj se pridruži s njim.',
     createCode: 'Napravi kod',
     modsSub: 'Svako pravilo po želji: bez magle, šah-mat, Kralj brda, bilo koji sat. Nikad rangirano.',
     demoBot: 'Bot za probu',
@@ -139,10 +141,10 @@ export const hr: Dict = {
     drawn: 'Remi.',
     noGames: 'Nema partija u tijeku. Pritisni Igraj za novu.',
     noArena: 'Trenutačno nema najavljene arene.',
-    fourTitle: 'Četiri igrača, rangirano',
-    fourAbout: 'Proširena ploča · Potapanje brodova · Istodobni potez · Pješaci lakrdijaši · Bez magle',
-    fourRanked: 'Rangira se na zasebnom rejtingu za četiri igrača. 10 minuta svakome.',
-    fourPlay: 'Nađi partiju za četiri igrača',
+    fourTitle: 'Ratni način',
+    fourAbout: 'Četiri igrača · Proširena ploča · Potapanje brodova · Istodobni potez · Pješaci lakrdijaši · Bez magle',
+    fourRanked: 'Rangira se na zasebnom rejtingu Ratnog načina. 10 minuta svakome.',
+    fourPlay: 'Nađi partiju Ratnog načina',
     fourFinding: 'Tražim još tri igrača…',
     fourWaiting: (n, secs) => `${n} od 4 čeka, ${secs} s`,
     fourGuest: 'Rangirane partije traže račun.',
@@ -203,8 +205,8 @@ export const hr: Dict = {
   about: {
     title: 'O igri',
     paras: [
-      'Eat the King je izvorna igra: šah u magli rata. Vidiš samo polja do kojih tvoje figure dosežu, nema šaha, a pobjeđuješ kad uzmeš kralja. Svaka partija koju pokreneš s ove stranice je ta igra.',
-      'Sve ostalo su modovi. Modovi okreću jedan po jedan kotačić: digni maglu, igraj do šah-mata, postavi figure u tajnosti, utrkuj se do brda ili dovedi četiri igrača za jednu ploču. Partije s modovima nikad nisu rangirane.',
+      'Eat the King je izvorna igra: šah u magli rata. Vidiš samo polja do kojih tvoje figure dosežu, nema šaha, a pobjeđuješ kad uzmeš kralja. Uvijek počinje iz uobičajenog položaja. Ratni način je druga službena igra: četiri igrača na proširenoj ploči, potapanje brodova, istodobni potez i pješaci lakrdijaši, bez magle.',
+      'Sve ostalo su modovi. Modovi okreću jedan po jedan kotačić: digni maglu, igraj do šah-mata, postavi figure u tajnosti, utrkuj se do brda ili probaj druge partije za četiri igrača. Partije s modovima nikad nisu rangirane.',
     ],
     inspired: 'Inspiracija',
     sources: [
@@ -532,7 +534,7 @@ export const hr: Dict = {
         title: 'Satovi i rejting',
         p: [
           'Satovi rade na poslužitelju, pa ih zatvaranje kartice ne zaustavlja. Istekne li ti vrijeme, gubiš, osim ako protivnik s onim što mu je ostalo ne može pobijediti. **Dnevni** daje 24 sata po potezu, a **Tjedni** 7 dana, iznova nakon svakog poteza.',
-          'Svaka partija između dva prijavljena igrača je **rangirana**, a svi načini igre dijele jedan rejting, koji počinje na 1500. Pritisni **Igraj** na početnoj da te spojimo s igračem najbližim tvom rejtingu. Partije s **modovima** i protiv bota nikad se ne računaju.',
+          'Svaka partija između dva prijavljena igrača je **rangirana**, a Pojedi kralja i Ratni način imaju svaki svoj rejting, koji počinje na 1500. Pritisni **Igraj** na početnoj da te spojimo s igračem najbližim tvom rejtingu. Partije s **modovima** i protiv bota nikad se ne računaju.',
         ],
       },
       draws: {
@@ -549,7 +551,7 @@ export const hr: Dict = {
   profile: {
     loading: 'Učitavanje profila',
     ratingLabel: 'rejting',
-    fourRatingLabel: 'rejting za četiri igrača',
+    fourRatingLabel: 'rejting Ratnog načina',
     onBoard: (rank) => `#${rank} na ljestvici`,
     joined: (date) => `Član od: ${date}`,
     hidden: 'Skriveno od drugih',
@@ -890,9 +892,9 @@ export const hr: Dict = {
 
   leaderboard: {
     title: 'Top 100',
-    oneOnOne: 'Jedan na jedan',
-    fourPlayers: 'Četiri igrača',
-    nobodyRatedFour: 'Još nitko nije rangiran. Odigraj rangiranu partiju za četiri igrača i pojavit ćeš se ovdje.',
+    oneOnOne: 'Pojedi kralja',
+    fourPlayers: 'Ratni način',
+    nobodyRatedFour: 'Još nitko nije rangiran. Odigraj partiju Ratnog načina i pojavit ćeš se ovdje.',
     updated: 'Ažurira se nakon svake rangirane partije',
     loading: 'Učitavanje ljestvice',
     nobodyRated:

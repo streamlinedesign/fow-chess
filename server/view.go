@@ -92,6 +92,9 @@ func (s *Settings) normalize() {
 	s.Sync = false
 	s.Fog, s.KingCapture, s.CenterVision = true, true, "any"
 	s.JumpKing, s.JesterPawns, s.Hill = false, false, false
+	// Eat the King is played from the usual position; Back row and
+	// Battleship are mods.
+	s.Setup = ""
 }
 
 // startFrom is the FEN a game starts from: the usual position, or the players' setups.
