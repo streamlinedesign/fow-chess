@@ -8,6 +8,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 - The site has a Download link and a /download page (the build for your system, every build, and how to add the site to a phone's home screen), and a strip on the home page on computers.
 - The site can be installed on a phone: it has a web app manifest and icons.
 - `GET /api/ranks`: your place on both leaderboards and how many players are on each.
+- Two official games on the home page, each ranked on its own: Eat the King (one against one, fog, always the usual starting position; Back row and Battleship are only under Mods now) and War Mode (the ranked four-player game: extended board, Battleship, Sync Move, jester pawns, no fog).
 - Tournaments are hidden for now: no links in the header, the menu or the home page, and /tournaments shows not found. Switch them back on with `TOURNAMENTS` in `web/src/features.ts`.
 - Ranked four-player games are played with jester pawns, rules and pieces.
 - Ranked four-player games: one fixed game (extended board, Battleship, Sync Move, no fog, 10 minutes each), found from the home page in a queue of four by rating. It has its own Glicko-2 rating and its own leaderboard tab; each game counts as a result against each of the other three by finishing order. Players have two minutes to place their pieces, then get a bot's arrangement.

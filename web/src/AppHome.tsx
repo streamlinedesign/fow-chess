@@ -10,12 +10,10 @@ import {
   loadSettings,
   sameTime,
   saveSettings,
-  SETUPS,
-  setupMode,
   type Settings,
   type TimeControl,
 } from './settings'
-import { DropMenu, MenuItem, MenuSeparator } from './Sheet'
+import { DropMenu, MenuItem } from './Sheet'
 import { api } from './social'
 import { Button } from './ui'
 
@@ -134,11 +132,10 @@ function RankLine({ num, text }: { num: string; text: string }) {
   )
 }
 
-/** The clock (and layout) Play uses, remembered like the website's picker. */
+/** The clock Play uses, remembered like the website's picker. */
 function ClockChip({ settings, onChange }: { settings: Settings; onChange: (s: Settings) => void }) {
   const t = useT()
   const clocks: TimeControl[] = [...presets(false), ...presets(true)]
-  const layout = setupMode(settings).value
   return (
     <DropMenu
       title={t.desktop.clock}
@@ -155,13 +152,6 @@ function ClockChip({ settings, onChange }: { settings: Settings; onChange: (s: S
         <MenuItem key={i} onSelect={() => onChange({ ...settings, time: c })}>
           <span className="w-4">{sameTime(c, settings.time) ? '✓' : ''}</span>
           {describeTime(c, t)}
-        </MenuItem>
-      ))}
-      <MenuSeparator />
-      {SETUPS.map((m) => (
-        <MenuItem key={m.value} onSelect={() => onChange({ ...settings, setup: m.value })}>
-          <span className="w-4">{layout === m.value ? '✓' : ''}</span>
-          {t.home.layoutIs(t.setups[m.value].label)}
         </MenuItem>
       ))}
     </DropMenu>
