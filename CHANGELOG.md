@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Home page cards: no single word left alone on the last line of a description (`text-wrap: pretty`), and War Mode's list never splits an item such as Fog of war or starts a line with a dot.
 - Home page: War Mode's card puts its clocks first and what the game is under them, as Eat the King's does. Play a friend with a code is now Play with a friend. Rex, Vercingetorix and Ramesses II moved from the bottom of the page to Play a bot, under Play with a friend; each still opens a new game, and signed-in players see what beating each one unlocks. Solomon stays on the board.
 - War Mode has a fourth clock, 10 minutes plus 5 seconds a move. Its card on the home page picks Short (10 or 30 minutes) or Long (2 hours or a day), like Eat the King, and no longer explains the rating. On phones the title and both official games come first, then the board, then Play a friend.
 - Play as guest: guests can queue for an unranked game against other guests, Eat the King at Rapid 10+0 or War Mode at 30 min +10s (`/api/guest/queue?player=…`, body `{"game":"etk"|"war"}`). Whoever has waited longest is seated first. The cards show no clock picker to guests, and a link to log in for ranked games.

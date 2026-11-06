@@ -149,7 +149,7 @@ export const hr: Dict = {
     noArena: 'Trenutačno nema najavljene arene.',
     fourTitle: 'Ratni način',
     fourAbout:
-      'Četiri igrača · Potapanje brodova · Pješaci lakrdijaši · Magla rata',
+      'Četiri\u00a0igrača\u00a0· Potapanje\u00a0brodova\u00a0· Pješaci\u00a0lakrdijaši\u00a0· Magla\u00a0rata',
     warLength: 'Sat Ratnog načina',
     warTimes: [
       { label: '30 min', sub: '+10s po potezu' },
