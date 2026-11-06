@@ -20,6 +20,7 @@
 
 ## Later
 
+- Tournaments are hidden (`TOURNAMENTS` in `web/src/features.ts`); decide when to bring them back, and whether the server should stop scheduling arenas meanwhile
 - Four players: a player's skin can share a colour with another seat (violet set next to the violet seat); decide whether to steer away from that, and whether the seat dots should follow the skin
 - Skins are kept only in memory for live games: after a server restart a player's skin shows once they reconnect
 

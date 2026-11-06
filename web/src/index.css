@@ -2024,6 +2024,10 @@ a.tick:active {
 .home-r1 {
   grid-template-columns: 2fr 1fr 1fr;
 }
+/* Without the arena cell (tournaments hidden): your games, then friends or Watch. */
+.home-r1.two {
+  grid-template-columns: 2fr 1fr;
+}
 .home-bots {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -2715,6 +2719,9 @@ a.tick:active {
   }
   .home-r1 > .home-cell:nth-child(2) {
     border-left: 0;
+  }
+  .home-r1.two > .home-cell:nth-child(2) {
+    grid-column: 1 / -1;
   }
   .home-bots {
     grid-template-columns: 1fr 1fr;
