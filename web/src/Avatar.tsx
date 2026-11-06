@@ -1,3 +1,4 @@
+import { TitleTag } from './TitleTag'
 import { useAvatar } from './avatars'
 import { useT } from './i18n'
 import { avatarImg } from './sets'
@@ -83,7 +84,10 @@ export function Who({
     <span className="flex min-w-0 items-center gap-2.5">
       <Avatar size={size} online={online} name={name} />
       <span className="flex min-w-0 flex-col leading-tight">
-        <span className="truncate font-semibold">{name}</span>
+        <span className="truncate font-semibold">
+          <TitleTag name={name} />
+          {name}
+        </span>
         {sub !== undefined && sub !== '' && <span className="truncate text-[13px] text-accent">{sub}</span>}
       </span>
     </span>

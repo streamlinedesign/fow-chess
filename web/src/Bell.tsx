@@ -1,3 +1,4 @@
+import { TitleTag } from './TitleTag'
 import * as Popover from '@radix-ui/react-popover'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Avatar } from './Avatar'
@@ -85,7 +86,12 @@ export function Bell() {
 
 function Name({ name }: { name?: string }) {
   const t = useT()
-  return <b className="font-semibold">{name || t.common.aGuest}</b>
+  return (
+    <b className="font-semibold">
+      <TitleTag name={name} />
+      {name || t.common.aGuest}
+    </b>
+  )
 }
 
 /** What a finished game was, from your side: "You ate dino_r's king". */

@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Title tags also show in Messages, the bell and friends lists, and a rated game refreshes its players' titles and your unlocked sets as soon as it ends, without a reload.
 - Titles: your highest rating in either game earns a title, kept for life: Club player 1150, Expert (EX) 1300, Candidate master (CM) 1450, Fog master (FM) 1600, International master (IM) 1800, Grandmaster (GM) 2000 and King (K) 2500. The tag shows before names on the board, the leaderboard, Watch and profiles (`GET /api/titles?u=…`), and the rules explain it under Rank scores.
 - A set for each title: Bronze, Silver and Gold (one recipe in three metals), Grandmaster (Galaxy sun for White, Black hole for Black) and King, whose pieces shine and whose board has a light passing over it; both stay still for players who ask their device for less motion. Holy moves from 2000 to 1800; a 2000 reached before still counts for every set up to Grandmaster.
 - The sets follow one set of rules: Blueprint gets the shared outline weight, Survey's Black its 5 and its White contour lines, Holy the Gold set's gold, and Galaxy's light tile is a step darker so White reads on it.

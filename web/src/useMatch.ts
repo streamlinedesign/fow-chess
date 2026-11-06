@@ -1,3 +1,4 @@
+import { afterRated } from './titles'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Skin } from './pieces'
 import { playerId } from './player'
@@ -124,6 +125,8 @@ export function useMatch(id: string) {
           }
           // A win over a bot unlocked its skin: the pickers hear of it at once.
           if (msg.unlocked) refreshUnlocks()
+          // A rated game just moved ratings: titles may have changed, and with them sets.
+          if (msg.ratingDiff) afterRated(`${msg.id}:${msg.round}`, [msg.players.w.name, msg.players.b.name])
           setState({ ...msg, receivedAt: performance.now() })
         } else if (msg.type === 'chat') {
           // Players get the whole chat on (re)connecting and at a rematch, then each new line.
