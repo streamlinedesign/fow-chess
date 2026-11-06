@@ -95,6 +95,7 @@ export const en = {
     skinToWin: (set: string) => `Plays ${set.toLowerCase()}. Beat it to unlock the set.`,
     skinWon: (set: string) => `${set} unlocked.`,
     noSkin: 'Plays the classic pieces. Nothing to unlock.',
+    skinGuest: (set: string) => `Plays ${set.toLowerCase()}. Log in, then beat it to unlock the set.`,
     codePlaceholder: 'Paste a code',
     codeLabel: 'Match code',
     join: 'Join',
@@ -139,6 +140,8 @@ export const en = {
     demoTip: 'Click a piece to move. Nothing to set up and nothing is saved: it’s a warm-up.',
     youWon: 'You took the king.',
     unlockedSkin: (set: string) => `${set} pieces and tiles unlocked.`,
+    guestWon: 'Guests keep nothing they win: log in to unlock sets.',
+    threeOf: (name: string) => `${name} × 3`,
     youLost: (bot: string) => `${bot} took your king.`,
     drawn: 'A draw.',
     noGames: 'Nothing in progress. Press Play to start a game.',
@@ -250,7 +253,7 @@ export const en = {
   },
 
   about: {
-    plansHeading: 'Plans for v1.0',
+    plansHeading: 'Upcoming',
     plansSub: (date: string) => `Coming with the full release, ${date}.`,
     plans: [
       'The rules of both games may still change',

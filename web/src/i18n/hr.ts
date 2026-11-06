@@ -95,6 +95,7 @@ export const hr: Dict = {
     skinToWin: (set: string) => `Igra kompletom ${set.toLowerCase()}. Pobijedi ga i otključaj ga.`,
     skinWon: (set: string) => `${set}: otključano.`,
     noSkin: 'Igra klasičnim figurama. Nema što otključati.',
+    skinGuest: (set: string) => `Igra kompletom ${set.toLowerCase()}. Prijavi se, pa ga pobijedi i otključaj komplet.`,
     codePlaceholder: 'Zalijepi kod',
     codeLabel: 'Kod partije',
     join: 'Pridruži se',
@@ -139,6 +140,8 @@ export const hr: Dict = {
     demoTip: 'Klikni figuru da je pomakneš. Ništa se ne postavlja i ništa se ne sprema: ovo je zagrijavanje.',
     youWon: 'Uzeo si kralja.',
     unlockedSkin: (set: string) => `Otključane figure i polja: ${set}.`,
+    guestWon: 'Gosti ne zadržavaju ništa što osvoje: prijavi se da otključaš komplete.',
+    threeOf: (name: string) => `${name} × 3`,
     youLost: (bot) => `${bot} ti je uzeo kralja.`,
     drawn: 'Remi.',
     noGames: 'Nema partija u tijeku. Pritisni Igraj za novu.',
@@ -249,7 +252,7 @@ export const hr: Dict = {
   },
 
   about: {
-    plansHeading: 'Planovi za v1.0',
+    plansHeading: 'Uskoro',
     plansSub: (date) => `Stiže s punim izdanjem, ${date}.`,
     plans: [
       'Pravila obje igre još se mogu mijenjati',
