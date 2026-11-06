@@ -4,6 +4,10 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Desktop app for Windows, Mac and Linux (`desktop/`, Rust and Tauri): the game in its own window, with a loading screen while it connects and a "can't reach the game" screen that retries by itself. Its home has three ways to play side by side: Eat the King, War Mode (the ranked four-player game) and Modded, with your rating and place under the two ranked ones. Installers are built for each release tag and attached to the GitHub release.
+- The site has a Download link and a /download page (the build for your system, every build, and how to add the site to a phone's home screen), and a strip on the home page on computers.
+- The site can be installed on a phone: it has a web app manifest and icons.
+- `GET /api/ranks`: your place on both leaderboards and how many players are on each.
 - Two official games on the home page, each ranked on its own: Eat the King (one against one, fog, always the usual starting position; Back row and Battleship are only under Mods now) and War Mode (the ranked four-player game: extended board, Battleship, Sync Move, jester pawns, no fog).
 - Tournaments are hidden for now: no links in the header, the menu or the home page, and /tournaments shows not found. Switch them back on with `TOURNAMENTS` in `web/src/features.ts`.
 - Ranked four-player games are played with jester pawns, rules and pieces.

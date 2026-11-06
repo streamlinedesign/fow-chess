@@ -280,6 +280,8 @@ type leader struct {
 	Username string `json:"username"`
 	Rating   int    `json:"rating"`
 	Games    int    `json:"games"`
+	// Of is how many players are on the leaderboard; only Rank fills it.
+	Of int `json:"of,omitempty"`
 }
 
 // ratingColumns are the rating and game count columns for the
@@ -320,8 +322,9 @@ func (s *Store) Rank(userID int64, four bool) (*leader, error) {
 	rc, gc := ratingColumns(four)
 	err := s.db.QueryRow(`
 		SELECT u.username, u.`+rc+`, u.`+gc+`,
-			(SELECT count(*) FROM users o WHERE o.`+gc+` > 0 AND (o.`+rc+` > u.`+rc+` OR (o.`+rc+` = u.`+rc+` AND o.id < u.id))) + 1
-		FROM users u WHERE u.id = $1 AND u.`+gc+` > 0`, userID).Scan(&l.Username, &rating, &l.Games, &l.Rank)
+			(SELECT count(*) FROM users o WHERE o.`+gc+` > 0 AND (o.`+rc+` > u.`+rc+` OR (o.`+rc+` = u.`+rc+` AND o.id < u.id))) + 1,
+			(SELECT count(*) FROM users o WHERE o.`+gc+` > 0)
+		FROM users u WHERE u.id = $1 AND u.`+gc+` > 0`, userID).Scan(&l.Username, &rating, &l.Games, &l.Rank, &l.Of)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

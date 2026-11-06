@@ -1,0 +1,111 @@
+name: desktop
+
+# The desktop app (desktop/). On every branch push: one Linux build, to show
+# it still compiles (cached, so about a minute when desktop/ hasn't changed). On a version tag (make release pushes one): the
+# installers for Windows, Mac and Linux, attached to that tag's GitHub release
+# under fixed names, which the site's Download links point at
+# (releases/latest/download/<name>).
+#
+# The app opens the server in the GAME_URL repository variable
+# (Settings > Secrets and variables > Actions > Variables). A release build
+# stops if it isn't set, rather than ship an app that opens localhost.
+on:
+  push:
+    branches-ignore: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: WebKitGTK and friends
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: desktop }
+      - run: cargo build --locked
+        working-directory: desktop
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Need GAME_URL
+        run: |
+          if [ -z "${{ vars.GAME_URL }}" ]; then
+            echo "::error::Set the GAME_URL repository variable to the game server's address."
+            exit 1
+          fi
+      - name: Make the release if there isn't one
+        run: gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes "Eat the King $GITHUB_REF_NAME. See CHANGELOG.md."
+
+  build:
+    needs: release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            args: --bundles msi
+            out: |
+              target/release/bundle/msi/*.msi=EatTheKing-windows-x64.msi
+          - os: macos-latest
+            args: --target universal-apple-darwin --bundles dmg
+            out: |
+              target/universal-apple-darwin/release/bundle/dmg/*.dmg=EatTheKing-mac-universal.dmg
+          - os: ubuntu-22.04
+            args: --bundles deb,appimage
+            out: |
+              target/release/bundle/appimage/*.AppImage=EatTheKing-linux-x86_64.AppImage
+              target/release/bundle/deb/*.deb=EatTheKing-linux-amd64.deb
+    runs-on: ${{ matrix.os }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      EATTHEKING_URL: ${{ vars.GAME_URL }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: desktop }
+      - name: WebKitGTK and friends
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libxdo-dev libssl-dev patchelf
+      - name: Version from VERSION
+        run: |
+          v=$(cat ../VERSION)
+          sed -i.bak "s/^version = \".*\"/version = \"$v\"/" Cargo.toml
+      - name: Build
+        run: npx -y @tauri-apps/cli@2 build ${{ matrix.args }}
+      - name: Attach to the release under fixed names
+        run: |
+          mkdir -p out
+          while IFS='=' read -r pattern name; do
+            [ -z "$pattern" ] && continue
+            cp $pattern "out/$name"
+          done <<< "${{ matrix.out }}"
+          gh release upload "$GITHUB_REF_NAME" out/* --clobber

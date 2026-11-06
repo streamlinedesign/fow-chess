@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"log"
 	"math/rand/v2"
+	"mime"
 	"net/http"
 	"net/url"
 	"os"
@@ -276,6 +277,8 @@ func redactURL(s string) string {
 
 // spa serves static files and falls back to index.html so /m/ABC123 deep links work.
 func spa(fsys embed.FS) http.Handler {
+	// The web app manifest, so phones offer to install the site.
+	mime.AddExtensionType(".webmanifest", "application/manifest+json")
 	sub, _ := fs.Sub(fsys, "dist")
 	files := http.FileServerFS(sub)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

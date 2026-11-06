@@ -41,10 +41,22 @@ build: ## One self-contained binary at ./chess
 	rm -rf server/dist && cp -r web/dist server/dist
 	cd server && CGO_ENABLED=0 go build -trimpath -ldflags="$(LDFLAGS)" -o ../$(NAME) .
 
-lint: ## gofmt, go vet, eslint
+lint: ## gofmt, go vet, eslint, cargo fmt
 	gofmt -l -w $$(git ls-files '*.go')
+	@if command -v cargo >/dev/null; then cd desktop && cargo fmt; fi
 	cd server && go vet ./...
 	cd web && npm run lint --if-present
+
+# The desktop app (desktop/, Rust + Tauri) opens the game server in its own
+# window. GAME_URL picks the server; unset, it's the local `make dev` one.
+# Linux needs the WebKitGTK headers first (see desktop/README.md).
+desktop: ## Run the desktop app against GAME_URL (default: make dev's server on PORT)
+	cd desktop && EATTHEKING_URL=$${GAME_URL:-http://localhost:$(PORT)} cargo run
+
+desktop-build: ## Installers for this system into desktop/target/release/bundle, for GAME_URL
+	@test -n "$(GAME_URL)" || { echo "Set GAME_URL to the server the app should open, e.g. GAME_URL=https://example.com"; exit 1; }
+	sed -i.bak 's/^version = ".*"/version = "$(VERSION)"/' desktop/Cargo.toml && rm desktop/Cargo.toml.bak
+	cd desktop && EATTHEKING_URL=$(GAME_URL) npx -y @tauri-apps/cli@2 build
 
 # The server and tests use DATABASE_URL, or else a database called chess in the
 # Postgres installed on this machine, which the server creates on first start.
@@ -93,6 +105,6 @@ configure-repo: ## One-time GitHub settings: auto-merge, Actions may open PRs, m
 	echo "$$repo configured"
 
 clean: ## Remove build output and the dev server binary
-	rm -rf web/dist server/dist/* .dev-server $(NAME) $(NAME)-linux-amd64
+	rm -rf web/dist server/dist/* .dev-server $(NAME) $(NAME)-linux-amd64 desktop/target
 
-.PHONY: help dev test build lint migrate db-reset db-seed bugs psql deploy release configure-repo clean
+.PHONY: help dev test build lint desktop desktop-build migrate db-reset db-seed bugs psql deploy release configure-repo clean

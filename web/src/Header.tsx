@@ -3,6 +3,8 @@ import { logout, useMe } from './auth'
 import { Avatar } from './Avatar'
 import { Bell } from './Bell'
 import { TOURNAMENTS } from './features'
+import { DESKTOP } from './desktop'
+import { DownloadIcon } from './DownloadPage'
 import { LANGS, setLang, useLang, useT } from './i18n'
 import { Icon } from './icons'
 import { useCounts } from './live'
@@ -89,6 +91,16 @@ export function Header() {
             >
               {t.common.watch}
             </a>
+            {!DESKTOP && (
+              <a
+                href="/download"
+                onClick={(e) => go(e, '/download')}
+                className="flex h-9 items-center gap-1.5 rounded-md px-3 text-sm font-semibold transition-colors hover:bg-muted max-md:hidden"
+              >
+                <DownloadIcon size={15} />
+                {t.desktop.download}
+              </a>
+            )}
             <LangMenu />
             <button
               onClick={toggleTheme}
@@ -228,6 +240,12 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
         <Icon name="book" />
         {t.landing.howToPlay}
       </MenuItem>
+      {!DESKTOP && (
+        <MenuItem onSelect={() => navigate('/download')}>
+          <DownloadIcon size={16} />
+          {t.desktop.download}
+        </MenuItem>
+      )}
       {TOURNAMENTS && (
         <MenuItem onSelect={() => navigate('/tournaments')}>
           <Icon name="swords" />
