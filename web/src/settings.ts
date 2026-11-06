@@ -51,16 +51,16 @@ export type Bot = 'rex' | 'vercingetorix' | 'ramesses' | 'solomon'
  * unlocks its theme (THEME_LOCK in sets.ts).
  */
 export const BOT_SET: Record<Bot, string> = {
-  rex: 'holy',
-  vercingetorix: 'blueprint',
+  rex: 'blueprint',
+  vercingetorix: 'holy',
   ramesses: 'ancient',
   solomon: 'galaxy',
 }
 
 /** Each bot's face: a piece of its strength from its own set. J is the jester pawn, X the prince. */
 export const BOT_FACE: Record<Bot, string> = {
-  rex: setImg('holy-dark', 'J'), // Rex inutilis
-  vercingetorix: setImg('blueprint-dark', 'N'),
+  rex: setImg('blueprint-dark', 'J'), // Rex inutilis
+  vercingetorix: setImg('holy-dark', 'N'),
   ramesses: setImg('ancient-dark', 'X'),
   solomon: setImg('galaxy-dark', 'K'),
 }

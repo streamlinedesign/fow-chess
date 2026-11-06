@@ -8,6 +8,7 @@
 
 ## Next
 
+- CI has no Postgres, so every database test skips there (a broken unlock test merged that way); add a Postgres service to the CI workflow
 - Security before the beta, still open (from the review): security headers (CSP, frame-ancestors, nosniff, HSTS) in the Caddy block when `deploy/` is written; never run `make db-seed` against production (known `demo` passwords)
 - Copy the backward pawns removal (`engine/`) into `chess-bots`
 - Copy the jester pawns engine change into `chess-bots` (or extract the engine module first)
