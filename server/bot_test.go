@@ -3,6 +3,8 @@ package main
 import (
 	"path/filepath"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -147,5 +149,54 @@ func TestBotSetupGuardsTheKing(t *testing.T) {
 				t.Fatalf("king on its own row %d: %s", row, b)
 			}
 		}
+	}
+}
+
+// Bots wait their turn to think, and a bot that starts while others wait is
+// told the server is busy.
+func TestThinkGate(t *testing.T) {
+	g := newThinkGate(1)
+	var running, most atomic.Int32
+	busy := make(chan bool, 8)
+	hold := make(chan struct{})
+	first := make(chan struct{})
+	go g.think(func(b bool) {
+		busy <- b
+		close(first)
+		<-hold
+	})
+	<-first
+	var wg sync.WaitGroup
+	for range 3 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			g.think(func(b bool) {
+				n := running.Add(1)
+				if n > most.Load() {
+					most.Store(n)
+				}
+				busy <- b
+				time.Sleep(5 * time.Millisecond)
+				running.Add(-1)
+			})
+		}()
+	}
+	for g.waiting.Load() < 3 {
+		time.Sleep(time.Millisecond)
+	}
+	close(hold)
+	wg.Wait()
+	close(busy)
+	var got []bool
+	for b := range busy {
+		got = append(got, b)
+	}
+	if most.Load() != 1 {
+		t.Errorf("%d bots thought at once, want 1", most.Load())
+	}
+	// Alone at first; then two of the three start with someone still queued.
+	if len(got) != 4 || got[0] || !got[1] || !got[2] || got[3] {
+		t.Errorf("busy flags %v, want [false true true false]", got)
 	}
 }

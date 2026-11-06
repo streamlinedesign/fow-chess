@@ -23,11 +23,17 @@ type player func(pos engine.Position, seen *[64]bool, r *rand.Rand) (engine.Move
 var kingWarning = os.Getenv("STRENGTH_WARNING") != "off"
 
 // botPlayer is a bot as it plays now, or as it played before 2026-11 with
-// the prefix "old:" (legacy_test.go).
+// the prefix "old:" (legacy_test.go), or as it plays on a busy server with
+// "busy:" (ChooseBusy).
 func botPlayer(name string) player {
 	if l, ok := strings.CutPrefix(name, "old:"); ok {
 		return func(pos engine.Position, seen *[64]bool, r *rand.Rand) (engine.Move, bool) {
 			return legacyChoose(Level(l), pos, seen, r, Level(l) == Ramesses || Level(l) == Solomon)
+		}
+	}
+	if l, ok := strings.CutPrefix(name, "busy:"); ok {
+		return func(pos engine.Position, seen *[64]bool, r *rand.Rand) (engine.Move, bool) {
+			return ChooseBusy(Level(l), pos, seen, kingWarning, r)
 		}
 	}
 	return func(pos engine.Position, seen *[64]bool, r *rand.Rand) (engine.Move, bool) {

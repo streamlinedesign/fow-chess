@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Bots take turns to think: at most one fewer than the server's cores search at once (one on a one-core droplet), so a crowd of bot games no longer slows human games. A bot that starts while others are queued thinks less (`bots.ChooseBusy`: Solomon imagines 8 boards instead of 32, and every searching bot looks at a quarter of the positions within 150 ms), which plays about as well as Ramesses II and keeps the queue short. On one core with 1,000 human games and 40 Solomon games, human moves went from about 1 s to 50 ms at the 99th percentile, and the bots still answered in the same time.
 - Croatian is switched off for the beta (`CROATIAN` in `web/src/features.ts`): the language pickers hide, a Croatian browser gets English, and a saved Croatian choice falls back to English. The translation stays in `web/src/i18n/hr.ts`.
 - The home page Mods band is headed "Modded Bonanza.", set a touch smaller so the longer word fits beside the cards.
 - The home page demo boards keep room for the bot's "thinking" line, so on phones the board no longer jumps each time the bot moves.

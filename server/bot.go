@@ -2,7 +2,9 @@ package main
 
 import (
 	"math/rand/v2"
+	"runtime"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"chess/bots"
@@ -57,7 +59,15 @@ func (m *Match) pokeBot() {
 		level := bots.Level(m.settings.Bot)
 		round, plies := m.round, len(m.game.History())
 		time.AfterFunc(m.botDelay(c, now), func() {
-			mv, ok := bots.ChooseWarned(level, pos, seen, true, nil) // every game warns of an attacked king
+			var mv engine.Move
+			var ok bool
+			thinking.think(func(busy bool) {
+				choose := bots.ChooseWarned
+				if busy {
+					choose = bots.ChooseBusy
+				}
+				mv, ok = choose(level, pos, seen, true, nil) // every game warns of an attacked king
+			})
 			m.mu.Lock()
 			defer m.mu.Unlock()
 			m.botThinking = false
@@ -69,6 +79,31 @@ func (m *Match) pokeBot() {
 			m.pokeBot() // a Sync Move round may have been played: the bot moves again
 		})
 	}
+}
+
+// thinking lets only a few bots search at once, one fewer than the server
+// has cores (at least one), so bots queue for the CPU rather than slow down
+// every human game. On a one-core droplet about 30 Solomon games kept the core
+// busy and pushed human moves to over a second; queued, the humans don't wait.
+var thinking = newThinkGate(max(1, runtime.GOMAXPROCS(0)-1))
+
+type thinkGate struct {
+	slots   chan struct{}
+	waiting atomic.Int32
+}
+
+func newThinkGate(n int) *thinkGate {
+	return &thinkGate{slots: make(chan struct{}, n)}
+}
+
+// think runs f once a slot is free. busy is whether other bots are still
+// waiting for one, in which case f should think less (bots.ChooseBusy).
+func (g *thinkGate) think(f func(busy bool)) {
+	g.waiting.Add(1)
+	g.slots <- struct{}{}
+	busy := g.waiting.Add(-1) > 0
+	defer func() { <-g.slots }()
+	f(busy)
 }
 
 // botDelay is how long the bot waits before moving: long enough to feel like
