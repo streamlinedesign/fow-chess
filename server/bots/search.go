@@ -46,9 +46,10 @@ var plans = map[Level]plan{
 	Solomon:       {fogDepth: 2, samples: 32, nodes: 300000, guarded: true},
 }
 
-// thinkTime is the most time any bot takes for a move, whatever the server
-// is doing.
-var thinkTime = 600 * time.Millisecond
+// ThinkTime is the most time any bot takes for a move, whatever the server
+// is doing. 0 is no limit, so a seed always plays the same game: the node
+// budget alone stops the search.
+var ThinkTime = 600 * time.Millisecond
 
 // fogCost is what each way into the king from the fog costs, in pawns, and
 // clampScore the most one imagined board can count for or against a move,
@@ -157,7 +158,7 @@ func chooseDeep(pl plan, pos engine.Position, seen *[64]bool, warning bool, rng 
 		me:       pos.Turn,
 		guarded:  pl.guarded && seen != nil,
 		budget:   pl.nodes,
-		deadline: time.Now().Add(thinkTime),
+		deadline: time.Now().Add(ThinkTime),
 		tt:       make([]ttEntry, ttSize),
 	}
 	for _, c := range []engine.Color{engine.White, engine.Black} {
@@ -234,7 +235,7 @@ func chooseDeep(pl plan, pos engine.Position, seen *[64]bool, warning bool, rng 
 
 func (s *deep) tick() bool {
 	s.nodes++
-	if s.nodes >= s.budget || s.nodes&1023 == 0 && time.Now().After(s.deadline) {
+	if s.nodes >= s.budget || s.nodes&1023 == 0 && ThinkTime > 0 && time.Now().After(s.deadline) {
 		s.stopped = true
 	}
 	return s.stopped
