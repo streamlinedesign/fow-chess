@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { geo, pieceImg4, squareName, type FourLook, type Seat } from './four'
 import { useT } from './i18n'
 import { Button } from './ui'
@@ -39,6 +39,17 @@ function remembered(layout: Layout, rows: number) {
 }
 
 type Pick = { tray: string } | { square: number } | null
+
+/** A drag in progress: a piece from the tray, or one already on the board. As in SetupBoard. */
+type Drag = {
+  x: number
+  y: number
+  moved: boolean
+  source: { tray: string } | { square: number; el: HTMLElement }
+  ghost?: HTMLImageElement
+}
+
+const DRAG_START = 4
 
 /**
  * Where a four-player arranges their pieces before a Back row or Battleship
@@ -81,6 +92,11 @@ export function FourSetup({
   const [start] = useState(() => mine || remembered(layout, g.rows))
   const [board, setBoard] = useState(start)
   const [pick, setPick] = useState<Pick>(null)
+  const boardRef = useRef<HTMLDivElement>(null)
+  const trayRef = useRef<HTMLDivElement>(null)
+  const drag = useRef<Drag | null>(null)
+  // A drag that moved ends with a click on whatever is under the pointer; that click is not a tap.
+  const swallowClick = useRef(false)
   useEffect(() => {
     if (mine) setBoard(mine)
   }, [mine])
@@ -100,32 +116,121 @@ export function FourSetup({
     setPick(next)
   }
 
+  /** Puts a k from the tray on square i, sending whatever stood there back to the tray. */
+  const placeFromTray = (k: string, i: number) => {
+    if (!allowed(i) || left[k] <= 0) return
+    const b = [...board]
+    const here = b[i]
+    b[i] = k
+    // When you have more of the same piece, keep it picked so the next tap places another.
+    const remaining = left[k] - 1 + (here === k ? 1 : 0)
+    set(b, remaining > 0 ? { tray: k } : null)
+  }
+
+  /** Moves the piece on from to to, swapping with whatever is there. */
+  const moveOnBoard = (from: number, to: number) => {
+    if (from === to || !allowed(to)) return setPick(null)
+    const b = [...board]
+    ;[b[to], b[from]] = [b[from], b[to]]
+    set(b)
+  }
+
+  const removeFromBoard = (i: number) => {
+    const b = [...board]
+    b[i] = '.'
+    set(b)
+  }
+
   const tapSquare = (i: number) => {
     if (ready) return
-    const b = [...board]
-    if (pick && 'tray' in pick) {
-      if (!allowed(i)) return
-      const here = b[i]
-      b[i] = pick.tray
-      const remaining = left[pick.tray] - 1 + (here === pick.tray ? 1 : 0)
-      return set(b, remaining > 0 ? pick : null)
+    if (swallowClick.current) {
+      swallowClick.current = false
+      return
     }
+    if (pick && 'tray' in pick) return placeFromTray(pick.tray, i)
     if (pick && 'square' in pick) {
-      if (pick.square === i || !allowed(i)) return setPick(null)
-      ;[b[i], b[pick.square]] = [b[pick.square], b[i]]
-      return set(b)
+      if (pick.square === i) return setPick(null)
+      return moveOnBoard(pick.square, i)
     }
     if (board[i] !== '.' && allowed(i)) setPick({ square: i })
   }
 
   const tapTray = (k: string) => {
     if (ready) return
-    if (pick && 'square' in pick) {
-      const b = [...board]
-      b[pick.square] = '.'
-      return set(b)
+    if (swallowClick.current) {
+      swallowClick.current = false
+      return
     }
+    if (pick && 'square' in pick) return removeFromBoard(pick.square)
     if (left[k] > 0) setPick(pick && 'tray' in pick && pick.tray === k ? null : { tray: k })
+  }
+
+  // Dragging. Taps stay click events on the buttons; a pointer that moves becomes a drag.
+  const squareFromPoint = (x: number, y: number) => {
+    const rect = boardRef.current!.getBoundingClientRect()
+    const col = Math.floor(((x - rect.left) / rect.width) * 8)
+    const row = Math.floor(((y - rect.top) / rect.height) * g.rows)
+    if (col < 0 || col > 7 || row < 0 || row >= g.rows) return null
+    return (g.rows - 1 - row) * 8 + col
+  }
+  const overTray = (x: number, y: number) => {
+    const r = trayRef.current?.getBoundingClientRect()
+    return !!r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom
+  }
+
+  const startDrag = (e: React.PointerEvent, source: Drag['source']) => {
+    if (e.button !== 0 || ready || drag.current) return
+    drag.current = { x: e.clientX, y: e.clientY, moved: false, source }
+    const onMove = (ev: PointerEvent) => {
+      const d = drag.current
+      if (!d) return
+      if (!d.moved && Math.hypot(ev.clientX - d.x, ev.clientY - d.y) < DRAG_START) return
+      d.moved = true
+      if ('tray' in d.source) {
+        if (!d.ghost) {
+          d.ghost = document.createElement('img')
+          d.ghost.src = pieceImg4(seat + d.source.tray, look)
+          d.ghost.className = 'drag-ghost'
+          d.ghost.style.width = `${boardRef.current!.getBoundingClientRect().width / 8}px`
+          document.body.append(d.ghost)
+        }
+        d.ghost.style.transform = `translate(${ev.clientX}px, ${ev.clientY}px) translate(-50%, -50%) scale(1.15)`
+      } else {
+        const r = d.source.el.parentElement!.getBoundingClientRect()
+        d.source.el.dataset.dragging = 'true'
+        d.source.el.style.transform = `translate(${ev.clientX - (r.left + r.width / 2)}px, ${ev.clientY - (r.top + r.height / 2)}px) scale(1.15)`
+      }
+    }
+    const end = (ev: PointerEvent, cancelled: boolean) => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onCancel)
+      const d = drag.current
+      drag.current = null
+      if (!d) return
+      d.ghost?.remove()
+      if ('square' in d.source) {
+        d.source.el.style.transform = ''
+        delete d.source.el.dataset.dragging
+      }
+      if (cancelled || !d.moved) return
+      swallowClick.current = true
+      // The click that follows lands on whatever is under the pointer, or nowhere: either way, forget it soon.
+      setTimeout(() => (swallowClick.current = false), 0)
+      const to = squareFromPoint(ev.clientX, ev.clientY)
+      if ('tray' in d.source) {
+        if (to !== null) placeFromTray(d.source.tray, to)
+      } else if (overTray(ev.clientX, ev.clientY)) {
+        removeFromBoard(d.source.square)
+      } else if (to !== null) {
+        moveOnBoard(d.source.square, to)
+      }
+    }
+    const onUp = (ev: PointerEvent) => end(ev, false)
+    const onCancel = (ev: PointerEvent) => end(ev, true)
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onCancel)
   }
 
   const clear = () => set([...board].map((c) => (fixed(c) ? c : '.')))
@@ -148,6 +253,10 @@ export function FourSetup({
           data-selected={!!pick && 'square' in pick && pick.square === i}
           aria-label={c === '.' ? name : `${name}, ${kindNames[c]}`}
           onClick={() => tapSquare(i)}
+          onPointerDown={(e) => {
+            const el = e.currentTarget.querySelector<HTMLElement>('.piece')
+            if (el && allowed(i)) startDrag(e, { square: i, el })
+          }}
           disabled={ready}
         >
           {c !== '.' && <img className="piece" src={pieceImg4(seat + c, look)} alt="" draggable={false} />}
@@ -166,6 +275,7 @@ export function FourSetup({
         <p className="text-sm text-accent">{ready ? t.four.arranged : t.four.arrangeHint(g.rows)}</p>
       </div>
       <div
+        ref={boardRef}
         className="board setup-board grid w-full grid-cols-8 overflow-hidden rounded-md shadow-[0_0_0_2px_var(--color-fg)]"
         onContextMenu={(e) => e.preventDefault()}
       >
@@ -173,6 +283,7 @@ export function FourSetup({
       </div>
 
       <div
+        ref={trayRef}
         className="tray"
         role="group"
         aria-label={pick && 'square' in pick ? t.setup.tapToRemove : t.setup.yourPieces}
@@ -190,6 +301,9 @@ export function FourSetup({
             aria-label={t.setup.left(kindNames[k], left[k])}
             disabled={ready || (left[k] === 0 && !(pick && 'square' in pick))}
             onClick={() => tapTray(k)}
+            onPointerDown={(e) => {
+              if (left[k] > 0) startDrag(e, { tray: k })
+            }}
           >
             <img src={pieceImg4(seat + k, look)} alt="" draggable={false} />
             <span>{left[k]}</span>
