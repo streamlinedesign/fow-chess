@@ -1,3 +1,4 @@
+import { TitleTag } from './TitleTag'
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useMe } from './auth'
 import { Avatar, Who } from './Avatar'
@@ -95,7 +96,10 @@ export function MessagesPage({ name }: { name?: string }) {
                 >
                   <Avatar size={44} online={c.with.online} name={c.with.username} />
                   <div className="min-w-0">
-                    <div className="font-semibold">{c.with.username}</div>
+                    <div className="font-semibold">
+                      <TitleTag name={c.with.username} />
+                      {c.with.username}
+                    </div>
                     <div className="prev">
                       {c.last.from === me.username && t.chat.youPrefix}
                       {c.last.offer ? t.messages.matchOffer : c.last.text}

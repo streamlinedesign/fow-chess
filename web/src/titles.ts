@@ -1,4 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react'
+import { refreshUnlocks } from './prefs'
 
 // Titles, earned by the highest rating reached in either Eat the King or War
 // Mode and kept for life. Each comes with a set (THEME_LOCK in sets.ts).
@@ -37,10 +38,19 @@ function emit() {
   listeners.forEach((l) => l())
 }
 
-/** Forgets a player's title, as when a rated game of theirs has just ended. */
-export function forgetTitle(name: string) {
-  cache.delete(key(name))
+const rated = new Set<string>()
+
+/**
+ * Once a rated game is over and saved, its players' titles are looked up again
+ * and the viewer's unlocks refreshed, since a new title brings a set. Once per
+ * game round (`game`), however many states repeat it.
+ */
+export function afterRated(game: string, names: (string | undefined)[]) {
+  if (rated.has(game)) return
+  rated.add(game)
+  for (const n of names) if (n) cache.delete(key(n))
   emit()
+  refreshUnlocks()
 }
 
 function flush() {

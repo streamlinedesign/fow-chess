@@ -1,3 +1,4 @@
+import { afterRated } from './titles'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Seat } from './four'
 import type { Skin } from './pieces'
@@ -128,6 +129,13 @@ export function useFourMatch(id: string) {
             sock.close()
             return setConn('outdated')
           }
+          const seats = Object.values(msg.players ?? {}) as FourSeatState[]
+          // A rated game just moved ratings: titles may have changed, and with them sets.
+          if (seats.some((s) => s.ratingDiff !== undefined))
+            afterRated(
+              `four:${msg.id}`,
+              seats.map((s) => s.name),
+            )
           setState({ ...msg, receivedAt: performance.now() })
         } else if (msg.type === 'chat') {
           setChat((c) => (msg.reset ? msg.lines : [...c, ...msg.lines]))

@@ -18,7 +18,6 @@
 - First droplet deploy: unit file and Caddy block in `deploy/`, `make deploy`
 
 - Titles: watch how many players reach Expert in the first weeks; the marks can move down without taking anything away
-- Titles in chat and the bell; a title reached mid-visit shows after a reload
 
 ## Later
 
@@ -45,6 +44,7 @@
 
 ## Done
 
+- 0.38.1: title tags in Messages, the bell and friends; titles and sets refresh after a rated game
 - 0.38.0: titles from Club player to King, a set for each (bronze, silver, gold, grandmaster, king), holy at 1800, sets brought to one style
 - 0.36.0: Play a bot under Play with a friend; War Mode card clocks first
 - 0.35.0: War Mode 10 minute clock, Short and Long on its card; phones show the games before the board
