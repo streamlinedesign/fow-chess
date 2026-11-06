@@ -2346,6 +2346,9 @@ a.tick:active {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
+.home-times.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 .home-time {
   display: flex;
   flex-direction: column;
@@ -2905,8 +2908,30 @@ a.tick:active {
     display: none;
   }
 }
-/* Phone: one column, and the board goes edge to edge, first. */
+/* Phone: one column. The title and the two official games come first, then
+   the board (edge to edge), then Play a friend. */
 @media (max-width: 760px) {
+  .home-hero {
+    display: flex;
+    flex-direction: column;
+  }
+  .home-hero > .home-menu,
+  .home-menu-grid {
+    display: contents;
+  }
+  .home-menu-grid > section:first-child {
+    order: 1;
+  }
+  .home-menu-grid > .home-official {
+    order: 2;
+  }
+  .home-hero > .home-cell:first-child {
+    order: 3;
+    border-top: 1px solid var(--line);
+  }
+  .home-menu-grid > .home-code {
+    order: 4;
+  }
   .home {
     --gut: 16px;
   }

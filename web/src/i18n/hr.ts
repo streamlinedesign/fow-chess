@@ -149,12 +149,12 @@ export const hr: Dict = {
     fourTitle: 'Ratni način',
     fourAbout:
       'Četiri igrača · Potapanje brodova · Pješaci lakrdijaši · Magla rata',
-    fourRanked: 'Rangira se na zasebnom rejtingu Ratnog načina, istom za svaku duljinu.',
     warLength: 'Sat Ratnog načina',
     warTimes: [
       { label: '30 min', sub: '+10s po potezu' },
       { label: '2 sata', sub: '+30s po potezu' },
       { label: '1 dan', sub: 'po potezu' },
+      { label: '10 min', sub: '+5s po potezu' },
     ],
     official: 'Službeno',
     yourRating: 'tvoj rejting',
@@ -185,7 +185,7 @@ export const hr: Dict = {
     logInForRating: 'Prijavi se za rejting',
     neverRanked: 'Nikad rangirano',
     chooseMods: 'Odaberi modove',
-    warClocks: ['30 min + 10 s svakome', '2 h + 30 s svakome', '1 dan po potezu'],
+    warClocks: ['30 min + 10 s svakome', '2 h + 30 s svakome', '1 dan po potezu', '10 min + 5 s svakome'],
     clock: 'Sat',
     title: 'Igraj na računalu.',
     about:
@@ -688,7 +688,7 @@ export const hr: Dict = {
         kind: 'Rangirano',
         title: 'Sat i rejting',
         p: [
-          'Odaberi sat: **30 minuta svakome plus 10 sekundi po potezu**, **2 sata svakome plus 30 sekundi po potezu** ili **dan za svaki potez**. Pritisni **Igraj** na početnoj stranici i uđi u red četvorice blizu tvog rejtinga koji su odabrali isti sat.',
+          'Odaberi sat: kratki su **10 minuta svakome plus 5 sekundi po potezu** ili **30 minuta svakome plus 10 sekundi po potezu**; dugi su **2 sata svakome plus 30 sekundi po potezu** ili **dan za svaki potez**. Pritisni **Igraj** na početnoj stranici i uđi u red četvorice blizu tvog rejtinga koji su odabrali isti sat.',
           'Za igru s prijateljima odaberi Ratni način pod **Igraj s prijateljem preko koda** i pošalji im kod. Pridružiti se mogu do trojica, botovi zauzmu prazna mjesta, a igra se nikad ne rangira.',
           'Ratni način ima **vlastiti rejting**, od 1000, i vlastitu ljestvicu. Kako se mijenja, piše pod **Bodovanje** niže.',
         ],
@@ -698,7 +698,7 @@ export const hr: Dict = {
         title: 'Počinješ s 1000',
         p: [
           'Pojedi kralja i Ratni način imaju svaki **svoj rejting**, koji počinje na **1000**, i svaki svoju ljestvicu. Mijenja se za cijele bodove nakon svake rangirane partije.',
-          'Partije s **manje od sat vremena** svakome su **kratke**: blitz, rapid i 30 minuta u Ratnom načinu. **Duge** su one od sat vremena ili više svakome, te dnevni i tjedni satovi. Dan traje od ponoći do ponoći po UTC-u.',
+          'Partije s **manje od sat vremena** svakome su **kratke**: blitz, rapid te 10 i 30 minuta u Ratnom načinu. **Duge** su one od sat vremena ili više svakome, te dnevni i tjedni satovi. Dan traje od ponoći do ponoći po UTC-u.',
         ],
       },
       scoreDuel: {

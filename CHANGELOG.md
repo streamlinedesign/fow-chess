@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- War Mode has a fourth clock, 10 minutes plus 5 seconds a move. Its card on the home page picks Short (10 or 30 minutes) or Long (2 hours or a day), like Eat the King, and no longer explains the rating. On phones the title and both official games come first, then the board, then Play a friend.
 - Play as guest: guests can queue for an unranked game against other guests, Eat the King at Rapid 10+0 or War Mode at 30 min +10s (`/api/guest/queue?player=…`, body `{"game":"etk"|"war"}`). Whoever has waited longest is seated first. The cards show no clock picker to guests, and a link to log in for ranked games.
 - Home page: Eat the King and War Mode cards keep Play at the bottom, so the buttons line up side by side. "Try it against the bots" is gone from War Mode, and its clocks read +10s and +30s.
 - Solomon plays the default pieces and tiles on the home page board; beating him there still unlocks galaxy for a signed-in player. Bots wear their set in games started from their cards.
