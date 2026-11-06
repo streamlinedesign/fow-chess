@@ -30,13 +30,22 @@ const paths = {
       strokeLinejoin="round"
     />
   ),
+  // A cog: Settings.
   gear: (
     <>
-      <circle cx="7.5" cy="7.5" r="2" />
       <path
-        d="M7.5 1.5v1.6M7.5 11.9v1.6M13.5 7.5h-1.6M3.1 7.5H1.5M11.74 3.26l-1.13 1.13M4.39 10.61l-1.13 1.13M11.74 11.74l-1.13-1.13M4.39 4.39 3.26 3.26"
-        strokeLinecap="round"
+        d="M11.93 5.93 L13.55 6.15 L13.55 8.85 L11.93 9.07 L11.74 9.52 L12.74 10.82 L10.82 12.74 L9.52 11.74 L9.07 11.93 L8.85 13.55 L6.15 13.55 L5.93 11.93 L5.48 11.74 L4.18 12.74 L2.26 10.82 L3.26 9.52 L3.07 9.07 L1.45 8.85 L1.45 6.15 L3.07 5.93 L3.26 5.48 L2.26 4.18 L4.18 2.26 L5.48 3.26 L5.93 3.07 L6.15 1.45 L8.85 1.45 L9.07 3.07 L9.52 3.26 L10.82 2.26 L12.74 4.18 L11.74 5.48Z"
+        strokeLinejoin="round"
       />
+      <circle cx="7.5" cy="7.5" r="1.9" />
+    </>
+  ),
+  // A dial with its pointer: Mods turn one rule at a time.
+  dial: (
+    <>
+      <circle cx="7.5" cy="7.5" r="5.5" />
+      <path d="M7.5 7.5 10.4 4.6" strokeLinecap="round" />
+      <circle cx="7.5" cy="7.5" r="0.9" fill="currentColor" stroke="none" />
     </>
   ),
   out: (

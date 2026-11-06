@@ -4,6 +4,11 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Home page: Eat the King and War Mode are marked as the official games, with an Official tag, an ink bar down the side and your rating in each. War Mode's button just says Play.
+- Your ratings moved from the header into your menu, both of them: Eat the King and War Mode. `/api/me` returns `fourRating`.
+- Settings has a cog icon; Mods has a dial.
+- "Inspired by" no longer lists Hungry Hungry Hippos.
+- Fixed the unlocks test, which still expected a new account to have no themes after Cyberpunk became everyone's for the beta (main was red).
 - Bots: `bots.ThinkTime` caps the time a move takes (600 ms); 0 lifts it, so chess-bots can play a seed the same way every time.
 - Stronger bots. One-against-one, the searching bots share a new search (iterative deepening, transposition table, captures played out) that looks only a few plies deep under fog, where a deeper look trusts a board missing every hidden piece. Solomon imagines where the pieces it can't see might be, many times over, and plays the move that does best on average. Bots use the king warning like a player does. In 400-game matches under Eat the King's rules each bot beat its old self: Vercingetorix by about 215 Elo, Ramesses II 110, Solomon 270; the ladder stays in order. Rex inutilis still plays at random. Four players: a new bot that plays Sync Move as it is (a piece is in danger on any square someone could move to this round, a piece that moves away dodges, two pieces landing together both go), with levels: Vercingetorix plays the old bot, Ramesses II and Solomon the new one, Solomon also lining up next round's captures. In War Mode Solomon wins 85% of games against three of the old bot (25% is level). `go test ./bots -run Strength` and `./four -run FourBotStrength` replay the matches.
 - Cyberpunk king, queen and prince: the glitched star is now the galaxy's two sparkles in the same place and size, with a neon ghost beside them and a thin cut across, in place of the sliced, outlined star. Ancient pieces: the Greek key on each foot is centred on it (it sat to the left, most on the pawn and jester).

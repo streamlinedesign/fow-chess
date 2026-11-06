@@ -74,9 +74,10 @@ export function Landing() {
               )}
             </p>
           </section>
-          <PlayMenu settings={settings} onChange={setSettings} signedIn={!!me} busy={busy} />
+          <PlayMenu settings={settings} onChange={setSettings} signedIn={!!me} busy={busy} rating={me?.rating} />
           <FindFour
             signedIn={!!me}
+            rating={me?.fourRating}
             onTry={() => {
               setDemo('war')
               document.querySelector('.home-hero')?.scrollIntoView({ behavior: 'smooth' })
@@ -123,11 +124,13 @@ function PlayMenu({
   onChange,
   signedIn,
   busy,
+  rating,
 }: {
   settings: Settings
   onChange: (s: Settings) => void
   signedIn: boolean
   busy: boolean
+  rating?: number
 }) {
   const t = useT()
   const long = isLong(settings.time)
@@ -152,10 +155,8 @@ function PlayMenu({
   const summary = [describeTime(settings.time, t), t.home.etkAbout, signedIn ? t.home.ranked : t.home.guestNote]
 
   return (
-    <section>
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-[22px] font-semibold tracking-tight">{t.home.etkTitle}</h2>
-      </div>
+    <section className="home-official">
+      <OfficialHead title={t.home.etkTitle} rating={rating} />
       <div className="mt-4 flex flex-col gap-3.5">
         <RadioGroup.Root
           aria-label={t.home.length}
@@ -493,7 +494,17 @@ export function FindMatch({
  * War Mode, the ranked four-player game: one fixed game (extended board,
  * Battleship, Sync Move, jester pawns, no fog), found in its own queue of four.
  */
-export function FindFour({ signedIn, bare, onTry }: { signedIn: boolean; bare?: boolean; onTry?: () => void }) {
+export function FindFour({
+  signedIn,
+  bare,
+  onTry,
+  rating,
+}: {
+  signedIn: boolean
+  bare?: boolean
+  onTry?: () => void
+  rating?: number
+}) {
   const t = useT()
   const [since, setSince] = useState<number | null>(null)
   const [now, setNow] = useState(0)
@@ -549,10 +560,10 @@ export function FindFour({ signedIn, bare, onTry }: { signedIn: boolean; bare?: 
   useEffect(() => () => void (since !== null && api('DELETE', '/api/four/queue').catch(() => {})), [since])
 
   return (
-    <section className="flex flex-col gap-2.5">
+    <section className={`flex flex-col gap-2.5 ${bare ? '' : 'home-official'}`}>
       {!bare && (
         <>
-          <h2 className="text-[22px] font-semibold tracking-tight">{t.home.fourTitle}</h2>
+          <OfficialHead title={t.home.fourTitle} rating={rating} />
           <p className="home-summary">
             <b>{t.home.fourAbout}</b>
             <span className="block">{signedIn ? t.home.fourRanked : t.home.fourGuest}</span>
@@ -581,11 +592,11 @@ export function FindFour({ signedIn, bare, onTry }: { signedIn: boolean; bare?: 
         </div>
       ) : (
         <Button variant={bare ? 'solid' : 'outline'} className="home-play" onClick={start}>
-          {bare ? t.home.play : t.home.fourPlay}
+          {t.home.play}
         </Button>
       )}
       {onTry && (
-        <Button variant="ghost" className="self-start px-0 underline-offset-4 hover:underline" onClick={onTry}>
+        <Button variant="ghost" className="self-start !px-0 underline-offset-4 hover:bg-transparent hover:underline" onClick={onTry}>
           {t.home.tryWar}
         </Button>
       )}
@@ -595,6 +606,26 @@ export function FindFour({ signedIn, bare, onTry }: { signedIn: boolean; bare?: 
         </p>
       )}
     </section>
+  )
+}
+
+/** The title of one of the two official, ranked games: an Official tag beside
+ * it, and your rating in it on the right when you're signed in. */
+function OfficialHead({ title, rating }: { title: string; rating?: number }) {
+  const t = useT()
+  return (
+    <div className="official-head">
+      <h2>
+        {title}
+        <span className="official-tag">{t.home.official}</span>
+      </h2>
+      {rating !== undefined && (
+        <span className="official-rating" aria-label={t.home.yourRatingIn(title, rating)}>
+          <b>{rating}</b>
+          <span>{t.home.yourRating}</span>
+        </span>
+      )}
+    </div>
   )
 }
 
