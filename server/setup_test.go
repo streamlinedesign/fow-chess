@@ -77,27 +77,6 @@ func TestSetupFEN(t *testing.T) {
 	}
 }
 
-func TestSniperWin(t *testing.T) {
-	cm, kc := engine.Checkmate.String(), engine.KingCaptured.String()
-	for _, tc := range []struct {
-		result, reason string
-		plies          int
-		want           bool
-	}{
-		{"1-0", kc, 1, true},
-		{"0-1", kc, 2, true},
-		{"0-1", cm, 0, true},
-		{"1-0", kc, 3, false},
-		{"0-1", kc, 1, false},
-		{"1-0", "resignation", 1, false},
-		{"1/2-1/2", "stalemate", 0, false},
-	} {
-		if got := sniperWin(tc.result, tc.reason, tc.plies); got != tc.want {
-			t.Errorf("%s by %s after %d: %v", tc.result, tc.reason, tc.plies, got)
-		}
-	}
-}
-
 func TestSetupMatch(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "x")
 	store := openTestStore(t, path)
@@ -143,23 +122,23 @@ func TestSetupMatch(t *testing.T) {
 		t.Fatalf("after both set up: status %v clock %v", st["status"], st["clock"])
 	}
 
-	// The king started in the rook's sights: taking it on the first move is a Sniper Win.
+	// The king started in the rook's sights: taking it on the first move wins.
 	m.handle(cw, inMsg{Type: "move", UCI: "e3e8"})
 	st = lastState(t, cw)
-	if st["result"] != "1-0" || st["sniper"] != true {
-		t.Fatalf("result %v sniper %v", st["result"], st["sniper"])
+	if st["result"] != "1-0" {
+		t.Fatalf("result %v", st["result"])
 	}
 	store.Close()
 
 	store = openTestStore(t, path)
 	rec, _ := store.Game(m.id, 1)
-	if rec.StartFEN == "" || !rec.sniper() || rec.RatingDiff[white] == nil {
-		t.Fatalf("saved game: start %q sniper %v diff %v", rec.StartFEN, rec.sniper(), rec.RatingDiff)
+	if rec.StartFEN == "" || rec.RatingDiff[white] == nil {
+		t.Fatalf("saved game: start %q diff %v", rec.StartFEN, rec.RatingDiff)
 	}
-	// A Sniper Win moves ratings a quarter as far as a whole win.
-	want := startRating + int(math.Round(float64(winValue(settings.Time, startRating, startRating))*sniperWeight))
+	// A win on the first move counts as a whole win.
+	want := startRating + winValue(settings.Time, startRating, startRating)
 	if a, _ := store.UserByID(ann.ID); int(math.Round(a.Rating)) != want {
-		t.Errorf("ann's rating after a Sniper Win %.1f, want %d", a.Rating, want)
+		t.Errorf("ann's rating after a first-move win %.1f, want %d", a.Rating, want)
 	}
 	// The replay starts from the setups.
 	if r, err := buildReplay(rec); err != nil || r.Frames[0].Board[20] != 'R' {

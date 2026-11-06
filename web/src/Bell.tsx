@@ -94,7 +94,6 @@ function resultLine(n: Notification, t: Dict) {
   const { result, reason } = n.data
   const line = (key: keyof Dict['bell']) => fill(t.bell[key] as string, parts)
   if (result === 'draw') return line('drawn')
-  if (n.data.sniper) return line(result === 'won' ? 'sniperWon' : 'sniperLost')
   if (reason === 'capturing the king') return line(result === 'won' ? 'ateKing' : 'ateYourKing')
   if (reason === 'reaching the hill') return line(result === 'won' ? 'tookHill' : 'theyTookHill')
   return line(result === 'won' ? 'beat' : 'lostTo')

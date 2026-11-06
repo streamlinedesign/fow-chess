@@ -462,11 +462,11 @@ export const hr: Dict = {
     },
     backRow: {
       label: 'Zadnji red',
-      hint: 'Rasporedi svoj zadnji red kako god želiš. Kralj može početi u opasnosti: pobjeda u prvom potezu je Snajperska pobjeda.',
+      hint: 'Rasporedi svoj zadnji red kako god želiš. Kralj može početi u opasnosti.',
     },
     battleship: {
       label: 'Potapanje brodova',
-      hint: 'Postavi svih šesnaest figura bilo gdje u svoja četiri reda. Kralj može početi u opasnosti: pobjeda u prvom potezu je Snajperska pobjeda.',
+      hint: 'Postavi svih šesnaest figura bilo gdje u svoja četiri reda. Kralj može početi u opasnosti.',
     },
   },
 
@@ -494,11 +494,7 @@ export const hr: Dict = {
     youLose: 'Poraz',
     kingEaten: 'Tvoj kralj je pojeden',
     sideWins: (side) => `${side} pobjeđuje`,
-    sniperWin: 'Snajperska pobjeda',
-    sniped: 'Snajperski poraz',
     winsDetail: (side, how) => `${side} pobjeđuje ${how}.`,
-    sniperDetail: (side, how) => `${side} pobjeđuje ${how} već prvim potezom.`,
-    sniperRating: 'Snajperska pobjeda vrijedi četvrtinu rejtinga cijele partije.',
     drawDetail: (how) => `Remi ${how}.`,
     drawStatus: (how) => `Remi ${how}`,
     matchRules: 'Pravila partije',
@@ -707,7 +703,7 @@ export const hr: Dict = {
         title: 'Pobjeda i poraz',
         p: [
           'Pobjeda vrijedi **18 do 23 boda** u kratkoj partiji i **22 do 30** u dugoj: sredinu kad imate jednak rejting, više što je protivnikov rejting viši od tvog, najviše kad je viši za 400, a manje protiv slabijeg.',
-          'Poraženi gubi **isto toliko**, a **pola** toga pri **prvom porazu u danu**. Remi ne mijenja ništa. Snajperska pobjeda vrijedi četvrtinu.',
+          'Poraženi gubi **isto toliko**, a **pola** toga pri **prvom porazu u danu**. Remi ne mijenja ništa.',
         ],
       },
       scoreWar: {
@@ -715,7 +711,7 @@ export const hr: Dict = {
         title: 'Po mjestu',
         p: [
           'Pobjednik dobiva isti raspon kao u Pojedi kralja, **18 do 23** u kratkoj ili **22 do 30** u dugoj, prema svom rejtingu u odnosu na prosjek ostale trojice.',
-          '**Drugi** gubi koliko je pobjednik dobio, **treći** i **četvrti** pola toga. Pri tvom **prvom porazu u danu** drugi gubi pola, treći **ništa**, a četvrti četvrtinu. U neriješenoj igri oni izjednačeni na prvom mjestu ne mijenjaju ništa.',
+          '**Drugo** mjesto se računa kao pobjeda i dobiva **pola** toga. **Treći** i **četvrti** gube pola toga, osim pri tvom **prvom porazu u danu**, kad treći gubi **ništa**, a četvrti četvrtinu. U neriješenoj igri oni izjednačeni na prvom mjestu ne mijenjaju ništa.',
         ],
       },
       draws: {
@@ -765,7 +761,6 @@ export const hr: Dict = {
     won: (name) => `${name} pobjeđuje`,
     howEat: 'jedenjem kralja',
     howHill: 'osvajanjem brda',
-    onFirstMove: ' već prvim potezom',
     offerMatch: 'Ponudi partiju',
     friendOptions: 'Opcije prijateljstva',
     removeFriend: 'Ukloni prijatelja',
@@ -856,8 +851,6 @@ export const hr: Dict = {
     titleNew: (n) => `Obavijesti, ${n} ${slavic(n, 'nova', 'nove', 'novih')}`,
     nothingYet: 'Još ništa. Ovdje se pojavljuju zahtjevi za prijateljstvo, ponude partija i tvoji rezultati.',
     drawn: 'Tvoja partija s igračem {who} završila je remijem {how}.',
-    sniperWon: 'Snajperska pobjeda: pobijedio si igrača {who} već prvim potezom.',
-    sniperLost: '{who} te snajpirao već prvim potezom.',
     ateKing: 'Pojeo si kralja igrača {who}.',
     ateYourKing: '{who} ti je pojeo kralja.',
     tookHill: 'Osvojio si brdo protiv igrača {who}.',
@@ -930,7 +923,7 @@ export const hr: Dict = {
         '**Svaki dan** je brzopotezna arena 10+0 u 19:00 i Blitz arena 5+0 u 20:00 po zagrebačkom vremenu, u trajanju od 45 odnosno 30 minuta.',
         '**Pridruži se** prije početka ili dok traje. Na početku treba barem 4 igrača, inače se otkazuje, a zvono ti javi.',
         '**Sparivanje je automatsko.** Čim ste ti i još netko slobodni, spojen si s onim tko ti je najbliži po bodovima, a partija se otvara sama. Ostani na stranici dok čekaš.',
-        '**Bodovi:** 2 za pobjedu, uključujući snajpersku, 1 za remi. Partije su rangirane kao i sve druge. Partija koja završi nakon kraja arene ne računa se.',
+        '**Bodovi:** 2 za pobjedu, 1 za remi. Partije su rangirane kao i sve druge. Partija koja završi nakon kraja arene ne računa se.',
         '**Pauziraj** kad god želiš; bodovi ti ostaju. Kad arena završi, svatko u zvonu dobije svoj plasman.',
       ],
     },
@@ -949,7 +942,6 @@ export const hr: Dict = {
   replay: {
     drawBy: (how) => `Remi ${how}`,
     sideWon: (side, how) => `${side} je pobijedio ${how}`,
-    sniper: (won) => `Snajperska pobjeda: ${won} već prvim potezom`,
     loadingGame: 'Učitavanje partije',
     first: 'Prvi potez',
     previous: 'Prethodni potez',

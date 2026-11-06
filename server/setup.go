@@ -143,22 +143,3 @@ func setupFEN(placed [2]string) string {
 	}
 	return fen.String() + " w " + castling + " - 0 1"
 }
-
-// sniperWin is whether a game was won on the winner's very first move, or
-// before any move: a king that started under attack or already mated. It can
-// only happen in setup modes, and counts for less rating than a whole game.
-func sniperWin(result, reason string, plies int) bool {
-	if reason != engine.Checkmate.String() && reason != engine.KingCaptured.String() {
-		return false
-	}
-	switch result {
-	case engine.WhiteWins.String():
-		return plies == 1
-	case engine.BlackWins.String():
-		return plies == 0 || plies == 2
-	}
-	return false
-}
-
-// sniperWeight is how much of a whole game's rating change a Sniper Win moves.
-const sniperWeight = 0.25

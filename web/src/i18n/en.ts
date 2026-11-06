@@ -464,11 +464,11 @@ export const en = {
     },
     backRow: {
       label: 'Back row',
-      hint: 'Arrange your back row however you like. Kings can start in danger: winning on your first move is a Sniper Win.',
+      hint: 'Arrange your back row however you like. Kings can start in danger.',
     },
     battleship: {
       label: 'Battleship',
-      hint: 'Place all sixteen pieces anywhere in your four rows. Kings can start in danger: winning on your first move is a Sniper Win.',
+      hint: 'Place all sixteen pieces anywhere in your four rows. Kings can start in danger.',
     },
   },
 
@@ -496,12 +496,8 @@ export const en = {
     youLose: 'You lose',
     kingEaten: 'Your king was eaten',
     sideWins: (side: string) => `${side} wins`,
-    sniperWin: 'Sniper Win',
-    sniped: 'Sniped',
     /** "White wins by checkmate." */
     winsDetail: (side: string, how: string) => `${side} wins ${how}.`,
-    sniperDetail: (side: string, how: string) => `${side} wins ${how} on their first move.`,
-    sniperRating: "A Sniper Win counts for a quarter of a game's rating.",
     drawDetail: (how: string) => `Draw ${how}.`,
     drawStatus: (how: string) => `Draw ${how}`,
     matchRules: 'Match rules',
@@ -710,7 +706,7 @@ export const en = {
         title: 'Win or lose',
         p: [
           'A win is worth **18 to 23 points** in a short game and **22 to 30** in a long one: the middle when you’re rated level, more the further your opponent is rated above you, the top at 400 above, and less against someone below.',
-          'The loser loses **the same amount**, and **half** of it on their **first loss of the day**. A draw moves nobody. A Sniper Win counts for a quarter.',
+          'The loser loses **the same amount**, and **half** of it on their **first loss of the day**. A draw moves nobody.',
         ],
       },
       scoreWar: {
@@ -718,7 +714,7 @@ export const en = {
         title: 'By place',
         p: [
           'The winner gets the same range as in Eat the King, **18 to 23** short or **22 to 30** long, set by their rating against the average of the other three.',
-          '**Second** loses what the winner got, **third** and **fourth** half of it. On your **first loss of the day**, second loses half, third **nothing** and fourth a quarter. In a drawn game, the players level in first move nobody.',
+          '**Second** counts as a win and gets **half** of that. **Third** and **fourth** lose half of it, except on your **first loss of the day**, when third loses **nothing** and fourth a quarter. In a drawn game, the players level in first move nobody.',
         ],
       },
       draws: {
@@ -768,7 +764,6 @@ export const en = {
     won: (name: string) => `${name} won`,
     howEat: 'by eating the king',
     howHill: 'by taking the hill',
-    onFirstMove: ' on the first move',
     offerMatch: 'Offer a match',
     friendOptions: 'Friend options',
     removeFriend: 'Remove friend',
@@ -859,8 +854,6 @@ export const en = {
     titleNew: (n: number) => `Notifications, ${n} new`,
     nothingYet: 'Nothing yet. Friend requests, match offers and your results show up here.',
     drawn: 'Your game with {who} was drawn {how}.',
-    sniperWon: 'Sniper Win: you beat {who} on your first move.',
-    sniperLost: '{who} sniped you on their first move.',
     ateKing: "You ate {who}'s king.",
     ateYourKing: '{who} ate your king.',
     tookHill: 'You took the hill against {who}.',
@@ -933,7 +926,7 @@ export const en = {
         '**Every day** there is a Rapid 10+0 arena at 19:00 and a Blitz 5+0 arena at 20:00, Zagreb time, lasting 45 and 30 minutes.',
         '**Join** before it starts or while it runs. It needs at least 4 players at the start, or it is called off and the bell tells you.',
         '**Pairing is automatic.** As soon as you and someone else are free, you are paired with whoever is nearest in points, and the game opens by itself. Stay on the site while you wait.',
-        '**Points:** 2 for a win, including a Sniper Win, 1 for a draw. Games are ranked like any other. A game that ends after the arena is over does not count.',
+        '**Points:** 2 for a win, 1 for a draw. Games are ranked like any other. A game that ends after the arena is over does not count.',
         '**Sit out** at any time; your points stay. When the arena ends, everyone gets their place in the bell.',
       ],
     },
@@ -951,7 +944,6 @@ export const en = {
   replay: {
     drawBy: (how: string) => `Draw ${how}`,
     sideWon: (side: string, how: string) => `${side} won ${how}`,
-    sniper: (won: string) => `Sniper Win: ${won} on the first move`,
     loadingGame: 'Loading game',
     first: 'First move',
     previous: 'Previous move',

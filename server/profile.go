@@ -24,8 +24,6 @@ type gameSummary struct {
 	// RatingDiff is the profile owner's rating change, once a rated game is over.
 	RatingDiff *int  `json:"ratingDiff,omitempty"`
 	UpdatedAt  int64 `json:"updatedAt"` // unix milliseconds
-	// Sniper marks a game won on the winner's first move.
-	Sniper bool `json:"sniper,omitempty"`
 }
 
 type profileResponse struct {
@@ -68,7 +66,7 @@ func summarize(g gameRecord, userID int64) gameSummary {
 		Opponent: [2]string{g.whiteName, g.blackName}[other], Waiting: g.Seats[other] == "",
 		Settings: g.Settings, Plies: plies, Turn: colorNames[plies%2],
 		Result: g.Result, Reason: g.Reason, Rated: g.Rated, RatingDiff: g.RatingDiff[color],
-		UpdatedAt: g.UpdatedAt.UnixMilli(), Sniper: g.sniper(),
+		UpdatedAt: g.UpdatedAt.UnixMilli(),
 	}
 }
 
@@ -128,7 +126,6 @@ type replayResponse struct {
 	History  []string          `json:"history"`
 	Frames   []replayFrame     `json:"frames"`
 	Ended    int64             `json:"ended"` // unix milliseconds
-	Sniper   bool              `json:"sniper,omitempty"`
 	// Skins are the signed-in players' looks as they are now, so a replay
 	// draws each player's pieces and squares the way they like them.
 	Skins map[string]*skin `json:"skins,omitempty"`
@@ -297,7 +294,7 @@ func buildReplay(rec *gameRecord) (*replayResponse, error) {
 		MatchID: rec.MatchID, Round: rec.Round, Settings: rec.Settings,
 		Players: map[string]string{"w": rec.whiteName, "b": rec.blackName},
 		Result:  rec.Result, Reason: rec.Reason, History: []string{}, Frames: []replayFrame{frame()},
-		Ended: rec.UpdatedAt.UnixMilli(), Sniper: rec.sniper(),
+		Ended: rec.UpdatedAt.UnixMilli(),
 	}
 	for _, uci := range strings.Fields(rec.Moves) {
 		pm, err := g.PlayUCI(uci)

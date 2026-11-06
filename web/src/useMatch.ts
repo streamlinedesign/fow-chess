@@ -47,7 +47,6 @@ export type MatchState = {
   result?: '1-0' | '0-1' | '1/2-1/2'
   reason?: string
   /** A game won on the winner's very first move. It moves ratings a quarter as far as a whole game. */
-  sniper?: boolean
   /** During setup: who is ready, what you placed, and the opponent's setup once they're ready in a game without fog. */
   setup?: { ready: Record<Color, boolean>; mine?: string; theirs?: string }
   /** name is the username of a signed-in player, absent for a guest. */

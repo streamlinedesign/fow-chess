@@ -178,7 +178,7 @@ export function ScoreRules() {
   // War Mode places for a 21-point win: usual, and on a first loss of the day.
   const war: [string, string][] = [
     ['+21', '+21'],
-    ['−21', '−11'],
+    ['+11', '+11'],
     ['−11', '0'],
     ['−11', '−5'],
   ]
@@ -220,7 +220,7 @@ export function ScoreRules() {
                 <tr key={i}>
                   <td className="pr-4 text-accent">{r.placeN[i]}</td>
                   <td className="pr-4">{usual}</td>
-                  <td>{i === 0 ? '' : first}</td>
+                  <td>{i < 2 ? '' : first}</td>
                 </tr>
               ))}
             </tbody>

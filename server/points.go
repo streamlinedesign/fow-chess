@@ -47,12 +47,9 @@ func half(n int) int { return (n + 1) / 2 }
 
 // duelPoints is how Eat the King moves the winner's and the loser's ratings:
 // the loser loses what the winner wins, half of it on their first loss of
-// the day. A draw moves nobody. A Sniper Win counts sniperWeight of a win.
-func duelPoints(t TimeControl, winner, loser float64, firstLoss, sniper bool) (win, lose int) {
+// the day. A draw moves nobody.
+func duelPoints(t TimeControl, winner, loser float64, firstLoss bool) (win, lose int) {
 	w := winValue(t, winner, loser)
-	if sniper {
-		w = int(math.Round(float64(w) * sniperWeight))
-	}
 	l := w
 	if firstLoss {
 		l = half(w)
@@ -65,11 +62,12 @@ func duelPoints(t TimeControl, winner, loser float64, firstLoss, sniper bool) (w
 // seats are rated, and whose loss would be their first of the day.
 //
 // The winner gets winValue against the average of the other rated players.
-// Second place loses that amount, third and fourth half of it. On a first
-// loss of the day second place loses half, third nothing, fourth a quarter.
-// When no one finished first alone (a draw) the players sharing first place
-// don't move, and everyone below loses as above, by the points the game
-// would have been worth at their ratings.
+// Second place counts as a win too and gets half of that; third and fourth
+// lose half of it. A loss is third or fourth: on a first loss of the day
+// third loses nothing and fourth a quarter. When no one finished first alone
+// (a draw) the players sharing first place don't move, and everyone below
+// scores as above, by the points the game would have been worth at their
+// ratings.
 func warPoints(t TimeControl, places []int, ratings [4]float64, rated, firstLoss [4]bool) [4]int {
 	var out [4]int
 	winner, firsts := -1, 0
@@ -99,14 +97,16 @@ func warPoints(t TimeControl, places []int, ratings [4]float64, rated, firstLoss
 	return out
 }
 
+// warLost is whether finishing in this place counts as a loss: third or
+// fourth. First and second are wins.
+func warLost(place int) bool { return place > 2 }
+
 // warLoss is what a player who finished in this place (2 to 4) loses when
-// first place won stake points.
+// first place won stake points; second place gains, so it's negative.
 func warLoss(place, stake int, firstLoss bool) int {
 	switch {
-	case place == 2 && firstLoss:
-		return half(stake)
 	case place == 2:
-		return stake
+		return -half(stake)
 	case place == 3 && firstLoss:
 		return 0
 	case place == 3:

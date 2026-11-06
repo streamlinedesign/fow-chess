@@ -127,11 +127,6 @@ type gameRecord struct {
 	onRated func(diff [2]int)
 }
 
-// sniper is whether the game was a Sniper Win; see sniperWin.
-func (r *gameRecord) sniper() bool {
-	return sniperWin(r.Result, r.Reason, len(strings.Fields(r.Moves)))
-}
-
 // deadline is when the side to move runs out of time, or nil if no clock is running.
 func (r *gameRecord) deadline() *time.Time {
 	if r.TurnStart.IsZero() {
@@ -236,7 +231,7 @@ func (s *Store) rate(r gameRecord) (*[2]int, error) {
 	winner := map[string]int{"1-0": white, "0-1": black}
 	if w, ok := winner[r.Result]; ok {
 		l := 1 - w
-		diff[w], diff[l] = duelPoints(r.Settings.Time, before[w], before[l], firstLoss[l], r.sniper())
+		diff[w], diff[l] = duelPoints(r.Settings.Time, before[w], before[l], firstLoss[l])
 		if _, err := tx.Exec(`UPDATE users SET lost_on = `+utcToday+` WHERE id = $1`, r.Users[l]); err != nil {
 			return nil, err
 		}
