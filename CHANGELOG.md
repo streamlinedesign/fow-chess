@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- The desktop app's downloads are hidden until 1.0: no Download link, menu item or home page strip, and /download shows not found. Switch them back on with `DOWNLOADS` in `web/src/features.ts`. The app can still be installed on a phone from the browser.
 - Desktop app for Windows, Mac and Linux (`desktop/`, Rust and Tauri): the game in its own window, with a loading screen while it connects and a "can't reach the game" screen that retries by itself. Its home has three ways to play side by side: Eat the King, War Mode (the ranked four-player game) and Modded, with your rating and place under the two ranked ones. Installers are built for each release tag and attached to the GitHub release.
 - The site has a Download link and a /download page (the build for your system, every build, and how to add the site to a phone's home screen), and a strip on the home page on computers.
 - The site can be installed on a phone: it has a web app manifest and icons.

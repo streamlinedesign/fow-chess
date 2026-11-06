@@ -2,7 +2,6 @@
 
 ## Now
 
-- Desktop app: set the `GAME_URL` repository variable (Actions > Variables) to the live server, then `make release` so the Download links have files behind them
 - Review and merge PR #20 (daily Blitz and Rapid arenas)
 - Delete the five stale `claude/project-thread-*` branches once their PRs are closed
 - Run `make configure-repo` once so auto-merge and branch protection are on
@@ -21,6 +20,8 @@
 
 ## Later
 
+- 1.0: desktop app downloads. Set the `GAME_URL` repository variable (Actions > Variables), `make release`, then turn on `DOWNLOADS` in `web/src/features.ts`
+- 1.0: split the rules engine into its own Go repo (`streamlinedesign/chess-engine`) shared by the server and chess-bots
 - Desktop app: code signing (Apple Developer account, Windows certificate), a notification when it's your move, `eattheking://` game links, auto-update
 - Tournaments are hidden (`TOURNAMENTS` in `web/src/features.ts`); decide when to bring them back, and whether the server should stop scheduling arenas meanwhile
 - Four players: a player's skin can share a colour with another seat (violet set next to the violet seat); decide whether to steer away from that, and whether the seat dots should follow the skin

@@ -19,7 +19,7 @@ import { ReplayPage } from './ReplayPage'
 import { RulesPage } from './RulesPage'
 import { ModsPage } from './ModsPage'
 import { TournamentsPage } from './TournamentsPage'
-import { TOURNAMENTS } from './features'
+import { DOWNLOADS, TOURNAMENTS } from './features'
 import { AppHome } from './AppHome'
 import { DESKTOP } from './desktop'
 import { DownloadPage } from './DownloadPage'
@@ -82,7 +82,7 @@ export function App() {
     <ModsPage />
   ) : TOURNAMENTS && path === '/tournaments' ? (
     <TournamentsPage />
-  ) : path === '/download' ? (
+  ) : DOWNLOADS && path === '/download' ? (
     <DownloadPage />
   ) : path === '/' ? (
     DESKTOP ? (
