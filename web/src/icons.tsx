@@ -89,6 +89,13 @@ const paths = {
       />
     </>
   ),
+  // A box with an arrow out of it: Share.
+  share: (
+    <>
+      <path d="M7.5 9V1.5M4.8 4.2l2.7-2.7 2.7 2.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5 6H3v7h9V6h-2" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
   book: (
     <>
       <path

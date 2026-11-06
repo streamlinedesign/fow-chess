@@ -4,6 +4,11 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Sharing: link previews for every page (OpenGraph and Twitter tags put into index.html by the server, with a 1200 by 630 picture drawn at `/og/<page>.png`): the home page, games (players, mods, clock, result; the board only once a game is over, so the fog holds), replays, profiles (title, ratings, games) and mods setups. `BASE_URL` sets the address used in them; unset, it's the one the request came to.
+- Share buttons on games, replays and profiles, and Share this setup on the Mods page: the share sheet on phones, else the link is copied. A mods link (`/mods?mod=prince&mod=ambush&players=4&clock=5-0`) opens the Mods page with exactly those switches on, and its preview lists them with what each does.
+- Installable app: a service worker (`web/public/sw.js`) keeps the app's files for quick and offline starts and never touches the API, live games or previews; the manifest gains a maskable icon and shortcuts to Mods, Watch and How to play.
+- The favicon and app icons are the header's king, lying on its side; the favicon turns light in dark browser tabs. `make share-assets` redraws the icons and the preview pieces from the SVGs.
+
 - Title tags also show in Messages, the bell and friends lists, and a rated game refreshes its players' titles and your unlocked sets as soon as it ends, without a reload.
 - Titles: your highest rating in either game earns a title, kept for life: Club player 1150, Expert (EX) 1300, Candidate master (CM) 1450, Fog master (FM) 1600, International master (IM) 1800, Grandmaster (GM) 2000 and King (K) 2500. The tag shows before names on the board, the leaderboard, Watch and profiles (`GET /api/titles?u=…`), and the rules explain it under Rank scores.
 - A set for each title: Bronze, Silver and Gold (one recipe in three metals), Grandmaster (Galaxy sun for White, Black hole for Black) and King, whose pieces shine and whose board has a light passing over it; both stay still for players who ask their device for less motion. Holy moves from 2000 to 1800; a 2000 reached before still counts for every set up to Grandmaster.

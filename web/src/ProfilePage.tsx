@@ -12,6 +12,8 @@ import { navigate } from './router'
 import { DropMenu, MenuItem } from './Sheet'
 import { describeSettings, describeTime, modeName, NO_CLOCK, type Settings } from './settings'
 import { api, openOffer, presence, type FriendState } from './social'
+import { siteURL } from './share'
+import { ShareButton } from './ShareButton'
 import { Button, Spinner } from './ui'
 import type { Color } from './useMatch'
 
@@ -149,9 +151,17 @@ export function ProfilePage({ name }: { name: string }) {
         <section className="home-cell prof-head">
           <Avatar size={112} online={profile.online} name={profile.username} className="max-[720px]:!size-[72px]" />
           <div className="min-w-0">
-            <h1 className="text-[clamp(32px,6vw,48px)] leading-none font-semibold tracking-tight break-all">
-              {profile.username}
-            </h1>
+            <div className="flex items-center gap-1">
+              <h1 className="min-w-0 text-[clamp(32px,6vw,48px)] leading-none font-semibold tracking-tight break-all">
+                {profile.username}
+              </h1>
+              <ShareButton
+                variant="ghost"
+                title={t.share.shareProfile}
+                text={t.share.profileText(profile.username, profile.rating)}
+                url={siteURL(`/u/${profile.username}`)}
+              />
+            </div>
             <ProfileTitle name={profile.username} />
             {/* Each rating keeps its label beside it, so they still pair up when they wrap. */}
             <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1">

@@ -6,9 +6,11 @@ import { Page } from './Page'
 import { playerId } from './player'
 import { getPrefs } from './prefs'
 import { navigate } from './router'
-import { describeTime, loadSettings, modeName, saveSettings, setupMode, type Settings } from './settings'
+import { clocksFor, describeTime, loadSettings, modeName, saveSettings, setupMode, type Settings } from './settings'
 import { SettingsBoard, setupNotes } from './SettingsBoard'
 import { fourName, SettingsPanel } from './SettingsPanel'
+import { modsFromLink, modsLink } from './share'
+import { ShareButton } from './ShareButton'
 import { Button } from './ui'
 
 /** The game with every dial exposed, laid out like the home page: the board at the left, the dials at the right. Mods games are never ranked. */
@@ -16,10 +18,20 @@ export function ModsPage() {
   const t = useT()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  // A link from the home page's Mods band (/mods?mod=jump) turns that one switch on.
+  // A shared setup (/mods?mod=prince&clock=5-0, see share.ts) opens with exactly
+  // those switches. A link from the home page's Mods band (/mods?mod=jump)
+  // turns that one switch on.
+  const [shared] = useState(() =>
+    new URLSearchParams(location.search).has('clock')
+      ? modsFromLink(loadSettings(true), location.search, clocksFor(true))
+      : null,
+  )
   const [linked] = useState(() => new URLSearchParams(location.search).get('mod') ?? '')
-  const [settings, setSettings] = useState<Settings>(() => modFromLink(loadSettings(true), linked))
+  const [settings, setSettings] = useState<Settings>(
+    () => shared?.settings ?? modFromLink(loadSettings(true), linked),
+  )
   const [four, setFour] = useState(() => {
+    if (shared) return shared.four
     if (linked === 'extended') return true
     try {
       return localStorage.getItem('modsPlayers') === '4'
@@ -28,8 +40,8 @@ export function ModsPage() {
     }
   })
   useEffect(() => {
-    if (linked) history.replaceState(null, '', '/mods')
-  }, [linked])
+    if (linked || shared) history.replaceState(null, '', '/mods')
+  }, [linked, shared])
   const pickFour = (on: boolean) => {
     setFour(on)
     try {
@@ -103,6 +115,7 @@ export function ModsPage() {
           <section>
             <h1 className="home-title">{t.mods.title}</h1>
             <p className="mt-2.5 text-[15px] text-accent">{t.mods.intro}</p>
+            {shared && <p className="mt-2 text-sm text-accent">{t.share.linkedSetup}</p>}
             <CurrentSetup settings={settings} four={four} />
           </section>
           <section>
@@ -116,6 +129,14 @@ export function ModsPage() {
             <Button variant="solid" className="home-play" onClick={create} loading={busy} disabled={busy}>
               {t.common.newMatch}
             </Button>
+            <ShareButton
+              title={t.share.setupTitle}
+              text={t.share.setupText(
+                `${four ? fourName(settings, t) : modeName(settings, t)} · ${describeTime(settings.time, t)}`,
+              )}
+              url={modsLink(settings, four)}
+              label={t.share.shareSetup}
+            />
             {error && (
               <p role="alert" className="text-danger">
                 {error}

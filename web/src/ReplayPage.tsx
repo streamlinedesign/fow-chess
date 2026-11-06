@@ -6,6 +6,8 @@ import { errorText, useT, type Dict } from './i18n'
 import { how } from './MatchPage'
 import { navigate } from './router'
 import { describeSettings, type Settings } from './settings'
+import { siteURL } from './share'
+import { ShareButton } from './ShareButton'
 import { Button, Spinner } from './ui'
 import type { Color } from './useMatch'
 
@@ -184,6 +186,12 @@ export function ReplayPage({ id, round }: { id: string; round: number }) {
             <Button variant="ghost" onClick={() => setFlipped((v) => !v)}>
               {t.replay.flip}
             </Button>
+            <ShareButton
+              variant="ghost"
+              title={t.share.shareReplay}
+              text={`${resultLine(replay, t)} · ${describeSettings(replay.settings, t).join(' · ')}`}
+              url={siteURL(`/g/${id}/${round}`)}
+            />
           </div>
 
           <ol className="grid max-h-[40dvh] max-w-[300px] grid-cols-[2.5rem_1fr_1fr] gap-y-1 overflow-y-auto font-mono text-[15px] tabular-nums lg:max-h-[50dvh]">

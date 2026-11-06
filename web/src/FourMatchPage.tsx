@@ -20,6 +20,7 @@ import { how } from './MatchPage'
 import { PromotionDialog } from './Promotion'
 import { skinOf, usePrefs, type Prefs } from './prefs'
 import { navigate } from './router'
+import { shareLink, siteURL } from './share'
 import { Button, Dialog, Spinner } from './ui'
 import { useFourMatch, type FourState } from './useFourMatch'
 
@@ -559,17 +560,12 @@ function WaitingCard({
 }) {
   const t = useT()
   const [copied, setCopied] = useState(false)
-  const link = `${location.origin}/f/${id}`
+  const link = siteURL(`/f/${id}`)
   const share = async () => {
-    try {
-      if (navigator.share && matchMedia('(pointer: coarse)').matches) {
-        await navigator.share({ title: t.match.shareTitle, url: link })
-        return
-      }
-      await navigator.clipboard.writeText(link)
+    if ((await shareLink({ title: t.match.shareTitle, url: link })) === 'copied') {
       setCopied(true)
       setTimeout(() => setCopied(false), 1500)
-    } catch {}
+    }
   }
   return (
     <div className="absolute inset-0 z-20 grid place-items-center bg-bg/70 p-4 backdrop-blur-[3px]">
