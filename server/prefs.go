@@ -90,6 +90,9 @@ type prefs struct {
 	// Plain turns every skin off on this player's screen: classic pieces and
 	// the plain board for everyone but bots. The picks are kept.
 	Plain bool `json:"plain"`
+	// Fog is how hidden squares look on this player's screen: "smoke" (the
+	// default, also "") or "dusk". Only theirs; nobody else sees it.
+	Fog string `json:"fog"`
 	// Primary was the set for your own pieces before White and Black sets.
 	// Read once to carry an old choice over, never written.
 	Primary string `json:"primary,omitempty"`
@@ -123,8 +126,13 @@ func (p *prefs) fill() {
 }
 
 func (p prefs) valid() bool {
-	return p.skin.valid() && (p.Side == "" || p.Side == "w" || p.Side == "b")
+	return p.skin.valid() && (p.Side == "" || p.Side == "w" || p.Side == "b") && validFog(p.Fog)
 }
+
+// fogStyles are how hidden squares can look; "" is the default, smoke. Must match FOG_STYLES in web/src/prefs.ts.
+var fogStyles = []string{"", "smoke", "dusk"}
+
+func validFog(f string) bool { return slices.Contains(fogStyles, f) }
 
 // validAvatar: "" for the default pawn, or "<set>/<piece>" from a one-colour set.
 func validAvatar(a string) bool {
@@ -153,6 +161,9 @@ func (s *Store) Look(id int64) (lookResponse, error) {
 	l.skin.clean()
 	if l.Side != "w" && l.Side != "b" {
 		l.Side = ""
+	}
+	if !validFog(l.Fog) {
+		l.Fog = ""
 	}
 	if !validAvatar(l.Avatar) {
 		l.Avatar = ""

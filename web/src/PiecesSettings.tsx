@@ -1,9 +1,12 @@
 import * as Switch from '@radix-ui/react-switch'
-import { memo, useId, useMemo, useState } from 'react'
+import { memo, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { AvatarImg } from './Avatar'
+import { Board } from './Board'
 import { useT } from './i18n'
-import { setPrefs, usePrefs, useUnlocked, type Prefs } from './prefs'
-import { AVATAR_GROUPS, CLASSIC, concrete, familyOf, KINDS, SET_IDS, setImg, THEME_LOCK, TILE_IDS, tileImg } from './sets'
+import type { Look } from './pieces'
+import { FOG_STYLES, setPrefs, skinOf, usePrefs, useUnlocked, type FogStyle } from './prefs'
+import { AVATAR_GROUPS, concrete, familyOf, KINDS, SET_IDS, setImg, THEME_LOCK, TILE_IDS, tileImg } from './sets'
+import { Button } from './ui'
 import { BOTS } from './settings'
 
 // The pickers are plain radio buttons, not Radix: a page of them stays quick
@@ -156,39 +159,93 @@ const onBlack = (black: string) => setPrefs({ black })
 const onLight = (v: string) => setPrefs({ lightTiles: v === 'plain' ? '' : v })
 const onDark = (v: string) => setPrefs({ darkTiles: v === 'plain' ? '' : v })
 
-/** Your Black set's back row and pawns at the top, your White set's at the bottom, all on your tiles. */
-const Preview = memo(function Preview({
-  white,
-  black,
-  lightTiles,
-  darkTiles,
-  plain,
-}: Pick<Prefs, 'white' | 'black' | 'lightTiles' | 'darkTiles' | 'plain'>) {
+const START = 'RNBQKBNRPPPPPPPP' + '.'.repeat(32) + 'pppppppprnbqkbnr'
+// With the fog shown, the start as one side sees it: their own four ranks.
+const FOGGED = { w: START.slice(0, 32) + '?'.repeat(32), b: '?'.repeat(32) + START.slice(32) }
+const noMoves: string[] = []
+const noop = () => {}
+
+/**
+ * The live preview: a full board at the start, both sides in your sets and on
+ * your tiles, so every pick shows at once. Swap sides turns it round; the fog
+ * button hides the far half in your fog style, vision squares ringed.
+ */
+export const LivePreview = memo(function LivePreview({ className = '' }: { className?: string }) {
   const t = useT()
-  const row = 'RNBQKBNR'
-  const lines = [row.toLowerCase(), 'pppppppp', 'PPPPPPPP', row]
-  const img = (p: string) => {
-    const c = p === p.toUpperCase() ? 'w' : 'b'
-    return setImg(concrete(plain ? CLASSIC : c === 'w' ? white : black, c), p, c)
-  }
+  const p = usePrefs()
+  const [side, setSide] = useState<'w' | 'b'>(p.side || 'w')
+  const [fog, setFog] = useState(false)
+  // Picking a fog style shows it.
+  const style = useRef(p.fog)
+  useEffect(() => {
+    if (style.current !== p.fog) setFog(true)
+    style.current = p.fog
+  }, [p.fog])
+  // Your skin on both halves, so the board shows your White set and your Black set together.
+  const skin = skinOf(p)
+  const look = useMemo<Look>(
+    () => ({ skins: { w: skin, b: skin } }),
+    [skin.white, skin.black, skin.lightTiles, skin.darkTiles],
+  )
+  const center = useMemo(() => (fog ? { you: side } : undefined), [fog, side])
   return (
-    <div className="set-preview" role="img" aria-label={t.pieces.preview}>
-      {lines.map((line, r) =>
-        [...line].map((p, c) => {
-          const light = (r + c) % 2 === 0
-          const src = plain ? undefined : tileImg(light ? lightTiles : darkTiles, light)
-          return (
-            <span
-              key={`${r}${c}`}
-              className="sq"
-              data-light={light}
-              style={src ? { background: `url("${src}") center / cover` } : undefined}
+    <div className={`live-preview ${className}`}>
+      <div className="live-head">
+        <b>{t.pieces.livePreview}</b>
+        <div className="flex gap-1.5">
+          <Button
+            variant="ghost"
+            className="h-9 px-3 text-sm"
+            aria-pressed={fog}
+            data-on={fog || undefined}
+            onClick={() => setFog((f) => !f)}
+          >
+            {t.pieces.showFog}
+          </Button>
+          <Button variant="ghost" className="h-9 px-3 text-sm" onClick={() => setSide((s) => (s === 'w' ? 'b' : 'w'))}>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
             >
-              <img className="piece" src={img(p)} alt="" draggable={false} decoding="async" />
-            </span>
-          )
-        }),
-      )}
+              <path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3" />
+            </svg>
+            {t.pieces.swapSides}
+          </Button>
+        </div>
+      </div>
+      <div className="live-board" role="img" aria-label={t.pieces.preview}>
+        <Board
+          board={fog ? FOGGED[side] : START}
+          orientation={side}
+          you={side}
+          legal={noMoves}
+          look={look}
+          center={center}
+          onMove={noop}
+        />
+      </div>
+      <p className="text-[13px] text-accent">{side === 'w' ? t.pieces.previewWhite : t.pieces.previewBlack}</p>
+    </div>
+  )
+})
+
+/** The fog style picker. */
+const FogPicker = memo(function FogPicker({ value }: { value: FogStyle }) {
+  const t = useT()
+  return (
+    <div role="radiogroup" aria-label={t.pieces.fog} className="seg">
+      {FOG_STYLES.map((f) => (
+        <button key={f} type="button" role="radio" aria-checked={value === f} onClick={() => setPrefs({ fog: f })}>
+          {t.pieces.fogStyles[f]}
+        </button>
+      ))}
     </div>
   )
 })
@@ -268,7 +325,7 @@ export function PiecesSettings({ signedIn }: { signedIn: boolean }) {
   return (
     <>
       <div className="set-row stack">
-        <Preview white={p.white} black={p.black} lightTiles={p.lightTiles} darkTiles={p.darkTiles} plain={p.plain} />
+        <LivePreview className="live-inline" />
         <p className="text-sm text-accent">{signedIn ? t.pieces.unlockHint : t.pieces.unlockGuest}</p>
       </div>
       <label className="set-row cursor-pointer">
@@ -280,6 +337,13 @@ export function PiecesSettings({ signedIn }: { signedIn: boolean }) {
           <span className="sl-switch-track" />
         </Switch.Root>
       </label>
+      <div className="set-row">
+        <div className="row-l">
+          <b>{t.pieces.fog}</b>
+          <span>{t.pieces.fogHint[p.fog]}</span>
+        </div>
+        <FogPicker value={p.fog} />
+      </div>
       <div className="set-row stack">
         <div className="row-l">
           <b>{t.pieces.whiteSet}</b>

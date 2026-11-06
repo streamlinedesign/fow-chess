@@ -1,6 +1,8 @@
+import { FogLayer } from './Fog'
 import { useT } from './i18n'
 import { squareIndex } from './position'
 import { usePieces } from './prefs'
+import { fogTint } from './sets'
 import type { Dict } from './i18n'
 import { HILL, OUTPOSTS, setupMode, type Settings } from './settings'
 
@@ -34,6 +36,7 @@ export function SettingsBoard({ settings, boardClassName = '' }: { settings: Set
   const pieceImg = usePieces('w')
   const setup = setupMode(settings)
   const squares = []
+  const fogCells: (string | null)[] = []
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
       const sq = FILES[col] + (8 - row)
@@ -41,6 +44,7 @@ export function SettingsBoard({ settings, boardClassName = '' }: { settings: Set
       const rank = i >> 3
       // At the start your pieces see your own four ranks: the pawns reach rank 4.
       const fog = settings.fog && rank >= 4
+      fogCells.push(fog ? fogTint(undefined) : null)
       const piece = fog ? null : START[i] === '.' ? null : START[i]
       squares.push(
         <div
@@ -73,11 +77,12 @@ export function SettingsBoard({ settings, boardClassName = '' }: { settings: Set
 
   return (
     <div
-      className={`board setup-board grid aspect-square w-full grid-cols-8 grid-rows-8 overflow-hidden rounded-md shadow-[0_0_0_2px_var(--color-fg)] ${boardClassName}`}
+      className={`board setup-board grid aspect-square w-full grid-cols-8 grid-rows-8 overflow-hidden board-crisp ${boardClassName}`}
       role="img"
       aria-label={`${t.settingsBoard.aria} ${notes.join(' ')}`}
     >
       {squares}
+      <FogLayer cells={fogCells} size={8} />
     </div>
   )
 }

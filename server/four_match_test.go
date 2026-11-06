@@ -387,3 +387,42 @@ func TestFourExtended(t *testing.T) {
 		t.Fatalf("extended game not restored")
 	}
 }
+
+// Bots left alone with nobody watching stop, and start again when someone
+// opens the game.
+func TestFourBotsAloneWait(t *testing.T) {
+	hub := NewFourHub(nil)
+	hub.botPause = func() time.Duration { return 0 }
+	ann := guestPlayer("ann-browser")
+	m := hub.Create(ann, fourSettings{Sync: true})
+	c := newClient(ann.key)
+	m.join(c, ann)
+	m.handle(c, fourIn{Type: "fill"})
+	m.handle(c, fourIn{Type: "resign"})
+	m.leave(c)
+	moves := func() int {
+		m.mu.Lock()
+		defer m.mu.Unlock()
+		return len(m.game.History())
+	}
+	time.Sleep(100 * time.Millisecond) // a round already under way may finish
+	before := moves()
+	time.Sleep(200 * time.Millisecond)
+	if n := moves(); n != before {
+		t.Fatalf("bots played on alone: %d moves, then %d", before, n)
+	}
+	m.join(newClient("bob-browser"), guestPlayer("bob-browser"))
+	deadline := time.Now().Add(5 * time.Second)
+	for moves() == before {
+		m.mu.Lock()
+		over := m.game.Over()
+		m.mu.Unlock()
+		if over {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("bots didn't start again when someone opened the game")
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}

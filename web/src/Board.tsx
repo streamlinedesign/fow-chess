@@ -1,6 +1,8 @@
 import { memo, useRef, useState } from 'react'
+import { FogLayer } from './Fog'
 import { pieceAt, squareIndex, type Look } from './position'
 import { usePieces, useTiles } from './prefs'
+import { fogTint } from './sets'
 import { HILL, OUTPOSTS } from './settings'
 import type { Color } from './useMatch'
 
@@ -169,6 +171,7 @@ export const Board = memo(function Board({
   }
 
   const squares = []
+  const fogCells: (string | null)[] = []
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
       const sq = squareAt(col, row, orientation)
@@ -176,7 +179,10 @@ export const Board = memo(function Board({
       const piece = pieceAt(board, sq)
       const fog = board[i] === '?'
       const light = ((i & 7) + (i >> 3)) % 2 === 1
-      const skin = fog ? undefined : tile(i >> 3, light)
+      // Hidden squares keep their tiles: dusk shows them under its veil, and the fog takes their colour.
+      const skin = tile(i >> 3, light)
+      const tint = fog ? fogTint(skin) : null
+      fogCells.push(tint)
       const target = targets.has(sq)
       // A pawn moving diagonally onto an empty square is capturing en passant.
       const capture = target && (piece !== null || (pieceAt(board, sel!)?.toLowerCase() === 'p' && sel![0] !== sq[0]))
@@ -187,7 +193,14 @@ export const Board = memo(function Board({
           data-square={sq}
           data-light={light}
           data-tile={skin ? true : undefined}
-          style={skin ? ({ '--tile': `url("${skin}")` } as React.CSSProperties) : undefined}
+          style={
+            skin || tint
+              ? ({
+                  '--tile': skin ? `url("${skin}")` : undefined,
+                  '--fog-tint': tint ?? undefined,
+                } as React.CSSProperties)
+              : undefined
+          }
           // Under fog the square your piece left is often out of sight; a highlight there would read as visible.
           data-last={
             !fog && (lastMove?.from === sq || lastMove?.to === sq || alsoMove?.from === sq || alsoMove?.to === sq)
@@ -215,7 +228,7 @@ export const Board = memo(function Board({
   return (
     <div
       ref={boardRef}
-      className="board grid aspect-square w-full grid-cols-8 grid-rows-8 overflow-hidden rounded-md shadow-[0_0_0_2px_var(--color-fg)]"
+      className="board grid aspect-square w-full grid-cols-8 grid-rows-8 overflow-hidden board-crisp"
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={(e) => endDrag(e)}
@@ -223,6 +236,7 @@ export const Board = memo(function Board({
       onContextMenu={(e) => e.preventDefault()}
     >
       {squares}
+      <FogLayer cells={fogCells} size={8} />
     </div>
   )
 })

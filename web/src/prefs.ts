@@ -20,7 +20,16 @@ export type Prefs = Skin & {
    * yours and your opponents' alike. Bots and four-player colours stay. Your picks are kept.
    */
   plain: boolean
+  /** How hidden squares look on your screen, and nobody else's: see FOG_STYLES. */
+  fog: FogStyle
 }
+
+/**
+ * Smoke draws one soft cloud over what you can't see; dusk leaves the squares
+ * under a dark veil, so you still see their colour. Must match fogStyles in server/prefs.go.
+ */
+export const FOG_STYLES = ['smoke', 'dusk'] as const
+export type FogStyle = (typeof FOG_STYLES)[number]
 
 export const DEFAULT_PREFS: Prefs = {
   white: CLASSIC,
@@ -30,6 +39,7 @@ export const DEFAULT_PREFS: Prefs = {
   lightTiles: '',
   darkTiles: '',
   plain: false,
+  fog: 'smoke',
 }
 
 /**
@@ -76,7 +86,8 @@ function clean(p: (Partial<Prefs> & { primary?: string }) | null | undefined): P
   if (!TILE_IDS.includes(out.lightTiles) || !isUnlocked(out.lightTiles)) out.lightTiles = ''
   if (!TILE_IDS.includes(out.darkTiles) || !isUnlocked(out.darkTiles)) out.darkTiles = ''
   const { white, black, side, avatar, lightTiles, darkTiles } = out
-  return { white, black, side, avatar, lightTiles, darkTiles, plain: out.plain === true }
+  const fog = FOG_STYLES.includes(out.fog) ? out.fog : 'smoke'
+  return { white, black, side, avatar, lightTiles, darkTiles, plain: out.plain === true, fog }
 }
 
 /** The part of your preferences everyone in your games sees. */
@@ -91,13 +102,20 @@ function loadLocal(): Prefs {
 }
 
 let prefs = loadLocal()
+showFog(prefs)
 let username: string | null = null
 const listeners = new Set<() => void>()
 
 const isDefault = (p: Prefs) => (Object.keys(DEFAULT_PREFS) as (keyof Prefs)[]).every((k) => p[k] === DEFAULT_PREFS[k])
 
+/** The fog style is drawn by CSS, from the page's root (see index.css). */
+function showFog(p: Prefs) {
+  if (typeof document !== 'undefined') document.documentElement.dataset.fogStyle = p.fog
+}
+
 function set(next: Prefs) {
   prefs = next
+  showFog(next)
   try {
     localStorage.setItem('prefs', JSON.stringify(next))
   } catch {}

@@ -276,7 +276,7 @@ export function FourSetup({
       </div>
       <div
         ref={boardRef}
-        className="board setup-board grid w-full grid-cols-8 overflow-hidden rounded-md shadow-[0_0_0_2px_var(--color-fg)]"
+        className="board setup-board grid w-full grid-cols-8 overflow-hidden board-crisp"
         onContextMenu={(e) => e.preventDefault()}
       >
         {squares}

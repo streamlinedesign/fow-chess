@@ -4,7 +4,7 @@ import { logout, refreshMe, useMe } from './auth'
 import { go } from './ProfilePage'
 import { LANGS, setLang, useLang, useT } from './i18n'
 import { Page, PageHead } from './Page'
-import { PiecesSettings } from './PiecesSettings'
+import { LivePreview, PiecesSettings } from './PiecesSettings'
 import { navigate } from './router'
 import { api } from './social'
 import { setThemeMode, themeMode, type ThemeMode } from './theme'
@@ -64,7 +64,7 @@ export function SettingsPage() {
           </span>
         }
       />
-      <div className="home-row">
+      <div className="home-row set-split">
         <div className="home-cell set-grid">
           <nav className="set-nav" aria-label={t.account.sections}>
             {sections.map((id) => (
@@ -224,6 +224,10 @@ export function SettingsPage() {
             )}
           </div>
         </div>
+        {/* Wide screens: the preview beside every setting, so each change shows at once. */}
+        <aside className="home-cell set-live">
+          <LivePreview />
+        </aside>
       </div>
     </Page>
   )

@@ -122,3 +122,22 @@ export function avatarImg(code: string | undefined) {
   if (!byId.has(set) || !KINDS.includes(kind as (typeof KINDS)[number])) return null
   return setImg(set, kind)
 }
+
+/**
+ * The colour of the fog over each tile skin's squares: a deep shade of the
+ * skin, so hidden squares still read as that player's half. "" is the plain board.
+ */
+export const FOG_TINT: Record<string, string> = {
+  '': '#34342c',
+  galaxy: '#231b52',
+  blueprint: '#112a58',
+  holy: '#4a3c1c',
+  ancient: '#3a2214',
+  cyberpunk: '#3a1250',
+}
+
+const skinOfTile = new Map<string, string>()
+for (const id of THEMES) for (const light of [true, false]) skinOfTile.set(tileImg(id, light)!, id)
+
+/** The fog colour over a square drawn with this tile image (undefined for a plain square). */
+export const fogTint = (tile: string | undefined) => FOG_TINT[(tile && skinOfTile.get(tile)) || '']

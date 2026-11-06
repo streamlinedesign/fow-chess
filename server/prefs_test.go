@@ -26,17 +26,18 @@ func TestPrefsAndAvatars(t *testing.T) {
 		`{"avatar":"red"}`,
 		`{"avatar":"galaxy/K"}`,
 		`{"lightTiles":"marble"}`,
+		`{"fog":"rain"}`,
 	} {
 		if code, _ := ann.do("PUT", "/api/prefs", bad); code != 400 {
 			t.Errorf("%s: %d", bad, code)
 		}
 	}
 
-	if code, _ := ann.do("PUT", "/api/prefs", `{"white":"red","black":"red","side":"b","avatar":"violet-light/N"}`); code != 200 {
+	if code, _ := ann.do("PUT", "/api/prefs", `{"white":"red","black":"red","side":"b","avatar":"violet-light/N","fog":"dusk"}`); code != 200 {
 		t.Fatalf("save: %d", code)
 	}
 	_, me = ann.do("GET", "/api/me", "")
-	if me["white"] != "red" || me["black"] != "red" || me["side"] != "b" || me["avatar"] != "violet-light/N" {
+	if me["white"] != "red" || me["black"] != "red" || me["side"] != "b" || me["avatar"] != "violet-light/N" || me["fog"] != "dusk" {
 		t.Errorf("saved: %v", me)
 	}
 

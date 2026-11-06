@@ -314,7 +314,7 @@ export function SetupBoard({
     <div className="flex flex-col gap-3">
       <div
         ref={boardRef}
-        className="board setup-board grid aspect-square w-full grid-cols-8 grid-rows-8 overflow-hidden rounded-md shadow-[0_0_0_2px_var(--color-fg)]"
+        className="board setup-board grid aspect-square w-full grid-cols-8 grid-rows-8 overflow-hidden board-crisp"
         onContextMenu={(e) => e.preventDefault()}
       >
         {squares}
