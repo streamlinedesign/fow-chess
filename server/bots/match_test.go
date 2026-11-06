@@ -20,7 +20,7 @@ func playFog(level Level, guardedWhite bool, seed uint64) float64 {
 	for ply := 0; ply < 300; ply++ {
 		me := p.Turn
 		seen := p.Vision(me)
-		m, ok := choose(level, p, &seen, r, (me == engine.White) == guardedWhite)
+		m, ok := legacyChoose(level, p, &seen, r, (me == engine.White) == guardedWhite)
 		if !ok {
 			return 0.5
 		}

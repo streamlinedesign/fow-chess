@@ -19,9 +19,9 @@ const (
 	Rex Level = "rex"
 	// Vercingetorix grabs what it can see and avoids the obvious.
 	Vercingetorix Level = "vercingetorix"
-	// Ramesses looks a few moves ahead.
+	// Ramesses looks a few moves ahead and guards its king against the fog.
 	Ramesses Level = "ramesses"
-	// Solomon looks further and values what it can see.
+	// Solomon imagines where the pieces it can't see might be.
 	Solomon Level = "solomon"
 )
 
@@ -46,60 +46,31 @@ func (l Level) Name() string {
 // Valid reports whether l names a bot.
 func (l Level) Valid() bool { return l.Name() != "" }
 
-// depth is how many plies each level searches.
-func (l Level) depth() int {
-	switch l {
-	case Vercingetorix:
-		return 2
-	case Ramesses:
-		return 3
-	case Solomon:
-		return 4
-	}
-	return 0
-}
-
 // Choose picks a move for the side to move in pos, who sees the squares in
 // seen (nil for the whole board). Candidates are pos's legal moves, so the
 // move is always playable; what the bot thinks will follow is worked out on
 // the board as it sees it, with the pieces it can't see left out. It returns
 // false when there is no legal move.
 func Choose(level Level, pos engine.Position, seen *[64]bool, rng *rand.Rand) (engine.Move, bool) {
-	return choose(level, pos, seen, rng, level == Ramesses || level == Solomon)
+	return ChooseWarned(level, pos, seen, false, rng)
 }
 
-// choose is Choose, with guarded saying whether the bot guards its king
-// against the fog (see exposure).
-func choose(level Level, pos engine.Position, seen *[64]bool, rng *rand.Rand, guarded bool) (engine.Move, bool) {
+// ChooseWarned is Choose in a game with the king warning, where a player is
+// told when their king is attacked, even by a piece they can't see. The bot
+// works that out from pos, as the server does for a person, and uses only
+// that one fact.
+func ChooseWarned(level Level, pos engine.Position, seen *[64]bool, warning bool, rng *rand.Rand) (engine.Move, bool) {
+	if rng == nil {
+		rng = rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+	}
+	if pl, ok := plans[level]; ok {
+		return chooseDeep(pl, pos, seen, warning, rng)
+	}
 	moves := pos.LegalMoves()
 	if len(moves) == 0 {
 		return engine.Move{}, false
 	}
-	if rng == nil {
-		rng = rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
-	}
-	if level.depth() == 0 {
-		return moves[rng.IntN(len(moves))], true
-	}
-	known := knownBoard(pos, seen)
-	s := &search{level: level, rng: rng, me: pos.Turn, guarded: guarded && seen != nil}
-	// A king the bot can't see isn't missing, it's hidden: its absence from
-	// the known board must not look like a capture.
-	for _, c := range []engine.Color{engine.White, engine.Black} {
-		s.kingKnown[c] = known.KingSquare(c) != engine.NoSquare
-	}
-	best, bestScore := moves[0], math.Inf(-1)
-	for _, m := range shuffled(moves, rng) {
-		// Each move gets a full window, so its score is exact and the noise
-		// below compares like with like. A little noise keeps the bot from
-		// playing the same game twice.
-		s.nodes = 0
-		score := -s.negamax(known.Apply(m), level.depth()-1, math.Inf(-1), math.Inf(1)) + rng.Float64()*0.05
-		if score > bestScore {
-			best, bestScore = m, score
-		}
-	}
-	return best, true
+	return moves[rng.IntN(len(moves))], true
 }
 
 // knownBoard is pos as the side to move sees it: pieces on squares it can't
@@ -119,104 +90,10 @@ func knownBoard(pos engine.Position, seen *[64]bool) engine.Position {
 	return known
 }
 
-type search struct {
-	level     Level
-	rng       *rand.Rand
-	nodes     int
-	kingKnown [2]bool
-	// me is the bot's colour, and guarded whether it scores the ways into its
-	// king from the fog.
-	me      engine.Color
-	guarded bool
-}
-
-// maxNodes caps the search below each candidate move, so a bot never takes
-// long whatever the position.
-const maxNodes = 20000
-
 // win is the score for taking the king.
 const win = 100000
 
-// negamax scores pos for the side to move, looking depth plies ahead.
-func (s *search) negamax(pos engine.Position, depth int, alpha, beta float64) float64 {
-	s.nodes++
-	us := pos.Turn
-	// The side to move has no king on the board it knows: it lost it.
-	if s.kingKnown[us] && pos.KingSquare(us) == engine.NoSquare {
-		return -win - float64(depth)
-	}
-	if k := pos.KingSquare(us.Other()); pos.Hill && k != engine.NoSquare && engine.OnHill(k) {
-		return -win - float64(depth)
-	}
-	if depth <= 0 || s.nodes > maxNodes {
-		return s.evaluate(pos)
-	}
-	moves := pos.LegalMoves()
-	if len(moves) == 0 {
-		// Nothing of this side's in sight can move: the hidden pieces will, so
-		// score the board as it stands rather than call it a stalemate.
-		return s.evaluate(pos)
-	}
-	orderMoves(pos, moves)
-	best := math.Inf(-1)
-	for _, m := range moves {
-		score := -s.negamax(pos.Apply(m), depth-1, -beta, -alpha)
-		if score > best {
-			best = score
-		}
-		if score > alpha {
-			alpha = score
-		}
-		if alpha >= beta {
-			break
-		}
-	}
-	return best
-}
-
 var value = [...]float64{engine.NoKind: 0, engine.Pawn: 1, engine.Knight: 3, engine.Bishop: 3, engine.Rook: 5, engine.Queen: 9, engine.King: 0}
-
-// evaluate scores pos for the side to move: material it can see, and for the
-// stronger bots, how much of the board it sees and pieces near the centre.
-func (s *search) evaluate(pos engine.Position) float64 {
-	us := pos.Turn
-	score := 0.0
-	for sq, pc := range pos.Board {
-		if pc.IsEmpty() {
-			continue
-		}
-		v := value[pc.Kind()]
-		if s.level != Vercingetorix && pc.Kind() != engine.King {
-			v += centre(engine.Square(sq)) * 0.03
-		}
-		if pc.Is(us) {
-			score += v
-		} else {
-			score -= v
-		}
-	}
-	if s.level == Solomon {
-		// Seeing more of the board is worth a little: fog hides the danger.
-		seen := pos.Vision(us)
-		n := 0
-		for _, ok := range seen {
-			if ok {
-				n++
-			}
-		}
-		score += float64(n) * 0.02
-	}
-	if s.guarded {
-		seen := pos.Vision(s.me)
-		cost := exposureCost * float64(exposure(&pos, s.me, &seen))
-		if us == s.me {
-			score -= cost
-		} else {
-			score += cost
-		}
-	}
-	return score
-}
 
 // centre is 1 on the four centre squares, falling to 0 at the edge.
 func centre(sq engine.Square) float64 {

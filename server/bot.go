@@ -57,7 +57,7 @@ func (m *Match) pokeBot() {
 		level := bots.Level(m.settings.Bot)
 		round, plies := m.round, len(m.game.History())
 		time.AfterFunc(m.botDelay(c, now), func() {
-			mv, ok := bots.Choose(level, pos, seen, nil)
+			mv, ok := bots.ChooseWarned(level, pos, seen, true, nil) // every game warns of an attacked king
 			m.mu.Lock()
 			defer m.mu.Unlock()
 			m.botThinking = false

@@ -3,7 +3,8 @@
 Run from the repo root: python3 scripts/cyberpunk.py
 Writes web/src/pieces/cyberpunk/{w,b}<kind>.svg and web/src/tiles/cyberpunk-{l,d}.svg.
 White is ice white with dark lines, Black deep violet with neon cyan lines; both
-have a magenta and cyan fringe, and the king, queen and prince a glitched star.
+have a magenta and cyan fringe, and the king, queen and prince the galaxy's
+sparkles with a glitch.
 """
 import os
 import re
@@ -27,20 +28,20 @@ def parse(kind):
 
 
 def sparkle(x, y, r, color):
-    """The galaxy set's four-point sparkle, with a dark edge so it reads on any tile."""
+    """The galaxy set's four-point sparkle."""
     k = r * 0.22
     return (f'<path d="M{x} {y-r} Q{x+k} {y-k} {x+r} {y} Q{x+k} {y+k} {x} {y+r} Q{x-k} {y+k} {x-r} {y} Q{x-k} {y-k} {x} {y-r} Z" '
-            f'fill="{color}" stroke="#0c0624" stroke-width="0.9" stroke-linejoin="round"/>')
+            f'fill="{color}"/>')
 
 
 def glitch_star(p, t):
-    """Two sparkles with a ghost behind them and a thin slice pushed sideways."""
-    stars = lambda c: sparkle(85, 10, 6.5, c) + sparkle(91.5, 21.5, 2.8, c)
-    return (f'<defs><clipPath id="{p}a"><rect x="70" y="0" width="30" height="8.6"/><rect x="70" y="11" width="30" height="20"/></clipPath>'
-            f'<clipPath id="{p}b"><rect x="70" y="8.6" width="30" height="2.4"/></clipPath></defs>'
-            f'<g transform="translate(-2 0.6)">{stars(t["ghost"])}</g>'
-            f'<g clip-path="url(#{p}a)">{stars(t["star"])}</g>'
-            f'<g clip-path="url(#{p}b)" transform="translate(2.6 0)">{stars(t["star"])}</g>')
+    """The galaxy's two sparkles, in the same place and size, glitched: a ghost
+    in the other neon colour a step to the right, and a thin gap cut across."""
+    stars = lambda c: sparkle(85, 9, 5, c) + sparkle(90, 19, 2.2, c)
+    return (f'<defs><mask id="{p}m"><rect x="70" y="0" width="30" height="30" fill="#fff"/>'
+            f'<rect x="70" y="9.9" width="30" height="0.9" fill="#000"/></mask></defs>'
+            f'<g transform="translate(1.3 0)">{stars(t["ghost"])}</g>'
+            f'<g mask="url(#{p}m)">{stars(t["star"])}</g>')
 
 
 def piece(side, kind):
