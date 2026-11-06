@@ -1,10 +1,10 @@
 import * as Switch from '@radix-ui/react-switch'
-import { memo, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { memo, useId, useMemo, useState } from 'react'
 import { AvatarImg } from './Avatar'
 import { Board } from './Board'
 import { useT } from './i18n'
 import type { Look } from './pieces'
-import { FOG_STYLES, setPrefs, skinOf, usePrefs, useUnlocked, type FogStyle } from './prefs'
+import { setPrefs, skinOf, usePrefs, useUnlocked } from './prefs'
 import { AVATAR_GROUPS, concrete, familyOf, KINDS, SET_IDS, setImg, THEME_LOCK, TILE_IDS, tileImg } from './sets'
 import { Button } from './ui'
 import { BOTS } from './settings'
@@ -175,12 +175,6 @@ export const LivePreview = memo(function LivePreview({ className = '' }: { class
   const p = usePrefs()
   const [side, setSide] = useState<'w' | 'b'>(p.side || 'w')
   const [fog, setFog] = useState(false)
-  // Picking a fog style shows it.
-  const style = useRef(p.fog)
-  useEffect(() => {
-    if (style.current !== p.fog) setFog(true)
-    style.current = p.fog
-  }, [p.fog])
   // Your skin on both halves, so the board shows your White set and your Black set together.
   const skin = skinOf(p)
   const look = useMemo<Look>(
@@ -232,20 +226,6 @@ export const LivePreview = memo(function LivePreview({ className = '' }: { class
         />
       </div>
       <p className="text-[13px] text-accent">{side === 'w' ? t.pieces.previewWhite : t.pieces.previewBlack}</p>
-    </div>
-  )
-})
-
-/** The fog style picker. */
-const FogPicker = memo(function FogPicker({ value }: { value: FogStyle }) {
-  const t = useT()
-  return (
-    <div role="radiogroup" aria-label={t.pieces.fog} className="seg">
-      {FOG_STYLES.map((f) => (
-        <button key={f} type="button" role="radio" aria-checked={value === f} onClick={() => setPrefs({ fog: f })}>
-          {t.pieces.fogStyles[f]}
-        </button>
-      ))}
     </div>
   )
 })
@@ -337,13 +317,6 @@ export function PiecesSettings({ signedIn }: { signedIn: boolean }) {
           <span className="sl-switch-track" />
         </Switch.Root>
       </label>
-      <div className="set-row">
-        <div className="row-l">
-          <b>{t.pieces.fog}</b>
-          <span>{t.pieces.fogHint[p.fog]}</span>
-        </div>
-        <FogPicker value={p.fog} />
-      </div>
       <div className="set-row stack">
         <div className="row-l">
           <b>{t.pieces.whiteSet}</b>
