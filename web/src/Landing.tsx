@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Avatar, Who } from './Avatar'
 import { useMe } from './auth'
 import { DemoBoard, savedDemoMode, type DemoMode } from './DemoBoard'
-import { DOWNLOADS, TOURNAMENTS } from './features'
+import { DOWNLOADS, TOURNAMENTS, releaseDate } from './features'
 import { BUILDS, detectOS, downloadUrl, OS_NAME } from './desktop'
 import { DownloadIcon } from './DownloadPage'
 import { useT } from './i18n'
@@ -35,9 +35,6 @@ import { api, openOffer, type UserCard } from './social'
 import { countdown, type Tournament } from './TournamentsPage'
 import { Button } from './ui'
 
-/** The day the beta ends and the full game ships. */
-const RELEASE = '2027-02-02'
-
 /** Clocks split by how long a game takes: Short is Blitz and Rapid, Long the rest. */
 const SHORT_GROUPS = ['Blitz', 'Rapid']
 export const presets = (long: boolean) =>
@@ -67,11 +64,7 @@ export function Landing() {
           <section>
             <h1 className="home-title">{t.landing.tagline}</h1>
             <p className="home-release">
-              {t.landing.release(
-                new Intl.DateTimeFormat(t.locale, { day: 'numeric', month: 'long', year: 'numeric' }).format(
-                  new Date(`${RELEASE}T12:00:00`),
-                ),
-              )}
+              {t.landing.release(releaseDate(t.locale))}
             </p>
           </section>
           <PlayMenu settings={settings} onChange={setSettings} signedIn={!!me} busy={busy} rating={me?.rating} />
@@ -571,7 +564,7 @@ export function FindFour({
         </>
       )}
       {!signedIn ? (
-        <Button variant={bare ? 'solid' : 'outline'} className="home-play" onClick={() => navigate('/login')}>
+        <Button variant="solid" className="home-play" onClick={() => navigate('/login')}>
           {t.home.logInToPlay}
         </Button>
       ) : waiting ? (
@@ -591,7 +584,7 @@ export function FindFour({
           </Button>
         </div>
       ) : (
-        <Button variant={bare ? 'solid' : 'outline'} className="home-play" onClick={start}>
+        <Button variant="solid" className="home-play" onClick={start}>
           {t.home.play}
         </Button>
       )}

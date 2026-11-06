@@ -4,6 +4,10 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Tap an enemy piece you can see to see where it could move, in both games. The server works it out from the board as you see it (hidden squares count as empty, no castling or en passant), so it tells you nothing new. New `reach` field in the game state.
+- The rules page has "Plans for v1.0" (rules may change, hand-drawn pieces and skins, apps for Windows, Linux, Mac, iOS and Android, self-hosting, more skins, tournaments, more mods, security and anti-cheat) in place of the Opera Game replay, which is gone along with its data and test.
+- War Mode's Play button is solid, like Eat the King's.
+- War Mode rules: the Battleship setup card says you can tap or drag.
 - Holy pieces: the halo and its rays fit inside the piece, so the queen's, king's and prince's halos are no longer cut off at the top. Cyberpunk king, queen and prince have no star.
 - Four-player bots under fog: they guard their king against squares they can't see and take and hold their vision squares. With fog and vision squares, War Mode's bot won 30% of games against three that don't (25% is level).
 - War Mode is played in the fog of war again, with centre vision: a piece on one of your two vision squares in the middle shows you the whole board. Ranked games and the home page board both.

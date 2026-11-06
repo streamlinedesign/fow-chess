@@ -1066,13 +1066,16 @@ type fourView struct {
 	Legal []string  `json:"legal"`
 	Last  *lastMove `json:"last"`
 	// LastRound is every move of the last Sync Move round, when the viewer can see them all.
-	LastRound    []lastMove          `json:"lastRound,omitempty"`
-	Danger       string              `json:"danger,omitempty"`
-	DangerHidden bool                `json:"dangerHidden,omitempty"`
-	FullVision   bool                `json:"fullVision,omitempty"`
-	History      []fourEvent         `json:"history"`
-	Captured     map[string][]string `json:"captured"`
-	Behind       int                 `json:"behind,omitempty"`
+	LastRound    []lastMove `json:"lastRound,omitempty"`
+	Danger       string     `json:"danger,omitempty"`
+	DangerHidden bool       `json:"dangerHidden,omitempty"`
+	// Reach is where each other player's piece the viewer can see could move,
+	// worked out on the board as the viewer sees it (see enemyReach in view.go).
+	Reach      map[string][]string `json:"reach,omitempty"`
+	FullVision bool                `json:"fullVision,omitempty"`
+	History    []fourEvent         `json:"history"`
+	Captured   map[string][]string `json:"captured"`
+	Behind     int                 `json:"behind,omitempty"`
 }
 
 type fourState struct {
@@ -1095,6 +1098,40 @@ type fourState struct {
 	Planned string `json:"planned,omitempty"`
 	// Arranged is the viewer's arrangement while players place their pieces.
 	Arranged string `json:"arranged,omitempty"`
+}
+
+// fourReach is enemyReach for four players: where each other player's piece
+// that us can see could go, on a copy of the board with every square us can't
+// see emptied and no castling or en passant.
+func fourReach(pos *four.Position, us four.Color, seen *[four.NumSquares]bool) map[string][]string {
+	view := *pos
+	view.Castling, view.EP, view.EPPawn = 0, four.NoSquare, four.NoSquare
+	if seen != nil {
+		for sq := range view.Board {
+			if !seen[sq] {
+				view.Board[sq] = four.NoPiece
+			}
+		}
+	}
+	reach := map[string][]string{}
+	for sq, pc := range view.Board {
+		if pc.IsEmpty() || pc.Color() == us || view.Out[pc.Color()] {
+			continue
+		}
+		var to []string
+		for _, m := range view.PieceMoves(four.Square(sq)) {
+			if s := m.To.String(); !slices.Contains(to, s) {
+				to = append(to, s)
+			}
+		}
+		if len(to) > 0 {
+			reach[four.Square(sq).String()] = to
+		}
+	}
+	if len(reach) == 0 {
+		return nil
+	}
+	return reach
 }
 
 // fourViewFor is the game as viewer sees it (-1 sees everything). Under fog a
@@ -1136,6 +1173,9 @@ func fourViewFor(g *four.Game, viewer int, playable, fog bool) fourView {
 		if k := pos.KingSquare(four.Color(viewer)); k != four.NoSquare && pos.Attacked(k, four.Color(viewer), nil) {
 			v.Danger = k.String()
 			v.DangerHidden = seen != nil && !pos.Attacked(k, four.Color(viewer), seen)
+		}
+		if playable {
+			v.Reach = fourReach(&pos, four.Color(viewer), seen)
 		}
 	}
 	for _, c := range four.Colors {

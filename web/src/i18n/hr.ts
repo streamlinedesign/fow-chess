@@ -106,8 +106,6 @@ export const hr: Dict = {
     noFriendsOnline: 'Trenutačno nema prijatelja online.',
     allGames: 'Sve partije',
     guestPitch: 'Prijavi se da sačuvaš partije, dodaš prijatelje i igraš za rejting.',
-    replayHeading: 'Magla rata, ponovno odigrana',
-    replaySub: 'Slavna partija, prikazana onako kako bi je vidio svaki od igrača.',
   },
 
   home: {
@@ -211,19 +209,6 @@ export const hr: Dict = {
     strip: 'Igraj na računalu',
     stripAbout: 'Ista igra u vlastitom prozoru, za Windows, Mac i Linux.',
     otherSystems: 'Ostali sustavi',
-  },
-
-  showcase: {
-    fogLifted: 'Magla se digla',
-    view: (side) => `Pogled: ${side.toLowerCase()}`,
-    auto: 'Auto',
-    whoseView: 'Čiji pogled',
-    aria: 'Partija s maglom rata, ponovno odigrana s obje strane.',
-    loading: 'Učitavanje snimke',
-    operaGame: 'Partija u operi',
-    text: ', Morphy protiv vojvode od Brunswicka i grofa Isouarda, Pariz 1858., odigrana s maglom rata.',
-    atMate: 'Kad partija završi, magla se diže za obje strane.',
-    eachSide: 'Svaka strana vidi samo ono što njezine figure dosežu.',
   },
 
   settingsBoard: {
@@ -530,6 +515,18 @@ export const hr: Dict = {
     warSub: 'Četiri igrača, svatko za sebe. Rangira se po vlastitom rejtingu.',
     modsNote:
       'Sve ostalo, od šah-mata do Kralja brda, je mod. Svaki je objašnjen tamo gdje ga biraš, na stranici Modovi.',
+    plansHeading: 'Planovi za v1.0',
+    plansSub: (date) => `Puno izdanje, ${date}.`,
+    plans: [
+      ['Pravila se mogu mijenjati', 'Pravila obje igre još se mogu mijenjati tijekom bete.'],
+      ['Ručno crtane figure i skinovi', 'Svaki set i polja nacrtani rukom.'],
+      ['Aplikacije', 'Posebne aplikacije za Windows, Linux, Mac, iOS i Android.'],
+      ['Vlastiti poslužitelj', 'Pogon igre kao zaseban projekt, da možeš sam pokrenuti poslužitelj.'],
+      ['Više skinova', 'Novi setovi i polja za otključavanje.'],
+      ['Turniri', 'Arene i događaji s vlastitim poretkom.'],
+      ['Više modova', 'Više opcija na stranici Modovi.'],
+      ['Sigurnost i borba protiv varanja', 'Jači poslužitelj i hvatanje igrača kojima netko pomaže.'],
+    ],
     cards: {
       fog: {
         kind: 'Što vidiš',
@@ -584,7 +581,7 @@ export const hr: Dict = {
         kind: 'Prije igre',
         title: 'Postavljanje kao Potapanje brodova',
         p: [
-          'Svatko postavlja **svih šesnaest figura bilo gdje u svoja četiri reda**, i pješake, ne vidjevši tuđe.',
+          'Svatko postavlja **svih šesnaest figura bilo gdje u svoja četiri reda**, i pješake, ne vidjevši tuđe. Dodirni ili povuci figure na mjesto.',
           'Imaš **dvije minute**. Tko do tada nije spreman, dobiva raspored bota. Kralj može početi u opasnosti.',
         ],
       },

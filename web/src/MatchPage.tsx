@@ -215,6 +215,7 @@ export function MatchPage({ id }: { id: string }) {
                   check={predicting ? undefined : state?.check}
                   danger={predicting ? undefined : state?.danger}
                   unsafe={state?.unsafe}
+                  reach={predicting ? undefined : state?.reach}
                   hill={state?.settings.hill}
                   look={look}
                   center={
