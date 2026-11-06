@@ -28,8 +28,8 @@ export const THEMES = ['galaxy', 'blueprint', 'holy', 'ancient', 'cyberpunk'] as
  * colours are never locked. Must match themeLocks in server/unlocks.go.
  */
 export const THEME_LOCK: Record<string, string> = {
-  holy: 'bot:rex',
-  blueprint: 'bot:vercingetorix',
+  holy: 'bot:vercingetorix',
+  blueprint: 'bot:rex',
   ancient: 'bot:ramesses',
   galaxy: 'bot:solomon',
   cyberpunk: 'beta',

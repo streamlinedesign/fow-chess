@@ -278,6 +278,8 @@ type Match struct {
 	overNotified int
 	// rewarded is one more than the round whose bot win has been unlocked, so it's done once.
 	rewarded int
+	// unlockedRound is one more than the round in which the bot's theme was unlocked for the first time.
+	unlockedRound int
 	// botThinking is set while a bot's move is being worked out, so a bot
 	// is poked once per turn.
 	botThinking bool
@@ -647,7 +649,7 @@ type stateMsg struct {
 	Ticking []string `json:"ticking,omitempty"`
 	// Planned is the move this player has sent for the Sync Move round.
 	Planned string `json:"planned,omitempty"`
-	// Unlocked is the theme a signed-in player won by beating the bot.
+	// Unlocked is the theme a signed-in player unlocked for the first time by beating the bot.
 	Unlocked string `json:"unlocked,omitempty"`
 }
 
@@ -1068,7 +1070,7 @@ func (m *Match) base() stateMsg {
 	}
 	if status == "over" {
 		base.Sniper = sniperWin(result, reason, len(m.game.History()))
-		if m.botWinner() != 0 {
+		if m.unlockedRound == m.round+1 {
 			base.Unlocked = botTheme(m.settings.Bot)
 		}
 	}

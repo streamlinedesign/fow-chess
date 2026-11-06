@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Rex inutilis now plays blueprint and Vercingetorix holy, and beating each unlocks that set. Beating a bot whose set you already have no longer says it's unlocked.
 - Back to the default rules: Eat the King warns you when your king is attacked and has centre vision again, and `/rules` is one page. This undoes #45 (in 0.18.0, never released).
 - Cyberpunk pieces and tiles, for everyone in the beta: ice white with dark lines for White, deep violet with neon cyan lines for Black, a pink and cyan glitch edge, and a glitched star on the king, queen and prince; flat cyan and violet squares with neon corners. Everyone has them while the beta is open, guests included; after `BETA_ENDS` accounts made before then keep them. Drawn by `scripts/cyberpunk.py`.
 - Fixed: opening a match link that no longer exists (a mistyped code, or a game from before a server restart) crashed the page with "Something broke" instead of saying the match wasn't found.

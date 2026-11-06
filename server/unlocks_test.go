@@ -12,6 +12,8 @@ import (
 // Beating a bot unlocks the theme it wears; losing to it, or a guest beating
 // it, unlocks nothing.
 func TestBeatingABotUnlocksItsTheme(t *testing.T) {
+	// Long after the beta, so beta themes (cyberpunk) don't count for this new account.
+	t.Setenv("BETA_ENDS", "2000-01-01")
 	site := newTestSite(t)
 	ann := site.signup("ann")
 	u, _ := site.store.UserByName("ann")
@@ -39,11 +41,7 @@ func TestBeatingABotUnlocksItsTheme(t *testing.T) {
 
 	play(bots.Rex, false)
 	m := play(bots.Solomon, true)
-	m.mu.Lock()
-	if st := m.base(); st.Unlocked != "galaxy" {
-		t.Errorf("the state says %q was unlocked", st.Unlocked)
-	}
-	m.mu.Unlock()
+	waitFor(t, m, "the state to say galaxy was unlocked", func() bool { return m.base().Unlocked == "galaxy" })
 
 	deadline := time.Now().Add(5 * time.Second)
 	for {
@@ -68,6 +66,15 @@ func TestBeatingABotUnlocksItsTheme(t *testing.T) {
 	if th := got["themes"].([]any); len(th) != 1 || th[0] != "galaxy" {
 		t.Errorf("unlocks: %v", got)
 	}
+
+	// Beating Solomon again unlocks nothing new, so the game says nothing.
+	again := play(bots.Solomon, true)
+	time.Sleep(200 * time.Millisecond)
+	again.mu.Lock()
+	if st := again.base(); st.Status != "over" || st.Unlocked != "" {
+		t.Errorf("second win: status %q, unlocked %q", st.Status, st.Unlocked)
+	}
+	again.mu.Unlock()
 
 	// A guest who wins has nothing to keep it on.
 	store := openTestStore(t, filepath.Join(t.TempDir(), "x"))

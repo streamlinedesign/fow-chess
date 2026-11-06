@@ -24,8 +24,8 @@ const lockBeta = "beta"
 // theme that isn't here is free. Must match THEME_LOCK in web/src/sets.ts and
 // BOT_SET in web/src/settings.ts.
 var themeLocks = map[string]string{
-	"holy":      "bot:rex",
-	"blueprint": "bot:vercingetorix",
+	"holy":      "bot:vercingetorix",
+	"blueprint": "bot:rex",
 	"ancient":   "bot:ramesses",
 	"galaxy":    "bot:solomon",
 	"cyberpunk": lockBeta,
@@ -147,10 +147,15 @@ func (s *Store) stripLocked(playerID string, sk *skin) bool {
 	return true
 }
 
-// Unlock records a reason for a player; a second time does nothing.
-func (s *Store) Unlock(id int64, reason string) error {
-	_, err := s.db.Exec(`INSERT INTO unlocks (user_id, reason, created_at) VALUES ($1, $2, now()) ON CONFLICT DO NOTHING`, id, reason)
-	return err
+// Unlock records a reason for a player, and says whether it's new; a second
+// time does nothing.
+func (s *Store) Unlock(id int64, reason string) (bool, error) {
+	res, err := s.db.Exec(`INSERT INTO unlocks (user_id, reason, created_at) VALUES ($1, $2, now()) ON CONFLICT DO NOTHING`, id, reason)
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
 }
 
 // botWinner is the signed-in player who just beat the bot in this round, or 0.
@@ -171,7 +176,8 @@ func (m *Match) botWinner() int64 {
 }
 
 // rewardBotWin unlocks the bot's theme for a signed-in player who beat it,
-// once a round. Callers hold m.mu.
+// once a round. Only a first unlock is announced to the players (see
+// stateMsg.Unlocked): beating the bot again says nothing. Callers hold m.mu.
 func (m *Match) rewardBotWin() {
 	if m.rewarded == m.round+1 {
 		return
@@ -181,10 +187,20 @@ func (m *Match) rewardBotWin() {
 		return
 	}
 	m.rewarded = m.round + 1
-	reason := "bot:" + m.settings.Bot
+	reason, round := "bot:"+m.settings.Bot, m.round
 	go func() {
-		if err := m.store.Unlock(id, reason); err != nil {
+		added, err := m.store.Unlock(id, reason)
+		if err != nil {
 			log.Printf("unlock %s for %d: %v", reason, id, err)
+		}
+		if !added {
+			return
+		}
+		m.mu.Lock()
+		defer m.mu.Unlock()
+		if m.round == round {
+			m.unlockedRound = round + 1
+			m.broadcast()
 		}
 	}()
 }
