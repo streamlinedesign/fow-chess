@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"chess/bots"
 	"chess/four"
 )
 
@@ -120,4 +121,32 @@ func slicesCount(xs []string, v string) int {
 		}
 	}
 	return n
+}
+
+func TestFourDemo(t *testing.T) {
+	hub := NewFourHub(nil)
+	hub.botPause = func() time.Duration { return 0 }
+	if warMode.Time != (TimeControl{Base: 1800, Inc: 10}) || rankedFour.Time != warMode.Time || !rankedFour.Rated || warMode.Rated {
+		t.Fatalf("war mode %+v ranked %+v", warMode, rankedFour)
+	}
+	p := &player{key: "guest:1", name: "Guest"}
+	m := hub.Create(p, demoFour(bots.Ramesses))
+	c := newClient(p.key)
+	m.join(c, p)
+	s := lastFour(t, c)
+	if s.Status != "setup" || !s.Settings.Demo || s.Settings.Rated || s.Settings.Time.clocked() || s.Settings.Setup != "battleship" {
+		t.Fatalf("status %s settings %+v", s.Status, s.Settings)
+	}
+	for _, seat := range []string{"b", "g", "v"} {
+		if pl := s.Players[seat]; !pl.Bot || pl.Name != "Ramesses II" || !pl.Ready {
+			t.Errorf("seat %s: %+v", seat, pl)
+		}
+	}
+	m.handle(c, fourIn{Type: "setup", Board: four.Extended.StandardSetup()})
+	if s := lastFour(t, c); s.Status != "playing" || len(s.Legal) == 0 {
+		t.Fatalf("status %s", s.Status)
+	}
+	if demoFour("nobody").Bot != string(demoBot) {
+		t.Error("an unknown bot should fall back to the demo bot")
+	}
 }

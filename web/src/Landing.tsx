@@ -2,7 +2,7 @@ import * as RadioGroup from '@radix-ui/react-radio-group'
 import { useEffect, useState } from 'react'
 import { Avatar, Who } from './Avatar'
 import { useMe } from './auth'
-import { DemoBoard } from './DemoBoard'
+import { DemoBoard, savedDemoMode, type DemoMode } from './DemoBoard'
 import { DOWNLOADS, TOURNAMENTS } from './features'
 import { BUILDS, detectOS, downloadUrl, OS_NAME } from './desktop'
 import { DownloadIcon } from './DownloadPage'
@@ -37,7 +37,8 @@ import { Button } from './ui'
 
 /** Clocks split by how long a game takes: Short is Blitz and Rapid, Long the rest. */
 const SHORT_GROUPS = ['Blitz', 'Rapid']
-export const presets = (long: boolean) => TIME_GROUPS.filter(([g]) => SHORT_GROUPS.includes(g) !== long).flatMap(([, p]) => p)
+export const presets = (long: boolean) =>
+  TIME_GROUPS.filter(([g]) => SHORT_GROUPS.includes(g) !== long).flatMap(([, p]) => p)
 const isLong = (t: TimeControl) => !SHORT_GROUPS.includes(timeGroup(t))
 
 /**
@@ -51,19 +52,26 @@ export function Landing() {
   const t = useT()
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const [busy, setBusy] = useState(false)
+  const [demo, setDemo] = useState<DemoMode>(savedDemoMode)
 
   return (
     <main className="home">
       <div className="home-row home-hero">
         <div className="home-cell cross">
-          <DemoBoard me={me?.username} />
+          <DemoBoard me={me?.username} mode={demo} onMode={setDemo} />
         </div>
         <div className="home-cell home-menu">
           <section>
             <h1 className="home-title">{t.landing.tagline}</h1>
           </section>
           <PlayMenu settings={settings} onChange={setSettings} signedIn={!!me} busy={busy} />
-          <FindFour signedIn={!!me} />
+          <FindFour
+            signedIn={!!me}
+            onTry={() => {
+              setDemo('war')
+              document.querySelector('.home-hero')?.scrollIntoView({ behavior: 'smooth' })
+            }}
+          />
           <CodeGame settings={settings} busy={busy} setBusy={setBusy} />
           <section>
             <a href="/mods" onClick={(e) => go(e, '/mods')} className="home-mods">
@@ -176,7 +184,15 @@ function PlayMenu({
 }
 
 /** A custom game: make a code to share, or join one. Quieter than matchmaking. */
-export function CodeGame({ settings, busy, setBusy }: { settings: Settings; busy: boolean; setBusy: (b: boolean) => void }) {
+export function CodeGame({
+  settings,
+  busy,
+  setBusy,
+}: {
+  settings: Settings
+  busy: boolean
+  setBusy: (b: boolean) => void
+}) {
   const t = useT()
   const [code, setCode] = useState('')
   const [doing, setDoing] = useState<'create' | 'join' | null>(null)
@@ -467,7 +483,7 @@ export function FindMatch({
  * War Mode, the ranked four-player game: one fixed game (extended board,
  * Battleship, Sync Move, jester pawns, no fog), found in its own queue of four.
  */
-export function FindFour({ signedIn, bare }: { signedIn: boolean; bare?: boolean }) {
+export function FindFour({ signedIn, bare, onTry }: { signedIn: boolean; bare?: boolean; onTry?: () => void }) {
   const t = useT()
   const [since, setSince] = useState<number | null>(null)
   const [now, setNow] = useState(0)
@@ -556,6 +572,11 @@ export function FindFour({ signedIn, bare }: { signedIn: boolean; bare?: boolean
       ) : (
         <Button variant={bare ? 'solid' : 'outline'} className="home-play" onClick={start}>
           {bare ? t.home.play : t.home.fourPlay}
+        </Button>
+      )}
+      {onTry && (
+        <Button variant="ghost" className="self-start px-0 underline-offset-4 hover:underline" onClick={onTry}>
+          {t.home.tryWar}
         </Button>
       )}
       {error && (
@@ -810,7 +831,11 @@ function AppStrip() {
       <div className="home-cell">
         <div className="flex items-baseline justify-between gap-3">
           <h2 className="text-[22px] font-semibold tracking-tight">{t.desktop.strip}</h2>
-          <a href="/download" onClick={(e) => go(e, '/download')} className="text-sm font-medium text-accent hover:text-fg">
+          <a
+            href="/download"
+            onClick={(e) => go(e, '/download')}
+            className="text-sm font-medium text-accent hover:text-fg"
+          >
             {t.desktop.otherSystems}
           </a>
         </div>

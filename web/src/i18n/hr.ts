@@ -146,7 +146,7 @@ export const hr: Dict = {
     noArena: 'Trenutačno nema najavljene arene.',
     fourTitle: 'Ratni način',
     fourAbout: 'Četiri igrača · Proširena ploča · Potapanje brodova · Istodobni potez · Pješaci lakrdijaši · Bez magle',
-    fourRanked: 'Rangira se na zasebnom rejtingu Ratnog načina. 10 minuta svakome.',
+    fourRanked: 'Rangira se na zasebnom rejtingu Ratnog načina. 30 minuta svakome, plus 10 sekundi po potezu.',
     fourPlay: 'Nađi partiju Ratnog načina',
     fourFinding: 'Tražim još tri igrača…',
     fourWaiting: (n, secs) => `${n} od 4 čeka, ${secs} s`,
@@ -154,6 +154,13 @@ export const hr: Dict = {
     keepGames: 'Sačuvaj svoje partije',
     playBot: (name) => `Igraj: ${name}`,
     cantStart: 'Ploča se nije pokrenula. Osvježi stranicu za novi pokušaj.',
+    boardMode: 'Igra',
+    tryWar: 'Probaj protiv botova',
+    opponents: 'Protivnici',
+    threeBots: (bot) => `${bot} ×3`,
+    demoBots: 'Tri bota za probu',
+    warTip: 'Postavi figure u svoja četiri reda, a onda svi igraju istodobno. Bez sata, i ništa se ne sprema.',
+    placing: 'Postavi figure',
   },
 
   desktop: {
@@ -161,7 +168,8 @@ export const hr: Dict = {
     original: 'Eat the King',
     originalAbout: 'Izvorna igra. Dva igrača u magli rata, bez šaha, pojedi kralja za pobjedu.',
     war: 'Ratni način',
-    warAbout: 'Četiri igrača, svi igraju istodobno. Magla je podignuta, a pješaci su lakrdijaši. Pobjeđuje posljednji kralj.',
+    warAbout:
+      'Četiri igrača, svi igraju istodobno. Magla je podignuta, a pješaci su lakrdijaši. Pobjeđuje posljednji kralj.',
     modded: 'Modovi',
     moddedAbout: 'Svaki prekidač: magla, šah-mat, Kralj brda, istodobni potez, bilo koji sat, dva ili četiri igrača.',
     place: (rank, of) => `${rank}. od ${of.toLocaleString('hr')} · rangirano`,
@@ -169,10 +177,11 @@ export const hr: Dict = {
     logInForRating: 'Prijavi se za rejting',
     neverRanked: 'Nikad rangirano',
     chooseMods: 'Odaberi modove',
-    warClock: '10 min svakome',
+    warClock: '30 min + 10 s svakome',
     clock: 'Sat',
     title: 'Igraj na računalu.',
-    about: 'Ista igra u vlastitom prozoru, za Windows, Mac i Linux. Ostaješ prijavljen, a počinje na početnoj s tri načina igre.',
+    about:
+      'Ista igra u vlastitom prozoru, za Windows, Mac i Linux. Ostaješ prijavljen, a počinje na početnoj s tri načina igre.',
     downloadFor: (os) => `Preuzmi za ${os}`,
     firstTitle: 'Kad je prvi put otvoriš.',
     firstText:
@@ -189,7 +198,8 @@ export const hr: Dict = {
     phoneAbout:
       'Nema aplikacije za instalirati. Otvori ovu stranicu na mobitelu i dodaj je na početni zaslon: na iPhoneu Dijeli pa Dodaj na početni zaslon; na Androidu izbornik pa Instaliraj aplikaciju. Otvara se preko cijelog zaslona, kao aplikacija.',
     phoneTitle: 'Igraj na mobitelu.',
-    phoneHero: 'Nema aplikacije za instalirati. Dodaj ovu stranicu na početni zaslon i otvara se preko cijelog zaslona, kao aplikacija.',
+    phoneHero:
+      'Nema aplikacije za instalirati. Dodaj ovu stranicu na početni zaslon i otvara se preko cijelog zaslona, kao aplikacija.',
     addToHome: 'Dodaj na početni zaslon',
     iphoneHint: 'Na iPhoneu: Dijeli, zatim Dodaj na početni zaslon.',
     onComputer: 'Na računalu',
