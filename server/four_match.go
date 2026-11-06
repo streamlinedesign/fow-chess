@@ -982,12 +982,43 @@ func (m *FourMatch) pokeBot() {
 				m.play(moves[i], now)
 			}
 		}
+		m.drawIfBotsShuffle(now)
 		if len(m.game.History()) != events {
 			m.save()
 		}
 		m.pokeBot()
 		m.broadcast()
 	}()
+}
+
+// botDrawPlies is how many plies the bots may play among themselves, with no
+// person left in and nothing taken, before the game is called a draw.
+const botDrawPlies = 200
+
+// drawIfBotsShuffle ends a game that only bots are still in as a draw once
+// nothing has been taken for botDrawPlies plies. Bots that guard their kings
+// can otherwise shuffle forever. Callers hold m.mu.
+func (m *FourMatch) drawIfBotsShuffle(now time.Time) {
+	if m.game.Over() {
+		return
+	}
+	pos := m.game.Position()
+	for _, c := range four.Colors {
+		if !pos.Out[c] && !m.bots[c] {
+			return
+		}
+	}
+	h := m.game.History()
+	if len(h) < botDrawPlies {
+		return
+	}
+	for _, e := range h[len(h)-botDrawPlies:] {
+		if e.Captured != four.NoPiece || e.Bumped || e.Out != four.NoMethod {
+			return
+		}
+	}
+	m.game.AgreeDraw()
+	m.startTurn(now)
 }
 
 // fourBotMove is the move of the bot in a seat. Rex inutilis plays at random,

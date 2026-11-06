@@ -88,6 +88,8 @@ export function Landing() {
 
       <About />
 
+      <Plans />
+
       <div className={`home-row home-r1 ${TOURNAMENTS ? '' : 'two'}`}>
         <div className="home-cell cross">{me ? <YourGames username={me.username} /> : <GuestPitch />}</div>
         {TOURNAMENTS && (
@@ -823,6 +825,29 @@ function About() {
             </div>
           ))}
         </dl>
+      </div>
+    </section>
+  )
+}
+
+/** What's coming with 1.0: one short line each. */
+function Plans() {
+  const t = useT()
+  return (
+    <section className="home-row" aria-labelledby="plans-title">
+      <div className="home-cell">
+        <h2 id="plans-title" className="text-[22px] font-semibold tracking-tight">
+          {t.about.plansHeading}
+        </h2>
+        <p className="mt-1 text-[13px] text-accent">{t.about.plansSub(releaseDate(t.locale))}</p>
+        <ol className="plans">
+          {t.about.plans.map((p, i) => (
+            <li key={p}>
+              <span className="plans-n">{String(i + 1).padStart(2, '0')}</span>
+              {p}
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   )

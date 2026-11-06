@@ -248,6 +248,18 @@ export const hr: Dict = {
   },
 
   about: {
+    plansHeading: 'Planovi za v1.0',
+    plansSub: (date) => `Stiže s punim izdanjem, ${date}.`,
+    plans: [
+      'Pravila obje igre još se mogu mijenjati',
+      'Ručno crtane figure i skinovi',
+      'Aplikacije za Windows, Linux, Mac, iOS i Android',
+      'Zaseban pogon igre za vlastiti poslužitelj',
+      'Više skinova',
+      'Turniri',
+      'Više modova',
+      'Sigurnost i borba protiv varanja',
+    ],
     title: 'O igri',
     paras: [
       'Eat the King je izvorna igra: šah u magli rata. Vidiš samo polja do kojih tvoje figure dosežu, nema šaha, a pobjeđuješ kad uzmeš kralja. Uvijek počinje iz uobičajenog položaja. Ratni način je druga službena igra: četiri igrača na proširenoj ploči, potapanje brodova, istodobni potez i pješaci lakrdijaši, u magli rata.',
@@ -515,18 +527,6 @@ export const hr: Dict = {
     warSub: 'Četiri igrača, svatko za sebe. Rangira se po vlastitom rejtingu.',
     modsNote:
       'Sve ostalo, od šah-mata do Kralja brda, je mod. Svaki je objašnjen tamo gdje ga biraš, na stranici Modovi.',
-    plansHeading: 'Planovi za v1.0',
-    plansSub: (date) => `Puno izdanje, ${date}.`,
-    plans: [
-      ['Pravila se mogu mijenjati', 'Pravila obje igre još se mogu mijenjati tijekom bete.'],
-      ['Ručno crtane figure i skinovi', 'Svaki set i polja nacrtani rukom.'],
-      ['Aplikacije', 'Posebne aplikacije za Windows, Linux, Mac, iOS i Android.'],
-      ['Vlastiti poslužitelj', 'Pogon igre kao zaseban projekt, da možeš sam pokrenuti poslužitelj.'],
-      ['Više skinova', 'Novi setovi i polja za otključavanje.'],
-      ['Turniri', 'Arene i događaji s vlastitim poretkom.'],
-      ['Više modova', 'Više opcija na stranici Modovi.'],
-      ['Sigurnost i borba protiv varanja', 'Jači poslužitelj i hvatanje igrača kojima netko pomaže.'],
-    ],
     cards: {
       fog: {
         kind: 'Što vidiš',
