@@ -148,12 +148,12 @@ export const en = {
     noArena: 'No arena coming up right now.',
     fourTitle: 'War Mode',
     fourAbout: 'Four players · Battleship · Jester pawns · Fog of war',
-    fourRanked: 'Ranked on a War Mode rating of its own, the same for every length.',
     warLength: 'War Mode clock',
     warTimes: [
       { label: '30 min', sub: '+10s a move' },
       { label: '2 hours', sub: '+30s a move' },
       { label: '1 day', sub: 'per move' },
+      { label: '10 min', sub: '+5s a move' },
     ],
     official: 'Official',
     yourRating: 'your rating',
@@ -187,7 +187,7 @@ export const en = {
     logInForRating: 'Log in for a rating',
     neverRanked: 'Never ranked',
     chooseMods: 'Choose mods',
-    warClocks: ['30 min + 10 s each', '2 h + 30 s each', '1 day per move'],
+    warClocks: ['30 min + 10 s each', '2 h + 30 s each', '1 day per move', '10 min + 5 s each'],
     clock: 'Clock',
     title: 'Play on your computer.',
     about:
@@ -691,7 +691,7 @@ export const en = {
         kind: 'Ranked',
         title: 'Clock and rating',
         p: [
-          'Pick a clock: **30 minutes each plus 10 seconds a move**, **2 hours each plus 30 seconds a move**, or **a day for every move**. Press **Play** on the home page to join a queue of four near your rating who picked the same clock.',
+          'Pick a clock: Short is **10 minutes each plus 5 seconds a move** or **30 minutes each plus 10 seconds a move**; Long is **2 hours each plus 30 seconds a move** or **a day for every move**. Press **Play** on the home page to join a queue of four near your rating who picked the same clock.',
           'To play friends instead, pick War Mode under **Play a friend with a code** and send them the code. Up to three can join, bots take the empty seats, and the game is never ranked.',
           'War Mode has its **own rating**, starting at 1000, and its own leaderboard. How it moves is under **Rank scores** below.',
         ],
@@ -701,7 +701,7 @@ export const en = {
         title: 'Starting at 1000',
         p: [
           'Eat the King and War Mode each keep **a rating of their own**, starting at **1000**, with a leaderboard each. It moves by whole points after every ranked game.',
-          'Games of **under an hour** each are **short**: blitz, rapid and War Mode’s 30 minutes. **Long** games are an hour or more each, plus daily and weekly clocks. A day runs midnight to midnight UTC.',
+          'Games of **under an hour** each are **short**: blitz, rapid and War Mode’s 10 and 30 minutes. **Long** games are an hour or more each, plus daily and weekly clocks. A day runs midnight to midnight UTC.',
         ],
       },
       scoreDuel: {

@@ -30,6 +30,8 @@ import {
   TIME_GROUPS,
   timeGroup,
   timeLabel,
+  WAR_LONG,
+  WAR_SHORT,
   WAR_TIMES,
   type Bot,
   type Settings,
@@ -636,26 +638,11 @@ export function FindFour({
           <OfficialHead title={t.home.fourTitle} rating={rating} />
           <p className="home-summary">
             <b>{t.home.fourAbout}</b>
-            <span className="block">{signedIn ? t.home.fourRanked : t.home.fourGuest}</span>
+            {!signedIn && <span className="block">{t.home.fourGuest}</span>}
           </p>
         </>
       )}
-      {onTime && signedIn && (
-        <RadioGroup.Root
-          aria-label={t.home.warLength}
-          value={String(WAR_TIMES.findIndex((p) => sameTime(p, time)))}
-          onValueChange={(i) => onTime(WAR_TIMES[Number(i)])}
-          disabled={waiting}
-          className="home-times"
-        >
-          {WAR_TIMES.map((_, i) => (
-            <RadioGroup.Item key={i} value={String(i)} className="home-time">
-              <b>{t.home.warTimes[i].label}</b>
-              <span>{t.home.warTimes[i].sub}</span>
-            </RadioGroup.Item>
-          ))}
-        </RadioGroup.Root>
-      )}
+      {onTime && signedIn && <WarClocks time={time} onTime={onTime} disabled={waiting} />}
       <div className="home-play-at flex flex-col gap-2.5">
       {waiting ? (
         <div className="tick flex items-center gap-3 p-3.5" role="status">
@@ -691,6 +678,57 @@ export function FindFour({
 
 /** The guests' Eat the King clock, Rapid 10+0. Must match guestRapid in server/guest_queue.go. */
 const GUEST_RAPID: TimeControl = { base: 600, inc: 0, perMove: 0 }
+
+/** War Mode's clock picker, laid out like Eat the King's: Short or Long, then two clocks. */
+function WarClocks({ time, onTime, disabled }: { time: TimeControl; onTime: (t: TimeControl) => void; disabled: boolean }) {
+  const t = useT()
+  const at = WAR_TIMES.findIndex((p) => sameTime(p, time))
+  const long = WAR_LONG.includes(at)
+  // Each length remembers the clock picked in it while the page is open.
+  const [last, setLast] = useState<Record<'short' | 'long', number>>(() => ({
+    short: long ? WAR_SHORT[1] : at,
+    long: long ? at : WAR_LONG[0],
+  }))
+  const pick = (i: number) => {
+    setLast({ ...last, [WAR_LONG.includes(i) ? 'long' : 'short']: i })
+    onTime(WAR_TIMES[i])
+  }
+  const clocks = long ? WAR_LONG : WAR_SHORT
+  return (
+    <>
+      <RadioGroup.Root
+        aria-label={t.home.length}
+        value={long ? 'long' : 'short'}
+        onValueChange={(l) => (l === 'long') !== long && pick(last[l as 'short' | 'long'])}
+        disabled={disabled}
+        className="seg seg-lg"
+      >
+        <RadioGroup.Item value="short">
+          {t.home.short}
+          <small>{t.home.shortSub}</small>
+        </RadioGroup.Item>
+        <RadioGroup.Item value="long">
+          {t.home.long}
+          <small>{t.home.longSub}</small>
+        </RadioGroup.Item>
+      </RadioGroup.Root>
+      <RadioGroup.Root
+        aria-label={t.home.warLength}
+        value={String(at)}
+        onValueChange={(i) => pick(Number(i))}
+        disabled={disabled}
+        className="home-times two"
+      >
+        {clocks.map((i) => (
+          <RadioGroup.Item key={i} value={String(i)} className="home-time">
+            <b>{t.home.warTimes[i].label}</b>
+            <span>{t.home.warTimes[i].sub}</span>
+          </RadioGroup.Item>
+        ))}
+      </RadioGroup.Root>
+    </>
+  )
+}
 
 /** Where guests queue for an unranked game with other guests. */
 const guestQueue = `/api/guest/queue?player=${playerId}`
