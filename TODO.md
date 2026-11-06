@@ -19,6 +19,7 @@
 
 ## Later
 
+- Blueprint unlocks at 1150, below the 1500 every account starts on, so every signed-in player has it; raise the mark if it should take work
 - Set `BETA_ENDS` in `/etc/<name>/env` when the beta closes, so cyberpunk stays with beta accounts only
 - Unlocks: replays and Watch don't draw a bot's set or tiles yet
 - 1.0: desktop app downloads. Set the `GAME_URL` repository variable (Actions > Variables), `make release`, then turn on `DOWNLOADS` in `web/src/features.ts`
@@ -42,6 +43,7 @@
 
 ## Done
 
+- 0.30.0: Mods band and skins showcase on the home page; Survey set for Vercingetorix; blueprint at a 1150 rating
 - 0.29.0: War Mode clocks of 30 minutes, 2 hours and a day; War Mode with friends by code
 - 0.28.0: home page plays Solomon, other bots as cards below, Upcoming list; guests are told wins unlock nothing
 - 0.24.2: fog is Dusk only

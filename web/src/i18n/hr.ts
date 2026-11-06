@@ -130,7 +130,6 @@ export const hr: Dict = {
     codeSubWar: 'Isti sat Ratnog načina kao gore. Pošalji kod do trojici prijatelja; botovi mogu zauzeti prazna mjesta.',
     codeGame: 'Igra s prijateljem',
     createCode: 'Napravi kod',
-    modsSub: 'Svako pravilo po želji: bez magle, šah-mat, Kralj brda, bilo koji sat. Nikad rangirano.',
     demoBot: 'Bot za probu',
     thinking: 'razmišlja',
     yourMove: 'tvoj potez',
@@ -294,6 +293,68 @@ export const hr: Dict = {
     currentSetup: 'Trenutačne postavke',
     intro:
       'Igra s otkrivenim kotačićima. Isključi maglu, igraj sa šahom, dodaj brdo ili kralja koji skače, ili makni sat. Partije s modovima su za zabavu i nikad se ne računaju u rejting.',
+  },
+
+  /** The Mods band on the home page. */
+  modsBand: {
+    title: ['Okreni', 'svaki', 'kotačić.'],
+    lede: 'Modovi su ista igra s opuštenim pravilima. Podigni maglu, pusti kralja da skače ili stavi četiri igrača na ploču 16 sa 16.',
+    sub: 'Bilo koja kombinacija, bilo koji sat. Modovi su za zabavu i nikad se ne rangiraju.',
+    open: 'Otvori modove',
+    tryExtended: 'Probaj proširenu ploču',
+    boardLabel: 'Proširena ploča za četiri igrača u magli. Crveni skakač prelazi otvoreni kut i jede plavog pješaka.',
+    boardCap: 'Proširena ploča · četiri igrača · ratna magla',
+    start: 'Crveni vidi samo ono što njegove figure dosežu',
+    steps: [
+      'Pješak izlazi i magla se malo diže',
+      'Skakač ide prema otvorenom kutu',
+      'Lovac vidi niz dugu dijagonalu',
+      'Kutovi nisu ničiji: svatko ih može prijeći',
+      'Dama dolazi iza',
+      'Skakač jede plavog pješaka kojeg je jedva vidio',
+    ],
+    ticker: [
+      'Proširena ploča',
+      'Sync Move',
+      'Jump King',
+      'Jester pješaci',
+      'Battleship',
+      'Zadnji red',
+      'Kralj brda',
+      'Središnji pogled',
+      'Bez magle',
+      'Šah-mat',
+      'Četiri igrača',
+      'Bilo koji sat',
+    ],
+    cells: {
+      extended: ['Proširena ploča', '16 sa 16, četiri reda svakome. Kutovi su otvoreni za sve.'],
+      sync: ['Sync Move', 'Svi igraju odjednom. Uzimanja dolaze zadnja, pa figura koja se makne izbjegne.'],
+      jump: ['Jump King', 'Tvoj kralj može skočiti i kao skakač.'],
+      jester: ['Jester pješaci', 'Pješaci se miču i uzimaju jedno polje u bilo kojem smjeru, kao kralj.'],
+      battleship: ['Battleship', 'Postavi svih šesnaest figura bilo gdje u svojim redovima. Nitko ne vidi gdje.'],
+      hill: ['Kralj brda', 'Dovedi kralja na središnje polje i pobijedi.'],
+      nofog: ['Bez magle', 'Cijela ploča na vidjelu. Šah, s kraljem kojeg se može pojesti.'],
+      mate: ['Šah-mat', 'Obična šahovska pravila sa šahom. Pobijedi na stari način.'],
+    } as Record<string, [string, string]>,
+    footLeft: 'Nikad rangirano · bilo koja kombinacija · bilo koji sat',
+    footRight: 'Otvori modove za sve prekidače',
+  },
+
+  /** The skins showcase on the home page. */
+  skins: {
+    title: 'Izgledi',
+    all: 'Sve figure i polja',
+    sub: 'Svaki komplet ima svoja polja i avatare. Osvoji ga i nosi ga. Boje su uvijek besplatne.',
+    guest: 'Prvo se prijavi. Pobjede gosta ne otključavaju ništa.',
+    beat: (bot: string) => `Pobijedi ${bot}`,
+    onThisPage: 'na ovoj stranici',
+    reach: (n: number) => `Dosegni ${n} u bilo kojem načinu`,
+    beta: 'Beta igrači',
+    unlocked: 'otključano',
+    playHere: (bot: string) => `Igraj protiv: ${bot}`,
+    isNew: 'novo',
+    locked: 'Zaključano',
   },
 
   four: {
@@ -922,11 +983,11 @@ export const hr: Dict = {
     plainTiles: 'Obična',
     lockedBy: (bot: string) => `Pobijedi: ${bot}`,
     lockedBeta: 'Za beta igrače',
-    lockedRating: 'Dosegni 2000',
+    lockedRating: (n: string) => `Dosegni ${n}`,
     unlockHint:
-      'Boje su tvoje. Većina tematskih kompleta pripada nekom botu: pobijedi ga i otključaš figure, polja i avatare. Sveti komplet je za rejting 2000.',
+      'Boje su tvoje. Većina tematskih kompleta pripada nekom botu: pobijedi ga i otključaš figure, polja i avatare. Nacrt je za rejting 1150, Sveti za 2000.',
     unlockGuest:
-      'Boje su tvoje. Većina tematskih kompleta pripada nekom botu: prijavi se i pobijedi ga da ga otključaš. Sveti komplet je za rejting 2000.',
+      'Boje su tvoje. Većina tematskih kompleta pripada nekom botu: prijavi se i pobijedi ga da ga otključaš. Nacrt je za rejting 1150, Sveti za 2000.',
     sets: {
       classic: 'Klasične',
       cream: 'Krem',
@@ -958,6 +1019,9 @@ export const hr: Dict = {
       cyberpunk: 'Cyberpunk',
       'cyberpunk-light': 'Cyberpunk, svijetle',
       'cyberpunk-dark': 'Cyberpunk, tamne',
+      survey: 'Karta',
+      'survey-light': 'Karta, svijetle',
+      'survey-dark': 'Karta, tamne',
     },
   },
 

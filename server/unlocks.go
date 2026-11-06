@@ -15,27 +15,28 @@ import (
 )
 
 // Themed skins are earned: most are worn by a bot, and beating that bot
-// unlocks its piece set, its tiles and its avatars. Holy is earned by
-// reaching a 2000 rating. The plain colours are never locked. Rex inutilis,
+// unlocks its piece set, its tiles and its avatars. Blueprint is earned by
+// reaching a 1150 rating and Holy by reaching 2000. The plain colours are never locked. Rex inutilis,
 // the weakest bot, plays the classic pieces and unlocks nothing.
 
 // lockBeta is the reason for a theme everyone has during the beta, and keeps
 // after it if their account was made before BETA_ENDS.
 const lockBeta = "beta"
 
-// lockRating is the reason for a theme earned by reaching ratingUnlock in
-// either rating, Eat the King or War Mode. Once reached it is kept.
-const lockRating = "rating:2000"
+// lockRating is the reason for a theme earned by reaching a rating, as
+// shown, in either rating, Eat the King or War Mode. Once reached it is kept.
+func lockRating(n int) string { return "rating:" + strconv.Itoa(n) }
 
-// ratingUnlock is the rating, as shown, that earns lockRating.
-const ratingUnlock = 2000
+// ratingUnlocks are the ratings that earn a theme: Blueprint and Holy.
+var ratingUnlocks = []int{1150, 2000}
 
 // themeLocks is what unlocks each locked theme: "bot:<level>", lockRating or
 // lockBeta. A theme that isn't here is free. Must match THEME_LOCK in
 // web/src/sets.ts and BOT_SET in web/src/settings.ts.
 var themeLocks = map[string]string{
-	"holy":      lockRating,
-	"blueprint": "bot:vercingetorix",
+	"holy":      lockRating(2000),
+	"blueprint": lockRating(1150),
+	"survey":    "bot:vercingetorix",
 	"ancient":   "bot:ramesses",
 	"galaxy":    "bot:solomon",
 	"cyberpunk": lockBeta,
@@ -127,8 +128,10 @@ func (s *Store) Unlocks(id int64) (unlocks, error) {
 	}
 	// A rating at the mark right now counts even before a rated game has
 	// recorded it (rateUnlock keeps it once reached).
-	if math.Round(peak) >= ratingUnlock {
-		u.reasons = append(u.reasons, lockRating)
+	for _, n := range ratingUnlocks {
+		if math.Round(peak) >= float64(n) {
+			u.reasons = append(u.reasons, lockRating(n))
+		}
 	}
 	rows, err := s.db.Query(`SELECT reason FROM unlocks WHERE user_id = $1`, id)
 	if err != nil {
@@ -166,15 +169,19 @@ func (s *Store) stripLocked(playerID string, sk *skin) bool {
 	return true
 }
 
-// rateUnlock records lockRating for a player whose rating has just reached
-// ratingUnlock, in the transaction that rated them, so it stays theirs if the
-// rating falls again.
+// rateUnlock records each rating unlock a player's rating has just reached,
+// in the transaction that rated them, so it stays theirs if the rating falls
+// again.
 func rateUnlock(tx *sql.Tx, id int64, rating float64) error {
-	if math.Round(rating) < ratingUnlock {
-		return nil
+	for _, n := range ratingUnlocks {
+		if math.Round(rating) < float64(n) {
+			continue
+		}
+		if _, err := tx.Exec(`INSERT INTO unlocks (user_id, reason, created_at) VALUES ($1, $2, now()) ON CONFLICT DO NOTHING`, id, lockRating(n)); err != nil {
+			return err
+		}
 	}
-	_, err := tx.Exec(`INSERT INTO unlocks (user_id, reason, created_at) VALUES ($1, $2, now()) ON CONFLICT DO NOTHING`, id, lockRating)
-	return err
+	return nil
 }
 
 // Unlock records a reason for a player; a second time does nothing.

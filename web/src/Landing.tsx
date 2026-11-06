@@ -9,6 +9,7 @@ import { DownloadIcon } from './DownloadPage'
 import { useT } from './i18n'
 import { Icon } from './icons'
 import { Leaderboard } from './Leaderboard'
+import { ModsBand } from './ModsBand'
 import { useLive } from './live'
 import { playerId } from './player'
 import { getPrefs, useUnlocked } from './prefs'
@@ -34,6 +35,7 @@ import {
   type Settings,
   type TimeControl,
 } from './settings'
+import { Skins } from './Skins'
 import { api, openOffer, type UserCard } from './social'
 import { countdown, type Tournament } from './TournamentsPage'
 import { Button } from './ui'
@@ -83,14 +85,12 @@ export function Landing() {
             }}
           />
           <CodeGame settings={settings} warTime={warTime} busy={busy} setBusy={setBusy} />
-          <section>
-            <a href="/mods" onClick={(e) => go(e, '/mods')} className="home-mods">
-              <span className="home-mods-title">{t.common.mods}</span>
-              <span className="block text-[13px] text-accent">{t.home.modsSub}</span>
-            </a>
-          </section>
         </div>
       </div>
+
+      <ModsBand />
+
+      <Skins />
 
       <About />
 
