@@ -785,6 +785,27 @@ a.tick:active {
 .menu-item svg {
   color: var(--color-accent);
 }
+/* Your two ratings at the top of your menu, side by side. */
+.menu-ratings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 0 4px 10px;
+}
+.menu-ratings > div {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--color-muted);
+}
+.menu-ratings dt {
+  font-size: 12px;
+  color: var(--color-accent);
+}
+.menu-ratings dd {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
 @media (min-width: 640px) {
   :root {
     --header: 80px;
@@ -2080,6 +2101,54 @@ a.tick:active {
 }
 .home-menu > section + section {
   border-top: 1px solid var(--line);
+}
+/* The two official, ranked games: a solid ink bar down the side, an Official
+   tag beside the title and your rating on the right. */
+.home-menu > .home-official {
+  box-shadow: inset 4px 0 0 var(--color-fg);
+}
+.official-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.official-head h2 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.official-tag {
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--color-fg);
+  color: var(--color-bg);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.official-rating {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.1;
+}
+.official-rating b {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 22px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.official-rating span {
+  font-size: 12px;
+  color: var(--color-accent);
 }
 .home-title {
   font-size: clamp(28px, 2.6vw, 38px);

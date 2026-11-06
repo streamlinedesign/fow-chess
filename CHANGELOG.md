@@ -4,6 +4,11 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Home page: Eat the King and War Mode are marked as the official games, with an Official tag, an ink bar down the side and your rating in each. War Mode's button just says Play.
+- Your ratings moved from the header into your menu, both of them: Eat the King and War Mode. `/api/me` returns `fourRating`.
+- Settings has a cog icon; Mods has a dial.
+- "Inspired by" no longer lists Hungry Hungry Hippos.
+- Fixed the unlocks test, which still expected a new account to have no themes after Cyberpunk became everyone's for the beta (main was red).
 - Back to the default rules: Eat the King warns you when your king is attacked and has centre vision again, and `/rules` is one page. This undoes #45 (in 0.18.0, never released).
 - Cyberpunk pieces and tiles, for everyone in the beta: ice white with dark lines for White, deep violet with neon cyan lines for Black, a pink and cyan glitch edge, and a glitched star on the king, queen and prince; flat cyan and violet squares with neon corners. Everyone has them while the beta is open, guests included; after `BETA_ENDS` accounts made before then keep them. Drawn by `scripts/cyberpunk.py`.
 - Fixed: opening a match link that no longer exists (a mistyped code, or a game from before a server restart) crashed the page with "Something broke" instead of saying the match wasn't found.

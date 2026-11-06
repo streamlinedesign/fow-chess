@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { dict, errorText } from './i18n'
 import { syncPrefs, type Prefs } from './prefs'
 
-export type Me = { username: string; rating: number } & Partial<Prefs>
+export type Me = { username: string; rating: number; fourRating?: number } & Partial<Prefs>
 
 // The signed-in user: undefined while the first check runs, null for a guest.
 let me: Me | null | undefined

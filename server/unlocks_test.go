@@ -18,7 +18,8 @@ func TestBeatingABotUnlocksItsTheme(t *testing.T) {
 	me := userPlayer(u, "ann-browser")
 
 	_, got := ann.do("GET", "/api/unlocks", "")
-	if th := got["themes"].([]any); len(th) != 0 {
+	// Cyberpunk is everyone's during the beta; the bots' themes start locked.
+	if th := got["themes"].([]any); len(th) != 1 || th[0] != "cyberpunk" {
 		t.Fatalf("a new account has %v", th)
 	}
 
@@ -51,7 +52,7 @@ func TestBeatingABotUnlocksItsTheme(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if th := un.themes(); slices.Equal(th, []string{"galaxy"}) {
+		if th := un.themes(); slices.Equal(th, []string{"galaxy", "cyberpunk"}) {
 			break
 		} else if time.Now().After(deadline) {
 			t.Fatalf("after beating Solomon and losing to Rex: %v", th)
@@ -65,7 +66,7 @@ func TestBeatingABotUnlocksItsTheme(t *testing.T) {
 		t.Errorf("holy, still locked: %d", code)
 	}
 	_, got = ann.do("GET", "/api/unlocks", "")
-	if th := got["themes"].([]any); len(th) != 1 || th[0] != "galaxy" {
+	if th := got["themes"].([]any); len(th) != 2 || th[0] != "galaxy" || th[1] != "cyberpunk" {
 		t.Errorf("unlocks: %v", got)
 	}
 

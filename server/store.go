@@ -414,11 +414,13 @@ func (s *Store) queryGames(where string, args ...any) ([]gameRecord, error) {
 
 // User is a signed-in player.
 type User struct {
-	ID        int64
-	Username  string
-	Rating    float64
-	CreatedAt time.Time
-	hash      []byte
+	ID       int64
+	Username string
+	Rating   float64
+	// FourRating is the War Mode rating (ranked four-player games).
+	FourRating float64
+	CreatedAt  time.Time
+	hash       []byte
 }
 
 var ErrUsernameTaken = errors.New("username taken")
@@ -447,8 +449,8 @@ func (s *Store) UserByID(id int64) (*User, error) {
 
 func (s *Store) user(where string, arg any) (*User, error) {
 	var u User
-	err := s.db.QueryRow(`SELECT id, username, rating, created_at, password_hash FROM users WHERE `+where, arg).
-		Scan(&u.ID, &u.Username, &u.Rating, &u.CreatedAt, &u.hash)
+	err := s.db.QueryRow(`SELECT id, username, rating, four_rating, created_at, password_hash FROM users WHERE `+where, arg).
+		Scan(&u.ID, &u.Username, &u.Rating, &u.FourRating, &u.CreatedAt, &u.hash)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

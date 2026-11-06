@@ -69,7 +69,6 @@ export const en = {
   } as Record<string, string>,
 
   header: {
-    yourRating: (n: number) => `Your rating, ${n}`,
     toggleDark: 'Toggle dark mode',
     yourMenu: 'Your menu',
     theme: 'Theme',
@@ -148,7 +147,9 @@ export const en = {
     fourTitle: 'War Mode',
     fourAbout: 'Four players · Extended board · Battleship · Sync Move · Jester pawns · No fog',
     fourRanked: 'Ranked on a War Mode rating of its own. 30 minutes each, plus 10 seconds a move.',
-    fourPlay: 'Find a War Mode game',
+    official: 'Official',
+    yourRating: 'your rating',
+    yourRatingIn: (game: string, n: number) => `Your ${game} rating, ${n}`,
     fourFinding: 'Finding three players…',
     fourWaiting: (n: number, secs: number) => `${n} of 4 waiting, ${secs} s`,
     fourGuest: 'Ranked games need an account.',
@@ -274,7 +275,6 @@ export const en = {
       ['Kriegspiel', 'Playing without seeing the other side.'],
       ['King of the Hill', 'Winning by walking your king to the centre.'],
       ['Battleship', 'Placing your pieces where nobody can see them.'],
-      ['Hungry Hungry Hippos', 'Eating is the point. Take the king and it’s over.'],
       ['Four-player chess', 'Everyone for themselves on a cross-shaped board.'],
     ] as [string, string][],
   },

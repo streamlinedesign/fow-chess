@@ -69,7 +69,6 @@ export const hr: Dict = {
   },
 
   header: {
-    yourRating: (n) => `Tvoj rejting, ${n}`,
     toggleDark: 'Promijeni tamni način',
     yourMenu: 'Tvoj izbornik',
     theme: 'Tema',
@@ -148,7 +147,9 @@ export const hr: Dict = {
     fourTitle: 'Ratni način',
     fourAbout: 'Četiri igrača · Proširena ploča · Potapanje brodova · Istodobni potez · Pješaci lakrdijaši · Bez magle',
     fourRanked: 'Rangira se na zasebnom rejtingu Ratnog načina. 30 minuta svakome, plus 10 sekundi po potezu.',
-    fourPlay: 'Nađi partiju Ratnog načina',
+    official: 'Službeno',
+    yourRating: 'tvoj rejting',
+    yourRatingIn: (game, n) => `Tvoj rejting u igri ${game}, ${n}`,
     fourFinding: 'Tražim još tri igrača…',
     fourWaiting: (n, secs) => `${n} od 4 čeka, ${secs} s`,
     fourGuest: 'Rangirane partije traže račun.',
@@ -273,7 +274,6 @@ export const hr: Dict = {
       ['Kriegspiel', 'Igra bez pogleda na drugu stranu.'],
       ['Kralj brda', 'Pobjeda dovođenjem kralja u centar.'],
       ['Potapanje brodova', 'Figure postavljene tamo gdje ih nitko ne vidi.'],
-      ['Gladni gladni nilski konji', 'Jesti je poanta. Uzmi kralja i gotovo je.'],
       ['Šah za četvero', 'Svatko za sebe na ploči u obliku križa.'],
     ],
   },
