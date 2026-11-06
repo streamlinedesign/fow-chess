@@ -112,8 +112,8 @@ type weights struct {
 // is the same bot without it and with more chance in what it plays. Under
 // fog both guard the king and hold the vision squares (see TestFourFog).
 var (
-	strongest = weights{hit: 0.4, dodge: 0.45, king: 60, take: 40, centre: 1.0 / 60, pawn: 0.1, threat: 0.3, fog: 1.5, outpost: 1.5, noise: 0.05}
-	careful   = weights{hit: 0.4, dodge: 0.45, king: 60, take: 40, centre: 1.0 / 60, pawn: 0.1, fog: 1.5, outpost: 1.5, noise: 4}
+	strongest = weights{hit: 0.4, dodge: 0.45, king: 60, take: 40, centre: 1.0 / 60, pawn: 0.1, threat: 0.3, fog: 0.5, outpost: 1.5, noise: 0.05}
+	careful   = weights{hit: 0.4, dodge: 0.45, king: 60, take: 40, centre: 1.0 / 60, pawn: 0.1, fog: 0.5, outpost: 1.5, noise: 4}
 )
 
 type bot struct {
