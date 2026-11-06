@@ -81,7 +81,7 @@ func TestWatching(t *testing.T) {
 	first := games[0].(map[string]any)
 	players := first["players"].(map[string]any)
 	if first["id"] != id || first["friend"] != true || players["w"].(map[string]any)["name"] != "ann" ||
-		players["w"].(map[string]any)["rating"] != 1500.0 || first["ply"] != 8.0 || first["spectators"] != 1.0 {
+		players["w"].(map[string]any)["rating"] != 1000.0 || first["ply"] != 8.0 || first["spectators"] != 1.0 {
 		t.Errorf("cat's first game: %v", first)
 	}
 	if second := games[1].(map[string]any); second["friend"] != false || second["players"].(map[string]any)["w"].(map[string]any)["name"] != nil {

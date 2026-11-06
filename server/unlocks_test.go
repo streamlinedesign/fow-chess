@@ -18,9 +18,9 @@ func TestBeatingABotUnlocksItsTheme(t *testing.T) {
 	me := userPlayer(u, "ann-browser")
 
 	_, got := ann.do("GET", "/api/unlocks", "")
-	// Cyberpunk is everyone's during the beta and Blueprint comes with the
-	// starting rating; the bots' themes start locked.
-	if th := got["themes"].([]any); len(th) != 2 || th[0] != "blueprint" || th[1] != "cyberpunk" {
+	// Cyberpunk is everyone's during the beta; Blueprint takes a 1150 rating,
+	// above the 1000 start, and the bots' themes start locked.
+	if th := got["themes"].([]any); len(th) != 1 || th[0] != "cyberpunk" {
 		t.Fatalf("a new account has %v", th)
 	}
 
@@ -59,7 +59,7 @@ func TestBeatingABotUnlocksItsTheme(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if th := un.themes(); slices.Equal(th, []string{"galaxy", "blueprint", "cyberpunk"}) {
+		if th := un.themes(); slices.Equal(th, []string{"galaxy", "cyberpunk"}) {
 			break
 		} else if time.Now().After(deadline) {
 			t.Fatalf("after beating Rex and Solomon and losing to Vercingetorix: %v", th)
@@ -73,7 +73,7 @@ func TestBeatingABotUnlocksItsTheme(t *testing.T) {
 		t.Errorf("holy, still locked: %d", code)
 	}
 	_, got = ann.do("GET", "/api/unlocks", "")
-	if th := got["themes"].([]any); len(th) != 3 || th[0] != "galaxy" || th[2] != "cyberpunk" {
+	if th := got["themes"].([]any); len(th) != 2 || th[0] != "galaxy" || th[1] != "cyberpunk" {
 		t.Errorf("unlocks: %v", got)
 	}
 
@@ -174,7 +174,7 @@ func TestRatingUnlocksHoly(t *testing.T) {
 		t.Error("holy went away when the rating fell")
 	}
 
-	// Blueprint is for 1150: a new account has it, and it stays when the rating falls below.
+	// Blueprint is for 1150, and it stays when the rating falls below.
 	blueprint := func(name string) bool {
 		t.Helper()
 		u, _ := store.UserByName(name)
@@ -185,7 +185,7 @@ func TestRatingUnlocksHoly(t *testing.T) {
 		return un.has("blueprint")
 	}
 	if !blueprint("cy") {
-		t.Error("a 1500 rating doesn't unlock blueprint")
+		t.Error("a 1980 rating doesn't unlock blueprint")
 	}
 	set("ann", "rating", 1100)
 	set("ann", "four_rating", 1100)

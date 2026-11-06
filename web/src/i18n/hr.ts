@@ -598,6 +598,15 @@ export const hr: Dict = {
     etkSub: 'Jedan na jedan, u magli, iz uobičajenog početnog položaja. Rangirano.',
     warHeading: 'Pravila Ratnog načina',
     warSub: 'Četiri igrača, svatko za sebe. Rangira se po vlastitom rejtingu.',
+    scoresHeading: 'Bodovanje',
+    scoresSub: 'Kako rangirana partija mijenja tvoj rejting.',
+    shortGames: 'Kratke',
+    longGames: 'Duge',
+    place: 'Mjesto',
+    usual: 'Inače',
+    firstLoss: 'Prvi poraz danas',
+    placeN: ['1.', '2.', '3.', '4.'],
+    scoresExample: 'Za pobjedu od 21 boda.',
     modsNote:
       'Sve ostalo, od šah-mata do Kralja brda, je mod. Svaki je objašnjen tamo gdje ga biraš, na stranici Modovi.',
     cards: {
@@ -639,7 +648,7 @@ export const hr: Dict = {
         title: 'Satovi i rejting',
         p: [
           'Satovi rade na poslužitelju, pa ih zatvaranje kartice ne zaustavlja. Istekne li ti vrijeme, gubiš, osim ako protivnik s onim što mu je ostalo ne može pobijediti. **Dnevni** daje 24 sata po potezu, a **Tjedni** 7 dana, iznova nakon svakog poteza.',
-          'Svaka partija između dva prijavljena igrača je **rangirana**, a Pojedi kralja i Ratni način imaju svaki svoj rejting, koji počinje na 1500. Pritisni **Igraj** na početnoj da te spojimo s igračem najbližim tvom rejtingu. Partije s **modovima** i protiv bota nikad se ne računaju.',
+          'Svaka partija između dva prijavljena igrača je **rangirana**, a Pojedi kralja i Ratni način imaju svaki svoj rejting, koji počinje na 1000 (vidi **Bodovanje** niže). Pritisni **Igraj** na početnoj da te spojimo s igračem najbližim tvom rejtingu. Partije s **modovima** i protiv bota nikad se ne računaju.',
         ],
       },
       warBoard: {
@@ -688,7 +697,31 @@ export const hr: Dict = {
         p: [
           'Odaberi sat: **30 minuta svakome plus 10 sekundi po potezu**, **2 sata svakome plus 30 sekundi po potezu** ili **dan za svaki potez**. Pritisni **Igraj** na početnoj stranici i uđi u red četvorice blizu tvog rejtinga koji su odabrali isti sat.',
           'Za igru s prijateljima odaberi Ratni način pod **Igraj s prijateljem preko koda** i pošalji im kod. Pridružiti se mogu do trojica, botovi zauzmu prazna mjesta, a igra se nikad ne rangira.',
-          'Svaka igra se broji kao rezultat **protiv svakog od ostale trojice**, po redoslijedu kojim ste završili. Ratni način ima **vlastiti rejting**, od 1500, i vlastitu ljestvicu.',
+          'Ratni način ima **vlastiti rejting**, od 1000, i vlastitu ljestvicu. Kako se mijenja, piše pod **Bodovanje** niže.',
+        ],
+      },
+      scoreStart: {
+        kind: 'Obje igre',
+        title: 'Počinješ s 1000',
+        p: [
+          'Pojedi kralja i Ratni način imaju svaki **svoj rejting**, koji počinje na **1000**, i svaki svoju ljestvicu. Mijenja se za cijele bodove nakon svake rangirane partije.',
+          'Partije s **manje od sat vremena** svakome su **kratke**: blitz, rapid i 30 minuta u Ratnom načinu. **Duge** su one od sat vremena ili više svakome, te dnevni i tjedni satovi. Dan traje od ponoći do ponoći po UTC-u.',
+        ],
+      },
+      scoreDuel: {
+        kind: 'Pojedi kralja',
+        title: 'Pobjeda i poraz',
+        p: [
+          'Pobjeda vrijedi **18 do 23 boda** u kratkoj partiji i **22 do 30** u dugoj: sredinu kad imate jednak rejting, više što je protivnikov rejting viši od tvog, najviše kad je viši za 400, a manje protiv slabijeg.',
+          'Poraženi gubi **isto toliko**, a **pola** toga pri **prvom porazu u danu**. Remi ne mijenja ništa. Snajperska pobjeda vrijedi četvrtinu.',
+        ],
+      },
+      scoreWar: {
+        kind: 'Ratni način',
+        title: 'Po mjestu',
+        p: [
+          'Pobjednik dobiva isti raspon kao u Pojedi kralja, **18 do 23** u kratkoj ili **22 do 30** u dugoj, prema svom rejtingu u odnosu na prosjek ostale trojice.',
+          '**Drugi** gubi koliko je pobjednik dobio, **treći** i **četvrti** pola toga. Pri tvom **prvom porazu u danu** drugi gubi pola, treći **ništa**, a četvrti četvrtinu. U neriješenoj igri oni izjednačeni na prvom mjestu ne mijenjaju ništa.',
         ],
       },
       draws: {

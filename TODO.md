@@ -17,6 +17,8 @@
 - Extract `server/engine` into a Go module so `chess-bots` stops carrying a copy
 - First droplet deploy: unit file and Caddy block in `deploy/`, `make deploy`
 
+- Revisit the 2000 rating that unlocks holy: with rank scores starting at 1000 it is about 50 net wins
+
 ## Later
 
 - Set `BETA_ENDS` in `/etc/<name>/env` when the beta closes, so cyberpunk stays with beta accounts only

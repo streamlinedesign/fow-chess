@@ -601,6 +601,15 @@ export const en = {
     etkSub: 'One against one, in the fog, from the usual position. Ranked.',
     warHeading: 'War Mode rules',
     warSub: 'Four players, everyone for themselves. Ranked on a rating of its own.',
+    scoresHeading: 'Rank scores',
+    scoresSub: 'How a ranked game moves your rating.',
+    shortGames: 'Short',
+    longGames: 'Long',
+    place: 'Place',
+    usual: 'Usual',
+    firstLoss: 'First loss today',
+    placeN: ['1st', '2nd', '3rd', '4th'],
+    scoresExample: 'For a 21-point win.',
     modsNote:
       'Everything else, from checkmate to King of the Hill, is a mod. Each one is explained where you pick it, on the Mods page.',
     cards: {
@@ -642,7 +651,7 @@ export const en = {
         title: 'Clocks and rating',
         p: [
           "Clocks run on the server, so closing the tab doesn't stop them. Run out and you lose, unless your opponent can't win with what's left. **Daily** gives you 24 hours per move and **Weekly** 7 days, reset after every move.",
-          'Every game between two signed-in players is **ranked**, with a rating of its own for Eat the King and for War Mode, each starting at 1500. Press **Play** on the home page to be paired with the player nearest your rating. **Mods** games and games against a bot never count.',
+          'Every game between two signed-in players is **ranked**, with a rating of its own for Eat the King and for War Mode, each starting at 1000 (see **Rank scores** below). Press **Play** on the home page to be paired with the player nearest your rating. **Mods** games and games against a bot never count.',
         ],
       },
       warBoard: {
@@ -691,7 +700,31 @@ export const en = {
         p: [
           'Pick a clock: **30 minutes each plus 10 seconds a move**, **2 hours each plus 30 seconds a move**, or **a day for every move**. Press **Play** on the home page to join a queue of four near your rating who picked the same clock.',
           'To play friends instead, pick War Mode under **Play a friend with a code** and send them the code. Up to three can join, bots take the empty seats, and the game is never ranked.',
-          'Each game counts as a result **against each of the other three**, by the order you finished in. War Mode has its **own rating**, starting at 1500, and its own leaderboard.',
+          'War Mode has its **own rating**, starting at 1000, and its own leaderboard. How it moves is under **Rank scores** below.',
+        ],
+      },
+      scoreStart: {
+        kind: 'Both games',
+        title: 'Starting at 1000',
+        p: [
+          'Eat the King and War Mode each keep **a rating of their own**, starting at **1000**, with a leaderboard each. It moves by whole points after every ranked game.',
+          'Games of **under an hour** each are **short**: blitz, rapid and War Mode’s 30 minutes. **Long** games are an hour or more each, plus daily and weekly clocks. A day runs midnight to midnight UTC.',
+        ],
+      },
+      scoreDuel: {
+        kind: 'Eat the King',
+        title: 'Win or lose',
+        p: [
+          'A win is worth **18 to 23 points** in a short game and **22 to 30** in a long one: the middle when you’re rated level, more the further your opponent is rated above you, the top at 400 above, and less against someone below.',
+          'The loser loses **the same amount**, and **half** of it on their **first loss of the day**. A draw moves nobody. A Sniper Win counts for a quarter.',
+        ],
+      },
+      scoreWar: {
+        kind: 'War Mode',
+        title: 'By place',
+        p: [
+          'The winner gets the same range as in Eat the King, **18 to 23** short or **22 to 30** long, set by their rating against the average of the other three.',
+          '**Second** loses what the winner got, **third** and **fourth** half of it. On your **first loss of the day**, second loses half, third **nothing** and fourth a quarter. In a drawn game, the players level in first move nobody.',
         ],
       },
       draws: {
