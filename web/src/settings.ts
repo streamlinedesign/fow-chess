@@ -27,8 +27,10 @@ export type Settings = {
   jesterPawns?: boolean
   /** King of the Hill: a king on one of the four centre squares wins. */
   hill?: boolean
-  /** Centre vision: a piece on the centre of the opponent's half shows you the whole board. Every game has 'any'; mods games may turn it off; 'pawn' is from early demo games. Must match centerVisions in server/view.go. */
+  /** Centre vision: a piece on the centre of the opponent's half shows you the whole board. A mod ('any'); ranked games had it before 0.9, and 'pawn' is from early demo games. Must match centerVisions in server/view.go. */
   centerVision?: CenterVision
+  /** King warning: you're told when your king is attacked. Mods only: Eat the King gives no warning. */
+  kingWarning?: boolean
   /** Sync Move: everyone moves at once each round. Always Eat the King. Mods only. */
   sync?: boolean
   /** Four players only: the extended board, 16 by 16 with neutral corners. Sent as board. */
@@ -143,7 +145,7 @@ const DEFAULTS: Settings = {
   kingCapture: true,
   time: tc(300),
   setup: '',
-  centerVision: 'any',
+  centerVision: '',
 }
 
 export const sameTime = (a: TimeControl, b: TimeControl) =>
@@ -201,7 +203,8 @@ export function loadSettings(mods = false): Settings {
       delete saved.sync
       delete saved.fourBoard
       saved.setup = ''
-      saved.centerVision = 'any'
+      saved.centerVision = ''
+      delete saved.kingWarning
       delete saved.mods
       delete saved.bot
       delete saved.unrated
@@ -233,8 +236,9 @@ export function twists(s: Settings, d: Dict) {
     ...(s.jumpKing ? [d.legacy.jump] : []),
     ...(s.jesterPawns ? [d.legacy.jesterPawns] : []),
     ...(s.sync ? [d.four.sync] : []),
-    // Centre vision for any piece is the game; mods games can turn it off, and early demo games counted only pawns.
-    ...(s.centerVision === 'pawn' ? [d.legacy.centerPawn] : s.mods && !s.centerVision ? [d.legacy.noCenter] : []),
+    // Early demo games counted only pawns. Ranked games before 0.9 had centre vision too, so it's named only in mods.
+    ...(s.centerVision === 'pawn' ? [d.legacy.centerPawn] : s.mods && s.centerVision ? [d.legacy.center] : []),
+    ...(s.kingWarning ? [d.legacy.kingWarning] : []),
   ]
 }
 

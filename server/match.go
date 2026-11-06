@@ -1101,12 +1101,16 @@ func (m *Match) view(msg stateMsg, color, side int) []byte {
 	if color >= 0 {
 		msg.You = colorNames[color]
 		msg.gameView = viewFor(m.game, color, msg.Status == "playing", m.settings.Fog)
+		if !m.settings.KingWarning {
+			msg.Danger, msg.DangerHidden, msg.Unsafe = "", false, nil
+		}
 		if msg.Planned = m.pending[color]; msg.Planned != "" {
 			msg.Legal = []string{} // a sent move is locked in
 		}
 	} else {
 		msg.Watching = colorNames[side]
 		msg.gameView = spectatorView(m.game, m.settings.rules(), side, m.settings.Fog)
+		msg.Danger, msg.DangerHidden, msg.Unsafe = "", false, nil // a player's warning, not a spectator's
 	}
 	b, _ := json.Marshal(msg)
 	return b

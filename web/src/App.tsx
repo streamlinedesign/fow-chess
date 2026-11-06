@@ -76,8 +76,8 @@ export function App() {
     <WatchPage />
   ) : path === '/settings' ? (
     <SettingsPage />
-  ) : path === '/rules' ? (
-    <RulesPage />
+  ) : path === '/rules' || path === '/rules/mods' ? (
+    <RulesPage mods={path === '/rules/mods'} />
   ) : path === '/mods' ? (
     <ModsPage />
   ) : TOURNAMENTS && path === '/tournaments' ? (

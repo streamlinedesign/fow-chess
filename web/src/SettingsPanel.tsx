@@ -20,7 +20,7 @@ import {
 
 /**
  * The mode and clock for a new match, boxed like a board of its own. Fog of
- * war and Eat the King are the game, so they aren't settings here; on the
+ * war and Eat the King (no check, no warning) are the game, so they aren't settings here; on the
  * mods page every dial is exposed. There's no ranked switch: a game is ranked
  * whenever both players are signed in, and a mods game never is.
  */
@@ -180,6 +180,12 @@ export function SettingsPanel({
                 }
                 checked={!!value.centerVision}
                 onChange={(on) => onChange({ ...value, centerVision: on ? 'any' : '' })}
+              />
+              <Toggle
+                label={t.panel.warning}
+                hint={t.panel.warningHint}
+                checked={!!value.kingWarning}
+                onChange={(kingWarning) => onChange({ ...value, kingWarning })}
               />
             </Group>
           )}

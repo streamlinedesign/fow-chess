@@ -29,6 +29,10 @@ type Settings struct {
 	// CenterVision gives the whole board to a player with a piece on the
 	// centre of the opponent's half: "pawn" counts only pawns, "any" any piece.
 	CenterVision string `json:"centerVision,omitempty"`
+	// KingWarning tells a player when their king is attacked, even from the
+	// fog, and marks the squares a seen piece covers when they pick the king
+	// up. Mods only: Eat the King gives no warning.
+	KingWarning bool `json:"kingWarning,omitempty"`
 	// Sync is Sync Move: both players send a move each round and both happen
 	// at once (see engine.Game.PlayRound). Mods only, and always Eat the King.
 	Sync bool `json:"sync,omitempty"`
@@ -66,8 +70,9 @@ func (s Settings) valid() bool {
 		(s.Bot == "" || bots.Level(s.Bot).Valid())
 }
 
-// normalize makes new settings the one game the site plays: fog of war with
-// centre vision (any piece), win by eating the king, ranked whenever both players are signed in. A mods game
+// normalize makes new settings the one game the site plays, Eat the King: fog
+// of war, no check or checkmate and no warning when the king is attacked, win
+// by eating it; ranked whenever both players are signed in. A mods game
 // keeps its options but is never ranked, and neither is a bot game. Saved
 // games keep whatever they were played with.
 func (s *Settings) normalize() {
@@ -90,7 +95,7 @@ func (s *Settings) normalize() {
 		return
 	}
 	s.Sync = false
-	s.Fog, s.KingCapture, s.CenterVision = true, true, "any"
+	s.Fog, s.KingCapture, s.CenterVision, s.KingWarning = true, true, "", false
 	s.JumpKing, s.JesterPawns, s.Hill = false, false, false
 	// Eat the King is played from the usual position; Back row and
 	// Battleship are mods.

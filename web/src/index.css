@@ -826,6 +826,26 @@ a.tick:active {
   background: var(--color-fg);
   color: var(--color-bg);
 }
+/* A segmented switch made of links, like the rules pages' Eat the King and Mods. */
+.seg a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.seg a:hover:not([aria-current='page']) {
+  background: var(--color-muted-2);
+}
+.seg a[aria-current='page'] {
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
 .seg.wide {
   display: grid;
   width: 100%;
