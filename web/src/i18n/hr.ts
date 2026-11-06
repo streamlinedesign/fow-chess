@@ -398,11 +398,11 @@ export const hr: Dict = {
     },
     backRow: {
       label: 'Zadnji red',
-      hint: 'Rasporedi svoj zadnji red kako god želiš.',
+      hint: 'Rasporedi svoj zadnji red kako god želiš. Kralj može početi u opasnosti: pobjeda u prvom potezu je Snajperska pobjeda.',
     },
     battleship: {
       label: 'Potapanje brodova',
-      hint: 'Postavi svih šesnaest figura bilo gdje u svoja četiri reda.',
+      hint: 'Postavi svih šesnaest figura bilo gdje u svoja četiri reda. Kralj može početi u opasnosti: pobjeda u prvom potezu je Snajperska pobjeda.',
     },
   },
 
@@ -522,8 +522,13 @@ export const hr: Dict = {
   rules: {
     heading: 'Kako se igra',
     intro:
-      'Obične šahovske figure i potezi, s dvije promjene: vidiš samo ono što vide tvoje figure, a pobjeđuješ tako da uzmeš kralja.',
+      'Dvije službene igre: Eat the King, šah u magli u kojem pobjeđuješ uzimanjem kralja, i Ratni način, četiri igrača koji love tuđe kraljeve.',
     yourMatchCode: 'tvoj kod partije',
+    etkHeading: 'Pravila igre Eat the King',
+    etkSub: 'Jedan na jedan, u magli, iz uobičajenog početnog položaja. Rangirano.',
+    warHeading: 'Pravila Ratnog načina',
+    warSub: 'Četiri igrača, svatko za sebe. Rangira se po vlastitom rejtingu.',
+    modsNote: 'Sve ostalo, od šah-mata do Kralja brda, je mod. Svaki je objašnjen tamo gdje ga biraš, na stranici Modovi.',
     cards: {
       fog: {
         kind: 'Što vidiš',
@@ -558,44 +563,60 @@ export const hr: Dict = {
           'Osvježavanje stranice ili gubitak signala vraća te na tvoje mjesto. Remi možeš ponuditi ili se predati u bilo kojem trenutku, a **revanš** zamjenjuje boje.',
         ],
       },
-      backRow: {
-        kind: 'Način igre',
-        title: 'Zadnji red',
-        p: [
-          'Prije partije svatko **rasporedi svoj zadnji red** kako želi. Pješaci ostaju gdje su uvijek.',
-          'Raspoređujete istodobno, pa nitko ne može reagirati. Rokada vrijedi samo za kralja i topa ostavljene na uobičajenim poljima.',
-        ],
-      },
-      battleship: {
-        kind: 'Način igre',
-        title: 'Potapanje brodova',
-        p: [
-          'Postavi **svih šesnaest figura bilo gdje u svoja četiri reda**, uključujući pješake. Sakrij kralja, sagradi zid ili usmjeri topa niz otvorenu liniju.',
-          'Tuđi raspored nikad ne vidiš, pa su prvi potezi lov.',
-        ],
-      },
-      sniper: {
-        kind: 'Zadnji red i Potapanje brodova',
-        title: 'Snajperska pobjeda',
-        p: [
-          'Kad sam raspoređuješ figure, kralj može početi u opasnosti. Ništa to ne sprječava: dio je igre. Ako pobijediš **već prvim potezom**, to je **snajperska pobjeda**.',
-          'I dalje se računa, ali oba rejtinga pomiče samo četvrtinu onoga što bi cijela partija.',
-        ],
-      },
-      jester: {
-        kind: 'Mod',
-        title: 'Pješaci lakrdijaši',
-        p: [
-          'Na stranici **modova** pješaci mogu postati lakrdijaši. Lakrdijaš se **kreće jedno polje u bilo kojem smjeru, kao kralj**, i **uzima na svakom od tih polja**, ravno naprijed i unatrag također.',
-          'Ostalo je i dalje pješak: **dvostruki korak** s početnog polja, **en passant** i **promocija** na zadnjem redu. Vidi sva polja oko sebe, a lakrdijaš do kralja ga napada.',
-        ],
-      },
       clocks: {
         kind: 'Rangirano',
         title: 'Satovi i rejting',
         p: [
           'Satovi rade na poslužitelju, pa ih zatvaranje kartice ne zaustavlja. Istekne li ti vrijeme, gubiš, osim ako protivnik s onim što mu je ostalo ne može pobijediti. **Dnevni** daje 24 sata po potezu, a **Tjedni** 7 dana, iznova nakon svakog poteza.',
           'Svaka partija između dva prijavljena igrača je **rangirana**, a Pojedi kralja i Ratni način imaju svaki svoj rejting, koji počinje na 1500. Pritisni **Igraj** na početnoj da te spojimo s igračem najbližim tvom rejtingu. Partije s **modovima** i protiv bota nikad se ne računaju.',
+        ],
+      },
+      warBoard: {
+        kind: 'Ploča',
+        title: 'Četiri igrača, proširena ploča',
+        p: [
+          'Ploča **16 puta 16** s **četiri reda za svakoga** i **otvorenim kutovima** koje svatko smije prijeći. Oko nje sjede Crveni, Plavi, Zeleni i Ljubičasti.',
+          '**Nema magle**: svi vide cijelu ploču. Pješaci se promoviraju **iza sredine** ili na **bočnim zidovima** igrača do tebe.',
+        ],
+      },
+      warSetup: {
+        kind: 'Prije igre',
+        title: 'Postavljanje kao Potapanje brodova',
+        p: [
+          'Svatko postavlja **svih šesnaest figura bilo gdje u svoja četiri reda**, i pješake, ne vidjevši tuđe.',
+          'Imaš **dvije minute**. Tko do tada nije spreman, dobiva raspored bota. Kralj može početi u opasnosti.',
+        ],
+      },
+      warSync: {
+        kind: 'Kako ide krug',
+        title: 'Istodobni potez',
+        p: [
+          '**Svi igraju odjednom.** Svaki krug odabereš potez, a potezi se odigraju zajedno kad sva četiri stignu.',
+          '**Uzimanja dolaze zadnja**, pa figura koja se u istom krugu makne izbjegne uzimanje.',
+        ],
+      },
+      warJester: {
+        kind: 'Pješaci',
+        title: 'Pješaci lakrdijaši',
+        p: [
+          'Lakrdijaš **ide jedno polje u bilo kojem smjeru, kao kralj**, i **uzima na svakom od tih polja**.',
+          'Zadržava pješakov **dvostruki korak** s početnog polja, **en passant** i **promociju**. Lakrdijaš do kralja napada ga.',
+        ],
+      },
+      warWin: {
+        kind: 'Kako pobjeđuješ',
+        title: 'Zadnji kralj na ploči',
+        p: [
+          '**Nema šaha.** Uzmi kralja i njegov igrač **ispada**: njegove figure silaze s ploče, a ostali igraju dalje. Pobjeđuje **zadnji preostali kralj**.',
+          'Igrač koji je ispao gleda nekoliko poteza iza, a njegov chat do kraja igre čitaju samo drugi koji su ispali.',
+        ],
+      },
+      warRating: {
+        kind: 'Rangirano',
+        title: 'Sat i rejting',
+        p: [
+          '**30 minuta svakome, plus 10 sekundi po potezu.** Pritisni **Igraj** na početnoj stranici i uđi u red četvorice blizu tvog rejtinga.',
+          'Svaka igra se broji kao rezultat **protiv svakog od ostale trojice**, po redoslijedu kojim ste završili. Ratni način ima **vlastiti rejting**, od 1500, i vlastitu ljestvicu.',
         ],
       },
       draws: {
