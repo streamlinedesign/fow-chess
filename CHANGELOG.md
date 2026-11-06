@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Home page Mods band: the fogged board and the running list of names are gone; the mod cards sit beside the headline instead, and the flying pieces stay. Jump King is called Prince, and Battleship is called Ambush (Zasjeda in Croatian) everywhere players see it; Battleship is also out of Inspired by. The code names (`jumpKing`, `battleship`) are unchanged, so saved games and settings keep working.
 - War Mode: second place counts as a win and gains half of what the winner gets (what third normally loses); only third and fourth count as a loss for the first-loss-of-the-day rule.
 - The Sniper Win is gone: a game won on the first move is an ordinary win, worth full points, with no special title in the game, profile, replay or bell.
 - Home page: the column beside the board is gone. New game, Play as Black and Pieces sit above the board on the left, the Eat the King / War Mode switch on the right; Solomon's line under the board says what beating him unlocks. The move list is no longer shown there. Where the menu has room (wide screens, tablets), Eat the King and War Mode sit side by side, and so do Play a friend and Mods below them.
