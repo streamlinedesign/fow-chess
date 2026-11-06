@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { logout, useMe } from './auth'
 import { Avatar } from './Avatar'
 import { Bell } from './Bell'
-import { TOURNAMENTS } from './features'
+import { DOWNLOADS, TOURNAMENTS } from './features'
 import { DESKTOP } from './desktop'
 import { DownloadIcon } from './DownloadPage'
 import { LANGS, setLang, useLang, useT } from './i18n'
@@ -91,7 +91,7 @@ export function Header() {
             >
               {t.common.watch}
             </a>
-            {!DESKTOP && (
+            {DOWNLOADS && !DESKTOP && (
               <a
                 href="/download"
                 onClick={(e) => go(e, '/download')}
@@ -240,7 +240,7 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
         <Icon name="book" />
         {t.landing.howToPlay}
       </MenuItem>
-      {!DESKTOP && (
+      {DOWNLOADS && !DESKTOP && (
         <MenuItem onSelect={() => navigate('/download')}>
           <DownloadIcon size={16} />
           {t.desktop.download}

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Avatar, Who } from './Avatar'
 import { useMe } from './auth'
 import { DemoBoard } from './DemoBoard'
-import { TOURNAMENTS } from './features'
+import { DOWNLOADS, TOURNAMENTS } from './features'
 import { BUILDS, detectOS, downloadUrl, OS_NAME } from './desktop'
 import { DownloadIcon } from './DownloadPage'
 import { useT } from './i18n'
@@ -85,7 +85,7 @@ export function Landing() {
         <div className="home-cell">{me ? <FriendsOnline /> : <WatchTeaser />}</div>
       </div>
 
-      <AppStrip />
+      {DOWNLOADS && <AppStrip />}
 
       <Bots settings={settings} />
 
