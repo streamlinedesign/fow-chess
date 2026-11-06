@@ -157,10 +157,9 @@ func TestSetupMatch(t *testing.T) {
 		t.Fatalf("saved game: start %q sniper %v diff %v", rec.StartFEN, rec.sniper(), rec.RatingDiff)
 	}
 	// A Sniper Win moves ratings a quarter as far as a whole win.
-	full := newPlayer.rate([]glickoResult{{newPlayer, 1}})
-	want := int(math.Round(1500 + sniperWeight*(full.Rating-1500)))
+	want := startRating + int(math.Round(float64(winValue(settings.Time, startRating, startRating))*sniperWeight))
 	if a, _ := store.UserByID(ann.ID); int(math.Round(a.Rating)) != want {
-		t.Errorf("ann's rating after a Sniper Win %.1f, want %d (a whole win: %.1f)", a.Rating, want, full.Rating)
+		t.Errorf("ann's rating after a Sniper Win %.1f, want %d", a.Rating, want)
 	}
 	// The replay starts from the setups.
 	if r, err := buildReplay(rec); err != nil || r.Frames[0].Board[20] != 'R' {

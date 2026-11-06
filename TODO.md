@@ -17,6 +17,8 @@
 - Extract `server/engine` into a Go module so `chess-bots` stops carrying a copy
 - First droplet deploy: unit file and Caddy block in `deploy/`, `make deploy`
 
+- Revisit the 2000 rating that unlocks holy: with rank scores starting at 1000 it is about 50 net wins
+
 ## Later
 
 - Set `BETA_ENDS` in `/etc/<name>/env` when the beta closes, so cyberpunk stays with beta accounts only
@@ -42,7 +44,8 @@
 
 ## Done
 
-- 0.30.0: home page board without the side column; Eat the King and War Mode side by side
+- 0.32.0: home page board without the side column; Eat the King and War Mode side by side
+- 0.30.0: Mods band and skins showcase on the home page; Survey set for Vercingetorix; blueprint at a 1150 rating
 - 0.29.0: War Mode clocks of 30 minutes, 2 hours and a day; War Mode with friends by code
 - 0.28.0: home page plays Solomon, other bots as cards below, Upcoming list; guests are told wins unlock nothing
 - 0.24.2: fog is Dusk only

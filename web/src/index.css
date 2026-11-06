@@ -2203,7 +2203,7 @@ a.tick:active {
   border-top: 1px solid var(--line);
 }
 /* With the room the board leaves (wide screens, or full width on a tablet), the
-   two official games sit side by side, and so do the code and Mods below them. */
+   two official games sit side by side, with Play a friend across both below. */
 .home-menu {
   container-type: inline-size;
 }
@@ -2219,9 +2219,11 @@ a.tick:active {
   .home-menu-grid .home-time {
     padding: 0 10px;
   }
-  .home-menu-grid > section:nth-child(3),
-  .home-menu-grid > section:nth-child(5) {
+  .home-menu-grid > section:nth-child(3) {
     border-left: 1px solid var(--line);
+  }
+  .home-menu-grid > section:nth-child(4) {
+    grid-column: 1 / -1;
   }
   .home-menu-grid > section:nth-child(n + 2) {
     border-top: 1px solid var(--line);
@@ -2605,21 +2607,6 @@ a.tick:active {
 .code-input:focus-visible {
   box-shadow: inset 0 0 0 2px var(--color-fg);
 }
-.home-mods {
-  display: block;
-}
-.home-mods-title {
-  display: block;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  text-decoration-color: var(--color-border);
-  transition: text-decoration-color 0.15s;
-}
-.home-mods:hover .home-mods-title {
-  text-decoration-color: var(--color-fg);
-}
-
 /* The demo game: player strips around the board, the opponent and the moves beside it. */
 .demo {
   display: grid;
@@ -3708,4 +3695,542 @@ a.tick:active {
   background: var(--color-bg);
   color: var(--color-fg);
   opacity: 1;
+}
+
+/*
+ * The Mods band on the home page: a night band, the same in both themes, with
+ * pieces flying through it, the extended board in the fog, every mod's name
+ * running past and a cell per mod.
+ */
+.mods-band {
+  --ink: #050505;
+  --paper: #fffabd;
+  --soft: #a3a38b;
+  --hair: rgb(255 250 189 / 0.2);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.mods-band :focus-visible {
+  outline-color: var(--paper);
+}
+.mods-sky {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.mods-sky img {
+  position: absolute;
+  left: var(--x);
+  top: 100%;
+  width: var(--s);
+  opacity: var(--o);
+  filter: blur(var(--b));
+  animation: mods-fly var(--d) linear var(--delay) infinite;
+}
+@keyframes mods-fly {
+  from {
+    transform: translate(0, 0) rotate(var(--r0));
+  }
+  to {
+    transform: translate(var(--dx), calc(-100% - 140vh)) rotate(var(--r1));
+  }
+}
+/* A soft dark behind the words so they stay readable. */
+.mods-sky::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(60% 70% at 22% 45%, rgb(5 5 5 / 0.86), transparent 70%),
+    linear-gradient(to bottom, rgb(5 5 5 / 0.2), rgb(5 5 5 / 0.55));
+}
+.mods-band-top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 48px;
+  align-items: center;
+  padding: 88px var(--gut) 72px;
+}
+.mods-band-title {
+  margin: 0;
+  font-size: clamp(76px, 12vw, 184px);
+  line-height: 0.84;
+  font-weight: 800;
+  letter-spacing: -0.065em;
+}
+.mods-band-title span {
+  display: block;
+}
+.mods-band-title .o {
+  color: transparent;
+  -webkit-text-stroke: 2px var(--paper);
+}
+.mods-band-lede {
+  margin-top: 28px;
+  max-width: 34ch;
+  font-size: 19px;
+  line-height: 1.45;
+}
+.mods-band-sub {
+  margin-top: 12px;
+  max-width: 40ch;
+  color: var(--soft);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.mods-band-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 28px;
+}
+.mods-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 20px;
+  border: 1px solid var(--paper);
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.mods-btn.solid,
+.mods-btn:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+.mods-btn.solid:hover {
+  background: transparent;
+  color: var(--paper);
+}
+
+/* The extended board, tilted like it's on a table; straight on hover. */
+.mods-stage {
+  perspective: 1600px;
+  padding-right: 8px;
+}
+.mods-demo {
+  position: relative;
+  width: min(100%, 660px);
+  aspect-ratio: 1;
+  margin-left: auto;
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  border: 1px solid rgb(255 250 189 / 0.5);
+  border-radius: 6px;
+  overflow: hidden;
+  transform: rotateX(22deg) rotateZ(-5deg) scale(0.92);
+  transform-origin: 50% 60%;
+  box-shadow:
+    0 40px 80px -20px rgb(0 0 0 / 0.9),
+    0 0 0 10px rgb(255 250 189 / 0.04);
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.mods-stage:hover .mods-demo {
+  transform: none;
+}
+.mods-demo .sq {
+  position: relative;
+  background: #5f5f4e;
+}
+.mods-demo .sq[data-light] {
+  background: #d6d1a6;
+}
+.mods-demo .sq[data-neutral] {
+  background: #3d3d33;
+}
+.mods-demo .sq[data-neutral][data-light] {
+  background: #4a4a3e;
+}
+.mods-demo .sq[data-fog] {
+  --veil: color-mix(in srgb, color-mix(in srgb, #34342c 45%, #0a0a08) 76%, transparent);
+  background: linear-gradient(var(--veil), var(--veil)), #5f5f4e;
+  box-shadow: inset 0 0 0 0.5px rgb(255 250 189 / 0.07);
+}
+.mods-demo .sq[data-fog][data-light] {
+  background: linear-gradient(var(--veil), var(--veil)), #d6d1a6;
+}
+.mods-demo .sq[data-fog][data-neutral] {
+  background: linear-gradient(var(--veil), var(--veil)), #3d3d33;
+}
+.mods-demo .sq[data-mark]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  box-shadow: inset 0 0 0 1.5px rgb(255 250 189 / 0.55);
+}
+.mods-demo .sq[data-mark='to']::after {
+  box-shadow: inset 0 0 0 2px var(--paper);
+}
+.mods-demo .pc {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(100% / 16);
+  height: calc(100% / 16);
+  transform: translate(calc(var(--x) * 100%), calc(var(--y) * 100%));
+  transition:
+    transform 0.55s cubic-bezier(0.3, 0.7, 0.2, 1),
+    opacity 0.4s;
+  pointer-events: none;
+}
+.mods-demo .pc img {
+  width: 100%;
+  height: 100%;
+}
+.mods-demo .pc[data-hidden] {
+  opacity: 0;
+}
+.mods-demo .pc[data-eaten] {
+  animation: mods-eaten 0.7s forwards;
+}
+@keyframes mods-eaten {
+  40% {
+    transform: translate(calc(var(--x) * 100%), calc(var(--y) * 100%)) scale(1.6) rotate(30deg);
+    opacity: 1;
+  }
+  to {
+    transform: translate(calc(var(--x) * 100%), calc(var(--y) * 100%)) scale(0.2) rotate(120deg);
+    opacity: 0;
+  }
+}
+.mods-demo-cap {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  width: min(100%, 660px);
+  margin: 34px 0 0 auto;
+  padding: 10px 12px;
+  border: 1px solid var(--hair);
+  border-radius: 6px;
+  background: rgb(5 5 5 / 0.8);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  color: var(--soft);
+}
+.mods-demo-cap span:first-child {
+  color: var(--paper);
+}
+
+/* Every mod's name, running past. */
+.mods-ticker {
+  overflow: hidden;
+  padding: 18px 0;
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+}
+.mods-ticker-run {
+  display: flex;
+  width: max-content;
+  animation: mods-run 38s linear infinite;
+}
+.mods-ticker:hover .mods-ticker-run {
+  animation-play-state: paused;
+}
+.mods-ticker span {
+  padding: 0 28px;
+  font-size: 56px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.mods-ticker .dot {
+  padding: 0;
+  color: var(--soft);
+}
+@keyframes mods-run {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* A cell per mod; each opens Mods with that switch on. */
+.mods-cells {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.mods-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 188px;
+  padding: 26px var(--gut) 28px;
+  border-right: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+  background: rgb(5 5 5 / 0.55);
+  backdrop-filter: blur(3px);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.mods-cell:nth-child(4n) {
+  border-right: 0;
+}
+.mods-cell:nth-last-child(-n + 4) {
+  border-bottom: 0;
+}
+.mods-cell .ic {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 10px;
+  transition: transform 0.3s;
+}
+.mods-cell .ic.sw {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.mods-cell .ic.sw i:nth-child(1),
+.mods-cell .ic.sw i:nth-child(4) {
+  background: currentColor;
+}
+.mods-cell h3 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.mods-cell p {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--soft);
+}
+.mods-cell:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+.mods-cell:hover p {
+  color: #505050;
+}
+.mods-cell:hover .ic {
+  transform: rotate(-12deg) scale(1.15);
+}
+.mods-band-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px var(--gut);
+  border-top: 1px solid var(--hair);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  color: var(--soft);
+}
+@media (max-width: 900px) {
+  .mods-band-top {
+    grid-template-columns: 1fr;
+    gap: 36px;
+    padding: 56px var(--gut) 40px;
+  }
+  .mods-demo {
+    margin: 0 auto;
+    transform: rotateX(16deg);
+  }
+  .mods-demo-cap {
+    flex-direction: column;
+    gap: 4px;
+    margin: 16px auto 0;
+  }
+  .mods-sky img.far {
+    display: none;
+  }
+  .mods-cells {
+    grid-template-columns: 1fr 1fr;
+  }
+  .mods-cell {
+    min-height: 0;
+    padding: 20px var(--gut) 22px;
+  }
+  .mods-cell:nth-child(4n) {
+    border-right: 1px solid var(--hair);
+  }
+  .mods-cell:nth-child(2n) {
+    border-right: 0;
+  }
+  .mods-cell:nth-last-child(-n + 4) {
+    border-bottom: 1px solid var(--hair);
+  }
+  .mods-cell:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+  .mods-cell p {
+    font-size: 13px;
+  }
+  .mods-ticker span {
+    padding: 0 16px;
+    font-size: 36px;
+  }
+  .mods-band-foot {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mods-sky img {
+    top: var(--y0);
+    animation: none;
+    transform: rotate(var(--r0));
+  }
+  .mods-ticker-run {
+    animation: none;
+  }
+  .mods-demo,
+  .mods-stage:hover .mods-demo {
+    transform: none;
+  }
+}
+
+/* The skins showcase: each themed set on its own tiles, with what unlocks it. */
+.skins-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.skins-head a {
+  font-size: 13px;
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.skins-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+.skin {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.skin-sw {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.skin-sw i {
+  background-size: cover;
+  background-position: center;
+}
+.skin-sw img {
+  position: absolute;
+  width: 50%;
+  height: 50%;
+  transition: transform 0.3s;
+}
+.skin-sw img:nth-of-type(1) {
+  left: 0;
+  bottom: 0;
+}
+.skin-sw img:nth-of-type(2) {
+  right: 0;
+  top: 0;
+}
+.skin:hover .skin-sw img:nth-of-type(1) {
+  transform: translateY(-6%) rotate(-6deg);
+}
+.skin:hover .skin-sw img:nth-of-type(2) {
+  transform: translateY(6%) rotate(6deg);
+}
+.skin[data-locked] .skin-sw::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, color-mix(in srgb, #34342c 45%, #0a0a08) 60%, transparent);
+}
+.skin-lock {
+  position: absolute;
+  z-index: 1;
+  right: 8px;
+  bottom: 8px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #fffabd;
+  color: #050505;
+}
+.skin h3 {
+  margin-top: 4px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.skin-new {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  vertical-align: 2px;
+}
+.skin-how {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-accent);
+}
+.skin-how b {
+  color: var(--color-fg);
+  font-weight: 500;
+}
+.skin-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+.skin-bar i {
+  display: block;
+  height: 100%;
+  background: var(--color-fg);
+}
+.skin-play {
+  align-self: flex-start;
+  height: 32px;
+  margin-top: 4px;
+  padding: 0 12px;
+  border-radius: 6px;
+  background: var(--color-fg);
+  color: var(--color-bg);
+  font-size: 13px;
+  font-weight: 600;
+}
+@media (max-width: 1100px) {
+  .skins-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 639px) {
+  .skins-grid {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding: 0 var(--gut);
+    margin: 20px calc(var(--gut) * -1) 0;
+    padding: 0 var(--gut) 4px;
+  }
+  .skin {
+    flex: 0 0 42%;
+    scroll-snap-align: start;
+  }
 }

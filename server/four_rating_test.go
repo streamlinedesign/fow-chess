@@ -122,7 +122,7 @@ func TestFourRanked(t *testing.T) {
 		}
 		ps[i] = userPlayer(u, "")
 	}
-	m := hub.CreateRanked(ps, [4]int{1500, 1500, 1500, 1500}, warMode.Time)
+	m := hub.CreateRanked(ps, [4]int{1000, 1000, 1000, 1000}, warMode.Time)
 	for i, p := range ps {
 		cs[i] = newClient(p.key)
 		m.join(cs[i], p)
@@ -131,7 +131,7 @@ func TestFourRanked(t *testing.T) {
 	if s.Status != "setup" || !s.Settings.Rated || s.Settings.Board != "" || !s.Settings.Fog || s.Settings.CenterVision != "any" || s.Settings.Sync || !s.Settings.JesterPawns {
 		t.Fatalf("status %s settings %+v", s.Status, s.Settings)
 	}
-	if s.Players["r"].Rating != 1500 {
+	if s.Players["r"].Rating != 1000 {
 		t.Errorf("rating %d", s.Players["r"].Rating)
 	}
 	m.handle(cs[0], fourIn{Type: "fill"}) // a full ranked game takes no bots
@@ -164,11 +164,14 @@ func TestFourRanked(t *testing.T) {
 		}
 		return *d
 	}
-	if !(diff("r") > diff("v") && diff("v") > diff("g") && diff("g") > diff("b")) || diff("r") <= 0 || diff("b") >= 0 {
+	// A 30-minute game at equal ratings is worth 21 to the winner. It's
+	// everyone's first loss of the day: second loses half, third nothing,
+	// fourth a quarter.
+	if diff("r") != 21 || diff("v") != -11 || diff("g") != 0 || diff("b") != -5 {
 		t.Errorf("diffs r %d v %d g %d b %d", diff("r"), diff("v"), diff("g"), diff("b"))
 	}
 	top, err := store.Leaderboard(10, true)
-	if err != nil || len(top) != 4 || top[0].Username != "ann" || top[3].Username != "ben" {
+	if err != nil || len(top) != 4 || top[0].Username != "ann" || top[1].Username != "cat" || top[3].Username != "dan" {
 		t.Errorf("four-player leaderboard %+v %v", top, err)
 	}
 	if one, _ := store.Leaderboard(10, false); len(one) != 0 {

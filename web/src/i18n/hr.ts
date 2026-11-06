@@ -130,7 +130,6 @@ export const hr: Dict = {
     codeSubWar: 'Isti sat Ratnog načina kao gore. Pošalji kod do trojici prijatelja; botovi mogu zauzeti prazna mjesta.',
     codeGame: 'Igra s prijateljem',
     createCode: 'Napravi kod',
-    modsSub: 'Svako pravilo po želji: bez magle, šah-mat, Kralj brda, bilo koji sat. Nikad rangirano.',
     thinking: 'razmišlja',
     yourMove: 'tvoj potez',
     newGame: 'Nova partija',
@@ -288,6 +287,68 @@ export const hr: Dict = {
     currentSetup: 'Trenutačne postavke',
     intro:
       'Igra s otkrivenim kotačićima. Isključi maglu, igraj sa šahom, dodaj brdo ili kralja koji skače, ili makni sat. Partije s modovima su za zabavu i nikad se ne računaju u rejting.',
+  },
+
+  /** The Mods band on the home page. */
+  modsBand: {
+    title: ['Okreni', 'svaki', 'kotačić.'],
+    lede: 'Modovi su ista igra s opuštenim pravilima. Podigni maglu, pusti kralja da skače ili stavi četiri igrača na ploču 16 sa 16.',
+    sub: 'Bilo koja kombinacija, bilo koji sat. Modovi su za zabavu i nikad se ne rangiraju.',
+    open: 'Otvori modove',
+    tryExtended: 'Probaj proširenu ploču',
+    boardLabel: 'Proširena ploča za četiri igrača u magli. Crveni skakač prelazi otvoreni kut i jede plavog pješaka.',
+    boardCap: 'Proširena ploča · četiri igrača · ratna magla',
+    start: 'Crveni vidi samo ono što njegove figure dosežu',
+    steps: [
+      'Pješak izlazi i magla se malo diže',
+      'Skakač ide prema otvorenom kutu',
+      'Lovac vidi niz dugu dijagonalu',
+      'Kutovi nisu ničiji: svatko ih može prijeći',
+      'Dama dolazi iza',
+      'Skakač jede plavog pješaka kojeg je jedva vidio',
+    ],
+    ticker: [
+      'Proširena ploča',
+      'Sync Move',
+      'Jump King',
+      'Jester pješaci',
+      'Battleship',
+      'Zadnji red',
+      'Kralj brda',
+      'Središnji pogled',
+      'Bez magle',
+      'Šah-mat',
+      'Četiri igrača',
+      'Bilo koji sat',
+    ],
+    cells: {
+      extended: ['Proširena ploča', '16 sa 16, četiri reda svakome. Kutovi su otvoreni za sve.'],
+      sync: ['Sync Move', 'Svi igraju odjednom. Uzimanja dolaze zadnja, pa figura koja se makne izbjegne.'],
+      jump: ['Jump King', 'Tvoj kralj može skočiti i kao skakač.'],
+      jester: ['Jester pješaci', 'Pješaci se miču i uzimaju jedno polje u bilo kojem smjeru, kao kralj.'],
+      battleship: ['Battleship', 'Postavi svih šesnaest figura bilo gdje u svojim redovima. Nitko ne vidi gdje.'],
+      hill: ['Kralj brda', 'Dovedi kralja na središnje polje i pobijedi.'],
+      nofog: ['Bez magle', 'Cijela ploča na vidjelu. Šah, s kraljem kojeg se može pojesti.'],
+      mate: ['Šah-mat', 'Obična šahovska pravila sa šahom. Pobijedi na stari način.'],
+    } as Record<string, [string, string]>,
+    footLeft: 'Nikad rangirano · bilo koja kombinacija · bilo koji sat',
+    footRight: 'Otvori modove za sve prekidače',
+  },
+
+  /** The skins showcase on the home page. */
+  skins: {
+    title: 'Izgledi',
+    all: 'Sve figure i polja',
+    sub: 'Svaki komplet ima svoja polja i avatare. Osvoji ga i nosi ga. Boje su uvijek besplatne.',
+    guest: 'Prvo se prijavi. Pobjede gosta ne otključavaju ništa.',
+    beat: (bot: string) => `Pobijedi ${bot}`,
+    onThisPage: 'na ovoj stranici',
+    reach: (n: number) => `Dosegni ${n} u bilo kojem načinu`,
+    beta: 'Beta igrači',
+    unlocked: 'otključano',
+    playHere: (bot: string) => `Igraj protiv: ${bot}`,
+    isNew: 'novo',
+    locked: 'Zaključano',
   },
 
   four: {
@@ -531,6 +592,15 @@ export const hr: Dict = {
     etkSub: 'Jedan na jedan, u magli, iz uobičajenog početnog položaja. Rangirano.',
     warHeading: 'Pravila Ratnog načina',
     warSub: 'Četiri igrača, svatko za sebe. Rangira se po vlastitom rejtingu.',
+    scoresHeading: 'Bodovanje',
+    scoresSub: 'Kako rangirana partija mijenja tvoj rejting.',
+    shortGames: 'Kratke',
+    longGames: 'Duge',
+    place: 'Mjesto',
+    usual: 'Inače',
+    firstLoss: 'Prvi poraz danas',
+    placeN: ['1.', '2.', '3.', '4.'],
+    scoresExample: 'Za pobjedu od 21 boda.',
     modsNote:
       'Sve ostalo, od šah-mata do Kralja brda, je mod. Svaki je objašnjen tamo gdje ga biraš, na stranici Modovi.',
     cards: {
@@ -572,7 +642,7 @@ export const hr: Dict = {
         title: 'Satovi i rejting',
         p: [
           'Satovi rade na poslužitelju, pa ih zatvaranje kartice ne zaustavlja. Istekne li ti vrijeme, gubiš, osim ako protivnik s onim što mu je ostalo ne može pobijediti. **Dnevni** daje 24 sata po potezu, a **Tjedni** 7 dana, iznova nakon svakog poteza.',
-          'Svaka partija između dva prijavljena igrača je **rangirana**, a Pojedi kralja i Ratni način imaju svaki svoj rejting, koji počinje na 1500. Pritisni **Igraj** na početnoj da te spojimo s igračem najbližim tvom rejtingu. Partije s **modovima** i protiv bota nikad se ne računaju.',
+          'Svaka partija između dva prijavljena igrača je **rangirana**, a Pojedi kralja i Ratni način imaju svaki svoj rejting, koji počinje na 1000 (vidi **Bodovanje** niže). Pritisni **Igraj** na početnoj da te spojimo s igračem najbližim tvom rejtingu. Partije s **modovima** i protiv bota nikad se ne računaju.',
         ],
       },
       warBoard: {
@@ -621,7 +691,31 @@ export const hr: Dict = {
         p: [
           'Odaberi sat: **30 minuta svakome plus 10 sekundi po potezu**, **2 sata svakome plus 30 sekundi po potezu** ili **dan za svaki potez**. Pritisni **Igraj** na početnoj stranici i uđi u red četvorice blizu tvog rejtinga koji su odabrali isti sat.',
           'Za igru s prijateljima odaberi Ratni način pod **Igraj s prijateljem preko koda** i pošalji im kod. Pridružiti se mogu do trojica, botovi zauzmu prazna mjesta, a igra se nikad ne rangira.',
-          'Svaka igra se broji kao rezultat **protiv svakog od ostale trojice**, po redoslijedu kojim ste završili. Ratni način ima **vlastiti rejting**, od 1500, i vlastitu ljestvicu.',
+          'Ratni način ima **vlastiti rejting**, od 1000, i vlastitu ljestvicu. Kako se mijenja, piše pod **Bodovanje** niže.',
+        ],
+      },
+      scoreStart: {
+        kind: 'Obje igre',
+        title: 'Počinješ s 1000',
+        p: [
+          'Pojedi kralja i Ratni način imaju svaki **svoj rejting**, koji počinje na **1000**, i svaki svoju ljestvicu. Mijenja se za cijele bodove nakon svake rangirane partije.',
+          'Partije s **manje od sat vremena** svakome su **kratke**: blitz, rapid i 30 minuta u Ratnom načinu. **Duge** su one od sat vremena ili više svakome, te dnevni i tjedni satovi. Dan traje od ponoći do ponoći po UTC-u.',
+        ],
+      },
+      scoreDuel: {
+        kind: 'Pojedi kralja',
+        title: 'Pobjeda i poraz',
+        p: [
+          'Pobjeda vrijedi **18 do 23 boda** u kratkoj partiji i **22 do 30** u dugoj: sredinu kad imate jednak rejting, više što je protivnikov rejting viši od tvog, najviše kad je viši za 400, a manje protiv slabijeg.',
+          'Poraženi gubi **isto toliko**, a **pola** toga pri **prvom porazu u danu**. Remi ne mijenja ništa. Snajperska pobjeda vrijedi četvrtinu.',
+        ],
+      },
+      scoreWar: {
+        kind: 'Ratni način',
+        title: 'Po mjestu',
+        p: [
+          'Pobjednik dobiva isti raspon kao u Pojedi kralja, **18 do 23** u kratkoj ili **22 do 30** u dugoj, prema svom rejtingu u odnosu na prosjek ostale trojice.',
+          '**Drugi** gubi koliko je pobjednik dobio, **treći** i **četvrti** pola toga. Pri tvom **prvom porazu u danu** drugi gubi pola, treći **ništa**, a četvrti četvrtinu. U neriješenoj igri oni izjednačeni na prvom mjestu ne mijenjaju ništa.',
         ],
       },
       draws: {
@@ -916,11 +1010,11 @@ export const hr: Dict = {
     plainTiles: 'Obična',
     lockedBy: (bot: string) => `Pobijedi: ${bot}`,
     lockedBeta: 'Za beta igrače',
-    lockedRating: 'Dosegni 2000',
+    lockedRating: (n: string) => `Dosegni ${n}`,
     unlockHint:
-      'Boje su tvoje. Većina tematskih kompleta pripada nekom botu: pobijedi ga i otključaš figure, polja i avatare. Sveti komplet je za rejting 2000.',
+      'Boje su tvoje. Većina tematskih kompleta pripada nekom botu: pobijedi ga i otključaš figure, polja i avatare. Nacrt je za rejting 1150, Sveti za 2000.',
     unlockGuest:
-      'Boje su tvoje. Većina tematskih kompleta pripada nekom botu: prijavi se i pobijedi ga da ga otključaš. Sveti komplet je za rejting 2000.',
+      'Boje su tvoje. Većina tematskih kompleta pripada nekom botu: prijavi se i pobijedi ga da ga otključaš. Nacrt je za rejting 1150, Sveti za 2000.',
     sets: {
       classic: 'Klasične',
       cream: 'Krem',
@@ -952,6 +1046,9 @@ export const hr: Dict = {
       cyberpunk: 'Cyberpunk',
       'cyberpunk-light': 'Cyberpunk, svijetle',
       'cyberpunk-dark': 'Cyberpunk, tamne',
+      survey: 'Karta',
+      'survey-light': 'Karta, svijetle',
+      'survey-dark': 'Karta, tamne',
     },
   },
 

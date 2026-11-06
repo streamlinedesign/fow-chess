@@ -46,7 +46,7 @@ func TestPrefsAndAvatars(t *testing.T) {
 	if code, _ := ann.do("PUT", "/api/prefs", themes); code != 403 {
 		t.Fatalf("locked themes: %d", code)
 	}
-	for _, reason := range []string{lockRating, "bot:solomon", "bot:ramesses"} {
+	for _, reason := range []string{lockRating(2000), "bot:solomon", "bot:ramesses"} {
 		if err := site.store.Unlock(ann.id(t), reason); err != nil {
 			t.Fatal(err)
 		}

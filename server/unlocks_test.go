@@ -18,7 +18,8 @@ func TestBeatingABotUnlocksItsTheme(t *testing.T) {
 	me := userPlayer(u, "ann-browser")
 
 	_, got := ann.do("GET", "/api/unlocks", "")
-	// Cyberpunk is everyone's during the beta; the bots' themes start locked.
+	// Cyberpunk is everyone's during the beta; Blueprint takes a 1150 rating,
+	// above the 1000 start, and the bots' themes start locked.
 	if th := got["themes"].([]any); len(th) != 1 || th[0] != "cyberpunk" {
 		t.Fatalf("a new account has %v", th)
 	}
@@ -119,8 +120,8 @@ func TestRatingUnlocksHoly(t *testing.T) {
 	if botTheme(string(bots.Rex)) != "" {
 		t.Errorf("Rex wears %q", botTheme(string(bots.Rex)))
 	}
-	if themeLocks["holy"] != lockRating {
-		t.Fatalf("holy is locked by %q", themeLocks["holy"])
+	if themeLocks["holy"] != lockRating(2000) || themeLocks["blueprint"] != lockRating(1150) {
+		t.Fatalf("holy is locked by %q, blueprint by %q", themeLocks["holy"], themeLocks["blueprint"])
 	}
 	store := openTestStore(t, filepath.Join(t.TempDir(), "x"))
 	has := func(name string) bool {
@@ -171,6 +172,46 @@ func TestRatingUnlocksHoly(t *testing.T) {
 	set("cy", "rating", 1980)
 	if !has("cy") {
 		t.Error("holy went away when the rating fell")
+	}
+
+	// Blueprint is for 1150, and it stays when the rating falls below.
+	blueprint := func(name string) bool {
+		t.Helper()
+		u, _ := store.UserByName(name)
+		un, err := store.Unlocks(u.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return un.has("blueprint")
+	}
+	if !blueprint("cy") {
+		t.Error("a 1980 rating doesn't unlock blueprint")
+	}
+	set("ann", "rating", 1100)
+	set("ann", "four_rating", 1100)
+	if blueprint("ann") {
+		t.Error("1100 unlocked blueprint without a recorded unlock")
+	}
+	ann, _ := store.UserByName("ann")
+	tx, err = store.db.Begin()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := rateUnlock(tx, ann.ID, 1150); err != nil {
+		t.Fatal(err)
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	if !blueprint("ann") {
+		t.Error("blueprint went away when the rating fell")
+	}
+}
+
+// Vercingetorix wears Survey, so beating him unlocks it.
+func TestVercingetorixWearsSurvey(t *testing.T) {
+	if botTheme(string(bots.Vercingetorix)) != "survey" || themeLocks["survey"] != "bot:vercingetorix" {
+		t.Fatalf("vercingetorix wears %q; survey is locked by %q", botTheme(string(bots.Vercingetorix)), themeLocks["survey"])
 	}
 }
 

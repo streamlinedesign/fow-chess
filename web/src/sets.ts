@@ -9,7 +9,7 @@ const classic = import.meta.glob<string>('./pieces/*.svg', { eager: true, import
 const coloured = import.meta.glob<string>('./pieces/four/*.svg', { eager: true, import: 'default' })
 const lightLines = import.meta.glob<string>('./pieces/light/*.svg', { eager: true, import: 'default' })
 const inkLines = import.meta.glob<string>('./pieces/ink/*.svg', { eager: true, import: 'default' })
-const themed = import.meta.glob<string>('./pieces/{galaxy,blueprint,holy,ancient,cyberpunk}/*.svg', {
+const themed = import.meta.glob<string>('./pieces/{galaxy,blueprint,holy,ancient,cyberpunk,survey}/*.svg', {
   eager: true,
   import: 'default',
 })
@@ -20,17 +20,18 @@ export const COLOURS = ['red', 'blue', 'green', 'violet'] as const
 const LETTER: Record<string, string> = { red: 'r', blue: 'b', green: 'g', violet: 'v' }
 
 /** The themed sets: each has a light side for White and a dark side for Black, and tiles to match. */
-export const THEMES = ['galaxy', 'blueprint', 'holy', 'ancient', 'cyberpunk'] as const
+export const THEMES = ['galaxy', 'blueprint', 'holy', 'ancient', 'cyberpunk', 'survey'] as const
 
 /**
  * What unlocks each themed set and its tiles and avatars: beating the bot that
- * wears it ("bot:<level>"), reaching a 2000 rating in either mode
- * ("rating:2000"), or "beta" for everyone during the beta. Plain colours are
+ * wears it ("bot:<level>"), reaching a rating in either mode
+ * ("rating:<n>"), or "beta" for everyone during the beta. Plain colours are
  * never locked. Must match themeLocks in server/unlocks.go.
  */
 export const THEME_LOCK: Record<string, string> = {
   holy: 'rating:2000',
-  blueprint: 'bot:vercingetorix',
+  blueprint: 'rating:1150',
+  survey: 'bot:vercingetorix',
   ancient: 'bot:ramesses',
   galaxy: 'bot:solomon',
   cyberpunk: 'beta',
@@ -135,6 +136,7 @@ export const FOG_TINT: Record<string, string> = {
   holy: '#4a3c1c',
   ancient: '#3a2214',
   cyberpunk: '#3a1250',
+  survey: '#2a3020',
 }
 
 const skinOfTile = new Map<string, string>()

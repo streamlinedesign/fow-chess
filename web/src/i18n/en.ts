@@ -130,7 +130,6 @@ export const en = {
     codeSubWar: 'Same War Mode clock as above. Send the code to up to three friends; bots can take the empty seats.',
     codeGame: 'Game with a friend',
     createCode: 'Create a code',
-    modsSub: 'Every rule switch: no fog, checkmate, King of the Hill, any clock. Never ranked.',
     thinking: 'thinking',
     yourMove: 'your move',
     newGame: 'New game',
@@ -289,6 +288,68 @@ export const en = {
     currentSetup: 'Current setup',
     intro:
       'The game with the dials exposed. Turn the fog off, play with check, add a hill or a jumping king, or take the clock away. Mods games are for fun and never count for rating.',
+  },
+
+  /** The Mods band on the home page. */
+  modsBand: {
+    title: ['Turn', 'every', 'dial.'],
+    lede: 'Mods are the same game with the rules let loose. Lift the fog, let the king jump, or put four players on a 16 by 16 board.',
+    sub: 'Any mix of switches, any clock. Mods games are for fun and never ranked.',
+    open: 'Open Mods',
+    tryExtended: 'Try the extended board',
+    boardLabel: "An extended four-player board in the fog. Red's knight crosses the open corner and eats a blue pawn.",
+    boardCap: 'Extended board · four players · fog of war',
+    start: 'Red sees only what its pieces reach',
+    steps: [
+      'The pawn steps out, and the fog lifts a little',
+      'A knight heads for the open corner',
+      'The bishop sees down the long diagonal',
+      'Corners belong to nobody: anyone can cross',
+      'The queen comes up behind',
+      'The knight eats a blue pawn it could only just see',
+    ],
+    ticker: [
+      'Extended board',
+      'Sync Move',
+      'Jump King',
+      'Jester pawns',
+      'Battleship',
+      'Back row',
+      'King of the Hill',
+      'Centre vision',
+      'No fog',
+      'Checkmate',
+      'Four players',
+      'Any clock',
+    ],
+    cells: {
+      extended: ['Extended board', '16 by 16, four rows each. The corners are open to everyone.'],
+      sync: ['Sync Move', 'Everyone moves at once. Captures come last, so a piece that moves away dodges.'],
+      jump: ['Jump King', 'Your king can also jump like a knight.'],
+      jester: ['Jester pawns', 'Pawns also step and take one square any way, like a king.'],
+      battleship: ['Battleship', 'Place all sixteen pieces anywhere in your rows. Nobody sees where.'],
+      hill: ['King of the Hill', 'Walk your king onto a centre square to win.'],
+      nofog: ['No fog', 'The whole board in plain sight. Chess, with the king up for eating.'],
+      mate: ['Checkmate', 'Plain chess rules with check. Win the old way.'],
+    } as Record<string, [string, string]>,
+    footLeft: 'Never ranked · any mix of mods · any clock',
+    footRight: 'Open Mods to see every switch',
+  },
+
+  /** The skins showcase on the home page. */
+  skins: {
+    title: 'Skins',
+    all: 'All pieces and tiles',
+    sub: 'Each set comes with its own tiles and avatars. Win it to wear it. Colours are always free.',
+    guest: "Sign in first. Wins as a guest don't unlock anything.",
+    beat: (bot: string) => `Beat ${bot}`,
+    onThisPage: 'on this page',
+    reach: (n: number) => `Reach ${n} in either mode`,
+    beta: 'Beta players',
+    unlocked: 'unlocked',
+    playHere: (bot: string) => `Play ${bot}`,
+    isNew: 'new',
+    locked: 'Locked',
   },
 
   four: {
@@ -534,6 +595,15 @@ export const en = {
     etkSub: 'One against one, in the fog, from the usual position. Ranked.',
     warHeading: 'War Mode rules',
     warSub: 'Four players, everyone for themselves. Ranked on a rating of its own.',
+    scoresHeading: 'Rank scores',
+    scoresSub: 'How a ranked game moves your rating.',
+    shortGames: 'Short',
+    longGames: 'Long',
+    place: 'Place',
+    usual: 'Usual',
+    firstLoss: 'First loss today',
+    placeN: ['1st', '2nd', '3rd', '4th'],
+    scoresExample: 'For a 21-point win.',
     modsNote:
       'Everything else, from checkmate to King of the Hill, is a mod. Each one is explained where you pick it, on the Mods page.',
     cards: {
@@ -575,7 +645,7 @@ export const en = {
         title: 'Clocks and rating',
         p: [
           "Clocks run on the server, so closing the tab doesn't stop them. Run out and you lose, unless your opponent can't win with what's left. **Daily** gives you 24 hours per move and **Weekly** 7 days, reset after every move.",
-          'Every game between two signed-in players is **ranked**, with a rating of its own for Eat the King and for War Mode, each starting at 1500. Press **Play** on the home page to be paired with the player nearest your rating. **Mods** games and games against a bot never count.',
+          'Every game between two signed-in players is **ranked**, with a rating of its own for Eat the King and for War Mode, each starting at 1000 (see **Rank scores** below). Press **Play** on the home page to be paired with the player nearest your rating. **Mods** games and games against a bot never count.',
         ],
       },
       warBoard: {
@@ -624,7 +694,31 @@ export const en = {
         p: [
           'Pick a clock: **30 minutes each plus 10 seconds a move**, **2 hours each plus 30 seconds a move**, or **a day for every move**. Press **Play** on the home page to join a queue of four near your rating who picked the same clock.',
           'To play friends instead, pick War Mode under **Play a friend with a code** and send them the code. Up to three can join, bots take the empty seats, and the game is never ranked.',
-          'Each game counts as a result **against each of the other three**, by the order you finished in. War Mode has its **own rating**, starting at 1500, and its own leaderboard.',
+          'War Mode has its **own rating**, starting at 1000, and its own leaderboard. How it moves is under **Rank scores** below.',
+        ],
+      },
+      scoreStart: {
+        kind: 'Both games',
+        title: 'Starting at 1000',
+        p: [
+          'Eat the King and War Mode each keep **a rating of their own**, starting at **1000**, with a leaderboard each. It moves by whole points after every ranked game.',
+          'Games of **under an hour** each are **short**: blitz, rapid and War Mode’s 30 minutes. **Long** games are an hour or more each, plus daily and weekly clocks. A day runs midnight to midnight UTC.',
+        ],
+      },
+      scoreDuel: {
+        kind: 'Eat the King',
+        title: 'Win or lose',
+        p: [
+          'A win is worth **18 to 23 points** in a short game and **22 to 30** in a long one: the middle when you’re rated level, more the further your opponent is rated above you, the top at 400 above, and less against someone below.',
+          'The loser loses **the same amount**, and **half** of it on their **first loss of the day**. A draw moves nobody. A Sniper Win counts for a quarter.',
+        ],
+      },
+      scoreWar: {
+        kind: 'War Mode',
+        title: 'By place',
+        p: [
+          'The winner gets the same range as in Eat the King, **18 to 23** short or **22 to 30** long, set by their rating against the average of the other three.',
+          '**Second** loses what the winner got, **third** and **fourth** half of it. On your **first loss of the day**, second loses half, third **nothing** and fourth a quarter. In a drawn game, the players level in first move nobody.',
         ],
       },
       draws: {
@@ -918,11 +1012,11 @@ export const en = {
     plainTiles: 'Plain',
     lockedBy: (bot: string) => `Beat ${bot}`,
     lockedBeta: 'Beta players',
-    lockedRating: 'Reach 2000',
+    lockedRating: (n: string) => `Reach ${n}`,
     unlockHint:
-      'Colours are yours. Most themed sets belong to a bot: beat it to unlock its pieces, tiles and avatars. Holy is for reaching a 2000 rating.',
+      'Colours are yours. Most themed sets belong to a bot: beat it to unlock its pieces, tiles and avatars. Blueprint is for reaching a 1150 rating, Holy for 2000.',
     unlockGuest:
-      'Colours are yours. Most themed sets belong to a bot: sign in and beat it to unlock it. Holy is for reaching a 2000 rating.',
+      'Colours are yours. Most themed sets belong to a bot: sign in and beat it to unlock it. Blueprint is for reaching a 1150 rating, Holy for 2000.',
     sets: {
       classic: 'Classic',
       cream: 'Cream',
@@ -954,6 +1048,9 @@ export const en = {
       cyberpunk: 'Cyberpunk',
       'cyberpunk-light': 'Cyberpunk, light',
       'cyberpunk-dark': 'Cyberpunk, dark',
+      survey: 'Survey',
+      'survey-light': 'Survey, light',
+      'survey-dark': 'Survey, dark',
     } as Record<string, string>,
   },
 
