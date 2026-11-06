@@ -37,7 +37,7 @@ export function ModsPage() {
     try {
       saveSettings(settings)
       if (four) {
-        const { fog, time, jumpKing, jesterPawns, hill, centerVision, setup, sync, kingWarning, fourBoard } = settings
+        const { fog, time, jumpKing, jesterPawns, hill, centerVision, setup, sync, fourBoard } = settings
         const body = {
           fog,
           time,
@@ -48,7 +48,6 @@ export function ModsPage() {
           centerVision,
           setup,
           sync,
-          kingWarning,
           board: fourBoard || '',
         }
         const res = await fetch(`/api/four?player=${playerId}`, {
@@ -97,20 +96,7 @@ export function ModsPage() {
         <div className="home-cell home-menu">
           <section>
             <h1 className="home-title">{t.mods.title}</h1>
-            <p className="mt-2.5 text-[15px] text-accent">
-              {t.mods.intro}{' '}
-              <a
-                href="/rules/mods"
-                className="font-semibold text-fg underline underline-offset-2"
-                onClick={(e) => {
-                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return
-                  e.preventDefault()
-                  navigate('/rules/mods')
-                }}
-              >
-                {t.mods.howTheyWork}
-              </a>
-            </p>
+            <p className="mt-2.5 text-[15px] text-accent">{t.mods.intro}</p>
             <CurrentSetup settings={settings} four={four} />
           </section>
           <section>
