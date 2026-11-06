@@ -321,7 +321,7 @@ export const hr: Dict = {
     guest: 'Prvo se prijavi. Pobjede gosta ne otključavaju ništa.',
     beat: (bot: string) => `Pobijedi ${bot}`,
     onThisPage: 'na ovoj stranici',
-    reach: (n: number) => `Dosegni ${n} u bilo kojem načinu`,
+    reach: (n: number, title: string) => `${title}: dosegni ${n}`,
     beta: 'Beta igrači',
     unlocked: 'otključano',
     playHere: (bot: string) => `Igraj protiv: ${bot}`,
@@ -692,6 +692,14 @@ export const hr: Dict = {
           '**Drugo** mjesto se računa kao pobjeda i dobiva **pola** toga. **Treći** i **četvrti** gube pola toga, osim pri tvom **prvom porazu u danu**, kad treći gubi **ništa**, a četvrti četvrtinu. U neriješenoj igri oni izjednačeni na prvom mjestu ne mijenjaju ništa.',
         ],
       },
+      scoreTitles: {
+        kind: 'Titule',
+        title: 'Zauvijek tvoje',
+        p: [
+          'Tvoj **najviši** rejting u bilo kojoj igri donosi titulu, a **zadržavaš je** i kad rejting padne. Svaka titula otključava komplet.',
+          'Njezina oznaka stoji ispred tvog imena: na ploči, ljestvici, profilu i u chatu.',
+        ],
+      },
       draws: {
         kind: 'Ostalo',
         title: 'Remi i ostalo',
@@ -945,6 +953,18 @@ export const hr: Dict = {
     createAnAccount: 'Stvori račun',
   },
 
+  titles: {
+    names: {
+      club: 'Klupski igrač',
+      expert: 'Ekspert',
+      candidate: 'Kandidat za majstora',
+      fog: 'Majstor magle',
+      im: 'Međunarodni majstor',
+      gm: 'Velemajstor',
+      king: 'Kralj',
+    } as Record<string, string>,
+  },
+
   pieces: {
     livePreview: 'Pregled uživo',
     showFog: 'Magla',
@@ -980,11 +1000,11 @@ export const hr: Dict = {
     plainTiles: 'Obična',
     lockedBy: (bot: string) => `Pobijedi: ${bot}`,
     lockedBeta: 'Za beta igrače',
-    lockedRating: (n: string) => `Dosegni ${n}`,
+    lockedRating: (n: string, title: string) => `${title}, ${n}`,
     unlockHint:
-      'Boje su tvoje. Većina tematskih kompleta pripada nekom botu: pobijedi ga i otključaš figure, polja i avatare. Nacrt je za rejting 1150, Sveti za 2000.',
+      'Boje su tvoje. Većina tematskih kompleta pripada nekom botu: pobijedi ga i otključaš figure, polja i avatare. Ostali dolaze s titulama: Nacrt na 1150, zatim Bronca, Srebro, Zlato, Sveti, Velemajstor i Kralj.',
     unlockGuest:
-      'Boje su tvoje. Većina tematskih kompleta pripada nekom botu: prijavi se i pobijedi ga da ga otključaš. Nacrt je za rejting 1150, Sveti za 2000.',
+      'Boje su tvoje. Većina tematskih kompleta pripada nekom botu: prijavi se i pobijedi ga da ga otključaš. Ostali dolaze s titulama: Nacrt na 1150, zatim Bronca, Srebro, Zlato, Sveti, Velemajstor i Kralj.',
     sets: {
       classic: 'Klasične',
       cream: 'Krem',
@@ -1019,6 +1039,21 @@ export const hr: Dict = {
       survey: 'Karta',
       'survey-light': 'Karta, svijetle',
       'survey-dark': 'Karta, tamne',
+      bronze: 'Bronca',
+      'bronze-light': 'Bronca, svijetle',
+      'bronze-dark': 'Bronca, tamne',
+      silver: 'Srebro',
+      'silver-light': 'Srebro, svijetle',
+      'silver-dark': 'Srebro, tamne',
+      gold: 'Zlato',
+      'gold-light': 'Zlato, svijetle',
+      'gold-dark': 'Zlato, tamne',
+      grandmaster: 'Velemajstor',
+      'grandmaster-light': 'Sunce galaksije',
+      'grandmaster-dark': 'Crna rupa',
+      king: 'Kralj',
+      'king-light': 'Kralj, svijetle',
+      'king-dark': 'Kralj, tamne',
     },
   },
 

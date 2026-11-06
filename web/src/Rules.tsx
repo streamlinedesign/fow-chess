@@ -1,3 +1,4 @@
+import { TITLES } from './titles'
 import type { ReactNode } from 'react'
 import { rich, useT, type Dict } from './i18n'
 import { pieceImg, type Look } from './position'
@@ -185,6 +186,24 @@ export function ScoreRules() {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <Card id="scoreStart" art={<span className="text-[60px] leading-none font-light tracking-tight">1000</span>} />
+      <Card
+        id="scoreTitles"
+        art={
+          <dl className="grid grid-cols-[auto_auto_auto] items-baseline gap-x-4 gap-y-0.5 font-mono text-[13px]">
+            {TITLES.filter((x) => x.tag).map((x) => (
+              <div key={x.id} className="contents">
+                <dt>
+                  <abbr className="title-tag" data-title={x.id} title={t.titles.names[x.id]}>
+                    {x.tag}
+                  </abbr>
+                </dt>
+                <dd className="text-accent">{t.titles.names[x.id]}</dd>
+                <dd className="text-right tabular-nums">{x.at}</dd>
+              </div>
+            ))}
+          </dl>
+        }
+      />
       <Card
         id="scoreDuel"
         art={

@@ -1,3 +1,4 @@
+import { TitleTag } from './TitleTag'
 import { BugButton } from './BugReport'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { refreshMe } from './auth'
@@ -461,6 +462,7 @@ function PlayerBar({ color, state, you, active }: PlayerBarProps) {
           }}
           className="min-w-0 truncate font-semibold hover:underline"
         >
+          <TitleTag name={name} />
           {label}
         </a>
       ) : (

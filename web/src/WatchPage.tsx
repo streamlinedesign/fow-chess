@@ -1,3 +1,4 @@
+import { TitleTag } from './TitleTag'
 import { useEffect, useState } from 'react'
 import { Avatar } from './Avatar'
 import { useT } from './i18n'
@@ -146,7 +147,10 @@ function Seat({ color, g }: { color: Color; g: LiveGame }) {
   return (
     <div className="flex min-w-0 items-center gap-2 text-[14.5px]">
       <Avatar size={24} name={p.name || undefined} />
-      <span className={`truncate ${p.name ? 'font-semibold' : 'text-accent'}`}>{p.name || t.common.guest}</span>
+      <span className={`truncate ${p.name ? 'font-semibold' : 'text-accent'}`}>
+        <TitleTag name={p.name || undefined} />
+        {p.name || t.common.guest}
+      </span>
       {p.rating ? <span className="font-mono text-[13px] text-accent tabular-nums">{p.rating}</span> : null}
       {g.turn === color && <span className="turn-tag ml-auto">{t.common.toMove}</span>}
     </div>

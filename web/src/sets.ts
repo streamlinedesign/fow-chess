@@ -9,10 +9,13 @@ const classic = import.meta.glob<string>('./pieces/*.svg', { eager: true, import
 const coloured = import.meta.glob<string>('./pieces/four/*.svg', { eager: true, import: 'default' })
 const lightLines = import.meta.glob<string>('./pieces/light/*.svg', { eager: true, import: 'default' })
 const inkLines = import.meta.glob<string>('./pieces/ink/*.svg', { eager: true, import: 'default' })
-const themed = import.meta.glob<string>('./pieces/{galaxy,blueprint,holy,ancient,cyberpunk,survey}/*.svg', {
-  eager: true,
-  import: 'default',
-})
+const themed = import.meta.glob<string>(
+  './pieces/{galaxy,blueprint,holy,ancient,cyberpunk,survey,bronze,silver,gold,grandmaster,king}/*.svg',
+  { eager: true, import: 'default' },
+)
+const still = import.meta.glob<string>('./pieces/king-still/*.svg', { eager: true, import: 'default' })
+/** Whether this player asked their device for less motion: animated sets are drawn still. */
+const lessMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
 const tiles = import.meta.glob<string>('./tiles/*.svg', { eager: true, import: 'default' })
 
 /** The plain colours, and the letter their files go by. */
@@ -20,16 +23,33 @@ export const COLOURS = ['red', 'blue', 'green', 'violet'] as const
 const LETTER: Record<string, string> = { red: 'r', blue: 'b', green: 'g', violet: 'v' }
 
 /** The themed sets: each has a light side for White and a dark side for Black, and tiles to match. */
-export const THEMES = ['galaxy', 'blueprint', 'holy', 'ancient', 'cyberpunk', 'survey'] as const
+export const THEMES = [
+  'galaxy',
+  'blueprint',
+  'holy',
+  'ancient',
+  'cyberpunk',
+  'survey',
+  'bronze',
+  'silver',
+  'gold',
+  'grandmaster',
+  'king',
+] as const
 
 /**
  * What unlocks each themed set and its tiles and avatars: beating the bot that
- * wears it ("bot:<level>"), reaching a rating in either mode
- * ("rating:<n>"), or "beta" for everyone during the beta. Plain colours are
+ * wears it ("bot:<level>"), the title for reaching a rating in either mode
+ * ("rating:<n>", see titles.ts), or "beta" for everyone during the beta. Plain colours are
  * never locked. Must match themeLocks in server/unlocks.go.
  */
 export const THEME_LOCK: Record<string, string> = {
-  holy: 'rating:2000',
+  king: 'rating:2500',
+  grandmaster: 'rating:2000',
+  holy: 'rating:1800',
+  gold: 'rating:1600',
+  silver: 'rating:1450',
+  bronze: 'rating:1300',
   blueprint: 'rating:1150',
   survey: 'bot:vercingetorix',
   ancient: 'bot:ramesses',
@@ -63,10 +83,13 @@ export const SETS: PieceSet[] = [
     { id: `${c}-light`, img: from(lightLines, 'light/', LETTER[c]) },
     { id: `${c}-ink`, img: from(inkLines, 'ink/', LETTER[c]) },
   ]),
-  ...THEMES.flatMap((t) => [
-    { id: `${t}-light`, img: from(themed, `${t}/`, 'w') },
-    { id: `${t}-dark`, img: from(themed, `${t}/`, 'b') },
-  ]),
+  ...THEMES.flatMap((t) => {
+    const [files, dir] = t === 'king' && lessMotion ? [still, 'king-still/'] : [themed, `${t}/`]
+    return [
+      { id: `${t}-light`, img: from(files, dir, 'w') },
+      { id: `${t}-dark`, img: from(files, dir, 'b') },
+    ]
+  }),
 ]
 
 /** Eat the King's own: cream for White, ink for Black. The default for both sides. */
@@ -137,10 +160,21 @@ export const FOG_TINT: Record<string, string> = {
   ancient: '#3a2214',
   cyberpunk: '#3a1250',
   survey: '#2a3020',
+  bronze: '#3a2416',
+  silver: '#2a2f37',
+  gold: '#3a2c0c',
+  grandmaster: '#140b30',
+  king: '#2a2210',
 }
+
+/** Tile skins whose board has a light passing over it (see .board-shine in index.css). */
+export const SHINING = new Set<string>(['king'])
 
 const skinOfTile = new Map<string, string>()
 for (const id of THEMES) for (const light of [true, false]) skinOfTile.set(tileImg(id, light)!, id)
+
+/** Whether a square drawn with this tile image has a light passing over it. */
+export const shines = (tile: string | undefined) => !!tile && SHINING.has(skinOfTile.get(tile) ?? '') && !lessMotion
 
 /** The fog colour over a square drawn with this tile image (undefined for a plain square). */
 export const fogTint = (tile: string | undefined) => FOG_TINT[(tile && skinOfTile.get(tile)) || '']

@@ -5,11 +5,24 @@ import { useUnlocked } from './prefs'
 import { go } from './ProfilePage'
 import { setImg, THEME_LOCK, tileImg } from './sets'
 import { BOTS } from './settings'
+import { titleAt } from './titles'
 
-/** The order of the showcase: the bots' sets from strongest, then the rating sets, then the beta set. */
-const SHOWCASE = ['galaxy', 'ancient', 'survey', 'blueprint', 'holy', 'cyberpunk']
+/** The order of the showcase: the bots' sets from strongest, then the title sets from the first, then the beta set. */
+const SHOWCASE = [
+  'galaxy',
+  'ancient',
+  'survey',
+  'blueprint',
+  'bronze',
+  'silver',
+  'gold',
+  'holy',
+  'grandmaster',
+  'king',
+  'cyberpunk',
+]
 /** Sets new since the last release, tagged in the showcase. */
-const NEW = new Set(['survey'])
+const NEW = new Set(['bronze', 'silver', 'gold', 'grandmaster', 'king'])
 
 /**
  * A small showcase of the themed sets on the home page: each on its own tiles,
@@ -38,7 +51,11 @@ export function Skins() {
             const has = !!unlocked?.has(theme)
             const bot = BOTS.find((b) => 'bot:' + b.level === reason)
             const rating = reason.startsWith('rating:') ? Number(reason.slice(7)) : 0
-            const how = bot ? t.skins.beat(bot.name) : rating ? t.skins.reach(rating) : t.skins.beta
+            const how = bot
+              ? t.skins.beat(bot.name)
+              : rating
+                ? t.skins.reach(rating, t.titles.names[titleAt(rating)?.id ?? ''] ?? '')
+                : t.skins.beta
             return (
               <div key={theme} className="skin" data-locked={!has || undefined}>
                 <span className="skin-sw">

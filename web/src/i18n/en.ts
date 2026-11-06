@@ -322,7 +322,7 @@ export const en = {
     guest: "Sign in first. Wins as a guest don't unlock anything.",
     beat: (bot: string) => `Beat ${bot}`,
     onThisPage: 'on this page',
-    reach: (n: number) => `Reach ${n} in either mode`,
+    reach: (n: number, title: string) => `${title}: reach ${n}`,
     beta: 'Beta players',
     unlocked: 'unlocked',
     playHere: (bot: string) => `Play ${bot}`,
@@ -695,6 +695,14 @@ export const en = {
           '**Second** counts as a win and gets **half** of that. **Third** and **fourth** lose half of it, except on your **first loss of the day**, when third loses **nothing** and fourth a quarter. In a drawn game, the players level in first move nobody.',
         ],
       },
+      scoreTitles: {
+        kind: 'Titles',
+        title: 'Kept for life',
+        p: [
+          'Your **highest** rating in either game earns a title, and you **keep it** if the rating falls. Each title unlocks a set.',
+          'Its tag shows before your name: on the board, the leaderboard, your profile and in chat.',
+        ],
+      },
       draws: {
         kind: 'The rest',
         title: 'Draws and the rest',
@@ -947,6 +955,18 @@ export const en = {
     createAnAccount: 'Create an account',
   },
 
+  titles: {
+    names: {
+      club: 'Club player',
+      expert: 'Expert',
+      candidate: 'Candidate master',
+      fog: 'Fog master',
+      im: 'International master',
+      gm: 'Grandmaster',
+      king: 'King',
+    } as Record<string, string>,
+  },
+
   pieces: {
     livePreview: 'Live preview',
     showFog: 'Fog',
@@ -982,11 +1002,11 @@ export const en = {
     plainTiles: 'Plain',
     lockedBy: (bot: string) => `Beat ${bot}`,
     lockedBeta: 'Beta players',
-    lockedRating: (n: string) => `Reach ${n}`,
+    lockedRating: (n: string, title: string) => `${title}, ${n}`,
     unlockHint:
-      'Colours are yours. Most themed sets belong to a bot: beat it to unlock its pieces, tiles and avatars. Blueprint is for reaching a 1150 rating, Holy for 2000.',
+      'Colours are yours. Most themed sets belong to a bot: beat it to unlock its pieces, tiles and avatars. The rest come with titles: Blueprint at 1150, then Bronze, Silver, Gold, Holy, Grandmaster and King.',
     unlockGuest:
-      'Colours are yours. Most themed sets belong to a bot: sign in and beat it to unlock it. Blueprint is for reaching a 1150 rating, Holy for 2000.',
+      'Colours are yours. Most themed sets belong to a bot: sign in and beat it to unlock it. The rest come with titles: Blueprint at 1150, then Bronze, Silver, Gold, Holy, Grandmaster and King.',
     sets: {
       classic: 'Classic',
       cream: 'Cream',
@@ -1021,6 +1041,21 @@ export const en = {
       survey: 'Survey',
       'survey-light': 'Survey, light',
       'survey-dark': 'Survey, dark',
+      bronze: 'Bronze',
+      'bronze-light': 'Bronze, light',
+      'bronze-dark': 'Bronze, dark',
+      silver: 'Silver',
+      'silver-light': 'Silver, light',
+      'silver-dark': 'Silver, dark',
+      gold: 'Gold',
+      'gold-light': 'Gold, light',
+      'gold-dark': 'Gold, dark',
+      grandmaster: 'Grandmaster',
+      'grandmaster-light': 'Galaxy sun',
+      'grandmaster-dark': 'Black hole',
+      king: 'King',
+      'king-light': 'King, light',
+      'king-dark': 'King, dark',
     } as Record<string, string>,
   },
 

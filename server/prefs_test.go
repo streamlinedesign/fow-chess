@@ -18,7 +18,7 @@ func TestPrefsAndAvatars(t *testing.T) {
 	}
 
 	for _, bad := range []string{
-		`{"white":"gold"}`,
+		`{"white":"platinum"}`,
 		`{"black":"red-ink"}`,
 		`{"side":"red"}`,
 		`{"avatar":"classic/K"}`,
@@ -41,7 +41,7 @@ func TestPrefsAndAvatars(t *testing.T) {
 	}
 
 	// Themes are locked until you beat the bot that wears them (holy: until
-	// you reach a 2000 rating).
+	// you reach an 1800 rating).
 	themes := `{"white":"holy","black":"galaxy","lightTiles":"holy","darkTiles":"galaxy","plain":true,"avatar":"ancient-dark/N"}`
 	if code, _ := ann.do("PUT", "/api/prefs", themes); code != 403 {
 		t.Fatalf("locked themes: %d", code)
@@ -120,7 +120,7 @@ func TestMatchSkins(t *testing.T) {
 	}
 	m.handle(cw, inMsg{Type: "skin", Skin: &skin{White: "blue", Black: "red"}})
 	m.handle(cs, inMsg{Type: "skin", Skin: &skin{White: "green", Black: "green"}}) // spectators have no seat
-	m.handle(cb, inMsg{Type: "skin", Skin: &skin{White: "gold", Black: "red"}})
+	m.handle(cb, inMsg{Type: "skin", Skin: &skin{White: "platinum", Black: "red"}})
 	p := seen(cs)
 	if s := p["w"].Skin; s == nil || s.White != "blue" || s.Black != "red" {
 		t.Errorf("white's skin: %+v", s)
