@@ -5,6 +5,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 ## [Unreleased]
 
 - Fog is Dusk only: hidden squares stay under a dark veil tinted by their tile skin. Smoke and the fog setting are gone; the settings preview's Fog button still shows it.
+- Four-player bots in the fog weigh their king's exposure less (0.5 pawns a way in, was 1.5): as strong, and bot-only games end far more often. The test of bots playing on after a player resigns no longer needs the game to end, only 400 moves, so it stops failing CI now and then. Bots in a four-player game stop moving once no person is left in it and nobody is watching, so a game of bots alone no longer runs on the server for good; anyone who opens it starts them again.
 - Fog has two looks, picked in Settings: Smoke (the default), one soft cloud with grain over what you can't see, and Dusk, a dark veil that keeps each hidden square's colour and tile. Both take the colour of the tile skin underneath. Vision squares and the hill stay ringed above the fog. The fog style is kept with your preferences (`fog` in `/api/prefs`) and only shows on your screen.
 - A crisper board: a double rule frame, square corners, slightly brighter squares, an outlined last move, darker move dots, corner wedges for captures and a small shadow under pieces.
 - Settings has a live preview beside every setting (inside Pieces on narrower screens): a full board in both your sets on your tiles, with Swap sides and a Fog button to see your fog style.

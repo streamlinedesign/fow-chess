@@ -929,7 +929,7 @@ func (m *FourMatch) play(uci string, now time.Time) bool {
 // botsToMove are the bots that still have to send a move in a Sync Move
 // round, or the bot to move. Callers hold m.mu.
 func (m *FourMatch) botsToMove() []four.Color {
-	if !m.full() || m.arranging() || m.game.Over() {
+	if !m.full() || m.arranging() || m.game.Over() || m.onlyBotsUnseen() {
 		return nil
 	}
 	if !m.settings.Sync {
@@ -946,6 +946,23 @@ func (m *FourMatch) botsToMove() []four.Color {
 		}
 	}
 	return out
+}
+
+// onlyBotsUnseen reports whether every player still in is a bot and nobody
+// has the game open. Bots alone in Sync Move can dodge each other for good,
+// so they wait until someone opens the game (join pokes them again). Callers
+// hold m.mu.
+func (m *FourMatch) onlyBotsUnseen() bool {
+	if len(m.clients) > 0 {
+		return false
+	}
+	pos := m.game.Position()
+	for _, c := range four.Colors {
+		if !pos.Out[c] && !m.bots[c] {
+			return false
+		}
+	}
+	return true
 }
 
 // pokeBot has the bots move after a short pause when it's their turn, or in
