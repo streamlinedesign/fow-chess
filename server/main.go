@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/signal"
 	"regexp"
+	"slices"
 	"strings"
 	"syscall"
 	"time"
@@ -166,6 +167,13 @@ func main() {
 		settings.Rated = false // only the queue starts ranked games
 		if settings.Demo {
 			settings = demoFour(bots.Level(settings.Bot))
+		} else if settings.War {
+			// War Mode with a friend: its rules, and one of its clocks.
+			if !slices.Contains(warTimes, settings.Time) {
+				jsonError(w, "Those match settings aren't available.", http.StatusBadRequest)
+				return
+			}
+			settings = warFour(settings.Time)
 		}
 		if !settings.valid() {
 			jsonError(w, "Those match settings aren't available.", http.StatusBadRequest)

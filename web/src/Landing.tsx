@@ -20,13 +20,16 @@ import {
   BOTS,
   describeTime,
   loadSettings,
+  loadWarTime,
   modeName,
   NO_CLOCK,
   sameTime,
   saveSettings,
+  saveWarTime,
   TIME_GROUPS,
   timeGroup,
   timeLabel,
+  WAR_TIMES,
   type Bot,
   type Settings,
   type TimeControl,
@@ -53,6 +56,7 @@ export function Landing() {
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const [busy, setBusy] = useState(false)
   const [demo, setDemo] = useState<DemoMode>(savedDemoMode)
+  const [warTime, setWarTime] = useWarTime()
 
   return (
     <main className="home">
@@ -71,12 +75,14 @@ export function Landing() {
           <FindFour
             signedIn={!!me}
             rating={me?.fourRating}
+            time={warTime}
+            onTime={setWarTime}
             onTry={() => {
               setDemo('war')
               document.querySelector('.home-hero')?.scrollIntoView({ behavior: 'smooth' })
             }}
           />
-          <CodeGame settings={settings} busy={busy} setBusy={setBusy} />
+          <CodeGame settings={settings} warTime={warTime} busy={busy} setBusy={setBusy} />
           <section>
             <a href="/mods" onClick={(e) => go(e, '/mods')} className="home-mods">
               <span className="home-mods-title">{t.common.mods}</span>
@@ -187,17 +193,52 @@ function PlayMenu({
   )
 }
 
-/** A custom game: make a code to share, or join one. Quieter than matchmaking. */
+/** The War Mode clock picked, remembered between visits. */
+export function useWarTime() {
+  const [time, setTime] = useState<TimeControl>(loadWarTime)
+  const set = (t: TimeControl) => {
+    saveWarTime(t)
+    setTime(t)
+  }
+  return [time, set] as const
+}
+
+type CodeKind = 'etk' | 'war'
+
+function savedCodeKind(): CodeKind {
+  try {
+    return localStorage.getItem('codeGame') === 'war' ? 'war' : 'etk'
+  } catch {
+    return 'etk'
+  }
+}
+
+/**
+ * A custom game: make a code to share, or join one. Quieter than matchmaking.
+ * Eat the King on the clock picked above, or War Mode on the War Mode clock
+ * for up to three friends, with bots for the seats nobody takes. Never ranked
+ * when it's War Mode.
+ */
 export function CodeGame({
   settings,
+  warTime,
   busy,
   setBusy,
 }: {
   settings: Settings
+  warTime: TimeControl
   busy: boolean
   setBusy: (b: boolean) => void
 }) {
   const t = useT()
+  const [kind, setKind] = useState<CodeKind>(savedCodeKind)
+  const pickKind = (k: string) => {
+    const next: CodeKind = k === 'war' ? 'war' : 'etk'
+    setKind(next)
+    try {
+      localStorage.setItem('codeGame', next)
+    } catch {}
+  }
   const [code, setCode] = useState('')
   const [doing, setDoing] = useState<'create' | 'join' | null>(null)
   const [error, setError] = useState('')
@@ -215,6 +256,15 @@ export function CodeGame({
   const create = async () => {
     begin('create')
     try {
+      if (kind === 'war') {
+        const res = await fetch(`/api/four?player=${playerId}`, {
+          method: 'POST',
+          body: JSON.stringify({ war: true, fog: true, time: warTime }),
+        })
+        if (!res.ok) throw new Error()
+        const { id } = await res.json()
+        return navigate(`/f/${id}`)
+      }
       saveSettings(settings)
       const res = await fetch(`/api/matches?player=${playerId}`, {
         method: 'POST',
@@ -233,15 +283,27 @@ export function CodeGame({
     const id = code.trim().toUpperCase()
     if (!id) return
     begin('join')
+    // A code is a two-player match or a four-player one.
     const res = await fetch(`/api/matches/${id}`).catch(() => null)
     if (res?.ok) return navigate(`/m/${id}`)
-    fail(res ? t.landing.noMatch(id) : t.common.cantReach)
+    const four = res ? await fetch(`/api/four/${id}`).catch(() => null) : null
+    if (four?.ok) return navigate(`/f/${id}`)
+    fail(res && four ? t.landing.noMatch(id) : t.common.cantReach)
   }
 
   return (
     <section className="home-code">
       <h2 className="text-lg font-semibold tracking-tight">{t.home.codeTitle}</h2>
-      <p className="mt-1 text-sm text-accent">{t.home.codeSub}</p>
+      <RadioGroup.Root
+        aria-label={t.home.codeGame}
+        value={kind}
+        onValueChange={pickKind}
+        className="seg mt-3 max-w-sm"
+      >
+        <RadioGroup.Item value="etk">{t.home.etkTitle}</RadioGroup.Item>
+        <RadioGroup.Item value="war">{t.home.fourTitle}</RadioGroup.Item>
+      </RadioGroup.Root>
+      <p className="mt-2 text-sm text-accent">{kind === 'war' ? t.home.codeSubWar : t.home.codeSub}</p>
       <div className="home-code-acts">
         <Button className="h-11 px-4" onClick={create} loading={doing === 'create'} disabled={busy}>
           {t.home.createCode}
@@ -494,11 +556,17 @@ export function FindFour({
   bare,
   onTry,
   rating,
+  time,
+  onTime,
 }: {
   signedIn: boolean
   bare?: boolean
   onTry?: () => void
   rating?: number
+  /** The War Mode clock to queue for. */
+  time: TimeControl
+  /** Shows the clock picker. */
+  onTime?: (t: TimeControl) => void
 }) {
   const t = useT()
   const [since, setSince] = useState<number | null>(null)
@@ -516,7 +584,7 @@ export function FindFour({
   const start = async () => {
     setError('')
     try {
-      const b = await api<QueueReply>('POST', '/api/four/queue')
+      const b = await api<QueueReply>('POST', '/api/four/queue', { time })
       if (b.matchId) return found(b.matchId)
       setSize(b.size ?? 1)
       setSince(Date.now())
@@ -564,6 +632,22 @@ export function FindFour({
             <span className="block">{signedIn ? t.home.fourRanked : t.home.fourGuest}</span>
           </p>
         </>
+      )}
+      {onTime && (
+        <RadioGroup.Root
+          aria-label={t.home.warLength}
+          value={String(WAR_TIMES.findIndex((p) => sameTime(p, time)))}
+          onValueChange={(i) => onTime(WAR_TIMES[Number(i)])}
+          disabled={waiting}
+          className="home-times"
+        >
+          {WAR_TIMES.map((_, i) => (
+            <RadioGroup.Item key={i} value={String(i)} className="home-time">
+              <b>{t.home.warTimes[i].label}</b>
+              <span>{t.home.warTimes[i].sub}</span>
+            </RadioGroup.Item>
+          ))}
+        </RadioGroup.Root>
       )}
       {!signedIn ? (
         <Button variant="solid" className="home-play" onClick={() => navigate('/login')}>

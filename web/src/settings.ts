@@ -133,6 +133,29 @@ export const TIME_GROUPS: [string, TimeControl[]][] = [
 ]
 
 /**
+ * War Mode's clocks: 30 minutes plus 10 seconds a move, 2 hours plus 30
+ * seconds a move, and a day for each move. Must match warTimes in
+ * server/four_match.go.
+ */
+export const WAR_TIMES: TimeControl[] = [tc(1800, 10), tc(7200, 30), tc(0, 0, DAY)]
+
+/** The War Mode clock last picked, for the queue and for games with friends. */
+export function loadWarTime(): TimeControl {
+  try {
+    const t = JSON.parse(localStorage.getItem('warTime') ?? 'null')
+    return WAR_TIMES.find((p) => t && sameTime(p, t)) ?? WAR_TIMES[0]
+  } catch {
+    return WAR_TIMES[0]
+  }
+}
+
+export function saveWarTime(t: TimeControl) {
+  try {
+    localStorage.setItem('warTime', JSON.stringify(t))
+  } catch {}
+}
+
+/**
  * The extra clock a mods game can have: none. The server's modTimeControls
  * (server/view.go) still accepts the longer list the mods page used to offer.
  */

@@ -46,18 +46,39 @@ type fourSettings struct {
 	// Bot, with no clock. It lives only in memory and is never saved or ranked.
 	Demo bool   `json:"demo,omitempty"`
 	Bot  string `json:"bot,omitempty"`
+	// War is War Mode, ranked or not; asking for it when creating a game
+	// gets War Mode's rules with the War Mode clock asked for (warFour).
+	War bool `json:"war,omitempty"`
 }
 
 // warMode is War Mode: the four-player cross, Battleship, jester pawns, fog of
 // war with centre vision (any piece on the middle four, as in Eat the King),
-// half an hour each plus ten seconds a move. Players take turns, Red, Blue,
-// Green, Violet. The extended board and Sync Move are mods (Mods, Four
-// players), not part of War Mode.
-var warMode = fourSettings{Setup: "battleship", JesterPawns: true,
-	Fog: true, CenterVision: "any", Time: TimeControl{Base: 1800, Inc: 10}}
+// and one of warTimes, half an hour each plus ten seconds a move by default.
+// Players take turns, Red, Blue, Green, Violet. The extended board and Sync
+// Move are mods (Mods, Four players), not part of War Mode.
+var warMode = fourSettings{Setup: "battleship", JesterPawns: true, War: true,
+	Fog: true, CenterVision: "any", Time: warTimes[0]}
 
-// rankedFour is the one ranked four-player game, War Mode.
-var rankedFour = func() fourSettings { s := warMode; s.Rated = true; return s }()
+// warTimes are War Mode's clocks: 30 minutes plus 10 seconds a move, 2 hours
+// plus 30 seconds a move, and a day for each move. Must match WAR_TIMES in
+// web/src/settings.ts.
+var warTimes = []TimeControl{{Base: 1800, Inc: 10}, {Base: 7200, Inc: 30}, {PerMove: 24 * 60 * 60}}
+
+// warFour is War Mode with clock t, or with the default clock if t isn't one
+// of warTimes.
+func warFour(t TimeControl) fourSettings {
+	s := warMode
+	if slices.Contains(warTimes, t) {
+		s.Time = t
+	}
+	return s
+}
+
+// rankedWar is the ranked four-player game, War Mode, with clock t.
+func rankedWar(t TimeControl) fourSettings { s := warFour(t); s.Rated = true; return s }
+
+// rankedFour is ranked War Mode with the default clock.
+var rankedFour = rankedWar(warMode.Time)
 
 // demoFour is War Mode against three copies of a bot from the home page
 // board: no clock, as on the one-against-one demo board.
@@ -71,8 +92,17 @@ func demoFour(bot bots.Level) fourSettings {
 }
 
 // fourArrangeTime is how long players of a ranked game have to place their
-// pieces; anyone still arranging then gets a bot's arrangement.
-const fourArrangeTime = 2 * time.Minute
+// pieces; anyone still arranging then gets a bot's arrangement. Two minutes,
+// five in a two-hour game, and the time for a move in a daily one.
+func fourArrangeTime(t TimeControl) time.Duration {
+	switch {
+	case t.PerMove > 0:
+		return time.Duration(t.PerMove) * time.Second
+	case t.Base >= 7200:
+		return 5 * time.Minute
+	}
+	return 2 * time.Minute
+}
 
 var fourShapes = map[string]four.Shape{"": four.Cross, "extended": four.Extended}
 
@@ -91,7 +121,8 @@ func (s fourSettings) valid() bool {
 	_, center := centerVisions[s.CenterVision]
 	_, layout := fourLayouts[s.Setup]
 	_, shape := fourShapes[s.Board]
-	return center && layout && shape && !(s.Hill && s.Board != "") && (s.Time.valid() || s.Time.modsValid())
+	return center && layout && shape && !(s.Hill && s.Board != "") &&
+		(s.Time.valid() || s.Time.modsValid() || slices.Contains(warTimes, s.Time))
 }
 
 // fourProtocol changes whenever the four-player state message changes shape.
@@ -161,8 +192,10 @@ func (h *FourHub) Create(creator *player, settings fourSettings) *FourMatch {
 }
 
 // CreateRanked starts a ranked game for four players from the queue, seated
-// in the order given, with their four-player ratings as they start.
-func (h *FourHub) CreateRanked(ps [4]*player, ratings [4]int) *FourMatch {
+// in the order given, with their four-player ratings as they start, on War
+// Mode clock t.
+func (h *FourHub) CreateRanked(ps [4]*player, ratings [4]int, t TimeControl) *FourMatch {
+	settings := rankedWar(t)
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	for {
@@ -174,7 +207,7 @@ func (h *FourHub) CreateRanked(ps [4]*player, ratings [4]int) *FourMatch {
 			continue
 		}
 		now := time.Now()
-		m := &FourMatch{hub: h, id: id, settings: rankedFour, game: four.NewGame(rankedFour.rules()),
+		m := &FourMatch{hub: h, id: id, settings: settings, game: four.NewGame(settings.rules()),
 			clients: map[*client]struct{}{}, created: now, touched: now, ratings: ratings}
 		m.resetClock()
 		for c, p := range ps {
@@ -498,7 +531,7 @@ func (m *FourMatch) armArrange() {
 	if !m.settings.Rated || !m.arranging() || m.arrange != nil {
 		return
 	}
-	m.arrange = time.AfterFunc(time.Until(m.created.Add(fourArrangeTime)), func() {
+	m.arrange = time.AfterFunc(time.Until(m.created.Add(fourArrangeTime(m.settings.Time))), func() {
 		m.mu.Lock()
 		defer m.mu.Unlock()
 		if !m.arranging() {

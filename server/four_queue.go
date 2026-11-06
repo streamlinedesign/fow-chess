@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"math"
 	"math/rand/v2"
 	"net/http"
@@ -11,12 +12,14 @@ import (
 
 // The four-player queue: signed-in players wait for ranked four-player
 // games, and the four closest four-player ratings are seated together once
-// they're within the window of whoever has waited longest. A player stays
+// they're within the window of whoever has waited longest. Players are only
+// seated with others who asked for the same War Mode clock. A player stays
 // in the queue only while their page keeps asking.
 
 type fourEntry struct {
 	user   *User
 	rating int
+	time   TimeControl
 	// since is when they joined; seen is their last poll.
 	since, seen time.Time
 }
@@ -31,17 +34,17 @@ func NewFourQueue() *FourQueue {
 	return &FourQueue{waiting: map[int64]*fourEntry{}, found: map[int64]foundMatch{}}
 }
 
-func (q *FourQueue) join(u *User, rating int) {
+func (q *FourQueue) join(u *User, rating int, t TimeControl) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.sweepLocked()
 	delete(q.found, u.ID)
-	if e := q.waiting[u.ID]; e != nil {
+	if e := q.waiting[u.ID]; e != nil && e.time == t {
 		e.seen = time.Now()
 		return
 	}
 	now := time.Now()
-	q.waiting[u.ID] = &fourEntry{user: u, rating: rating, since: now, seen: now}
+	q.waiting[u.ID] = &fourEntry{user: u, rating: rating, time: t, since: now, seen: now}
 }
 
 // group takes four waiting players including u out of the queue, the
@@ -51,12 +54,15 @@ func (q *FourQueue) group(u *User) []*fourEntry {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.sweepLocked()
-	if q.waiting[u.ID] == nil || len(q.waiting) < 4 {
+	me := q.waiting[u.ID]
+	if me == nil || len(q.waiting) < 4 {
 		return nil
 	}
 	all := make([]*fourEntry, 0, len(q.waiting))
 	for _, e := range q.waiting {
-		all = append(all, e)
+		if e.time == me.time {
+			all = append(all, e)
+		}
 	}
 	slices.SortFunc(all, func(a, b *fourEntry) int { return a.rating - b.rating })
 	now := time.Now()
@@ -111,11 +117,28 @@ func (q *FourQueue) seated(userID int64, matchID string) {
 	q.found[userID] = foundMatch{id: matchID, at: time.Now()}
 }
 
-func (q *FourQueue) Size() int {
+// Size is how many are waiting for clock t.
+func (q *FourQueue) Size(t TimeControl) int {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	q.sweepLocked()
-	return len(q.waiting)
+	n := 0
+	for _, e := range q.waiting {
+		if e.time == t {
+			n++
+		}
+	}
+	return n
+}
+
+// timeOf is the clock u is waiting for, or War Mode's default.
+func (q *FourQueue) timeOf(u *User) TimeControl {
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	if e := q.waiting[u.ID]; e != nil {
+		return e.time
+	}
+	return warMode.Time
 }
 
 func (q *FourQueue) sweepLocked() {
@@ -141,7 +164,7 @@ func (s *Social) seatFour(me *User, group []*fourEntry) string {
 	for c, e := range group {
 		ps[c], ratings[c] = userPlayer(e.user, ""), e.rating
 	}
-	m := s.fours.CreateRanked(ps, ratings)
+	m := s.fours.CreateRanked(ps, ratings, group[0].time)
 	for _, e := range group {
 		if e.user.ID != me.ID {
 			s.fourQueue.seated(e.user.ID, m.id)
@@ -152,27 +175,40 @@ func (s *Social) seatFour(me *User, group []*fourEntry) string {
 }
 
 func (s *Social) fourQueueRoutes(mux *http.ServeMux) {
-	reply := func(w http.ResponseWriter, waiting bool, matchID string) {
-		resp := map[string]any{"waiting": waiting, "size": s.fourQueue.Size()}
+	reply := func(w http.ResponseWriter, me *User, waiting bool, matchID string) {
+		resp := map[string]any{"waiting": waiting, "size": s.fourQueue.Size(s.fourQueue.timeOf(me))}
 		if matchID != "" {
 			resp["matchId"] = matchID
 		}
 		writeJSON(w, resp)
 	}
 
-	// Join the four-player queue, or get seated at once.
+	// Join the four-player queue for a War Mode clock (the default with no
+	// body), or get seated at once.
 	mux.HandleFunc("POST /api/four/queue", func(w http.ResponseWriter, r *http.Request) {
 		me := s.signedIn(w, r)
 		if me == nil {
 			return
 		}
+		body := struct {
+			Time *TimeControl `json:"time"`
+		}{}
+		json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&body)
+		t := warMode.Time
+		if body.Time != nil {
+			if !slices.Contains(warTimes, *body.Time) {
+				jsonError(w, "That clock isn't one of War Mode's.", http.StatusBadRequest)
+				return
+			}
+			t = *body.Time
+		}
 		rating := s.fours.fourRatings([4]int64{me.ID})[0]
-		s.fourQueue.join(me, rating)
+		s.fourQueue.join(me, rating, t)
 		if g := s.fourQueue.group(me); g != nil {
-			reply(w, false, s.seatFour(me, g))
+			reply(w, me, false, s.seatFour(me, g))
 			return
 		}
-		reply(w, true, "")
+		reply(w, me, true, "")
 	})
 
 	// Still waiting? Also what keeps a player in the queue, and where a
@@ -188,7 +224,7 @@ func (s *Social) fourQueueRoutes(mux *http.ServeMux) {
 				waiting, matchID = false, s.seatFour(me, g)
 			}
 		}
-		reply(w, waiting, matchID)
+		reply(w, me, waiting, matchID)
 	})
 
 	mux.HandleFunc("DELETE /api/four/queue", func(w http.ResponseWriter, r *http.Request) {

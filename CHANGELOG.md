@@ -4,6 +4,8 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- War Mode has three clocks: 30 minutes plus 10 seconds a move (as before), 2 hours plus 30 seconds a move, and a day for every move. The home page and the desktop app pick one; the queue only seats players who picked the same clock, and all three count on the one War Mode rating. Players get 2 minutes to place their pieces, 5 in a two-hour game and a day in a daily one.
+- Play a friend with a code can start War Mode: pick War Mode, create a code, and up to three friends join with it; bots take the seats nobody takes. Never ranked. Joining by code finds War Mode games too.
 - Rex inutilis is a basic bot: he plays the classic pieces and beating him unlocks nothing. Holy, the set he wore, now unlocks on reaching a 2000 rating in either Eat the King or War Mode, and stays once reached (`rating:2000` in `unlocks`). Players who already beat Rex keep holy (migration 012).
 - War Mode is back on the four-player cross (three rows each, the four middle squares give full vision); the extended board is a mod again. Ranked games, the home page board and the rules page all follow.
 - The home page War Mode board works in turns: your move shows at once, the line under the board says whose move it is, and the bots show as thinking while they play. A player knocked out there keeps seeing the board live instead of jumping a few moves back. The move list keeps each player's moves in their own column when someone is out.

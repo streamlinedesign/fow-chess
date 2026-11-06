@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useMe } from './auth'
 import { SEAT_COLORS } from './four'
 import { useT } from './i18n'
-import { CodeGame, FindFour, FindMatch, GuestPitch, presets, YourGames } from './Landing'
+import { CodeGame, FindFour, FindMatch, GuestPitch, presets, useWarTime, YourGames } from './Landing'
 import { pieceSrc } from './pieces'
 import { navigate } from './router'
 import {
@@ -12,6 +12,7 @@ import {
   saveSettings,
   type Settings,
   type TimeControl,
+  WAR_TIMES,
 } from './settings'
 import { DropMenu, MenuItem } from './Sheet'
 import { api } from './social'
@@ -29,6 +30,7 @@ export function AppHome() {
   const t = useT()
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const [busy, setBusy] = useState(false)
+  const [warTime, setWarTime] = useWarTime()
   const [ranks, setRanks] = useState<{ one: Standing; four: Standing } | null>(null)
 
   useEffect(() => {
@@ -68,11 +70,9 @@ export function AppHome() {
         <Mode art={<WarArt />} title={t.desktop.war} about={t.desktop.warAbout} rank={rank(ranks?.four)}>
           <div className="app-go">
             <div className="min-w-0 flex-1">
-              <FindFour signedIn={!!me} bare />
+              <FindFour signedIn={!!me} time={warTime} bare />
             </div>
-            <span className="app-chip" aria-label={t.desktop.clock}>
-              {t.desktop.warClock}
-            </span>
+            <WarClockChip time={warTime} onChange={setWarTime} />
           </div>
         </Mode>
         <Mode
@@ -90,7 +90,7 @@ export function AppHome() {
       <div className="app-below">
         <div className="home-cell">{me ? <YourGames username={me.username} /> : <GuestPitch />}</div>
         <div className="home-cell">
-          <CodeGame settings={settings} busy={busy} setBusy={setBusy} />
+          <CodeGame settings={settings} warTime={warTime} busy={busy} setBusy={setBusy} />
         </div>
       </div>
     </main>
@@ -152,6 +152,32 @@ function ClockChip({ settings, onChange }: { settings: Settings; onChange: (s: S
         <MenuItem key={i} onSelect={() => onChange({ ...settings, time: c })}>
           <span className="w-4">{sameTime(c, settings.time) ? '✓' : ''}</span>
           {describeTime(c, t)}
+        </MenuItem>
+      ))}
+    </DropMenu>
+  )
+}
+
+/** The War Mode clock Play queues for, shared with the code game below. */
+function WarClockChip({ time, onChange }: { time: TimeControl; onChange: (t: TimeControl) => void }) {
+  const t = useT()
+  const at = Math.max(0, WAR_TIMES.findIndex((p) => sameTime(p, time)))
+  return (
+    <DropMenu
+      title={t.desktop.clock}
+      trigger={
+        <button type="button" className="app-chip app-chip-btn" aria-label={t.desktop.clock}>
+          {t.desktop.warClocks[at]}
+          <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden>
+            <path d="M2 3.5 5 6.5 8 3.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+        </button>
+      }
+    >
+      {WAR_TIMES.map((c, i) => (
+        <MenuItem key={i} onSelect={() => onChange(c)}>
+          <span className="w-4">{i === at ? '✓' : ''}</span>
+          {t.desktop.warClocks[i]}
         </MenuItem>
       ))}
     </DropMenu>
