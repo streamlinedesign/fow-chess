@@ -971,7 +971,7 @@ func (m *FourMatch) pokeBot() {
 		for _, c := range bots {
 			pos := m.game.Position()
 			pos.Turn = c
-			mv, _ := fourBotMove(m.seats[c], &pos, rng)
+			mv, _ := fourBotMove(m.seats[c], &pos, m.settings.Fog, rng)
 			moves = append(moves, mv.UCI())
 		}
 		for i, c := range bots {
@@ -990,16 +990,32 @@ func (m *FourMatch) pokeBot() {
 }
 
 // fourBotMove is the move of the bot in a seat. Rex inutilis plays at random,
-// as in one-against-one; every other bot plays four.BotMove for now.
-func fourBotMove(seat string, pos *four.Position, rng *rand.Rand) (four.Move, bool) {
-	if strings.HasPrefix(seat, "bot:"+string(bots.Rex)+":") {
+// as in one-against-one; the others play four.BotMoveSeeing at their level,
+// from what they can see when the game has fog.
+func fourBotMove(seat string, pos *four.Position, fog bool, rng *rand.Rand) (four.Move, bool) {
+	level := bots.Level(strings.Split(strings.TrimPrefix(seat, "bot:"), ":")[0])
+	if level == bots.Rex {
 		moves := pos.LegalMoves()
 		if len(moves) == 0 {
 			return four.Move{}, false
 		}
 		return moves[rng.IntN(len(moves))], true
 	}
-	return four.BotMove(pos, rng)
+	var seen *[four.NumSquares]bool
+	if fog {
+		v := pos.Vision(pos.Turn)
+		seen = &v
+	}
+	return four.BotMoveSeeing(pos, seen, fourStrength[level], rng)
+}
+
+// fourStrength is how each bot plays four-player chess; the seats the queue
+// fills ("bot:four:<seat>") play the strongest.
+var fourStrength = map[bots.Level]four.Strength{
+	bots.Vercingetorix: four.Greedy,
+	bots.Ramesses:      four.Careful,
+	bots.Solomon:       four.Strongest,
+	"four":             four.Strongest,
 }
 
 func (m *FourMatch) chatJSON(reset bool, lines []chatLine) []byte {
