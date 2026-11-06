@@ -140,7 +140,7 @@ export const hr: Dict = {
     noGames: 'Nema partija u tijeku. Pritisni Igraj za novu.',
     noArena: 'Trenutačno nema najavljene arene.',
     fourTitle: 'Četiri igrača, rangirano',
-    fourAbout: 'Proširena ploča · Potapanje brodova · Istodobni potez · Bez magle',
+    fourAbout: 'Proširena ploča · Potapanje brodova · Istodobni potez · Pješaci lakrdijaši · Bez magle',
     fourRanked: 'Rangira se na zasebnom rejtingu za četiri igrača. 10 minuta svakome.',
     fourPlay: 'Nađi partiju za četiri igrača',
     fourFinding: 'Tražim još tri igrača…',

@@ -140,7 +140,7 @@ export const en = {
     noGames: 'Nothing in progress. Press Play to start a game.',
     noArena: 'No arena coming up right now.',
     fourTitle: 'Four players, ranked',
-    fourAbout: 'Extended board · Battleship · Sync Move · No fog',
+    fourAbout: 'Extended board · Battleship · Sync Move · Jester pawns · No fog',
     fourRanked: 'Ranked on a four-player rating of its own. 10 minutes each.',
     fourPlay: 'Find a four-player game',
     fourFinding: 'Finding three players…',
