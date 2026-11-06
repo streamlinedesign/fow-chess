@@ -206,22 +206,24 @@ func (s *Store) rate(r gameRecord) (*[2]int, error) {
 		return nil, err
 	}
 	// Lock in id order so two games finishing at once can't deadlock.
-	rows, err := tx.Query(`SELECT id, rating, deviation, volatility FROM users WHERE id IN ($1, $2) ORDER BY id FOR UPDATE`,
+	rows, err := tx.Query(`SELECT id, rating, lost_on IS DISTINCT FROM `+utcToday+` FROM users WHERE id IN ($1, $2) ORDER BY id FOR UPDATE`,
 		r.Users[white], r.Users[black])
 	if err != nil {
 		return nil, err
 	}
-	var before [2]glicko
+	var before [2]float64
+	var firstLoss [2]bool
 	for rows.Next() {
 		var id int64
-		var g glicko
-		if err := rows.Scan(&id, &g.Rating, &g.Deviation, &g.Volatility); err != nil {
+		var rating float64
+		var first bool
+		if err := rows.Scan(&id, &rating, &first); err != nil {
 			rows.Close()
 			return nil, err
 		}
 		for c := range r.Users {
 			if r.Users[c] == id {
-				before[c] = g
+				before[c], firstLoss[c] = rating, first
 			}
 		}
 	}
@@ -230,25 +232,22 @@ func (s *Store) rate(r gameRecord) (*[2]int, error) {
 		return nil, err
 	}
 
-	score := map[string]float64{"1-0": 1, "0-1": 0, "1/2-1/2": 0.5}[r.Result]
-	after := [2]glicko{
-		before[white].rate([]glickoResult{{before[black], score}}),
-		before[black].rate([]glickoResult{{before[white], 1 - score}}),
-	}
-	// A Sniper Win moves the ratings only part of the way a whole game would.
-	if r.sniper() {
-		for c := range after {
-			after[c] = before[c].toward(after[c], sniperWeight)
-		}
-	}
 	var diff [2]int
-	for c := range after {
-		diff[c] = int(math.Round(after[c].Rating)) - int(math.Round(before[c].Rating))
-		if _, err := tx.Exec(`UPDATE users SET rating = $2, deviation = $3, volatility = $4, rated_games = rated_games + 1 WHERE id = $1`,
-			r.Users[c], after[c].Rating, after[c].Deviation, after[c].Volatility); err != nil {
+	winner := map[string]int{"1-0": white, "0-1": black}
+	if w, ok := winner[r.Result]; ok {
+		l := 1 - w
+		diff[w], diff[l] = duelPoints(r.Settings.Time, before[w], before[l], firstLoss[l], r.sniper())
+		if _, err := tx.Exec(`UPDATE users SET lost_on = `+utcToday+` WHERE id = $1`, r.Users[l]); err != nil {
 			return nil, err
 		}
-		if err := rateUnlock(tx, r.Users[c], after[c].Rating); err != nil {
+	}
+	for c := range diff {
+		after := before[c] + float64(diff[c])
+		if _, err := tx.Exec(`UPDATE users SET rating = $2, rated_games = rated_games + 1 WHERE id = $1`,
+			r.Users[c], after); err != nil {
+			return nil, err
+		}
+		if err := rateUnlock(tx, r.Users[c], after); err != nil {
 			return nil, err
 		}
 	}
@@ -438,7 +437,7 @@ func (s *Store) CreateUser(username string, hash []byte) (*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &User{ID: id, Username: username, Rating: 1500, CreatedAt: now}, nil
+	return &User{ID: id, Username: username, Rating: startRating, CreatedAt: now}, nil
 }
 
 // UserByName finds a user regardless of case, or returns nil.

@@ -124,7 +124,7 @@ export function EatRules() {
 
       <Card id="clocks" art={<ClockArt time="5:00" inc="+0" />}>
         <span className="font-mono text-[15px]">
-          1500 → <strong className="text-fg">1512</strong>
+          1000 → <strong className="text-fg">1021</strong>
         </span>
       </Card>
 
@@ -167,6 +167,68 @@ export function WarRules() {
       />
       <Card id="warWin" art={<KingTaken />} />
       <Card id="warRating" art={<ClockArt time="30:00" inc="+10" />} />
+    </div>
+  )
+}
+
+/** Rank scores: how ranked games move both ratings. Keep in step with server/points.go. */
+export function ScoreRules() {
+  const t = useT()
+  const r = t.rules
+  // War Mode places for a 21-point win: usual, and on a first loss of the day.
+  const war: [string, string][] = [
+    ['+21', '+21'],
+    ['−21', '−11'],
+    ['−11', '0'],
+    ['−11', '−5'],
+  ]
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <Card id="scoreStart" art={<span className="text-[60px] leading-none font-light tracking-tight">1000</span>} />
+      <Card
+        id="scoreDuel"
+        art={
+          <dl className="grid grid-cols-[auto_auto] items-baseline gap-x-5 gap-y-1">
+            {(
+              [
+                [r.shortGames, '18–23'],
+                [r.longGames, '22–30'],
+              ] as const
+            ).map(([k, v]) => (
+              <div key={k} className="contents">
+                <dt className="text-[13px] text-accent">{k}</dt>
+                <dd className="font-mono text-[34px] leading-tight">{v}</dd>
+              </div>
+            ))}
+          </dl>
+        }
+      />
+      <Card
+        id="scoreWar"
+        art={
+          <table className="font-mono text-[15px]">
+            <caption className="sr-only">{r.scoresExample}</caption>
+            <thead>
+              <tr className="text-left text-[12px] text-accent">
+                <th className="pr-4 font-normal">{r.place}</th>
+                <th className="pr-4 font-normal">{r.usual}</th>
+                <th className="font-normal">{r.firstLoss}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {war.map(([usual, first], i) => (
+                <tr key={i}>
+                  <td className="pr-4 text-accent">{r.placeN[i]}</td>
+                  <td className="pr-4">{usual}</td>
+                  <td>{i === 0 ? '' : first}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        }
+      >
+        <p className="text-[13px]">{r.scoresExample}</p>
+      </Card>
     </div>
   )
 }

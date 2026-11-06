@@ -507,10 +507,10 @@ func (m *FourMatch) rate() {
 		return
 	}
 	m.rating = true
-	users, places := m.users, m.game.Places()
+	users, places, clock := m.users, m.game.Places(), m.settings.Time
 	go func() {
 		m.hub.flush()
-		diff, err := m.hub.rateFour(m.id, users, places)
+		diff, err := m.hub.rateFour(m.id, users, places, clock)
 		m.mu.Lock()
 		defer m.mu.Unlock()
 		m.rating = false

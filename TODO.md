@@ -17,6 +17,8 @@
 - Extract `server/engine` into a Go module so `chess-bots` stops carrying a copy
 - First droplet deploy: unit file and Caddy block in `deploy/`, `make deploy`
 
+- Revisit the 2000 rating that unlocks holy: with rank scores starting at 1000 it is about 50 net wins
+
 ## Later
 
 - Blueprint unlocks at 1150, below the 1500 every account starts on, so every signed-in player has it; raise the mark if it should take work

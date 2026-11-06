@@ -1,7 +1,7 @@
 import { useT } from './i18n'
 import { go } from './ProfilePage'
 import { Cell, Page, PageHead } from './Page'
-import { EatRules, WarRules } from './Rules'
+import { EatRules, ScoreRules, WarRules } from './Rules'
 
 /** How to play: the rules of the two official games, Eat the King and War Mode,
  * Mods explain themselves on /mods. */
@@ -29,6 +29,14 @@ export function RulesPage() {
               {t.rules.modsNote}
             </a>
           </p>
+        </Cell>
+      </div>
+      <div className="home-row">
+        <Cell
+          title={t.rules.scoresHeading}
+          right={<span className="text-[13px] text-accent">{t.rules.scoresSub}</span>}
+        >
+          <ScoreRules />
         </Cell>
       </div>
     </Page>

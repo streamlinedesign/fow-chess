@@ -175,7 +175,9 @@ func TestRating(t *testing.T) {
 	store = openTestStore(t, path)
 	ann, _ = store.UserByID(ann.ID)
 	ben, _ = store.UserByID(ben.ID)
-	if ann.Rating <= 1500 || ben.Rating >= 1500 || int(ann.Rating+ben.Rating+0.5) != 3000 {
+	// A five-minute win between new players is worth 21; it's ben's first
+	// loss of the day, so he loses half.
+	if ann.Rating != 1021 || ben.Rating != 989 {
 		t.Errorf("after one win ann %.1f, ben %.1f", ann.Rating, ben.Rating)
 	}
 	rec, _ := store.Game(rated.id, 1)
@@ -192,5 +194,17 @@ func TestRating(t *testing.T) {
 	}
 	if me, _ := store.Rank(ben.ID, false); me == nil || me.Rank != 2 || me.Of != 2 {
 		t.Errorf("ben's rank %+v", me)
+	}
+
+	// Ben's second loss of the day costs the whole 20 (ann is now rated a
+	// little above him, so the win is worth a little less).
+	hub = NewHub(store)
+	play(TimeControl{Base: 300})
+	store.Close()
+	store = openTestStore(t, path)
+	ann, _ = store.UserByID(ann.ID)
+	ben, _ = store.UserByID(ben.ID)
+	if ann.Rating != 1041 || ben.Rating != 969 {
+		t.Errorf("after a second win ann %.1f, ben %.1f", ann.Rating, ben.Rating)
 	}
 }
