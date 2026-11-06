@@ -20,6 +20,8 @@ type Social struct {
 	// fours and fourQueue are the four-player games and their ranked queue.
 	fours     *FourHub
 	fourQueue *FourQueue
+	// guestQueue seats guests in unranked games with each other.
+	guestQueue *GuestQueue
 }
 
 // notify stores a notification for the bell and tells the player's open tabs.

@@ -134,7 +134,8 @@ export function DemoBoard({ me, mode, onMode }: { me?: string; mode: DemoMode; o
       {modes}
     </div>
   )
-  const note = war ? t.home.warTip : skin ? skinLine(skin, !!me, unlocked, t) : t.home.demoTip
+  // Solomon plays the default pieces here, but beating him still unlocks his set.
+  const note = war ? t.home.warTip : skin ? homeSkinLine(skin, !!me, unlocked, t) : t.home.demoTip
   const extra = { bot, name: botName, bar, note }
 
   if (war)
@@ -240,6 +241,13 @@ function over(state: MatchState, you: Color, t: ReturnType<typeof useT>, bot: st
   return won ? t.home.youWon : t.home.youLost(bot.split(' ')[0])
 }
 
+/** The same for the home page board, where Solomon plays the default pieces. */
+function homeSkinLine(set: string, signedIn: boolean, unlocked: ReadonlySet<string> | null, t: ReturnType<typeof useT>) {
+  const name = t.pieces.sets[set]
+  if (!signedIn) return t.home.skinGuest(name)
+  return unlocked?.has(set) ? t.landing.skinWon(name) : t.home.skinBeat(name)
+}
+
 /** What beating a bot that wears a set gets you: already yours, yours to win, or nothing until you log in. */
 export function skinLine(
   set: string,
@@ -319,7 +327,7 @@ function Frame({
             unsafe={state?.unsafe}
             reach={predicting ? undefined : state?.reach}
             hill={state?.settings.hill}
-            look={gameLook(state?.settings ?? { bot }, you === 'w' ? 'b' : 'w')}
+            look={gameLook(state?.settings ?? { bot, demo: true }, you === 'w' ? 'b' : 'w')}
             // The same outpost rings as a real game, from the game's own rules.
             center={state?.settings.centerVision ? { you, live: !predicting && !!state.fullVision } : undefined}
             onMove={onMove}

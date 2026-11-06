@@ -80,11 +80,7 @@ export function Landing() {
               rating={me?.fourRating}
               time={warTime}
               onTime={setWarTime}
-              onTry={() => {
-                setDemo('war')
-                document.querySelector('.home-hero')?.scrollIntoView({ behavior: 'smooth' })
-              }}
-            />
+              />
             <CodeGame settings={settings} warTime={warTime} busy={busy} setBusy={setBusy} />
           </div>
         </div>
@@ -155,12 +151,17 @@ function PlayMenu({
     set({ ...settings, time })
   }
   const clocks = presets(long)
-  const summary = [describeTime(settings.time, t), t.home.etkAbout, signedIn ? t.home.ranked : t.home.guestNote]
+  // Guests play Rapid 10+0 only, against other guests, so they have no clock to pick.
+  const summary = signedIn
+    ? [describeTime(settings.time, t), t.home.etkAbout, t.home.ranked]
+    : [describeTime(GUEST_RAPID, t), t.home.etkAbout, t.home.guestNote]
 
   return (
     <section className="home-official">
       <OfficialHead title={t.home.etkTitle} rating={rating} />
-      <div className="mt-4 flex flex-col gap-3.5">
+      <div className="home-official-body mt-4 flex flex-col gap-3.5">
+        {signedIn && (
+          <>
         <RadioGroup.Root
           aria-label={t.home.length}
           value={long ? 'long' : 'short'}
@@ -190,6 +191,8 @@ function PlayMenu({
             </RadioGroup.Item>
           ))}
         </RadioGroup.Root>
+          </>
+        )}
 
         <FindMatch settings={settings} signedIn={signedIn} busy={busy} summary={summary} />
       </div>
@@ -443,12 +446,18 @@ export function FindMatch({
     setSince(null)
     navigate(`/m/${matchId}`)
   }
+  // Guests wait for other guests: one unranked game, Rapid 10+0.
+  const queue = signedIn ? '/api/queue' : guestQueue
 
   const start = async () => {
     setError('')
     saveSettings(settings)
     try {
-      const b = await api<{ matchId?: string; waiting?: boolean }>('POST', '/api/queue', settings)
+      const b = await api<{ matchId?: string; waiting?: boolean }>(
+        'POST',
+        queue,
+        signedIn ? settings : { game: 'etk' },
+      )
       if (b.matchId) return found(b.matchId)
       setSince(Date.now())
     } catch (e) {
@@ -458,7 +467,7 @@ export function FindMatch({
 
   const stop = () => {
     setSince(null)
-    api('DELETE', '/api/queue').catch(() => {})
+    api('DELETE', queue).catch(() => {})
   }
 
   // While waiting: keep the seat in the queue, pick up the match, and count the seconds.
@@ -466,7 +475,7 @@ export function FindMatch({
     if (!waiting) return
     let live = true
     const poll = () =>
-      api<{ matchId?: string; waiting?: boolean }>('GET', '/api/queue')
+      api<{ matchId?: string; waiting?: boolean }>('GET', queue)
         .then((b) => {
           if (!live) return
           if (b.matchId) found(b.matchId)
@@ -485,7 +494,7 @@ export function FindMatch({
     if (waiting && e.type === 'match' && e.matchId) found(e.matchId)
   })
   // Leaving the page leaves the queue.
-  useEffect(() => () => void (since !== null && api('DELETE', '/api/queue').catch(() => {})), [since])
+  useEffect(() => () => void (since !== null && api('DELETE', queue).catch(() => {})), [since])
 
   const about = bare ? null : (
     <p className="home-summary">
@@ -493,15 +502,6 @@ export function FindMatch({
       <span className="block">{summary[2]}</span>
     </p>
   )
-  if (!signedIn)
-    return (
-      <div className="flex flex-col gap-2.5">
-        {about}
-        <Button variant="solid" className="home-play" onClick={() => navigate('/login')}>
-          {t.home.logInToPlay}
-        </Button>
-      </div>
-    )
   if (waiting) {
     const secs = Math.max(0, Math.round(((now || since) - since) / 1000))
     return (
@@ -539,11 +539,12 @@ export function FindMatch({
     )
   }
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="home-play-at flex flex-col gap-2.5">
       {about}
       <Button variant="solid" className="home-play" onClick={start} disabled={busy}>
-        {t.home.play}
+        {signedIn ? t.home.play : t.home.playGuest}
       </Button>
+      {!signedIn && !bare && <LogInRanked />}
       {error && (
         <p role="alert" className="text-sm text-danger">
           {error}
@@ -560,14 +561,12 @@ export function FindMatch({
 export function FindFour({
   signedIn,
   bare,
-  onTry,
   rating,
   time,
   onTime,
 }: {
   signedIn: boolean
   bare?: boolean
-  onTry?: () => void
   rating?: number
   /** The War Mode clock to queue for. */
   time: TimeControl
@@ -586,11 +585,13 @@ export function FindFour({
     navigate(`/f/${matchId}`)
   }
   type QueueReply = { matchId?: string; waiting?: boolean; size?: number }
+  // Guests wait for three other guests: one unranked game on the 30 minute clock.
+  const queue = signedIn ? '/api/four/queue' : guestQueue
 
   const start = async () => {
     setError('')
     try {
-      const b = await api<QueueReply>('POST', '/api/four/queue', { time })
+      const b = await api<QueueReply>('POST', queue, signedIn ? { time } : { game: 'war' })
       if (b.matchId) return found(b.matchId)
       setSize(b.size ?? 1)
       setSince(Date.now())
@@ -600,14 +601,14 @@ export function FindFour({
   }
   const stop = () => {
     setSince(null)
-    api('DELETE', '/api/four/queue').catch(() => {})
+    api('DELETE', queue).catch(() => {})
   }
 
   useEffect(() => {
     if (!waiting) return
     let live = true
     const poll = () =>
-      api<QueueReply>('GET', '/api/four/queue')
+      api<QueueReply>('GET', queue)
         .then((b) => {
           if (!live) return
           if (b.matchId) found(b.matchId)
@@ -626,7 +627,7 @@ export function FindFour({
   useLive((e) => {
     if (waiting && e.type === 'four' && e.matchId) found(e.matchId)
   })
-  useEffect(() => () => void (since !== null && api('DELETE', '/api/four/queue').catch(() => {})), [since])
+  useEffect(() => () => void (since !== null && api('DELETE', queue).catch(() => {})), [since])
 
   return (
     <section className={`flex flex-col gap-2.5 ${bare ? '' : 'home-official'}`}>
@@ -639,7 +640,7 @@ export function FindFour({
           </p>
         </>
       )}
-      {onTime && (
+      {onTime && signedIn && (
         <RadioGroup.Root
           aria-label={t.home.warLength}
           value={String(WAR_TIMES.findIndex((p) => sameTime(p, time)))}
@@ -655,11 +656,8 @@ export function FindFour({
           ))}
         </RadioGroup.Root>
       )}
-      {!signedIn ? (
-        <Button variant="solid" className="home-play" onClick={() => navigate('/login')}>
-          {t.home.logInToPlay}
-        </Button>
-      ) : waiting ? (
+      <div className="home-play-at flex flex-col gap-2.5">
+      {waiting ? (
         <div className="tick flex items-center gap-3 p-3.5" role="status">
           <span className="spinner" aria-hidden />
           <span className="flex min-w-0 flex-1 flex-col">
@@ -677,24 +675,37 @@ export function FindFour({
         </div>
       ) : (
         <Button variant="solid" className="home-play" onClick={start}>
-          {t.home.play}
+          {signedIn ? t.home.play : t.home.playGuest}
         </Button>
       )}
-      {onTry && (
-        <Button
-          variant="ghost"
-          className="self-start !px-0 underline-offset-4 hover:bg-transparent hover:underline"
-          onClick={onTry}
-        >
-          {t.home.tryWar}
-        </Button>
-      )}
+      {!signedIn && !bare && !waiting && <LogInRanked />}
       {error && (
         <p role="alert" className="text-sm text-danger">
           {error}
         </p>
       )}
+      </div>
     </section>
+  )
+}
+
+/** The guests' Eat the King clock, Rapid 10+0. Must match guestRapid in server/guest_queue.go. */
+const GUEST_RAPID: TimeControl = { base: 600, inc: 0, perMove: 0 }
+
+/** Where guests queue for an unranked game with other guests. */
+const guestQueue = `/api/guest/queue?player=${playerId}`
+
+/** Under a guest's Play as guest: the way to ranked games. */
+function LogInRanked() {
+  const t = useT()
+  return (
+    <Button
+      variant="ghost"
+      className="self-start !px-0 underline-offset-4 hover:bg-transparent hover:underline"
+      onClick={() => navigate('/login')}
+    >
+      {t.home.logInRanked}
+    </Button>
   )
 }
 

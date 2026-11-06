@@ -153,6 +153,8 @@ func main() {
 	fourHub := NewFourHub(store)
 	social.fours, social.fourQueue = fourHub, NewFourQueue()
 	social.fourQueueRoutes(mux)
+	social.guestQueue = NewGuestQueue()
+	social.guestQueueRoutes(mux)
 	mux.HandleFunc("POST /api/four", func(w http.ResponseWriter, r *http.Request) {
 		if !creates.take(clientIP(r)) {
 			jsonError(w, "Too many attempts. Try again in a few minutes.", http.StatusTooManyRequests)
