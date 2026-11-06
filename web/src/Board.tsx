@@ -26,6 +26,8 @@ type Props = {
   danger?: string
   /** Squares a seen piece attacks, marked when the king is picked up. */
   unsafe?: string[]
+  /** Where each enemy piece you can see could move, by square; tap one to see it. */
+  reach?: Record<string, string[]>
   /** King of the Hill: mark the four centre squares. */
   hill?: boolean
   /**
@@ -76,6 +78,7 @@ export const Board = memo(function Board({
   check,
   danger,
   unsafe,
+  reach,
   hill,
   center,
   look,
@@ -87,6 +90,8 @@ export const Board = memo(function Board({
   const boardRef = useRef<HTMLDivElement>(null)
   const drag = useRef<Drag | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
+  // An enemy piece tapped to see where it could go.
+  const [peeked, setPeeked] = useState<string | null>(null)
 
   const canMoveFrom = (sq: string) => legal.some((m) => m.startsWith(sq))
 
@@ -95,6 +100,9 @@ export const Board = memo(function Board({
   const targets = sel ? targetsFrom(legal, sel) : new Set<string>()
   // Only the king has unsafe squares, so they show when the king is the piece picked up.
   const kingPicked = !!sel && pieceAt(board, sel)?.toLowerCase() === 'k'
+  // The peek lasts while that piece is still there and still has somewhere to go.
+  const peek = !sel && peeked && reach?.[peeked] ? peeked : null
+  const peekTargets = new Set(peek ? reach![peek] : [])
 
   const squareFromPoint = (x: number, y: number) => {
     const rect = boardRef.current!.getBoundingClientRect()
@@ -117,8 +125,10 @@ export const Board = memo(function Board({
 
     if (!canMoveFrom(sq)) {
       setSelected(null)
+      setPeeked(peek !== sq && reach?.[sq] ? sq : null)
       return
     }
+    setPeeked(null)
 
     const el = boardRef.current!.querySelector<HTMLElement>(`[data-square="${sq}"] .piece`)
     if (!el) return
@@ -201,6 +211,8 @@ export const Board = memo(function Board({
           data-danger={danger === sq}
           data-unsafe={kingPicked && target && !!unsafe?.includes(sq)}
           data-target={target ? (capture ? 'capture' : 'move') : undefined}
+          data-peeked={peek === sq || undefined}
+          data-reach={peekTargets.has(sq) ? (piece !== null ? 'capture' : 'move') : undefined}
           data-fog={fog}
           data-hill={hill && HILL.includes(sq)}
           data-outpost={center ? outpostKind(sq, center) : undefined}

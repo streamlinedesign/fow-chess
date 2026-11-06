@@ -17,6 +17,8 @@ type Props = {
   planned?: { from: string; to: string } | null
   /** Your king's square while something attacks it. */
   danger?: string
+  /** Where each other player's piece you can see could move, by square; tap one to see it. */
+  reach?: Record<string, string[]>
   /** King of the Hill: ring the four centre squares. Only on the cross. */
   hill?: boolean
   /** Centre vision: ring the squares that give it to you, lit while you hold one. */
@@ -38,6 +40,7 @@ export const FourBoard = memo(function FourBoard({
   lastMoves,
   planned,
   danger,
+  reach,
   hill,
   center,
   look,
@@ -47,6 +50,8 @@ export const FourBoard = memo(function FourBoard({
   const boardRef = useRef<HTMLDivElement>(null)
   const drag = useRef<Drag | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
+  // Another player's piece tapped to see where it could go.
+  const [peeked, setPeeked] = useState<string | null>(null)
   const geo = geoOf(board)
   const SIZE = geo.size
   const outposts = center ? geo.outposts(seat) : []
@@ -69,6 +74,8 @@ export const FourBoard = memo(function FourBoard({
   const sel = selected && canMoveFrom(selected) ? selected : null
   const targets = new Set(sel ? moves.filter((m) => m.from === sel).map((m) => m.to) : [])
   const targetsOf = (from: string) => new Set(moves.filter((m) => m.from === from).map((m) => m.to))
+  const peek = !sel && peeked && reach?.[peeked] ? peeked : null
+  const peekTargets = new Set(peek ? reach![peek] : [])
 
   const squareFromPoint = (px: number, py: number) => {
     const rect = boardRef.current!.getBoundingClientRect()
@@ -91,7 +98,12 @@ export const FourBoard = memo(function FourBoard({
       onMove?.(sel, sq)
       return
     }
-    if (!canMoveFrom(sq)) return setSelected(null)
+    if (!canMoveFrom(sq)) {
+      setSelected(null)
+      setPeeked(peek !== sq && reach?.[sq] ? sq : null)
+      return
+    }
+    setPeeked(null)
     const el = boardRef.current!.querySelector<HTMLElement>(`[data-square="${sq}"] .piece`)
     if (!el) return
     e.currentTarget.setPointerCapture(e.pointerId)
@@ -170,6 +182,8 @@ export const FourBoard = memo(function FourBoard({
           data-selected={sel === sq}
           data-danger={danger === sq}
           data-target={target ? (capture ? 'capture' : 'move') : undefined}
+          data-peeked={peek === sq || undefined}
+          data-reach={peekTargets.has(sq) ? (piece ? 'capture' : 'move') : undefined}
           data-fog={fog}
           data-neutral={geo.neutral(x, y) || undefined}
           data-hill={isHill(sq)}

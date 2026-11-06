@@ -106,8 +106,6 @@ export const en = {
     noFriendsOnline: 'No friends online right now.',
     allGames: 'All games',
     guestPitch: 'Log in to keep your games, add friends and play for a rating.',
-    replayHeading: 'Fog of war, replayed',
-    replaySub: 'A famous game, shown the way each player would have seen it.',
   },
 
   home: {
@@ -212,19 +210,6 @@ export const en = {
     strip: 'Play on your computer',
     stripAbout: 'The same game in its own window, for Windows, Mac and Linux.',
     otherSystems: 'Other systems',
-  },
-
-  showcase: {
-    fogLifted: 'Fog lifted',
-    view: (side: string) => `${side}'s view`,
-    auto: 'Auto',
-    whoseView: 'Whose view',
-    aria: 'A fog of war game replayed from each side.',
-    loading: 'Loading replay',
-    operaGame: 'The Opera Game',
-    text: ', Morphy vs. the Duke of Brunswick and Count Isouard, Paris 1858, replayed with fog of war.',
-    atMate: 'When the game ends the fog lifts for both sides.',
-    eachSide: 'Each side sees only what its own pieces can reach.',
   },
 
   settingsBoard: {
@@ -533,6 +518,18 @@ export const en = {
     warSub: 'Four players, everyone for themselves. Ranked on a rating of its own.',
     modsNote:
       'Everything else, from checkmate to King of the Hill, is a mod. Each one is explained where you pick it, on the Mods page.',
+    plansHeading: 'Plans for v1.0',
+    plansSub: (date: string) => `The full release, ${date}.`,
+    plans: [
+      ['Rules may change', 'The rules of both games are still subject to change during the beta.'],
+      ['Hand-drawn pieces and skins', 'Every set and tile drawn by hand.'],
+      ['Apps', 'Dedicated apps for Windows, Linux, Mac, iOS and Android.'],
+      ['Self-hosting', 'The game engine as its own project, so you can run a server yourself.'],
+      ['More skins', 'New sets and tiles to unlock.'],
+      ['Tournaments', 'Arenas and events with their own standings.'],
+      ['More mods', 'More dials to turn on the Mods page.'],
+      ['Security and anti-cheat', 'Hardening the server and catching players who get help.'],
+    ] as [string, string][],
     cards: {
       fog: {
         kind: 'What you see',
@@ -587,7 +584,7 @@ export const en = {
         kind: 'Before the game',
         title: 'Battleship setup',
         p: [
-          'Everyone places **all sixteen pieces anywhere in their four rows**, pawns included, without seeing anyone else’s.',
+          'Everyone places **all sixteen pieces anywhere in their four rows**, pawns included, without seeing anyone else’s. Tap or drag them into place.',
           'You have **two minutes**. Whoever isn’t ready by then gets a bot’s arrangement. A king can start in danger.',
         ],
       },

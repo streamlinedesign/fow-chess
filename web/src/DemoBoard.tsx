@@ -344,6 +344,7 @@ function Frame({
             check={predicting ? undefined : state?.check}
             danger={predicting ? undefined : state?.danger}
             unsafe={state?.unsafe}
+            reach={predicting ? undefined : state?.reach}
             hill={state?.settings.hill}
             look={gameLook(state?.settings ?? { bot }, you === 'w' ? 'b' : 'w')}
             // The same outpost rings as a real game, from the game's own rules.

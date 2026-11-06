@@ -189,7 +189,10 @@ type gameView struct {
 	// DangerHidden is set when the king is attacked only from the fog.
 	DangerHidden bool     `json:"dangerHidden,omitempty"`
 	Unsafe       []string `json:"unsafe,omitempty"`
-	History      []string `json:"history"` // SAN, or "?" for moves the viewer may not know
+	// Reach is where each enemy piece the viewer can see could move, worked out
+	// on the board as the viewer sees it, so it tells them nothing new.
+	Reach   map[string][]string `json:"reach,omitempty"`
+	History []string            `json:"history"` // SAN, or "?" for moves the viewer may not know
 	// Captured lists the pieces each side has taken, as FEN letters, most valuable first.
 	// Players know all of it even under fog: they saw what they took and see what they lost.
 	Captured map[string]string `json:"captured"`
@@ -250,6 +253,9 @@ func viewFor(g *engine.Game, viewer int, playable, fog bool) gameView {
 			seen = &vision
 		}
 		v.Danger, v.DangerHidden, v.Unsafe = kingDanger(&pos, engine.Color(viewer), seen)
+		if playable {
+			v.Reach = enemyReach(&pos, engine.Color(viewer), seen)
+		}
 	}
 
 	if !fog || g.Over() || viewer < 0 {
@@ -298,6 +304,42 @@ func viewFor(g *engine.Game, viewer int, playable, fog bool) gameView {
 		v.Check = pos.KingSquare(pos.Turn).String()
 	}
 	return v
+}
+
+// enemyReach is where each enemy piece the player can see could go, as the
+// player would work it out: on a copy of the board with every square they
+// can't see emptied, and without castling or en passant, which depend on
+// moves they may not have seen. Hidden pieces neither block nor show up, so
+// nothing here is news to the player. A nil seen means everything is visible.
+func enemyReach(pos *engine.Position, us engine.Color, seen *[64]bool) map[string][]string {
+	view := *pos
+	view.Castling, view.EP = 0, engine.NoSquare
+	if seen != nil {
+		for sq := range view.Board {
+			if !seen[sq] {
+				view.Board[sq] = engine.NoPiece
+			}
+		}
+	}
+	reach := map[string][]string{}
+	for sq, pc := range view.Board {
+		if pc.IsEmpty() || pc.Color() == us {
+			continue
+		}
+		var to []string
+		for _, m := range view.PieceMoves(engine.Square(sq)) {
+			if s := m.To.String(); !slices.Contains(to, s) {
+				to = append(to, s)
+			}
+		}
+		if len(to) > 0 {
+			reach[engine.Square(sq).String()] = to
+		}
+	}
+	if len(reach) == 0 {
+		return nil
+	}
+	return reach
 }
 
 // kingDanger says whether any enemy piece attacks the player's king, seen or
