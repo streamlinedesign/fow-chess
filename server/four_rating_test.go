@@ -56,7 +56,7 @@ func TestFourRanked(t *testing.T) {
 		m.join(cs[i], p)
 	}
 	s := lastFour(t, cs[0])
-	if s.Status != "setup" || !s.Settings.Rated || s.Settings.Board != "extended" || !s.Settings.Fog || s.Settings.CenterVision != "any" || s.Settings.Sync || !s.Settings.JesterPawns {
+	if s.Status != "setup" || !s.Settings.Rated || s.Settings.Board != "" || !s.Settings.Fog || s.Settings.CenterVision != "any" || s.Settings.Sync || !s.Settings.JesterPawns {
 		t.Fatalf("status %s settings %+v", s.Status, s.Settings)
 	}
 	if s.Players["r"].Rating != 1500 {
@@ -64,7 +64,7 @@ func TestFourRanked(t *testing.T) {
 	}
 	m.handle(cs[0], fourIn{Type: "fill"}) // a full ranked game takes no bots
 	for _, c := range cs {
-		m.handle(c, fourIn{Type: "setup", Board: four.Extended.StandardSetup()})
+		m.handle(c, fourIn{Type: "setup", Board: four.Cross.StandardSetup()})
 	}
 	// War Mode is played in the fog: most of the board is hidden at the start.
 	if s := lastFour(t, cs[0]); s.Status != "playing" || slicesCount(s.Board, "?") == 0 {
@@ -143,7 +143,7 @@ func TestFourDemo(t *testing.T) {
 			t.Errorf("seat %s: %+v", seat, pl)
 		}
 	}
-	m.handle(c, fourIn{Type: "setup", Board: four.Extended.StandardSetup()})
+	m.handle(c, fourIn{Type: "setup", Board: four.Cross.StandardSetup()})
 	if s := lastFour(t, c); s.Status != "playing" || len(s.Legal) == 0 {
 		t.Fatalf("status %s", s.Status)
 	}

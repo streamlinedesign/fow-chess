@@ -48,11 +48,12 @@ type fourSettings struct {
 	Bot  string `json:"bot,omitempty"`
 }
 
-// warMode is War Mode: the extended board, Battleship, jester pawns, fog of
-// war with centre vision (any piece, as in Eat the King), half an hour each
-// plus ten seconds a move. Players take turns, Red, Blue, Green, Violet; Sync
-// Move is a mod (Mods, Four players), not part of War Mode.
-var warMode = fourSettings{Board: "extended", Setup: "battleship", JesterPawns: true,
+// warMode is War Mode: the four-player cross, Battleship, jester pawns, fog of
+// war with centre vision (any piece on the middle four, as in Eat the King),
+// half an hour each plus ten seconds a move. Players take turns, Red, Blue,
+// Green, Violet. The extended board and Sync Move are mods (Mods, Four
+// players), not part of War Mode.
+var warMode = fourSettings{Setup: "battleship", JesterPawns: true,
 	Fog: true, CenterVision: "any", Time: TimeControl{Base: 1800, Inc: 10}}
 
 // rankedFour is the one ranked four-player game, War Mode.
@@ -1320,8 +1321,9 @@ func (m *FourMatch) view(s fourState, color, side int) []byte {
 	if color >= 0 {
 		s.You = four.Color(color).String()
 		s.fourView = fourViewFor(m.game, color, s.Status == "playing", m.settings.Fog)
-		if m.settings.Fog && m.knockedOut(color) {
+		if m.settings.Fog && m.knockedOut(color) && !m.settings.Demo {
 			// Out of the game, they'd see everything live and could pass it on.
+			// Against bots there's nobody to tell, so the home page board stays live.
 			s.fourView = m.spectatorView(color)
 		}
 		s.Planned = m.pending[color]
