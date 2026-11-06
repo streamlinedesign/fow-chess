@@ -917,6 +917,9 @@ export const en = {
       ancient: 'Ancient',
       'ancient-light': 'Ancient, light',
       'ancient-dark': 'Ancient, dark',
+      cyberpunk: 'Cyberpunk',
+      'cyberpunk-light': 'Cyberpunk, light',
+      'cyberpunk-dark': 'Cyberpunk, dark',
     } as Record<string, string>,
   },
 

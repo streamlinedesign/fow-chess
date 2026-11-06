@@ -19,6 +19,7 @@
 
 ## Later
 
+- Set `BETA_ENDS` in `/etc/<name>/env` when the beta closes, so cyberpunk stays with beta accounts only
 - Unlocks: a guest who beats a bot keeps nothing; decide whether to hold the win until they sign up. Replays and Watch don't draw a bot's set or tiles yet
 - 1.0: desktop app downloads. Set the `GAME_URL` repository variable (Actions > Variables), `make release`, then turn on `DOWNLOADS` in `web/src/features.ts`
 - 1.0: split the rules engine into its own Go repo (`streamlinedesign/chess-engine`) shared by the server and chess-bots
@@ -38,6 +39,7 @@
 
 ## Done
 
+- 0.17.0: cyberpunk pieces and tiles for beta players
 - 0.16.1: avatar framing, logo on phones, match-not-found crash, knocked-out four-player players kept behind and out of the chat, release date on the home page
 - 0.11.0: White and Black sets that opponents see, light and dark lines for colours, tiles on your half (three rows with four players), faster settings, head avatars
 - 0.10.1: themed piece sets (galaxy, blueprint, holy with the wing knight, ancient), tile skins with Greek key ancient tiles, skins switch
