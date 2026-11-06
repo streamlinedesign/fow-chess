@@ -146,7 +146,7 @@ export const en = {
     noArena: 'No arena coming up right now.',
     fourTitle: 'War Mode',
     fourAbout: 'Four players · Extended board · Battleship · Sync Move · Jester pawns · No fog',
-    fourRanked: 'Ranked on a War Mode rating of its own. 10 minutes each.',
+    fourRanked: 'Ranked on a War Mode rating of its own. 30 minutes each, plus 10 seconds a move.',
     fourPlay: 'Find a War Mode game',
     fourFinding: 'Finding three players…',
     fourWaiting: (n: number, secs: number) => `${n} of 4 waiting, ${secs} s`,
@@ -154,6 +154,13 @@ export const en = {
     keepGames: 'Keep your games',
     playBot: (name: string) => `Play ${name}`,
     cantStart: 'Couldn’t start the board. Reload to try again.',
+    boardMode: 'Game',
+    tryWar: 'Try it against the bots',
+    opponents: 'Opponents',
+    threeBots: (bot: string) => `${bot} ×3`,
+    demoBots: 'Three demo bots',
+    warTip: 'Place your pieces in your four rows, then everyone moves at once. No clock, and nothing is saved.',
+    placing: 'Place your pieces',
   },
 
   desktop: {
@@ -172,10 +179,11 @@ export const en = {
     logInForRating: 'Log in for a rating',
     neverRanked: 'Never ranked',
     chooseMods: 'Choose mods',
-    warClock: '10 min each',
+    warClock: '30 min + 10 s each',
     clock: 'Clock',
     title: 'Play on your computer.',
-    about: 'The same game in its own window, for Windows, Mac and Linux. It keeps you signed in and starts on a home with the three ways to play.',
+    about:
+      'The same game in its own window, for Windows, Mac and Linux. It keeps you signed in and starts on a home with the three ways to play.',
     downloadFor: (os: string) => `Download for ${os}`,
     firstTitle: 'The first time you open it.',
     firstText:

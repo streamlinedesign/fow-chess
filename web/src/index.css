@@ -2598,6 +2598,32 @@ a.tick:active {
 .demo-btn:hover {
   box-shadow: inset 0 0 0 1.5px var(--color-fg);
 }
+/* The War Mode setup on the home page board: its tray sized as on the game page. */
+.war-setup {
+  --board4: 480px;
+}
+/* Eat the King or War Mode on the home page board. */
+.demo-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--color-muted);
+}
+.demo-mode {
+  height: 34px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.demo-mode:hover {
+  background: color-mix(in srgb, var(--color-fg) 10%, transparent);
+}
+.demo-mode[data-state='checked'] {
+  background: var(--color-fg);
+  color: var(--color-bg);
+}
 
 /* Lists and cells below the hero. */
 .home-list {

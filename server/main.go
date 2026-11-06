@@ -164,6 +164,9 @@ func main() {
 		var settings fourSettings
 		json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&settings)
 		settings.Rated = false // only the queue starts ranked games
+		if settings.Demo {
+			settings = demoFour(bots.Level(settings.Bot))
+		}
 		if !settings.valid() {
 			jsonError(w, "Those match settings aren't available.", http.StatusBadRequest)
 			return

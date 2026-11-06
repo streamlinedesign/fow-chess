@@ -21,6 +21,9 @@ export type FourSettings = {
   board?: '' | 'extended'
   /** A ranked game, started by the four-player queue. */
   rated?: boolean
+  /** War Mode on the home page board against three copies of bot; no clock, never saved. */
+  demo?: boolean
+  bot?: string
 }
 
 export type FourSeatState = {
