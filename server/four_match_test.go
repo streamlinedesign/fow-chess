@@ -127,20 +127,22 @@ func TestFourBotsFillAndFinish(t *testing.T) {
 	if s.Status != "playing" || !s.Players["v"].Bot || s.Players["v"].Name != fourBotName {
 		t.Fatalf("after fill: %s %+v", s.Status, s.Players["v"])
 	}
-	// Ann resigns at once; the three bots play it out.
+	// Ann resigns at once; the three bots play on. Careful bots in the fog can
+	// dodge each other for a very long time, so it's enough that they finish
+	// or play 400 moves.
 	m.handle(c, fourIn{Type: "resign"})
 	deadline := time.Now().Add(20 * time.Second)
 	for {
 		m.mu.Lock()
-		over := m.game.Over()
+		over, n := m.game.Over(), len(m.game.History())
 		m.mu.Unlock()
-		if over {
+		if over || n >= 400 {
 			break
 		}
 		if time.Now().After(deadline) {
-			t.Fatal("bots still playing after 20s")
+			t.Fatalf("bots stopped after %d moves", n)
 		}
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(20 * time.Millisecond)
 	}
 }
 
@@ -383,5 +385,44 @@ func TestFourExtended(t *testing.T) {
 	again := NewFourHub(store).Get(m.id)
 	if again == nil || again.game.Tokens() != m.game.Tokens() || again.game.Position().Shape != four.Extended {
 		t.Fatalf("extended game not restored")
+	}
+}
+
+// Bots left alone with nobody watching stop, and start again when someone
+// opens the game.
+func TestFourBotsAloneWait(t *testing.T) {
+	hub := NewFourHub(nil)
+	hub.botPause = func() time.Duration { return 0 }
+	ann := guestPlayer("ann-browser")
+	m := hub.Create(ann, fourSettings{Sync: true})
+	c := newClient(ann.key)
+	m.join(c, ann)
+	m.handle(c, fourIn{Type: "fill"})
+	m.handle(c, fourIn{Type: "resign"})
+	m.leave(c)
+	moves := func() int {
+		m.mu.Lock()
+		defer m.mu.Unlock()
+		return len(m.game.History())
+	}
+	time.Sleep(100 * time.Millisecond) // a round already under way may finish
+	before := moves()
+	time.Sleep(200 * time.Millisecond)
+	if n := moves(); n != before {
+		t.Fatalf("bots played on alone: %d moves, then %d", before, n)
+	}
+	m.join(newClient("bob-browser"), guestPlayer("bob-browser"))
+	deadline := time.Now().Add(5 * time.Second)
+	for moves() == before {
+		m.mu.Lock()
+		over := m.game.Over()
+		m.mu.Unlock()
+		if over {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("bots didn't start again when someone opened the game")
+		}
+		time.Sleep(10 * time.Millisecond)
 	}
 }
