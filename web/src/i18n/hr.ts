@@ -294,7 +294,7 @@ export const hr: Dict = {
 
   /** The Mods band on the home page. */
   modsBand: {
-    title: ['Okreni', 'svaki', 'kotačić.'],
+    title: ['Okreni', 'svaki', 'kotačić'],
     lede: 'Modovi su ista igra s opuštenim pravilima. Podigni maglu, pusti kralja da skače ili stavi četiri igrača na ploču 16 sa 16.',
     sub: 'Bilo koja kombinacija, bilo koji sat. Modovi su za zabavu i nikad se ne rangiraju.',
     open: 'Otvori modove',
