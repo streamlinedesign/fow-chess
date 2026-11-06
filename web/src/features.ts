@@ -6,6 +6,9 @@ export const TOURNAMENTS = false
 /** The desktop app's downloads: the header link, the menu item, the home page strip and /download (a 404 while off). Back on for 1.0, once a release has the installers. */
 export const DOWNLOADS = false
 
+/** Croatian: the translation stays in `i18n/hr.ts` but isn't offered or picked from the browser, and a saved choice falls back to English. With one language left, the pickers hide. */
+export const CROATIAN = false
+
 /** The day the beta ends and 1.0 ships (home page and the rules page's plans). */
 export const RELEASE = '2027-02-02'
 
