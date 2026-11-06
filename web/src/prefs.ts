@@ -93,15 +93,33 @@ function clean(p: (Partial<Prefs> & { primary?: string }) | null | undefined): P
 /** The part of your preferences everyone in your games sees. */
 export const skinOf = ({ white, black, lightTiles, darkTiles }: Skin): Skin => ({ white, black, lightTiles, darkTiles })
 
-function loadLocal(): Prefs {
+// A guest's picks and the signed-in account's are kept apart, so signing out
+// goes back to what this browser picked as a guest (the defaults if nothing)
+// rather than keeping the account's sets. The account's copy is only a cache
+// for the first paint before /api/me answers, and is dropped on sign-out.
+const GUEST_KEY = 'prefs.guest'
+const ACCOUNT_KEY = 'prefs.account'
+
+function load(key: string): Prefs | null {
   try {
-    return clean(JSON.parse(localStorage.getItem('prefs') ?? 'null'))
+    const raw = localStorage.getItem(key)
+    return raw ? clean(JSON.parse(raw)) : null
   } catch {
-    return DEFAULT_PREFS
+    return null
   }
 }
 
-let prefs = loadLocal()
+function forget(key: string) {
+  try {
+    localStorage.removeItem(key)
+  } catch {}
+}
+
+// 'prefs' held whichever was last, guest or account, so it can't be trusted as
+// a guest's own picks.
+forget('prefs')
+
+let prefs = load(ACCOUNT_KEY) ?? load(GUEST_KEY) ?? DEFAULT_PREFS
 showFog(prefs)
 let username: string | null = null
 const listeners = new Set<() => void>()
@@ -117,7 +135,7 @@ function set(next: Prefs) {
   prefs = next
   showFog(next)
   try {
-    localStorage.setItem('prefs', JSON.stringify(next))
+    localStorage.setItem(username ? ACCOUNT_KEY : GUEST_KEY, JSON.stringify(next))
   } catch {}
   if (username) setCachedAvatar(username, next.avatar)
   listeners.forEach((l) => l())
@@ -140,15 +158,23 @@ function send(p: Prefs) {
 
 /**
  * Called whenever the signed-in user changes. The account's choices win; an
- * account that has none yet takes what this browser picked as a guest.
+ * account that has none yet takes what this browser picked as a guest. A guest
+ * gets this browser's guest picks back.
  */
 export function syncPrefs(me: (Partial<Prefs> & { username: string }) | null) {
   username = me?.username ?? null
   refreshUnlocks()
-  if (!me) return
+  if (!me) {
+    forget(ACCOUNT_KEY)
+    set(load(GUEST_KEY) ?? DEFAULT_PREFS)
+    return
+  }
+  const guest = load(GUEST_KEY) ?? DEFAULT_PREFS
   const server = clean(me)
-  if (isDefault(server) && !isDefault(prefs)) send(prefs)
-  else set(server)
+  if (isDefault(server) && !isDefault(guest)) {
+    send(guest)
+    set(guest)
+  } else set(server)
   setCachedAvatar(me.username, prefs.avatar)
 }
 
