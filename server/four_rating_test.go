@@ -56,7 +56,7 @@ func TestFourRanked(t *testing.T) {
 		m.join(cs[i], p)
 	}
 	s := lastFour(t, cs[0])
-	if s.Status != "setup" || !s.Settings.Rated || s.Settings.Board != "extended" || s.Settings.Fog || !s.Settings.Sync || !s.Settings.JesterPawns {
+	if s.Status != "setup" || !s.Settings.Rated || s.Settings.Board != "extended" || !s.Settings.Fog || s.Settings.CenterVision != "any" || !s.Settings.Sync || !s.Settings.JesterPawns {
 		t.Fatalf("status %s settings %+v", s.Status, s.Settings)
 	}
 	if s.Players["r"].Rating != 1500 {
@@ -66,7 +66,8 @@ func TestFourRanked(t *testing.T) {
 	for _, c := range cs {
 		m.handle(c, fourIn{Type: "setup", Board: four.Extended.StandardSetup()})
 	}
-	if s := lastFour(t, cs[0]); s.Status != "playing" || slicesCount(s.Board, "?") != 0 {
+	// War Mode is played in the fog: most of the board is hidden at the start.
+	if s := lastFour(t, cs[0]); s.Status != "playing" || slicesCount(s.Board, "?") == 0 {
 		t.Fatalf("status %s, %d hidden squares", s.Status, slicesCount(s.Board, "?"))
 	}
 	// Blue resigns first, then Green, then Violet: Red wins.

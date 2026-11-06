@@ -49,9 +49,10 @@ type fourSettings struct {
 }
 
 // warMode is War Mode: the extended board, Battleship, Sync Move, jester
-// pawns and no fog, half an hour each plus ten seconds a move.
+// pawns, fog of war with centre vision (any piece, as in Eat the King), half
+// an hour each plus ten seconds a move.
 var warMode = fourSettings{Board: "extended", Setup: "battleship", Sync: true, JesterPawns: true,
-	Time: TimeControl{Base: 1800, Inc: 10}}
+	Fog: true, CenterVision: "any", Time: TimeControl{Base: 1800, Inc: 10}}
 
 // rankedFour is the one ranked four-player game, War Mode.
 var rankedFour = func() fourSettings { s := warMode; s.Rated = true; return s }()
