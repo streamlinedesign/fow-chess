@@ -114,13 +114,14 @@ func TestBeatingABotUnlocksItsTheme(t *testing.T) {
 	d.mu.Unlock()
 }
 
-// Rex inutilis plays the classic pieces; holy, the set he used to wear, is
-// earned by reaching 2000 in either rating, and kept if the rating falls.
+// Rex inutilis plays the classic pieces; holy, the set he used to wear, comes
+// with International master: reaching 1800 in either rating, kept if the
+// rating falls.
 func TestRatingUnlocksHoly(t *testing.T) {
 	if botTheme(string(bots.Rex)) != "" {
 		t.Errorf("Rex wears %q", botTheme(string(bots.Rex)))
 	}
-	if themeLocks["holy"] != lockRating(2000) || themeLocks["blueprint"] != lockRating(1150) {
+	if themeLocks["holy"] != lockRating(1800) || themeLocks["blueprint"] != lockRating(1150) {
 		t.Fatalf("holy is locked by %q, blueprint by %q", themeLocks["holy"], themeLocks["blueprint"])
 	}
 	store := openTestStore(t, filepath.Join(t.TempDir(), "x"))
@@ -147,14 +148,14 @@ func TestRatingUnlocksHoly(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	set("ann", "rating", 1999.4)
+	set("ann", "rating", 1799.4)
 	if has("ann") {
-		t.Error("1999 is not 2000")
+		t.Error("1799 is not 1800")
 	}
-	set("ann", "rating", 1999.6) // shown as 2000
-	set("ben", "four_rating", 2100)
+	set("ann", "rating", 1799.6) // shown as 1800
+	set("ben", "four_rating", 1900)
 	if !has("ann") || !has("ben") || has("cy") {
-		t.Error("2000 in either rating unlocks holy")
+		t.Error("1800 in either rating unlocks holy")
 	}
 
 	// A rated game that takes cy to 2000 records it, so it stays.
@@ -169,7 +170,7 @@ func TestRatingUnlocksHoly(t *testing.T) {
 	if err := tx.Commit(); err != nil {
 		t.Fatal(err)
 	}
-	set("cy", "rating", 1980)
+	set("cy", "rating", 1700)
 	if !has("cy") {
 		t.Error("holy went away when the rating fell")
 	}
@@ -185,7 +186,7 @@ func TestRatingUnlocksHoly(t *testing.T) {
 		return un.has("blueprint")
 	}
 	if !blueprint("cy") {
-		t.Error("a 1980 rating doesn't unlock blueprint")
+		t.Error("a 2003 peak doesn't unlock blueprint")
 	}
 	set("ann", "rating", 1100)
 	set("ann", "four_rating", 1100)
@@ -205,6 +206,32 @@ func TestRatingUnlocksHoly(t *testing.T) {
 	}
 	if !blueprint("ann") {
 		t.Error("blueprint went away when the rating fell")
+	}
+}
+
+// Holy used to take 2000, and only that mark was recorded. A player who
+// reached it then has every title and set up to Grandmaster, even below 1800
+// now.
+func TestOldHolyMarkCounts(t *testing.T) {
+	store := openTestStore(t, filepath.Join(t.TempDir(), "x"))
+	u, err := store.CreateUser("old", []byte("x"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Unlock(u.ID, lockRating(2000)); err != nil {
+		t.Fatal(err)
+	}
+	un, err := store.Unlocks(u.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, th := range []string{"blueprint", "bronze", "silver", "gold", "holy", "grandmaster"} {
+		if !un.has(th) {
+			t.Errorf("%s is locked for a player who reached 2000", th)
+		}
+	}
+	if un.has("king") {
+		t.Error("king takes 2500")
 	}
 }
 

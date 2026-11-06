@@ -1,3 +1,5 @@
+import { TitleTag } from './TitleTag'
+import { useTitle } from './titles'
 import { useEffect, useState } from 'react'
 import { useMe } from './auth'
 import { Avatar } from './Avatar'
@@ -150,6 +152,7 @@ export function ProfilePage({ name }: { name: string }) {
             <h1 className="text-[clamp(32px,6vw,48px)] leading-none font-semibold tracking-tight break-all">
               {profile.username}
             </h1>
+            <ProfileTitle name={profile.username} />
             {/* Each rating keeps its label beside it, so they still pair up when they wrap. */}
             <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
               <span className="flex items-baseline gap-2">
@@ -465,5 +468,18 @@ function MatchCard({ g, owner }: { g: GameSummary; owner: string }) {
         </div>
       </div>
     </a>
+  )
+}
+
+/** A player's title in full under their name, with its tag; nothing without one. */
+function ProfileTitle({ name }: { name: string }) {
+  const t = useT()
+  const id = useTitle(name)
+  if (!id) return null
+  return (
+    <p className="mt-2 flex items-center text-[15px] font-semibold">
+      <TitleTag name={name} />
+      {t.titles.names[id]}
+    </p>
   )
 }

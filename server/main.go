@@ -76,6 +76,7 @@ func main() {
 	social.tournamentRoutes(mux, tournaments)
 	bugRoutes(mux, store, auth)
 	unlockRoutes(mux, store, auth)
+	titleRoutes(mux, store)
 
 	mux.HandleFunc("POST /api/matches", func(w http.ResponseWriter, r *http.Request) {
 		// The creator gets white even if the opponent's browser connects first.

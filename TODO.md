@@ -17,7 +17,8 @@
 - Extract `server/engine` into a Go module so `chess-bots` stops carrying a copy
 - First droplet deploy: unit file and Caddy block in `deploy/`, `make deploy`
 
-- Revisit the 2000 rating that unlocks holy: with rank scores starting at 1000 it is about 50 net wins
+- Titles: watch how many players reach Expert in the first weeks; the marks can move down without taking anything away
+- Titles in chat and the bell; a title reached mid-visit shows after a reload
 
 ## Later
 
@@ -44,6 +45,7 @@
 
 ## Done
 
+- 0.38.0: titles from Club player to King, a set for each (bronze, silver, gold, grandmaster, king), holy at 1800, sets brought to one style
 - 0.36.0: Play a bot under Play with a friend; War Mode card clocks first
 - 0.35.0: War Mode 10 minute clock, Short and Long on its card; phones show the games before the board
 - 0.34.0: play as guest (unranked queue for guests), card buttons aligned, home board Solomon in default pieces

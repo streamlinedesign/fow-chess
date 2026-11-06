@@ -3340,6 +3340,30 @@ a.tick:active {
 .sq[data-tile] {
   background: var(--tile) center / cover;
 }
+.sq[data-shine] {
+  background:
+    linear-gradient(110deg, transparent 38%, rgb(255 246 200 / 0.42) 50%, transparent 62%) 100% 0 / 400% 100% no-repeat,
+    var(--tile) center / cover;
+  animation: board-shine 7s linear var(--shine-d, 0s) infinite;
+}
+@keyframes board-shine {
+  0% {
+    background-position:
+      100% 0,
+      center;
+  }
+  22%,
+  100% {
+    background-position:
+      0% 0,
+      center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sq[data-shine] {
+    animation: none;
+  }
+}
 .sq[data-tile][data-check='true'] {
   background:
     radial-gradient(circle, #ef4444 0%, #ef444499 35%, transparent 75%),
@@ -4086,4 +4110,28 @@ a.tick:active {
     flex: 0 0 42%;
     scroll-snap-align: start;
   }
+}
+
+/* A title's tag before a name: mono, boxed in the text colour. King and
+   Grandmaster are filled, so the top two read at a glance. */
+.title-tag {
+  display: inline-block;
+  margin-right: 0.4em;
+  padding: 0.18em 0.32em 0.1em;
+  border: 1.5px solid currentColor;
+  border-radius: 3px;
+  font:
+    600 0.72em/1 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  vertical-align: 0.12em;
+}
+.title-tag[data-title='gm'],
+.title-tag[data-title='king'] {
+  background: var(--color-fg);
+  color: var(--color-bg);
+  border-color: var(--color-fg);
 }

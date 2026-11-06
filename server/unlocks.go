@@ -14,10 +14,11 @@ import (
 	"chess/engine"
 )
 
-// Themed skins are earned: most are worn by a bot, and beating that bot
-// unlocks its piece set, its tiles and its avatars. Blueprint is earned by
-// reaching a 1150 rating and Holy by reaching 2000. The plain colours are never locked. Rex inutilis,
-// the weakest bot, plays the classic pieces and unlocks nothing.
+// Themed skins are earned: some are worn by a bot, and beating that bot
+// unlocks its piece set, its tiles and its avatars; the rest come with a
+// title (titles.go), earned by the highest rating reached. The plain colours
+// are never locked. Rex inutilis, the weakest bot, plays the classic pieces
+// and unlocks nothing.
 
 // lockBeta is the reason for a theme everyone has during the beta, and keeps
 // after it if their account was made before BETA_ENDS.
@@ -27,19 +28,24 @@ const lockBeta = "beta"
 // shown, in either rating, Eat the King or War Mode. Once reached it is kept.
 func lockRating(n int) string { return "rating:" + strconv.Itoa(n) }
 
-// ratingUnlocks are the ratings that earn a theme: Blueprint and Holy.
-var ratingUnlocks = []int{1150, 2000}
+// ratingUnlocks are the ratings that earn a title and its theme, lowest first.
+var ratingUnlocks = []int{1150, 1300, 1450, 1600, 1800, 2000, 2500}
 
 // themeLocks is what unlocks each locked theme: "bot:<level>", lockRating or
 // lockBeta. A theme that isn't here is free. Must match THEME_LOCK in
 // web/src/sets.ts and BOT_SET in web/src/settings.ts.
 var themeLocks = map[string]string{
-	"holy":      lockRating(2000),
-	"blueprint": lockRating(1150),
-	"survey":    "bot:vercingetorix",
-	"ancient":   "bot:ramesses",
-	"galaxy":    "bot:solomon",
-	"cyberpunk": lockBeta,
+	"king":        lockRating(2500),
+	"grandmaster": lockRating(2000),
+	"holy":        lockRating(1800),
+	"gold":        lockRating(1600),
+	"silver":      lockRating(1450),
+	"bronze":      lockRating(1300),
+	"blueprint":   lockRating(1150),
+	"survey":      "bot:vercingetorix",
+	"ancient":     "bot:ramesses",
+	"galaxy":      "bot:solomon",
+	"cyberpunk":   lockBeta,
 }
 
 // betaEnds is when the beta closed, from BETA_ENDS (2006-01-02 or RFC 3339);
@@ -55,10 +61,11 @@ func betaEnds() time.Time {
 	return time.Time{}
 }
 
-// unlocks is what a viewer has: their reasons, and when their account was made
-// (zero for a guest).
+// unlocks is what a viewer has: their reasons, the highest rating they have
+// reached, and when their account was made (zero for a guest).
 type unlocks struct {
 	reasons []string
+	peak    int
 	created time.Time
 }
 
@@ -121,32 +128,37 @@ func (s *Store) Unlocks(id int64) (unlocks, error) {
 	if id == 0 || s == nil {
 		return u, nil
 	}
-	var peak float64
+	var now float64
 	if err := s.db.QueryRow(`SELECT created_at, GREATEST(rating, four_rating) FROM users WHERE id = $1`, id).
-		Scan(&u.created, &peak); err != nil {
+		Scan(&u.created, &now); err != nil {
 		return u, err
 	}
-	// A rating at the mark right now counts even before a rated game has
-	// recorded it (rateUnlock keeps it once reached).
-	for _, n := range ratingUnlocks {
-		if math.Round(peak) >= float64(n) {
-			u.reasons = append(u.reasons, lockRating(n))
-		}
-	}
+	// The peak is the rating right now (before a rated game has recorded it)
+	// or the highest rating mark recorded, so a mark reached once stays.
+	u.peak = int(math.Round(now))
 	rows, err := s.db.Query(`SELECT reason FROM unlocks WHERE user_id = $1`, id)
 	if err != nil {
 		return u, err
 	}
 	defer rows.Close()
+	var recorded []string
 	for rows.Next() {
 		var r string
 		if err := rows.Scan(&r); err != nil {
 			return u, err
 		}
-		if !slices.Contains(u.reasons, r) {
-			u.reasons = append(u.reasons, r)
+		if n, ok := ratingOf(r); ok {
+			u.peak = max(u.peak, n)
+		} else {
+			recorded = append(recorded, r)
 		}
 	}
+	for _, n := range ratingUnlocks {
+		if u.peak >= n {
+			u.reasons = append(u.reasons, lockRating(n))
+		}
+	}
+	u.reasons = append(u.reasons, recorded...)
 	return u, rows.Err()
 }
 
@@ -167,6 +179,16 @@ func (s *Store) stripLocked(playerID string, sk *skin) bool {
 	}
 	u.strip(sk)
 	return true
+}
+
+// ratingOf is the rating in a "rating:<n>" reason.
+func ratingOf(reason string) (int, bool) {
+	rest, ok := strings.CutPrefix(reason, "rating:")
+	if !ok {
+		return 0, false
+	}
+	n, err := strconv.Atoi(rest)
+	return n, err == nil
 }
 
 // rateUnlock records each rating unlock a player's rating has just reached,

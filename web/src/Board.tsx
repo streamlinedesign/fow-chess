@@ -1,7 +1,7 @@
 import { memo, useRef, useState } from 'react'
 import { pieceAt, squareIndex, type Look } from './position'
 import { usePieces, useTiles } from './prefs'
-import { fogTint } from './sets'
+import { fogTint, shines } from './sets'
 import { HILL, OUTPOSTS } from './settings'
 import type { Color } from './useMatch'
 
@@ -190,11 +190,14 @@ export const Board = memo(function Board({
           data-square={sq}
           data-light={light}
           data-tile={skin ? true : undefined}
+          // The King board: a light crosses it corner to corner, square by square; not over fog.
+          data-shine={!fog && shines(skin) ? true : undefined}
           style={
             skin || tint
               ? ({
                   '--tile': skin ? `url("${skin}")` : undefined,
                   '--fog-tint': tint ?? undefined,
+                  '--shine-d': `${(col + row) * 0.09}s`,
                 } as React.CSSProperties)
               : undefined
           }

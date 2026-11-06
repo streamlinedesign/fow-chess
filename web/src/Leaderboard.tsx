@@ -1,3 +1,4 @@
+import { TitleTag } from './TitleTag'
 import * as RadioGroup from '@radix-ui/react-radio-group'
 import { useEffect, useState } from 'react'
 import { Avatar } from './Avatar'
@@ -119,7 +120,10 @@ function Row({ leader, you }: { leader: Leader; you: boolean }) {
         >
           <Avatar size={30} name={leader.username} />
           <span className="flex min-w-0 flex-col leading-tight">
-            <span className="truncate font-semibold">{leader.username}</span>
+            <span className="truncate font-semibold">
+              <TitleTag name={leader.username} />
+              {leader.username}
+            </span>
             {you && <span className="text-[13px] text-accent">{t.common.you}</span>}
           </span>
         </a>

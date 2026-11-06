@@ -5,6 +5,7 @@ import { Board } from './Board'
 import { useT } from './i18n'
 import type { Look } from './pieces'
 import { setPrefs, skinOf, usePrefs, useUnlocked } from './prefs'
+import { titleAt } from './titles'
 import { AVATAR_GROUPS, concrete, familyOf, KINDS, SET_IDS, setImg, THEME_LOCK, TILE_IDS, tileImg } from './sets'
 import { Button } from './ui'
 import { BOTS } from './settings'
@@ -96,7 +97,10 @@ function useLockOf(): LockOf {
       const reason = THEME_LOCK[family]
       if (!reason || !unlocked || unlocked.has(family)) return undefined
       if (reason === 'beta') return t.pieces.lockedBeta
-      if (reason.startsWith('rating:')) return t.pieces.lockedRating(reason.slice(7))
+      if (reason.startsWith('rating:')) {
+        const n = reason.slice(7)
+        return t.pieces.lockedRating(n, t.titles.names[titleAt(Number(n))?.id ?? ''] ?? '')
+      }
       const bot = BOTS.find((b) => 'bot:' + b.level === reason)
       return bot ? t.pieces.lockedBy(bot.name.split(' ')[0]) : t.pieces.lockedBeta
     },
