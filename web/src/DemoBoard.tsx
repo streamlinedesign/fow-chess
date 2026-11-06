@@ -81,63 +81,61 @@ export function DemoBoard({ me, mode, onMode }: { me?: string; mode: DemoMode; o
   }, [mode, start, startWar])
 
   const other: Color = side === 'w' ? 'b' : 'w'
-  const actions = (
-    <div className="flex flex-wrap gap-2">
-      <button type="button" className="demo-btn" onClick={() => start(side, bot)}>
-        <span aria-hidden>↻</span> {t.home.newGame}
-      </button>
-      <button type="button" className="demo-btn" onClick={() => start(other, bot)}>
-        {t.home.playAs(other === 'w' ? t.common.white : t.common.black)}
-      </button>
-      <a
-        href="/settings#s-pieces"
-        className="demo-btn"
-        onClick={(e) => {
-          e.preventDefault()
-          navigate('/settings#s-pieces')
-        }}
-      >
-        {t.pieces.link}
-      </a>
-    </div>
-  )
   const war = mode === 'war'
   const botName = BOTS.find((b) => b.level === bot)!.name
   const skin = BOT_SET[bot]
-  const picker = (
-    <>
-      <div className="demo-opp">
-        <h3 id="demo-mode">{t.home.boardMode}</h3>
-        <RadioGroup.Root
-          aria-labelledby="demo-mode"
-          value={mode}
-          onValueChange={(m) => onMode(m as DemoMode)}
-          className="demo-modes"
-        >
-          <RadioGroup.Item value="etk" className="demo-mode">
-            {t.home.etkTitle}
-          </RadioGroup.Item>
-          <RadioGroup.Item value="war" className="demo-mode">
-            {t.home.fourTitle}
-          </RadioGroup.Item>
-        </RadioGroup.Root>
-      </div>
-      <div className="demo-opp">
-        <h3>{war ? t.home.opponents : t.home.opponent}</h3>
-        <div className="demo-bot">
-          <span className="demo-bot-face" aria-hidden>
-            <img src={BOT_FACE[bot]} alt="" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block font-semibold">{war ? t.home.threeOf(botName) : botName}</span>
-            <span className="block text-[13px] text-accent">{t.landing.botHints[bot]}</span>
-          </span>
-        </div>
-        {!war && skin && <p className="mt-2 text-[13px] text-accent">{skinLine(skin, !!me, unlocked, t)}</p>}
-      </div>
-    </>
+  const pieces = (
+    <a
+      href="/settings#s-pieces"
+      className="demo-btn"
+      onClick={(e) => {
+        e.preventDefault()
+        navigate('/settings#s-pieces')
+      }}
+    >
+      {t.pieces.link}
+    </a>
   )
-  const extra = { bot, name: botName, picker }
+  // Above the board: what to do with this game on the left, which game on the right.
+  const modes = (
+    <RadioGroup.Root
+      aria-label={t.home.boardMode}
+      value={mode}
+      onValueChange={(m) => onMode(m as DemoMode)}
+      className="demo-modes"
+    >
+      <RadioGroup.Item value="etk" className="demo-mode">
+        {t.home.etkTitle}
+      </RadioGroup.Item>
+      <RadioGroup.Item value="war" className="demo-mode">
+        {t.home.fourTitle}
+      </RadioGroup.Item>
+    </RadioGroup.Root>
+  )
+  const bar = (
+    <div className="demo-bar">
+      <div className="demo-acts">
+        {war ? (
+          <button type="button" className="demo-btn" onClick={() => startWar(bot)}>
+            <span aria-hidden>↻</span> {t.home.newGame}
+          </button>
+        ) : (
+          <>
+            <button type="button" className="demo-btn" onClick={() => start(side, bot)}>
+              <span aria-hidden>↻</span> {t.home.newGame}
+            </button>
+            <button type="button" className="demo-btn" onClick={() => start(other, bot)}>
+              {t.home.playAs(other === 'w' ? t.common.white : t.common.black)}
+            </button>
+          </>
+        )}
+        {pieces}
+      </div>
+      {modes}
+    </div>
+  )
+  const note = war ? t.home.warTip : skin ? skinLine(skin, !!me, unlocked, t) : t.home.demoTip
+  const extra = { bot, name: botName, bar, note }
 
   if (war)
     return (
@@ -148,13 +146,13 @@ export function DemoBoard({ me, mode, onMode }: { me?: string; mode: DemoMode; o
         me={me}
         bot={bot}
         name={botName}
-        picker={picker}
-        onNew={() => startWar(bot)}
+        bar={bar}
+        note={note}
       />
     )
 
   return id ? (
-    <Live key={id} id={id} side={side} me={me} actions={actions} {...extra} />
+    <Live key={id} id={id} side={side} me={me} {...extra} />
   ) : (
     <Frame
       {...extra}
@@ -163,23 +161,21 @@ export function DemoBoard({ me, mode, onMode }: { me?: string; mode: DemoMode; o
       board={startView(side)}
       legal={[]}
       onMove={() => {}}
-      history={[]}
       status={failed ? t.home.cantStart : null}
       thinking={false}
-      actions={actions}
     />
   )
 }
 
-type Extra = { bot: Bot; name: string; picker: React.ReactNode }
+/** What every view of the board shares: the bot, the bar above the board and the line below it. */
+type Extra = { bot: Bot; name: string; bar: React.ReactNode; note: string }
 
 function Live({
   id,
   side,
   me,
-  actions,
   ...extra
-}: { id: string; side: Color; me?: string; actions: React.ReactNode } & Extra) {
+}: { id: string; side: Color; me?: string } & Extra) {
   const t = useT()
   const img = usePieces(side)
   const { state, send } = useMatch(id)
@@ -197,10 +193,8 @@ function Live({
         board={startView(side)}
         legal={[]}
         onMove={() => {}}
-        history={[]}
-        status={null}
+          status={null}
         thinking={false}
-        actions={actions}
       />
     )
   const you = (state.you || 'w') as Color
@@ -223,10 +217,8 @@ function Live({
         state={state}
         predicting={!!shown}
         onMove={move}
-        history={state.history}
         status={over(state, you, t, extra.name, !!me)}
         thinking={!!shown || (state.status === 'playing' && state.turn !== you)}
-        actions={actions}
       />
       <PromotionDialog
         open={!!promotion}
@@ -263,7 +255,8 @@ export function skinLine(
 function Frame({
   bot,
   name,
-  picker,
+  bar,
+  note,
   me,
   you,
   board,
@@ -271,10 +264,8 @@ function Frame({
   state,
   predicting = false,
   onMove,
-  history,
   status,
   thinking,
-  actions,
 }: {
   me?: string
   you: Color
@@ -284,20 +275,16 @@ function Frame({
   /** Our own move is drawn before the server confirms it, so the state's marks are out of date. */
   predicting?: boolean
   onMove: (from: string, to: string) => void
-  history: string[]
   status: string | null
   thinking: boolean
-  actions: React.ReactNode
 } & Extra) {
   const t = useT()
   const avatar = usePrefs().avatar
   const yourTurn = !status && legal.length > 0
-  const rows: [string, string?][] = []
-  // A game where you're Black starts with White's hidden move.
-  for (let i = 0; i < history.length; i += 2) rows.push([history[i], history[i + 1]])
   return (
     <div className="demo">
       <div className="demo-main">
+        {bar}
         <div className="strip">
           <span className="strip-ava bot" aria-hidden>
             <img src={BOT_FACE[bot]} alt="" />
@@ -305,7 +292,7 @@ function Frame({
           <span className="strip-who">
             <span className="strip-name">{name}</span>
             <span className="strip-meta">
-              {t.home.demoBot}
+              {t.landing.botHints[bot]}
               {thinking && (
                 <>
                   {' · '}
@@ -355,31 +342,8 @@ function Frame({
             </span>
           </span>
         </div>
+        <p className="demo-note">{note}</p>
       </div>
-      <aside className="demo-side">
-        {picker}
-        <div className="demo-moves">
-          <h3>{t.home.moves}</h3>
-          {rows.length === 0 ? (
-            <p className="text-sm text-accent">{t.home.noMovesYet}</p>
-          ) : (
-            <ol className="moves">
-              {rows.slice(-8).map(([w, b], i) => {
-                const n = Math.max(0, rows.length - 8) + i + 1
-                return (
-                  <li key={n}>
-                    <span className="n">{n}.</span>
-                    <span data-hidden={w === '?'}>{w}</span>
-                    <span data-hidden={b === '?'}>{b ?? ''}</span>
-                  </li>
-                )
-              })}
-            </ol>
-          )}
-        </div>
-        {actions}
-        <p className="text-[13.5px] text-accent">{t.home.demoTip}</p>
-      </aside>
     </div>
   )
 }

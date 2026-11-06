@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react'
 import { AvatarImg } from './Avatar'
 import { geo, parseMove, pieceImg4, SEAT_COLORS, type Seat } from './four'
 import { FourBoard } from './FourBoard'
-import { fourLook, Moves } from './FourMatchPage'
+import { fourLook } from './FourMatchPage'
 import { FourSetup } from './FourSetup'
 import { useT } from './i18n'
 import { usePrefs } from './prefs'
 import { PromotionDialog } from './Promotion'
-import { navigate } from './router'
 import { avatarImg } from './sets'
 import { BOT_FACE, type Bot } from './settings'
 import { useFourMatch, type FourState } from './useFourMatch'
@@ -18,8 +17,9 @@ type Props = {
   me?: string
   bot: Bot
   name: string
-  picker: React.ReactNode
-  onNew: () => void
+  /** New game, Pieces and the game switch, above the board. */
+  bar: React.ReactNode
+  note: string
 }
 
 /**
@@ -56,8 +56,8 @@ function Table({
   me,
   bot,
   name,
-  picker,
-  onNew,
+  bar,
+  note,
   sent,
   onMove,
   onSetup,
@@ -128,6 +128,7 @@ function Table({
   return (
     <div className="demo">
       <div className="demo-main">
+        {bar}
         <div className="strip">
           <span className="strip-ava bot" aria-hidden>
             <img src={BOT_FACE[bot]} alt="" />
@@ -203,27 +204,8 @@ function Table({
             </span>
           </span>
         </div>
+        <p className="demo-note">{note}</p>
       </div>
-      <aside className="demo-side">
-        {picker}
-        {state && state.status !== 'setup' && <Moves state={state} />}
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className="demo-btn" onClick={onNew}>
-            <span aria-hidden>↻</span> {t.home.newGame}
-          </button>
-          <a
-            href="/settings#s-pieces"
-            className="demo-btn"
-            onClick={(e) => {
-              e.preventDefault()
-              navigate('/settings#s-pieces')
-            }}
-          >
-            {t.pieces.link}
-          </a>
-        </div>
-        <p className="text-[13.5px] text-accent">{t.home.warTip}</p>
-      </aside>
       <PromotionDialog
         open={!!promotion}
         img={(p) => pieceImg4(you + p.toUpperCase(), look)}

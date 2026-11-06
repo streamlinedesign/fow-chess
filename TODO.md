@@ -42,6 +42,7 @@
 
 ## Done
 
+- 0.30.0: home page board without the side column; Eat the King and War Mode side by side
 - 0.29.0: War Mode clocks of 30 minutes, 2 hours and a day; War Mode with friends by code
 - 0.28.0: home page plays Solomon, other bots as cards below, Upcoming list; guests are told wins unlock nothing
 - 0.24.2: fog is Dusk only

@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Home page: the column beside the board is gone. New game, Play as Black and Pieces sit above the board on the left, the Eat the King / War Mode switch on the right; Solomon's line under the board says what beating him unlocks. The move list is no longer shown there. Where the menu has room (wide screens, tablets), Eat the King and War Mode sit side by side, and so do Play a friend and Mods below them.
 - War Mode has three clocks: 30 minutes plus 10 seconds a move (as before), 2 hours plus 30 seconds a move, and a day for every move. The home page and the desktop app pick one; the queue only seats players who picked the same clock, and all three count on the one War Mode rating. Players get 2 minutes to place their pieces, 5 in a two-hour game and a day in a daily one.
 - Play a friend with a code can start War Mode: pick War Mode, create a code, and up to three friends join with it; bots take the seats nobody takes. Never ranked. Joining by code finds War Mode games too.
 - Home page: the board always plays Solomon (or three of him in War Mode); the opponent picker is gone. Rex, Vercingetorix and Ramesses II have their own cards at the bottom, each opening a new game on the clock picked above. The v1.0 plans list is called Upcoming.

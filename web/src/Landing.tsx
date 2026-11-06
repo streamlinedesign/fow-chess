@@ -65,30 +65,32 @@ export function Landing() {
           <DemoBoard me={me?.username} mode={demo} onMode={setDemo} />
         </div>
         <div className="home-cell home-menu">
-          <section>
-            <h1 className="home-title">{t.landing.tagline}</h1>
-            <p className="home-release">
-              {t.landing.release(releaseDate(t.locale))}
-            </p>
-          </section>
-          <PlayMenu settings={settings} onChange={setSettings} signedIn={!!me} busy={busy} rating={me?.rating} />
-          <FindFour
-            signedIn={!!me}
-            rating={me?.fourRating}
-            time={warTime}
-            onTime={setWarTime}
-            onTry={() => {
-              setDemo('war')
-              document.querySelector('.home-hero')?.scrollIntoView({ behavior: 'smooth' })
-            }}
-          />
-          <CodeGame settings={settings} warTime={warTime} busy={busy} setBusy={setBusy} />
-          <section>
-            <a href="/mods" onClick={(e) => go(e, '/mods')} className="home-mods">
-              <span className="home-mods-title">{t.common.mods}</span>
-              <span className="block text-[13px] text-accent">{t.home.modsSub}</span>
-            </a>
-          </section>
+          <div className="home-menu-grid">
+            <section>
+              <h1 className="home-title">{t.landing.tagline}</h1>
+              <p className="home-release">
+                {t.landing.release(releaseDate(t.locale))}
+              </p>
+            </section>
+            <PlayMenu settings={settings} onChange={setSettings} signedIn={!!me} busy={busy} rating={me?.rating} />
+            <FindFour
+              signedIn={!!me}
+              rating={me?.fourRating}
+              time={warTime}
+              onTime={setWarTime}
+              onTry={() => {
+                setDemo('war')
+                document.querySelector('.home-hero')?.scrollIntoView({ behavior: 'smooth' })
+              }}
+            />
+            <CodeGame settings={settings} warTime={warTime} busy={busy} setBusy={setBusy} />
+            <section>
+              <a href="/mods" onClick={(e) => go(e, '/mods')} className="home-mods">
+                <span className="home-mods-title">{t.common.mods}</span>
+                <span className="block text-[13px] text-accent">{t.home.modsSub}</span>
+              </a>
+            </section>
+          </div>
         </div>
       </div>
 
