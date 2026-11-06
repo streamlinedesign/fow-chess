@@ -84,7 +84,8 @@ export function Landing() {
               onTime={setWarTime}
               />
             <CodeGame settings={settings} warTime={warTime} busy={busy} setBusy={setBusy} />
-          </div>
+            <Bots settings={settings} signedIn={!!me} />
+                </div>
         </div>
       </div>
 
@@ -108,7 +109,6 @@ export function Landing() {
 
       {DOWNLOADS && <AppStrip />}
 
-      <Bots settings={settings} signedIn={!!me} />
 
       <div className="home-row home-r3">
         <div className="home-cell">
@@ -361,8 +361,9 @@ async function playBot(settings: Settings, bot: Bot) {
 }
 
 /**
- * The other bots, a row of cells: Solomon plays on the board at the top, the
- * rest are here. Each opens a new game with the mode and clock set above.
+ * The other bots, below Play with a friend: Solomon plays on the board, the
+ * rest each open a new game with the mode and clock set above. Signed-in
+ * players see what beating each one unlocks.
  */
 function Bots({ settings, signedIn }: { settings: Settings; signedIn: boolean }) {
   const t = useT()
@@ -379,43 +380,45 @@ function Bots({ settings, signedIn }: { settings: Settings; signedIn: boolean })
   }
   const rest = BOTS.filter((b) => b.level !== DEMO_BOT)
   return (
-    <div className="home-row home-bots three">
-      {rest.map((b, i) => {
-        const strength = BOTS.indexOf(b)
-        const set = BOT_SET[b.level]
-        return (
-          <div key={b.level} className={`home-cell home-bot ${i < rest.length - 1 ? 'cross' : ''}`}>
-            <span className="home-bot-top">
-              <span className="home-bot-face" aria-hidden>
-                <img src={BOT_FACE[b.level]} alt="" />
+    <section className="home-bot-section">
+      <h2 className="text-lg font-semibold tracking-tight">{t.home.botsTitle}</h2>
+      <div className="home-bot-list">
+        {rest.map((b) => {
+          const strength = BOTS.indexOf(b)
+          const set = BOT_SET[b.level]
+          return (
+            <div key={b.level} className="home-bot-item">
+              <span className="home-bot-top">
+                <span className="home-bot-face" aria-hidden>
+                  <img src={BOT_FACE[b.level]} alt="" />
+                </span>
+                <span className="strength" aria-label={`${strength + 1}/${BOTS.length}`}>
+                  {BOTS.map((_, j) => (
+                    <i key={j} data-on={j <= strength} />
+                  ))}
+                </span>
               </span>
-              <span className="strength" aria-label={`${strength + 1}/${BOTS.length}`}>
-                {BOTS.map((_, j) => (
-                  <i key={j} data-on={j <= strength} />
-                ))}
-              </span>
-            </span>
-            <h3>{b.name}</h3>
-            <p className="text-sm text-accent">{t.landing.botHints[b.level]}</p>
-            <p className="home-bot-skin text-sm">{set ? skinLine(set, signedIn, unlocked, t) : t.landing.noSkin}</p>
-            <Button
-              variant="outline"
-              className="home-bot-play h-10 px-4"
-              onClick={() => start(b.level)}
-              loading={starting === b.level}
-              disabled={starting !== null}
-            >
-              {t.home.playBot(b.name.split(' ')[0])}
-            </Button>
-            {error && starting === null && i === 0 && (
-              <p role="alert" className="text-sm text-danger">
-                {error}
-              </p>
-            )}
-          </div>
-        )
-      })}
-    </div>
+              <h3>{b.name}</h3>
+              <p className="text-[13px] text-accent">{t.landing.botHints[b.level]}</p>
+              {signedIn && set && <p className="text-[13px]">{skinLine(set, true, unlocked, t)}</p>}
+              <Button
+                className="home-bot-play h-10 px-4"
+                onClick={() => start(b.level)}
+                loading={starting === b.level}
+                disabled={starting !== null}
+              >
+                {t.home.playBot(b.name.split(' ')[0])}
+              </Button>
+            </div>
+          )
+        })}
+      </div>
+      {error && starting === null && (
+        <p role="alert" className="mt-2 text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </section>
   )
 }
 
@@ -633,17 +636,16 @@ export function FindFour({
 
   return (
     <section className={`flex flex-col gap-2.5 ${bare ? '' : 'home-official'}`}>
-      {!bare && (
-        <>
-          <OfficialHead title={t.home.fourTitle} rating={rating} />
-          <p className="home-summary">
-            <b>{t.home.fourAbout}</b>
-            {!signedIn && <span className="block">{t.home.fourGuest}</span>}
-          </p>
-        </>
-      )}
+      {!bare && <OfficialHead title={t.home.fourTitle} rating={rating} />}
       {onTime && signedIn && <WarClocks time={time} onTime={onTime} disabled={waiting} />}
       <div className="home-play-at flex flex-col gap-2.5">
+      {/* What the game is sits under the clocks and above Play, as on Eat the King's card. */}
+      {!bare && (
+        <p className="home-summary">
+          <b>{t.home.fourAbout}</b>
+          {!signedIn && <span className="block">{t.home.fourGuest}</span>}
+        </p>
+      )}
       {waiting ? (
         <div className="tick flex items-center gap-3 p-3.5" role="status">
           <span className="spinner" aria-hidden />
