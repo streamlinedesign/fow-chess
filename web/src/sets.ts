@@ -1,55 +1,26 @@
 // The piece sets: the families a player picks for White and for Black, and the
 // one-colour sets they are drawn in, each of which is also a row of avatars.
 // Must match setFamilies and pieceSets in server/prefs.go.
-import type { Look } from "./pieces";
+import type { Look } from './pieces'
 
-type Color = "w" | "b";
+type Color = 'w' | 'b'
 
-const classic = import.meta.glob<string>("./pieces/*.svg", {
+const classic = import.meta.glob<string>('./pieces/*.svg', { eager: true, import: 'default' })
+const coloured = import.meta.glob<string>('./pieces/four/*.svg', { eager: true, import: 'default' })
+const lightLines = import.meta.glob<string>('./pieces/light/*.svg', { eager: true, import: 'default' })
+const inkLines = import.meta.glob<string>('./pieces/ink/*.svg', { eager: true, import: 'default' })
+const themed = import.meta.glob<string>('./pieces/{galaxy,blueprint,holy,ancient,cyberpunk}/*.svg', {
   eager: true,
-  import: "default",
-});
-const coloured = import.meta.glob<string>("./pieces/four/*.svg", {
-  eager: true,
-  import: "default",
-});
-const lightLines = import.meta.glob<string>("./pieces/light/*.svg", {
-  eager: true,
-  import: "default",
-});
-const inkLines = import.meta.glob<string>("./pieces/ink/*.svg", {
-  eager: true,
-  import: "default",
-});
-const themed = import.meta.glob<string>(
-  "./pieces/{galaxy,blueprint,holy,ancient,cyberpunk}/*.svg",
-  {
-    eager: true,
-    import: "default",
-  },
-);
-const tiles = import.meta.glob<string>("./tiles/*.svg", {
-  eager: true,
-  import: "default",
-});
+  import: 'default',
+})
+const tiles = import.meta.glob<string>('./tiles/*.svg', { eager: true, import: 'default' })
 
 /** The plain colours, and the letter their files go by. */
-export const COLOURS = ["red", "blue", "green", "violet"] as const;
-const LETTER: Record<string, string> = {
-  red: "r",
-  blue: "b",
-  green: "g",
-  violet: "v",
-};
+export const COLOURS = ['red', 'blue', 'green', 'violet'] as const
+const LETTER: Record<string, string> = { red: 'r', blue: 'b', green: 'g', violet: 'v' }
 
 /** The themed sets: each has a light side for White and a dark side for Black, and tiles to match. */
-export const THEMES = [
-  "galaxy",
-  "blueprint",
-  "holy",
-  "ancient",
-  "cyberpunk",
-] as const;
+export const THEMES = ['galaxy', 'blueprint', 'holy', 'ancient', 'cyberpunk'] as const
 
 /**
  * What unlocks each themed set and its tiles and avatars: beating the bot that
@@ -57,26 +28,24 @@ export const THEMES = [
  * colours are never locked. Must match themeLocks in server/unlocks.go.
  */
 export const THEME_LOCK: Record<string, string> = {
-  holy: "bot:rex",
-  blueprint: "bot:vercingetorix",
-  ancient: "bot:ramesses",
-  galaxy: "bot:solomon",
-  cyberpunk: "beta",
-};
+  holy: 'bot:rex',
+  blueprint: 'bot:vercingetorix',
+  ancient: 'bot:ramesses',
+  galaxy: 'bot:solomon',
+  cyberpunk: 'beta',
+}
 
 /** The pieces a set has: the usual six, the jester pawn (J) and the prince (X). */
-export const KINDS = ["K", "Q", "R", "B", "N", "P", "J", "X"] as const;
+export const KINDS = ['K', 'Q', 'R', 'B', 'N', 'P', 'J', 'X'] as const
 
 export type PieceSet = {
-  id: string;
+  id: string
   /** The image for one piece, by uppercase kind. */
-  img: (kind: string) => string;
-};
+  img: (kind: string) => string
+}
 
-const from =
-  (files: Record<string, string>, dir: string, prefix: string) =>
-  (kind: string) =>
-    files[`./pieces/${dir}${prefix}${kind}.svg`];
+const from = (files: Record<string, string>, dir: string, prefix: string) => (kind: string) =>
+  files[`./pieces/${dir}${prefix}${kind}.svg`]
 
 /**
  * The one-colour sets. Names are in the dictionary (pieces.sets). A colour has
@@ -85,26 +54,26 @@ const from =
  * lines are mixed, kept for those games and for avatars picked before.
  */
 export const SETS: PieceSet[] = [
-  { id: "cream", img: from(classic, "", "w") },
-  { id: "ink", img: from(classic, "", "b") },
+  { id: 'cream', img: from(classic, '', 'w') },
+  { id: 'ink', img: from(classic, '', 'b') },
   ...COLOURS.flatMap((c) => [
-    { id: c, img: from(coloured, "four/", LETTER[c]) },
-    { id: `${c}-light`, img: from(lightLines, "light/", LETTER[c]) },
-    { id: `${c}-ink`, img: from(inkLines, "ink/", LETTER[c]) },
+    { id: c, img: from(coloured, 'four/', LETTER[c]) },
+    { id: `${c}-light`, img: from(lightLines, 'light/', LETTER[c]) },
+    { id: `${c}-ink`, img: from(inkLines, 'ink/', LETTER[c]) },
   ]),
   ...THEMES.flatMap((t) => [
-    { id: `${t}-light`, img: from(themed, `${t}/`, "w") },
-    { id: `${t}-dark`, img: from(themed, `${t}/`, "b") },
+    { id: `${t}-light`, img: from(themed, `${t}/`, 'w') },
+    { id: `${t}-dark`, img: from(themed, `${t}/`, 'b') },
   ]),
-];
+]
 
 /** Eat the King's own: cream for White, ink for Black. The default for both sides. */
-export const CLASSIC = "classic";
+export const CLASSIC = 'classic'
 
 /** The sets a player picks from for White and for Black, in picker order. */
-export const SET_IDS: string[] = [CLASSIC, ...COLOURS, ...THEMES];
+export const SET_IDS: string[] = [CLASSIC, ...COLOURS, ...THEMES]
 
-const byId = new Map(SETS.map((s) => [s.id, s]));
+const byId = new Map(SETS.map((s) => [s.id, s]))
 
 /**
  * The one-colour set a family is drawn in for one side: classic is cream for
@@ -113,57 +82,45 @@ const byId = new Map(SETS.map((s) => [s.id, s]));
  */
 export function concrete(id: string, color: Color) {
   // A colour's own id is also its four-player set, so families come first.
-  if (COLOURS.includes(id as (typeof COLOURS)[number]))
-    return `${id}-${color === "w" ? "light" : "ink"}`;
-  if (byId.has(id)) return id;
-  if (THEMES.includes(id as (typeof THEMES)[number]))
-    return `${id}-${color === "w" ? "light" : "dark"}`;
-  return color === "w" ? "cream" : "ink";
+  if (COLOURS.includes(id as (typeof COLOURS)[number])) return `${id}-${color === 'w' ? 'light' : 'ink'}`
+  if (byId.has(id)) return id
+  if (THEMES.includes(id as (typeof THEMES)[number])) return `${id}-${color === 'w' ? 'light' : 'dark'}`
+  return color === 'w' ? 'cream' : 'ink'
 }
 
 /** The family a one-colour set belongs to, as old choices are carried over. */
 export function familyOf(id: string) {
-  return (
-    SET_IDS.find(
-      (f) => f !== CLASSIC && (id === f || id.startsWith(f + "-")),
-    ) ?? CLASSIC
-  );
+  return SET_IDS.find((f) => f !== CLASSIC && (id === f || id.startsWith(f + '-'))) ?? CLASSIC
 }
 
 /** The avatar rows, by family: White's half, then Black's. */
-export const AVATAR_GROUPS = SET_IDS.map((f) => ({
-  id: f,
-  sets: [concrete(f, "w"), concrete(f, "b")],
-}));
+export const AVATAR_GROUPS = SET_IDS.map((f) => ({ id: f, sets: [concrete(f, 'w'), concrete(f, 'b')] }))
 
 /** The tile skins: "" is the plain board. Must match tileSkins in server/prefs.go. */
-export const TILE_IDS = ["", ...THEMES];
+export const TILE_IDS = ['', ...THEMES]
 
 /** A tile skin's image for a light or dark square; undefined for the plain board. */
 export const tileImg = (id: string, light: boolean) =>
-  id ? tiles[`./tiles/${id}-${light ? "l" : "d"}.svg`] : undefined;
+  id ? tiles[`./tiles/${id}-${light ? 'l' : 'd'}.svg`] : undefined
 
 /** The kind a piece is drawn as, for the game's mods. */
 export function lookKind(kind: string, look?: Look) {
-  if (look?.jesterPawns && kind === "P") return "J";
-  if (look?.jumpKing && kind === "K") return "X";
-  return kind;
+  if (look?.jesterPawns && kind === 'P') return 'J'
+  if (look?.jumpKing && kind === 'K') return 'X'
+  return kind
 }
 
 /** The image for one piece of a one-colour set (see concrete for a family); unknown sets draw in classic. */
-export function setImg(id: string, kind: string, color: Color = "w") {
-  return (byId.get(id) ?? byId.get(concrete(id, color))!).img(
-    kind.toUpperCase(),
-  );
+export function setImg(id: string, kind: string, color: Color = 'w') {
+  return (byId.get(id) ?? byId.get(concrete(id, color))!).img(kind.toUpperCase())
 }
 
 /** An avatar is "" for the default pawn, or "<set>/<kind>" like "red/N". Must match validAvatar in server/prefs.go. */
 export function avatarImg(code: string | undefined) {
-  if (!code) return null;
-  const [set, kind] = code.split("/");
-  if (!byId.has(set) || !KINDS.includes(kind as (typeof KINDS)[number]))
-    return null;
-  return setImg(set, kind);
+  if (!code) return null
+  const [set, kind] = code.split('/')
+  if (!byId.has(set) || !KINDS.includes(kind as (typeof KINDS)[number])) return null
+  return setImg(set, kind)
 }
 
 /**
@@ -171,18 +128,16 @@ export function avatarImg(code: string | undefined) {
  * skin, so hidden squares still read as that player's half. "" is the plain board.
  */
 export const FOG_TINT: Record<string, string> = {
-  "": "#34342c",
-  galaxy: "#231b52",
-  blueprint: "#112a58",
-  holy: "#4a3c1c",
-  ancient: "#3a2214",
-  cyberpunk: "#3a1250",
-};
+  '': '#34342c',
+  galaxy: '#231b52',
+  blueprint: '#112a58',
+  holy: '#4a3c1c',
+  ancient: '#3a2214',
+  cyberpunk: '#3a1250',
+}
 
-const skinOfTile = new Map<string, string>();
-for (const id of THEMES)
-  for (const light of [true, false]) skinOfTile.set(tileImg(id, light)!, id);
+const skinOfTile = new Map<string, string>()
+for (const id of THEMES) for (const light of [true, false]) skinOfTile.set(tileImg(id, light)!, id)
 
 /** The fog colour over a square drawn with this tile image (undefined for a plain square). */
-export const fogTint = (tile: string | undefined) =>
-  FOG_TINT[(tile && skinOfTile.get(tile)) || ""];
+export const fogTint = (tile: string | undefined) => FOG_TINT[(tile && skinOfTile.get(tile)) || '']
