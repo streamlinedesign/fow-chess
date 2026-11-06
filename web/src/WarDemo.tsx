@@ -155,6 +155,7 @@ function Table({
                 lastMoves={state?.lastRound}
                 planned={planned ? parseMove(planned) : null}
                 danger={state?.danger}
+                reach={state?.reach}
                 center={state?.settings.centerVision ? { live: !!state.fullVision } : undefined}
                 look={look ?? { jesterPawns: true }}
                 onMove={move}

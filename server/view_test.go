@@ -245,3 +245,36 @@ func TestCenterVisionSetting(t *testing.T) {
 		t.Errorf("Black shouldn't: fullVision %v", b.FullVision)
 	}
 }
+
+// enemyReach shows where the enemy pieces a player sees could go, and gives
+// nothing away: a hidden piece neither shows up nor blocks.
+func TestEnemyReach(t *testing.T) {
+	// White has a king on e1 and a knight on d4, which sees e6 and c6 among
+	// others. Black's pawn on e6 is in view; its rook on d8, knight on d7 and
+	// bishop on c5 are not.
+	pos, err := engine.ParseFEN("3r4/3n4/4p3/2b5/3N4/8/8/4K3 w - - 0 1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	pos.KingCapture = true
+	vision := pos.Vision(engine.White)
+	reach := enemyReach(&pos, engine.White, &vision)
+	for _, hidden := range []string{"d8", "d7", "c5"} {
+		if _, ok := reach[hidden]; ok {
+			t.Errorf("the hidden piece on %s leaked: %v", hidden, reach)
+		}
+	}
+	if got := reach["e6"]; len(got) != 1 || got[0] != "e5" {
+		t.Errorf("the pawn on e6 reaches %v, want [e5]", got)
+	}
+	// With everything in view, the rook on d8 is blocked by the knight on d7.
+	all := enemyReach(&pos, engine.White, nil)
+	for _, sq := range all["d8"] {
+		if sq == "d6" {
+			t.Errorf("full view: the rook should be blocked by d7: %v", all["d8"])
+		}
+	}
+	if len(all["c5"]) == 0 {
+		t.Errorf("full view: the bishop on c5 should have moves")
+	}
+}

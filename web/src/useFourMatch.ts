@@ -57,6 +57,8 @@ export type FourState = {
   /** Every move of the last Sync Move round, when you can see them all. */
   lastRound?: { from: string; to: string }[]
   danger?: string
+  /** Where each other player's piece you can see could move. */
+  reach?: Record<string, string[]>
   dangerHidden?: boolean
   fullVision?: boolean
   /** Every move and leaving; san is "?" for a move you can't know. */

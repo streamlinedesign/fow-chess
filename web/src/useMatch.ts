@@ -34,6 +34,8 @@ export type MatchState = {
   dangerHidden?: boolean
   /** Squares your king could step to that a piece you can see attacks. */
   unsafe?: string[]
+  /** Where each enemy piece you can see could move (see enemyReach in server/view.go). */
+  reach?: Record<string, string[]>
   /** Centre vision: you hold an outpost and see the whole board. */
   fullVision?: boolean
   /** Moves so far in algebraic notation. */

@@ -166,6 +166,7 @@ export function FourMatchPage({ id }: { id: string }) {
                 lastMoves={predicting ? undefined : state?.lastRound}
                 planned={planned ? parseMove(planned) : null}
                 danger={predicting ? undefined : state?.danger}
+                reach={predicting ? undefined : state?.reach}
                 hill={state?.settings.hill}
                 center={state?.settings.centerVision ? { live: !predicting && !!state.fullVision } : undefined}
                 look={look}
