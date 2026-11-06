@@ -148,7 +148,7 @@ export const en = {
     noGames: 'Nothing in progress. Press Play to start a game.',
     noArena: 'No arena coming up right now.',
     fourTitle: 'War Mode',
-    fourAbout: 'Four\u00a0players\u00a0· Ambush\u00a0· Jester\u00a0pawns\u00a0· Fog\u00a0of\u00a0war',
+    fourAbout: 'Four\u00a0players\u00a0· Open\u00a0Setup\u00a0· Jester\u00a0pawns\u00a0· Fog\u00a0of\u00a0war',
     warLength: 'War Mode clock',
     warTimes: [
       { label: '30 min', sub: '+10s a move' },
@@ -272,7 +272,7 @@ export const en = {
     ],
     title: 'About the game',
     paras: [
-      'Eat the King is the original game: chess in the fog of war. You see only the squares your pieces can reach, there is no check, and you win by capturing the king. It always starts from the usual position. War Mode is the second official game: four players in the fog on a cross-shaped board, with an Ambush setup and jester pawns, taking turns.',
+      'Eat the King is the original game: chess in the fog of war. You see only the squares your pieces can reach, there is no check, and you win by capturing the king. It always starts from the usual position. War Mode is the second official game: four players in the fog on a cross-shaped board, with an Open Setup and jester pawns, taking turns.',
       'Everything else is a mod. Mods turn one dial at a time: lift the fog, play to checkmate, set your pieces up in secret, race to the hill, or try other four-player games. Mods games are never ranked.',
     ],
     inspired: 'Inspired by',
@@ -305,7 +305,7 @@ export const en = {
       sync: ['Sync Move', 'Everyone moves at once. Captures come last, so a piece that moves away dodges.'],
       jump: ['Prince', 'Your king is a prince: it can also jump like a knight.'],
       jester: ['Jester pawns', 'Pawns also step and take one square any way, like a king.'],
-      battleship: ['Ambush', 'Place all sixteen pieces anywhere in your rows. Nobody sees where.'],
+      battleship: ['Open Setup', 'Place all sixteen pieces anywhere in your rows. Nobody sees where.'],
       hill: ['King of the Hill', 'Walk your king onto a centre square to win.'],
       nofog: ['No fog', 'The whole board in plain sight. Chess, with the king up for eating.'],
       mate: ['Checkmate', 'Plain chess rules with check. Win the old way.'],
@@ -445,7 +445,7 @@ export const en = {
       hint: 'Arrange your back row however you like. Kings can start in danger.',
     },
     battleship: {
-      label: 'Ambush',
+      label: 'Open Setup',
       hint: 'Place all sixteen pieces anywhere in your four rows. Kings can start in danger.',
     },
   },
@@ -632,7 +632,7 @@ export const en = {
       },
       warSetup: {
         kind: 'Before the game',
-        title: 'Ambush setup',
+        title: 'Open Setup',
         p: [
           'Everyone places **all sixteen pieces anywhere in their three rows**, pawns included, without seeing anyone else’s. Tap or drag them into place.',
           'You have **two minutes**. Whoever isn’t ready by then gets a bot’s arrangement. A king can start in danger.',
