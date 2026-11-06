@@ -8,9 +8,8 @@
 
 ## Next
 
-- Security before the beta, still open (from the review): a knocked-out four-player player sees the whole board and can still chat to players who are in; security headers (CSP, frame-ancestors, nosniff, HSTS) in the Caddy block when `deploy/` is written; never run `make db-seed` against production (known `demo` passwords)
+- Security before the beta, still open (from the review): security headers (CSP, frame-ancestors, nosniff, HSTS) in the Caddy block when `deploy/` is written; never run `make db-seed` against production (known `demo` passwords)
 - Copy the backward pawns removal (`engine/`) into `chess-bots`
-- Beta launch: check the new home page and mods page on a phone
 - Copy the jester pawns engine change into `chess-bots` (or extract the engine module first)
 - Review the mod artwork: jester pawn (`wJ`/`bJ`) and jump king (`wX`/`bX`) in `web/src/pieces/`
 - Adopt the Streamline design system (typeface, tokens) in place of Geist/Tailwind defaults
@@ -35,12 +34,13 @@
 - Four-player: drag pieces in the setup (taps only for now); bots that think about Sync Move rounds (they play as if in turns, and bot-only games can go on for a very long time)
 - Four-player: show these games on profiles, Watch and the bell; rematch and draw offers; a stronger bot
 - Four-player extended board: the seat names and clocks aren't drawn in the corners (they're playable there), only in the list beside the board; find a place for them on the board
-- War Mode: a bot or friendlier wait when fewer than four are in the queue; show War Mode games in the profile's game lists
+- War Mode: bot levels for four players (every bot but Rex inutilis plays `four.BotMove` on the home page board for now); a bot or friendlier wait when fewer than four are in the queue; show War Mode games in the profile's game lists
 - Decide what else the hub should show
 
 ## Done
 
-- 0.16.0: cyberpunk pieces and tiles for beta players
+- 0.17.0: cyberpunk pieces and tiles for beta players
+- 0.16.1: avatar framing, logo on phones, match-not-found crash, knocked-out four-player players kept behind and out of the chat, release date on the home page
 - 0.11.0: White and Black sets that opponents see, light and dark lines for colours, tiles on your half (three rows with four players), faster settings, head avatars
 - 0.10.1: themed piece sets (galaxy, blueprint, holy with the wing knight, ancient), tile skins with Greek key ancient tiles, skins switch
 - 0.5.0: bug reports from the footer and game pages; read them with `make bugs`

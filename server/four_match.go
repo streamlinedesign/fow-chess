@@ -13,6 +13,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"chess/bots"
 	"chess/four"
 	"github.com/coder/websocket"
 )
@@ -41,12 +42,30 @@ type fourSettings struct {
 	// Rated is a ranked game: only the four-player queue starts one, always
 	// with rankedFour's settings.
 	Rated bool `json:"rated,omitempty"`
+	// Demo is War Mode from the home page board: you against three copies of
+	// Bot, with no clock. It lives only in memory and is never saved or ranked.
+	Demo bool   `json:"demo,omitempty"`
+	Bot  string `json:"bot,omitempty"`
 }
 
-// rankedFour is the one ranked four-player game: the extended board,
-// Battleship, Sync Move, jester pawns and no fog, ten minutes each.
-var rankedFour = fourSettings{Board: "extended", Setup: "battleship", Sync: true, JesterPawns: true,
-	Time: TimeControl{Base: 600}, Rated: true}
+// warMode is War Mode: the extended board, Battleship, Sync Move, jester
+// pawns and no fog, half an hour each plus ten seconds a move.
+var warMode = fourSettings{Board: "extended", Setup: "battleship", Sync: true, JesterPawns: true,
+	Time: TimeControl{Base: 1800, Inc: 10}}
+
+// rankedFour is the one ranked four-player game, War Mode.
+var rankedFour = func() fourSettings { s := warMode; s.Rated = true; return s }()
+
+// demoFour is War Mode against three copies of a bot from the home page
+// board: no clock, as on the one-against-one demo board.
+func demoFour(bot bots.Level) fourSettings {
+	if !bot.Valid() {
+		bot = demoBot
+	}
+	s := warMode
+	s.Time, s.Demo, s.Bot = TimeControl{}, true, string(bot)
+	return s
+}
 
 // fourArrangeTime is how long players of a ranked game have to place their
 // pieces; anyone still arranging then gets a bot's arrangement.
@@ -122,6 +141,16 @@ func (h *FourHub) Create(creator *player, settings fourSettings) *FourMatch {
 			clients: map[*client]struct{}{}, created: now, touched: now}
 		m.resetClock()
 		m.seat(four.Red, creator)
+		if settings.Demo {
+			// The bots take the other seats and place their pieces now; the
+			// game begins once you've placed yours.
+			bot := bots.Level(settings.Bot)
+			rng := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+			for _, c := range four.Colors[1:] {
+				m.seat(c, &player{key: "bot:" + string(bot) + ":" + c.String(), name: bot.Name()})
+				m.start.Setups[c] = four.BotSetup(settings.shape(), rng)
+			}
+		}
 		m.save()
 		h.matches[id] = m
 		return m
@@ -182,6 +211,8 @@ func (h *FourHub) sweep() {
 		for id, m := range h.matches {
 			m.mu.Lock()
 			idle := len(m.clients) == 0 && time.Since(m.touched) > 2*time.Hour && h.db != nil
+			// A demo game isn't saved, and nobody comes back to one.
+			idle = idle || (m.settings.Demo && len(m.clients) == 0 && time.Since(m.touched) > 10*time.Minute)
 			if idle {
 				m.stopTimer()
 			}
@@ -424,6 +455,9 @@ func (m *FourMatch) online(c int) bool {
 // save queues the match for the database, and rates a ranked game that has
 // just ended. Callers hold m.mu.
 func (m *FourMatch) save() {
+	if m.settings.Demo {
+		return
+	}
 	m.hub.writes <- fourRecord{ID: m.id, Settings: m.settings, Seats: m.seats, Users: m.users, Names: m.names,
 		Moves: m.game.Tokens(), Result: m.game.Result(), Reason: m.game.Method().String(), Start: m.start,
 		Clock: m.clock, TurnStart: m.turnStart, Created: m.created, Updated: time.Now()}
@@ -719,8 +753,8 @@ func (m *FourMatch) join(c *client, p *player) {
 	}
 	m.clients[c] = struct{}{}
 	m.touched = time.Now()
-	if m.colorOf(c.playerID) >= 0 {
-		c.send(m.chatJSON(true, m.chat))
+	if color := m.colorOf(c.playerID); color >= 0 {
+		c.send(m.chatJSON(true, m.chatFor(color)))
 	}
 	m.pokeBot()
 	m.broadcast()
@@ -856,14 +890,15 @@ func (m *FourMatch) handle(c *client, msg fourIn) {
 			text = string([]rune(text)[:chatMaxLen])
 		}
 		m.chatID++
-		line := chatLine{ID: m.chatID, From: four.Color(color).String(), Text: text, At: now.UnixMilli()}
+		line := chatLine{ID: m.chatID, From: four.Color(color).String(), Text: text, At: now.UnixMilli(),
+			outOnly: m.knockedOut(color)}
 		m.chat = append(m.chat, line)
 		if len(m.chat) > chatMaxLines {
 			m.chat = slices.Clone(m.chat[len(m.chat)-chatMaxLines:])
 		}
 		b := m.chatJSON(false, []chatLine{line})
 		for cl := range m.clients {
-			if m.colorOf(cl.playerID) >= 0 {
+			if to := m.colorOf(cl.playerID); to >= 0 && (!line.outOnly || m.knockedOut(to)) {
 				cl.send(b)
 			}
 		}
@@ -936,7 +971,7 @@ func (m *FourMatch) pokeBot() {
 		for _, c := range bots {
 			pos := m.game.Position()
 			pos.Turn = c
-			mv, _ := four.BotMove(&pos, rng)
+			mv, _ := fourBotMove(m.seats[c], &pos, rng)
 			moves = append(moves, mv.UCI())
 		}
 		for i, c := range bots {
@@ -952,6 +987,19 @@ func (m *FourMatch) pokeBot() {
 		m.pokeBot()
 		m.broadcast()
 	}()
+}
+
+// fourBotMove is the move of the bot in a seat. Rex inutilis plays at random,
+// as in one-against-one; every other bot plays four.BotMove for now.
+func fourBotMove(seat string, pos *four.Position, rng *rand.Rand) (four.Move, bool) {
+	if strings.HasPrefix(seat, "bot:"+string(bots.Rex)+":") {
+		moves := pos.LegalMoves()
+		if len(moves) == 0 {
+			return four.Move{}, false
+		}
+		return moves[rng.IntN(len(moves))], true
+	}
+	return four.BotMove(pos, rng)
 }
 
 func (m *FourMatch) chatJSON(reset bool, lines []chatLine) []byte {
@@ -1167,12 +1215,40 @@ func (m *FourMatch) base() fourState {
 	return s
 }
 
+// knockedOut reports whether a seated player is out while the game goes on.
+// They know more than the players still in (they see more of the board), so
+// what they write reaches only others who are out, and they watch a few
+// rounds behind like spectators. Callers hold m.mu.
+func (m *FourMatch) knockedOut(color int) bool {
+	return color >= 0 && !m.game.Over() && m.game.Position().Out[color]
+}
+
+// chatFor is the chat a seated player may read: lines from players who were
+// out while the game ran are left out for players still in it, until it ends.
+// Callers hold m.mu.
+func (m *FourMatch) chatFor(color int) []chatLine {
+	if m.game.Over() || m.knockedOut(color) {
+		return m.chat
+	}
+	lines := make([]chatLine, 0, len(m.chat))
+	for _, l := range m.chat {
+		if !l.outOnly {
+			lines = append(lines, l)
+		}
+	}
+	return lines
+}
+
 // view fills in the state for a player (color 0 to 3) or a spectator who
 // watches as side. Callers hold m.mu.
 func (m *FourMatch) view(s fourState, color, side int) []byte {
 	if color >= 0 {
 		s.You = four.Color(color).String()
 		s.fourView = fourViewFor(m.game, color, s.Status == "playing", m.settings.Fog)
+		if m.settings.Fog && m.knockedOut(color) {
+			// Out of the game, they'd see everything live and could pass it on.
+			s.fourView = m.spectatorView(color)
+		}
 		s.Planned = m.pending[color]
 		if s.Planned != "" {
 			s.Legal = []string{}

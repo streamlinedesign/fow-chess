@@ -2087,6 +2087,12 @@ a.tick:active {
   font-weight: 650;
   letter-spacing: -0.03em;
 }
+.home-release {
+  margin-top: 10px;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 13px;
+  color: var(--color-accent);
+}
 .seg {
   display: grid;
   grid-auto-flow: column;
@@ -2256,7 +2262,7 @@ a.tick:active {
   width: 1.2em;
   height: 1.2em;
   flex: none;
-  margin: -10px 0.02em 0 -0.08em;
+  margin: -0.3em 0.02em 0 -0.08em;
   /* Lying on its side, crown away from the name, resting on the baseline. */
   transform: rotate(-90deg) translateX(-0.12em);
 }
@@ -2452,8 +2458,8 @@ a.tick:active {
 .strip-ava.bot {
   background: var(--color-fg);
 }
-.strip-ava.bot img,
-.strip-ava.you img {
+.strip-ava.bot > img,
+.strip-ava.you > img {
   width: 32px;
   height: 32px;
 }
@@ -2597,6 +2603,32 @@ a.tick:active {
 }
 .demo-btn:hover {
   box-shadow: inset 0 0 0 1.5px var(--color-fg);
+}
+/* The War Mode setup on the home page board: its tray sized as on the game page. */
+.war-setup {
+  --board4: 480px;
+}
+/* Eat the King or War Mode on the home page board. */
+.demo-modes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 8px;
+  background: var(--color-muted);
+}
+.demo-mode {
+  height: 34px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.demo-mode:hover {
+  background: color-mix(in srgb, var(--color-fg) 10%, transparent);
+}
+.demo-mode[data-state='checked'] {
+  background: var(--color-fg);
+  color: var(--color-bg);
 }
 
 /* Lists and cells below the hero. */
@@ -2938,8 +2970,10 @@ a.tick:active {
 }
 
 /*
- * A piece as an avatar, zoomed on its head: the top of the piece fills the
- * circle. The pieces share one drawing grid, so each kind gets its own top.
+ * A piece as an avatar, zoomed on its head. The avatar is a square window onto
+ * the piece image, sized and placed per kind so the head sits inside the
+ * circle with room around it: --s is the window's side, --t its top and --x
+ * its centre, as fractions of the image (the pieces share one drawing grid).
  */
 .ava-head {
   position: absolute;
@@ -2948,29 +2982,44 @@ a.tick:active {
   border-radius: 999px;
 }
 .ava-head img {
+  --s: 0.74;
+  --t: -0.05;
+  --x: 0.5;
   position: absolute;
-  left: -26.7%;
-  top: -5%;
-  width: 153%;
-  height: 153%;
+  left: calc((var(--s) / 2 - var(--x)) / var(--s) * 100%);
+  top: calc(var(--t) / var(--s) * -100%);
+  width: calc(100% / var(--s));
+  height: calc(100% / var(--s));
   max-width: none;
   user-select: none;
 }
-.ava-head img[data-kind='Q'],
+.ava-head img[data-kind='Q'] {
+  --s: 0.8;
+  --t: -0.07;
+}
 .ava-head img[data-kind='X'] {
-  top: -1.7%;
+  --s: 0.78;
+  --t: -0.07;
+}
+.ava-head img[data-kind='B'] {
+  --t: -0.06;
 }
 .ava-head img[data-kind='N'] {
-  top: -6.7%;
+  --s: 0.76;
+  --t: -0.04;
+  --x: 0.48;
 }
 .ava-head img[data-kind='R'] {
-  top: -21.7%;
+  --s: 0.8;
+  --t: 0.04;
 }
 .ava-head img[data-kind='J'] {
-  top: -16.7%;
+  --s: 0.78;
+  --t: 0.03;
 }
 .ava-head img[data-kind='P'] {
-  top: -35%;
+  --s: 0.62;
+  --t: 0.13;
 }
 
 /* Settings: pieces and avatar. */
@@ -3418,6 +3467,26 @@ a.tick:active {
   .dl-get {
     padding: 0 10px;
     box-shadow: none;
+  }
+}
+
+/* Profile numbers on a phone: two by two, each cell padded the same. */
+@media (max-width: 760px) {
+  .home-bots.stats {
+    grid-template-columns: 1fr 1fr;
+  }
+  .home-bots.stats > .stat {
+    padding: 18px var(--gut);
+  }
+  .home-bots.stats > .stat:nth-child(odd) {
+    border-left: 0;
+  }
+  .home-bots.stats > .stat:nth-child(even) {
+    border-left: 1px solid var(--line);
+    border-top: 0;
+  }
+  .home-bots.stats > .stat:nth-child(n + 3) {
+    border-top: 1px solid var(--line);
   }
 }
 
