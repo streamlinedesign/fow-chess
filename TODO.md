@@ -44,6 +44,7 @@
 
 ## Done
 
+- 0.36.0: Play a bot under Play with a friend; War Mode card clocks first
 - 0.35.0: War Mode 10 minute clock, Short and Long on its card; phones show the games before the board
 - 0.34.0: play as guest (unranked queue for guests), card buttons aligned, home board Solomon in default pieces
 - 0.32.0: home page board without the side column; Eat the King and War Mode side by side
