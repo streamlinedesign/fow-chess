@@ -61,10 +61,12 @@ func TestPreviewTags(t *testing.T) {
 		{"/m/DONE12", []string{`alice vs Solomon`, `alice won by resignation`, `Mods: Prince · Rapid 10+5`}},
 		{"/g/DONE12/1", []string{`Replay · 1 move`}},
 		{"/u/alice", []string{`<title>alice · Eat the King`, `Expert · Rated 1320 in Eat the King · 42 games played`}},
-		{"/mods?mod=prince&mod=ambush&players=4&clock=10-5", []string{
-			`Mods: Prince, Ambush`, `Four players · Rapid 10+5`,
-			`og:image" content="https://example.com/og/mods.png?mod=prince&amp;mod=ambush&amp;players=4&amp;clock=10-5"`,
+		{"/mods?mod=prince&mod=opensetup&players=4&clock=10-5", []string{
+			`Mods: Prince, Open Setup`, `Four players · Rapid 10+5`,
+			`og:image" content="https://example.com/og/mods.png?mod=prince&amp;mod=opensetup&amp;players=4&amp;clock=10-5"`,
 		}},
+		// Links made while it was called Ambush still work.
+		{"/mods?mod=ambush", []string{`Mods: Open Setup`}},
 		{"/nope", []string{`<title>Eat the King</title>`}},
 		{"/m/<script>", []string{`<title>Eat the King</title>`}},
 	}

@@ -149,7 +149,7 @@ export const hr: Dict = {
     noArena: 'Trenutačno nema najavljene arene.',
     fourTitle: 'Ratni način',
     fourAbout:
-      'Četiri\u00a0igrača\u00a0· Zasjeda\u00a0· Pješaci\u00a0lakrdijaši\u00a0· Magla\u00a0rata',
+      'Četiri\u00a0igrača\u00a0· Otvoreni\u00a0raspored\u00a0· Pješaci\u00a0lakrdijaši\u00a0· Magla\u00a0rata',
     warLength: 'Sat Ratnog načina',
     warTimes: [
       { label: '30 min', sub: '+10s po potezu' },
@@ -271,7 +271,7 @@ export const hr: Dict = {
     ],
     title: 'O igri',
     paras: [
-      'Eat the King je izvorna igra: šah u magli rata. Vidiš samo polja do kojih tvoje figure dosežu, nema šaha, a pobjeđuješ kad uzmeš kralja. Uvijek počinje iz uobičajenog položaja. Ratni način je druga službena igra: četiri igrača na ploči u obliku križa, zasjeda i pješaci lakrdijaši, na red, u magli rata.',
+      'Eat the King je izvorna igra: šah u magli rata. Vidiš samo polja do kojih tvoje figure dosežu, nema šaha, a pobjeđuješ kad uzmeš kralja. Uvijek počinje iz uobičajenog položaja. Ratni način je druga službena igra: četiri igrača na ploči u obliku križa, otvoreni raspored i pješaci lakrdijaši, na red, u magli rata.',
       'Sve ostalo su modovi. Modovi okreću jedan po jedan kotačić: digni maglu, igraj do šah-mata, postavi figure u tajnosti, utrkuj se do brda ili probaj druge partije za četiri igrača. Partije s modovima nikad nisu rangirane.',
     ],
     inspired: 'Inspiracija',
@@ -304,7 +304,7 @@ export const hr: Dict = {
       sync: ['Sync Move', 'Svi igraju odjednom. Uzimanja dolaze zadnja, pa figura koja se makne izbjegne.'],
       jump: ['Princ', 'Tvoj kralj je princ: može skočiti i kao skakač.'],
       jester: ['Jester pješaci', 'Pješaci se miču i uzimaju jedno polje u bilo kojem smjeru, kao kralj.'],
-      battleship: ['Zasjeda', 'Postavi svih šesnaest figura bilo gdje u svojim redovima. Nitko ne vidi gdje.'],
+      battleship: ['Otvoreni raspored', 'Postavi svih šesnaest figura bilo gdje u svojim redovima. Nitko ne vidi gdje.'],
       hill: ['Kralj brda', 'Dovedi kralja na središnje polje i pobijedi.'],
       nofog: ['Bez magle', 'Cijela ploča na vidjelu. Šah, s kraljem kojeg se može pojesti.'],
       mate: ['Šah-mat', 'Obična šahovska pravila sa šahom. Pobijedi na stari način.'],
@@ -443,7 +443,7 @@ export const hr: Dict = {
       hint: 'Rasporedi svoj zadnji red kako god želiš. Kralj može početi u opasnosti.',
     },
     battleship: {
-      label: 'Zasjeda',
+      label: 'Otvoreni raspored',
       hint: 'Postavi svih šesnaest figura bilo gdje u svoja četiri reda. Kralj može početi u opasnosti.',
     },
   },
@@ -629,7 +629,7 @@ export const hr: Dict = {
       },
       warSetup: {
         kind: 'Prije igre',
-        title: 'Postavljanje u zasjedi',
+        title: 'Otvoreni raspored',
         p: [
           'Svatko postavlja **svih šesnaest figura bilo gdje u svoja tri reda**, i pješake, ne vidjevši tuđe. Dodirni ili povuci figure na mjesto.',
           'Imaš **dvije minute**. Tko do tada nije spreman, dobiva raspored bota. Kralj može početi u opasnosti.',

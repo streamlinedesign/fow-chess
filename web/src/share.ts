@@ -41,7 +41,7 @@ function copyFallback(text: string) {
  * A mods link: /mods with the switches in the query, which the server reads
  * for the link preview too (parseModsLink in server/share.go):
  *
- *   /mods?mod=prince&mod=ambush&players=4&clock=10-5
+ *   /mods?mod=prince&mod=opensetup&players=4&clock=10-5
  *
  * mod may repeat; clock is minutes-increment, 1d, 7d or none.
  */
@@ -69,7 +69,7 @@ export function modsLink(s: Settings, four: boolean) {
   if (s.sync) mods.push('sync')
   if (s.jumpKing) mods.push('prince')
   if (s.jesterPawns) mods.push('jester')
-  if (s.setup === 'battleship') mods.push('ambush')
+  if (s.setup === 'battleship') mods.push('opensetup')
   if (s.setup === 'backRow') mods.push('backrow')
   if (s.hill && !(four && s.fourBoard === 'extended')) mods.push('hill')
   if (!s.fog) mods.push('nofog')
@@ -113,7 +113,8 @@ export function modsFromLink(
     if (m === 'sync') s.sync = true
     if (m === 'prince' || m === 'jump') s.jumpKing = true
     if (m === 'jester') s.jesterPawns = true
-    if (m === 'ambush' || m === 'battleship') s.setup = 'battleship'
+    // Open Setup was called Battleship, then Ambush.
+    if (m === 'opensetup' || m === 'ambush' || m === 'battleship') s.setup = 'battleship'
     if (m === 'backrow') s.setup = 'backRow'
     if (m === 'hill') s.hill = true
     if (m === 'nofog') s.fog = false

@@ -378,7 +378,7 @@ func movesLine(rec *gameRecord) string {
 	return fmt.Sprintf("%d moves", n)
 }
 
-// modeLine is a game's kind and clock: "Eat the King · Blitz 5+0", "Mods: Prince, Ambush · No clock".
+// modeLine is a game's kind and clock: "Eat the King · Blitz 5+0", "Mods: Prince, Open Setup · No clock".
 func modeLine(s Settings) string {
 	kind := "Eat the King"
 	if s.Bot != "" {
@@ -403,7 +403,7 @@ func modNames(s Settings) []string {
 	add(s.Sync, "Sync Move")
 	add(s.JumpKing, "Prince")
 	add(s.JesterPawns, "Jester pawns")
-	add(s.Setup == "battleship", "Ambush")
+	add(s.Setup == "battleship", "Open Setup")
 	add(s.Setup == "backRow", "Back row")
 	add(s.Hill, "King of the Hill")
 	add(!s.Fog, "No fog")
@@ -473,7 +473,7 @@ func dress(board string, s Settings) string {
 // A mods link is /mods with the switches in its query, which the Mods page reads
 // too (modsFromLink in web/src/share.ts):
 //
-//	/mods?mod=prince&mod=ambush&players=4&clock=10-5
+//	/mods?mod=prince&mod=opensetup&players=4&clock=10-5
 //
 // mod may repeat; clock is minutes-increment, 1d, 7d or none.
 type modsLink struct {
@@ -482,10 +482,12 @@ type modsLink struct {
 	Extended bool
 }
 
-// modKeys are the names of the mods in links, with the old names of two of them.
+// modKeys are the names of the mods in links, with the old names of two of them
+// (Open Setup was Battleship, then Ambush).
 var modKeys = map[string]func(*modsLink){
 	"prince":     func(l *modsLink) { l.Settings.JumpKing = true },
 	"jump":       func(l *modsLink) { l.Settings.JumpKing = true },
+	"opensetup":  func(l *modsLink) { l.Settings.Setup = "battleship" },
 	"ambush":     func(l *modsLink) { l.Settings.Setup = "battleship" },
 	"battleship": func(l *modsLink) { l.Settings.Setup = "battleship" },
 	"backrow":    func(l *modsLink) { l.Settings.Setup = "backRow" },
@@ -566,7 +568,7 @@ func modsCard(l modsLink) card {
 	add(s.Sync, "Sync Move: everyone moves at once.")
 	add(s.JumpKing, "Prince: the king can also jump like a knight.")
 	add(s.JesterPawns, "Jester pawns: pawns also step and take one square any way.")
-	add(s.Setup == "battleship", "Ambush: place all your pieces anywhere in your rows.")
+	add(s.Setup == "battleship", "Open Setup: place all your pieces anywhere in your rows.")
 	add(s.Setup == "backRow", "Back row: arrange your back row first.")
 	add(s.Hill, "King of the Hill: walk your king onto a centre square to win.")
 	add(!s.Fog, "No fog: the whole board in plain sight.")
