@@ -254,7 +254,7 @@ func (t *Tournaments) startGame(a *arena, p, q *arenaPlayer) {
 	if p.lastW && !q.lastW || (p.lastW == q.lastW && rand.IntN(2) == 1) {
 		w, b = q, p
 	}
-	settings := Settings{Fog: true, KingCapture: true, Time: a.kind.Time, Tournament: a.row.ID}
+	settings := Settings{Fog: true, KingCapture: true, CenterVision: "any", Time: a.kind.Time, Tournament: a.row.ID}
 	m := t.hub.CreateBetween(userPlayer(w.user, ""), userPlayer(b.user, ""), settings)
 	g := tournamentGame{MatchID: m.id, Round: 1, White: w.user.ID, Black: b.user.ID}
 	if err := t.store.AddTournamentGame(a.row.ID, g); err != nil {

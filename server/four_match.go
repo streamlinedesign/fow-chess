@@ -36,8 +36,6 @@ type fourSettings struct {
 	Setup string `json:"setup,omitempty"`
 	// Sync is Sync Move: everyone moves at once each round.
 	Sync bool `json:"sync,omitempty"`
-	// KingWarning tells a player when their king is attacked (see Settings).
-	KingWarning bool `json:"kingWarning,omitempty"`
 	// Board is "" for the usual cross, or "extended" for the 16 by 16 board
 	// with four rows each and neutral corners. It has no hill.
 	Board string `json:"board,omitempty"`
@@ -51,10 +49,9 @@ type fourSettings struct {
 }
 
 // warMode is War Mode: the extended board, Battleship, Sync Move, jester
-// pawns and no fog, half an hour each plus ten seconds a move. Unlike Eat the
-// King it keeps the king warning, as it had before the warning became a mod.
+// pawns and no fog, half an hour each plus ten seconds a move.
 var warMode = fourSettings{Board: "extended", Setup: "battleship", Sync: true, JesterPawns: true,
-	KingWarning: true, Time: TimeControl{Base: 1800, Inc: 10}}
+	Time: TimeControl{Base: 1800, Inc: 10}}
 
 // rankedFour is the one ranked four-player game, War Mode.
 var rankedFour = func() fourSettings { s := warMode; s.Rated = true; return s }()
@@ -1248,9 +1245,6 @@ func (m *FourMatch) view(s fourState, color, side int) []byte {
 	if color >= 0 {
 		s.You = four.Color(color).String()
 		s.fourView = fourViewFor(m.game, color, s.Status == "playing", m.settings.Fog)
-		if !m.settings.KingWarning {
-			s.Danger, s.DangerHidden = "", false
-		}
 		if m.settings.Fog && m.knockedOut(color) {
 			// Out of the game, they'd see everything live and could pass it on.
 			s.fourView = m.spectatorView(color)

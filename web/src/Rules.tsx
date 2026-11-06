@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react'
-import { rich, useT } from './i18n'
+import { rich, useT, type Dict } from './i18n'
 import { pieceImg, type Look } from './position'
-import { pieceImg4, SEATS } from './four'
-import { HILL, OUTPOSTS } from './settings'
+import { HILL } from './settings'
 
 /** A FEN board as 64 characters from a1 to h8, the way the server sends boards. */
 function fenBoard(fen: string) {
@@ -20,7 +19,6 @@ function MiniBoard({
   dots,
   hill,
   danger,
-  outposts,
   look,
 }: {
   fen: string
@@ -29,8 +27,6 @@ function MiniBoard({
   dots?: string[]
   hill?: boolean
   danger?: string
-  /** Ring the centre vision squares, White's solid and Black's dashed. */
-  outposts?: boolean
   look?: Look
 }) {
   const board = fenBoard(fen)
@@ -51,9 +47,6 @@ function MiniBoard({
           data-target={dots?.includes(sq) ? (piece === '.' ? 'move' : 'capture') : undefined}
           data-hill={hill && HILL.includes(sq)}
           data-danger={danger === sq}
-          data-outpost={
-            !outposts ? undefined : OUTPOSTS.w.includes(sq) ? 'yours' : OUTPOSTS.b.includes(sq) ? 'theirs' : undefined
-          }
         >
           {piece !== '.' && !fog && <img className="piece" src={pieceImg(piece, look)} alt="" draggable={false} />}
         </div>,
@@ -67,10 +60,12 @@ function MiniBoard({
   )
 }
 
-type CardText = { kind: string; title: string; p: string[] }
+type CardKey = keyof Dict['rules']['cards']
 
 /** One rule card: its art here, its words in the dictionary. */
-function Card({ card, art }: { card: CardText; art: ReactNode }) {
+function Card({ id, art, children }: { id: CardKey; art: ReactNode; children?: ReactNode }) {
+  const t = useT()
+  const card = t.rules.cards[id]
   return (
     <article className="tick flex flex-col gap-3 p-5 sm:p-6">
       <div className="mb-1.5 flex h-32 items-center">{art}</div>
@@ -82,6 +77,7 @@ function Card({ card, art }: { card: CardText; art: ReactNode }) {
         {card.p.map((p, i) => (
           <p key={i}>{rich(p)}</p>
         ))}
+        {children}
       </div>
     </article>
   )
@@ -89,150 +85,85 @@ function Card({ card, art }: { card: CardText; art: ReactNode }) {
 
 const rows = (n: number) => [...Array(n * 8)].map((_, i) => FILES[i % 8] + (Math.floor(i / 8) + 1))
 
-/** Every square a piece on sq reaches with these steps. */
-const steps = (sq: string, d: [number, number][]) =>
-  d
-    .map(([x, y]) => [FILES.indexOf(sq[0]) + x, Number(sq[1]) + y] as const)
-    .filter(([x, y]) => x >= 0 && x < 8 && y >= 1 && y <= 8)
-    .map(([x, y]) => FILES[x] + y)
-const KING: [number, number][] = [-1, 0, 1].flatMap((x) => [-1, 0, 1].map((y) => [x, y] as [number, number])).filter(([x, y]) => x || y)
-const KNIGHT: [number, number][] = [
-  [1, 2], [2, 1], [2, -1], [1, -2], [-1, -2], [-2, -1], [-2, 1], [-1, 2],
-]
-
-const Grid = ({ children }: { children: ReactNode }) => (
-  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{children}</div>
-)
-
-/** The game itself: Eat the King. Keep in step with server/engine and normalize in server/view.go. */
-export function CoreRules() {
+/** How the game works. Keep in step with server/engine and server/view.go. */
+export function Rules() {
   const t = useT()
-  const c = t.rules.cards
   return (
-    <Grid>
-      <Card
-        card={c.fog}
-        art={<MiniBoard fen="8/8/8/8/3N4/8/8/8" seen={['d4', 'b3', 'b5', 'c2', 'c6', 'e2', 'e6', 'f3', 'f5']} />}
-      />
-      <Card
-        card={c.eat}
-        art={
-          <div className="flex items-center gap-2.5" aria-hidden>
-            <img src={pieceImg('Q')} alt="" className="size-[72px]" />
-            <span className="text-3xl text-accent">→</span>
-            <img src={pieceImg('k')} alt="" className="size-[72px] -rotate-90 opacity-55" />
-          </div>
-        }
-      />
-      {/* The knight on c3 attacks the king, and nothing on the board says so. */}
-      <Card card={c.blind} art={<MiniBoard fen="8/8/8/8/8/2n5/8/4K3" seen={['e1', 'd1', 'd2', 'e2', 'f1', 'f2']} />} />
-    </Grid>
-  )
-}
+    <section id="rules" className="flex flex-col gap-6">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card
+          id="fog"
+          art={<MiniBoard fen="8/8/8/8/3N4/8/8/8" seen={['d4', 'b3', 'b5', 'c2', 'c6', 'e2', 'e6', 'f3', 'f5']} />}
+        />
 
-/** Where the pieces start: the usual position, or one you arrange. Still Eat the King. */
-export function LayoutRules() {
-  const c = useT().rules.cards
-  return (
-    <Grid>
-      <Card card={c.backRow} art={<MiniBoard fen="8/8/8/8/8/8/PPPPPPPP/BNRKQRNB" seen={rows(2)} last={rows(1)} />} />
-      <Card card={c.battleship} art={<MiniBoard fen="8/8/8/8/1P2N2P/P1R2Q1P/1PB1PPB1/P1RK1N2" seen={rows(4)} />} />
-      <Card card={c.sniper} art={<MiniBoard fen="4k3/8/8/8/8/4R3/8/4K3" last={['e3', 'e8']} />} />
-    </Grid>
-  )
-}
-
-/** Starting, clocks, rating, draws. */
-export function PlayingRules() {
-  const t = useT()
-  const c = t.rules.cards
-  return (
-    <Grid>
-      <Card
-        card={c.start}
-        art={
-          <div className="flex flex-col gap-1.5">
-            <div className="flex gap-1">
-              {'K7Q2XD'.split('').map((ch, i) => (
-                <span
-                  key={i}
-                  className="grid h-11 w-8 place-items-center rounded-md border-[1.5px] border-fg font-mono text-xl"
-                >
-                  {ch}
-                </span>
-              ))}
+        <Card
+          id="eat"
+          art={
+            <div className="flex items-center gap-2.5" aria-hidden>
+              <img src={pieceImg('Q')} alt="" className="size-[72px]" />
+              <span className="text-3xl text-accent">→</span>
+              <img src={pieceImg('k')} alt="" className="size-[72px] -rotate-90 opacity-55" />
             </div>
-            <span className="font-mono text-xs text-accent">{t.rules.yourMatchCode}</span>
-          </div>
-        }
-      />
-      <Card
-        card={c.clocks}
-        art={
-          <div className="flex flex-col gap-2">
-            <span className="flex items-baseline gap-2 rounded-md bg-fg px-3.5 py-2 font-mono text-[34px] leading-none text-bg">
-              5:00<span className="text-base opacity-70">+0</span>
-            </span>
-            <span className="font-mono text-[15px]">
-              1500 → <strong className="text-fg">1512</strong>
-            </span>
-          </div>
-        }
-      />
-      <Card card={c.draws} art={<span className="text-[60px] leading-none font-light tracking-tight">½ – ½</span>} />
-    </Grid>
-  )
-}
+          }
+        />
 
-/** The mods: one rule changed each. Keep in step with the mods page's switches. */
-export function ModRules() {
-  const c = useT().rules.modCards
-  return (
-    <Grid>
-      <Card card={c.fullBoard} art={<MiniBoard fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" />} />
-      <Card card={c.checkmate} art={<MiniBoard fen="4R1k1/5ppp/8/8/8/8/8/6K1" last={['e1', 'e8']} danger="g8" />} />
-      <Card
-        card={c.warning}
-        art={<MiniBoard fen="8/8/8/8/8/2n5/8/4K3" seen={['e1', 'd1', 'd2', 'e2', 'f1', 'f2']} danger="e1" />}
-      />
-      <Card
-        card={c.center}
-        art={<MiniBoard fen="r3k3/1p4p1/8/3N4/8/8/8/4K3" outposts last={['d5']} />}
-      />
-      <Card card={c.hill} art={<MiniBoard fen="8/8/8/8/4K3/8/8/8" hill last={['e3', 'e4']} />} />
-      <Card
-        card={c.jump}
-        art={<MiniBoard fen="8/8/8/8/3K4/8/8/8" look={{ jumpKing: true }} dots={[...steps('d4', KING), ...steps('d4', KNIGHT)]} />}
-      />
-      <Card
-        card={c.jester}
-        art={
-          <MiniBoard
-            fen="8/8/8/3n4/4P3/8/8/8"
-            look={{ jesterPawns: true }}
-            dots={steps('e4', KING)}
-          />
-        }
-      />
-      <Card
-        card={c.sync}
-        art={
-          <div className="flex flex-col gap-1.5 font-mono text-[22px] leading-none" aria-hidden>
-            <span className="rounded-md bg-fg px-3 py-2 text-bg">e2–e4</span>
-            <span className="rounded-md border-[1.5px] border-fg px-3 py-2">e7–e5</span>
-          </div>
-        }
-      />
-      <Card
-        card={c.four}
-        art={
-          <div className="grid grid-cols-2 gap-1" aria-hidden>
-            {SEATS.map((s) => (
-              <img key={s} src={pieceImg4(s + 'K')} alt="" className="size-14" />
-            ))}
-          </div>
-        }
-      />
-    </Grid>
+        <Card
+          id="danger"
+          art={<MiniBoard fen="8/8/8/8/8/2n5/8/4K3" seen={['e1', 'd1', 'd2', 'e2', 'f1', 'f2', 'c3']} danger="e1" />}
+        />
+
+        <Card
+          id="start"
+          art={
+            <div className="flex flex-col gap-1.5">
+              <div className="flex gap-1">
+                {'K7Q2XD'.split('').map((c, i) => (
+                  <span
+                    key={i}
+                    className="grid h-11 w-8 place-items-center rounded-md border-[1.5px] border-fg font-mono text-xl"
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+              <span className="font-mono text-xs text-accent">{t.rules.yourMatchCode}</span>
+            </div>
+          }
+        />
+
+        <Card id="backRow" art={<MiniBoard fen="8/8/8/8/8/8/PPPPPPPP/BNRKQRNB" seen={rows(2)} last={rows(1)} />} />
+
+        <Card id="battleship" art={<MiniBoard fen="8/8/8/8/1P2N2P/P1R2Q1P/1PB1PPB1/P1RK1N2" seen={rows(4)} />} />
+
+        <Card
+          id="jester"
+          art={
+            <MiniBoard
+              fen="8/8/8/3n4/4P3/8/8/8"
+              look={{ jesterPawns: true }}
+              dots={['d3', 'e3', 'f3', 'd4', 'f4', 'd5', 'e5', 'f5']}
+            />
+          }
+        />
+
+        <Card id="sniper" art={<MiniBoard fen="4k3/8/8/8/8/4R3/8/4K3" last={['e3', 'e8']} />} />
+
+        <Card
+          id="clocks"
+          art={
+            <div className="flex flex-col gap-2">
+              <span className="flex items-baseline gap-2 rounded-md bg-fg px-3.5 py-2 font-mono text-[34px] leading-none text-bg">
+                5:00<span className="text-base opacity-70">+0</span>
+              </span>
+              <span className="font-mono text-[15px]">
+                1500 → <strong className="text-fg">1512</strong>
+              </span>
+            </div>
+          }
+        />
+
+        <Card id="draws" art={<span className="text-[60px] leading-none font-light tracking-tight">½ – ½</span>} />
+      </div>
+    </section>
   )
 }

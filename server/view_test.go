@@ -1,7 +1,6 @@
 package main
 
 import (
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -230,10 +229,10 @@ func TestCenterVisionSetting(t *testing.T) {
 	if mods.CenterVision != "pawn" || mods.rules().CenterVision != engine.CenterPawn {
 		t.Errorf("a mods game keeps centre vision, got %q", mods.CenterVision)
 	}
-	plain := Settings{Time: TimeControl{Base: 300}, CenterVision: "pawn", KingWarning: true}
+	plain := Settings{Time: TimeControl{Base: 300}, CenterVision: "pawn"}
 	plain.normalize()
-	if plain.CenterVision != "" || plain.rules().CenterVision != engine.CenterOff || plain.KingWarning {
-		t.Errorf("Eat the King has no centre vision and no king warning, got %q %v", plain.CenterVision, plain.KingWarning)
+	if plain.CenterVision != "any" || plain.rules().CenterVision != engine.CenterAny {
+		t.Errorf("the ranked game has centre vision for any piece, got %q", plain.CenterVision)
 	}
 
 	// A white pawn on e5 shows White the whole board, and the view says so.
@@ -244,39 +243,5 @@ func TestCenterVisionSetting(t *testing.T) {
 	}
 	if b.FullVision || !strings.Contains(b.Board, "?") {
 		t.Errorf("Black shouldn't: fullVision %v", b.FullVision)
-	}
-}
-
-// Eat the King never says the king is attacked; the King warning mod does.
-func TestKingWarning(t *testing.T) {
-	store := openTestStore(t, filepath.Join(t.TempDir(), "x"))
-	for _, warn := range []bool{false, true} {
-		settings := Settings{Time: TimeControl{Base: 300}}
-		if warn {
-			settings = Settings{Mods: true, Fog: true, KingCapture: true, KingWarning: true, Time: TimeControl{Base: 300}}
-		}
-		settings.normalize()
-		alice, bob := guestPlayer("alice"), guestPlayer("bob")
-		m := NewHub(store).Create(alice, settings)
-		cw, cb := newClient(alice.key), newClient(bob.key)
-		m.join(cw, alice)
-		m.join(cb, bob)
-		for i, uci := range []string{"f2f3", "e7e5", "g2g4", "d8h4"} {
-			c := cw
-			if i%2 == 1 {
-				c = cb
-			}
-			m.handle(c, inMsg{Type: "move", UCI: uci})
-		}
-		s := lastState(t, cw)
-		if s["ply"].(float64) != 4 {
-			t.Fatalf("warn %v: moves not played: %v", warn, s["history"])
-		}
-		if got := s["danger"]; (got == "e1") != warn || (!warn && got != nil) {
-			t.Errorf("warn %v: danger %v", warn, got)
-		}
-		if !warn && s["check"] != nil {
-			t.Errorf("Eat the King has no check, got %v", s["check"])
-		}
 	}
 }

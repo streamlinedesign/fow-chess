@@ -232,7 +232,6 @@ export const hr: Dict = {
     hill: 'Ili dovedi kralja na jedno od uokvirenih središnjih polja.',
     center: 'Stavi bilo koju figuru na uokvireno polje u njihovoj polovici i vidjet ćeš cijelu ploču.',
     jester: 'Pješaci su lakrdijaši: kreću se i uzimaju jedno polje u bilo kojem smjeru, kao kralj.',
-    warning: 'Javlja ti se kad ti je kralj napadnut.',
     standard: 'Figure počinju kao u šahu.',
     backRow: 'Prvo rasporedi svoj zadnji red.',
     battleship: 'Prvo postavi sve figure bilo gdje u uokvirenim redovima.',
@@ -258,16 +257,14 @@ export const hr: Dict = {
       'Pješaci se kreću i uzimaju i jedno polje u bilo kojem smjeru, kao kralj. Zadržavaju dvostruki prvi korak, en passant i promociju.',
     center: 'Pogled iz centra',
     centerHint:
-      'Bilo koja figura na d5 ili e5 (d4 ili e4 za crnog) pokazuje ti cijelu ploču dok god stoji tamo.',
-    warning: 'Upozorenje za kralja',
-    warningHint: 'Javi kad ti je kralj napadnut, čak i iz magle, i označi polja oko njega koja pokriva figura koju vidiš.',
+      'Bilo koja figura na d5 ili e5 (d4 ili e4 za crnog) pokazuje ti cijelu ploču dok god stoji tamo. Uključeno u svakoj običnoj partiji.',
     modsNote: 'Partije s modovima nikad nisu rangirane.',
   },
 
   about: {
     title: 'O igri',
     paras: [
-      'Eat the King je izvorna igra: šah u magli rata. Vidiš samo polja do kojih tvoje figure dosežu, nema šaha, ništa te ne upozorava kad ti je kralj napadnut, a pobjeđuješ kad ga uzmeš. Uvijek počinje iz uobičajenog položaja. Ratni način je druga službena igra: četiri igrača na proširenoj ploči, potapanje brodova, istodobni potez i pješaci lakrdijaši, bez magle.',
+      'Eat the King je izvorna igra: šah u magli rata. Vidiš samo polja do kojih tvoje figure dosežu, nema šaha, a pobjeđuješ kad uzmeš kralja. Uvijek počinje iz uobičajenog položaja. Ratni način je druga službena igra: četiri igrača na proširenoj ploči, potapanje brodova, istodobni potez i pješaci lakrdijaši, bez magle.',
       'Sve ostalo su modovi. Modovi okreću jedan po jedan kotačić: digni maglu, igraj do šah-mata, postavi figure u tajnosti, utrkuj se do brda ili probaj druge partije za četiri igrača. Partije s modovima nikad nisu rangirane.',
     ],
     inspired: 'Inspiracija',
@@ -286,9 +283,8 @@ export const hr: Dict = {
   mods: {
     title: 'Modovi',
     currentSetup: 'Trenutačne postavke',
-    howTheyWork: 'Kako radi svaki mod',
     intro:
-      'Igra s otkrivenim kotačićima. Isključi maglu, igraj sa šahom, uključi upozorenje za kralja, dodaj brdo ili kralja koji skače, ili makni sat. Partije s modovima su za zabavu i nikad se ne računaju u rejting.',
+      'Igra s otkrivenim kotačićima. Isključi maglu, igraj sa šahom, dodaj brdo ili kralja koji skače, ili makni sat. Partije s modovima su za zabavu i nikad se ne računaju u rejting.',
   },
 
   four: {
@@ -377,8 +373,7 @@ export const hr: Dict = {
     jump: 'Jump King',
     jesterPawns: 'Pješaci lakrdijaši',
     centerPawn: 'Pogled iz centra (pješaci)',
-    center: 'Pogled iz centra',
-    kingWarning: 'Upozorenje za kralja',
+    noCenter: 'Bez pogleda iz centra',
   },
 
   time: {
@@ -527,15 +522,7 @@ export const hr: Dict = {
   rules: {
     heading: 'Kako se igra',
     intro:
-      'Pojedi kralja je šah s tri promjene: vidiš samo ono što vide tvoje figure, ništa ti ne kaže kad ti je kralj napadnut, a pobjeđuješ tako da ga uzmeš.',
-    nav: { aria: 'Pravila', core: 'Pojedi kralja', mods: 'Modovi' },
-    layouts: 'Rasporedi',
-    layoutsSub: 'Gdje figure počinju. Svaki raspored je i dalje Pojedi kralja.',
-    playing: 'Igranje partije',
-    modsHeading: 'Modovi',
-    modsIntro:
-      'Svaki mod mijenja jedno pravilo igre Pojedi kralja. Uključi ih na stranici Modovi, u bilo kojoj kombinaciji. Partije s modovima nikad nisu rangirane.',
-    openMods: 'Postavi partiju s modovima',
+      'Obične šahovske figure i potezi, s dvije promjene: vidiš samo ono što vide tvoje figure, a pobjeđuješ tako da uzmeš kralja.',
     yourMatchCode: 'tvoj kod partije',
     cards: {
       fog: {
@@ -543,35 +530,36 @@ export const hr: Dict = {
         title: 'Magla rata',
         p: [
           'Vidiš samo ono što vide tvoje figure: **njihova vlastita polja** i **svako polje na koje bi mogle doći**, uključujući uzimanja. Ostalo je pokriveno.',
-          '**Pješak** ima svoj pogled: uvijek vidi polje ispred sebe, čak i kad je blokiran, a s početnog polja oba polja ispred, čak i kad ne može onamo. Dijagonale vidi samo kad ima što uzeti.',
-          'Nema nikakvih naznaka o drugoj strani: nema isticanja zadnjeg poteza, a njihovi potezi u popisu se prikazuju kao ?. Magla se diže kad partija završi.',
+          'Dovedi **bilo koju figuru u centar njihove polovice** (d5 ili e5 kao bijeli, d4 ili e4 kao crni) i **vidiš cijelu ploču** dok god ona stoji tamo. Ta su polja uokvirena na ploči, tvoja punom a njihova isprekidanom linijom, i tvoja zasvijetle dok držiš jedno od njih.',
+          '**Pješak** ima svoj pogled: uvijek vidi polje ispred sebe, čak i kad je blokiran, a s početnog polja oba polja ispred, čak i kad ne može onamo. Dijagonale vidi samo kad ima što uzeti. Nema nikakvih naznaka o drugoj strani: nema isticanja zadnjeg poteza, a njihovi potezi u popisu se prikazuju kao ?. Magla se diže kad partija završi.',
         ],
       },
       eat: {
         kind: 'Kako pobjeđuješ',
         title: 'Pojedi kralja',
         p: [
-          '**Nema šaha** ni **šah-mata**. Kraljevi smiju ući u opasnost, ostati u njoj i rokirati kroz napad. Pobjeđuješ tako da **uzmeš kralja**.',
+          '**Nema šaha** ni šah-mata. Kraljevi smiju ući u opasnost, ostati u njoj i rokirati kroz napad. Pobjeđuješ tako da **uzmeš kralja**.',
+          'U magli nitko ne vidi sve prijetnje, pa kralja može uzeti figura koja se nikad nije pokazala. To je igra.',
         ],
       },
-      blind: {
-        kind: 'Što ti se kaže',
-        title: 'Bez upozorenja',
+      danger: {
+        kind: 'Jedino upozorenje',
+        title: 'Kralj u opasnosti',
         p: [
-          'Ništa ti ne kaže da ti je kralj napadnut: **nema šaha**, nema crvenog prstena, nema poruke. Ako ne vidiš napadača, ne znaš da je tamo.',
-          'Zato kralja može uzeti figura koja se nikad nije pokazala. To je igra.',
+          'Kad **bilo koja** figura napada tvog kralja, kralj dobiva crveni prsten i stranica to kaže, **čak i kad je napadač skriven u magli**. Saznaješ da si napadnut, ali ne i odakle.',
+          'Podigni kralja i označena su i polja koja pokriva figura koju vidiš. Te oznake koriste samo ono što je već na tvojoj ploči, pa skriveni napadač ostaje skriven.',
         ],
       },
       start: {
         kind: 'Za početak',
         title: 'Pokretanje partije',
         p: [
-          'Odaberi raspored i sat pa pritisni **Nova partija**. Dobivaš **kod** od 6 znakova i poveznicu za dijeljenje. Ti igraš bijelim, a tko god sljedeći otvori poveznicu igra crnim.',
+          'Odaberi način igre i sat pa pritisni **Nova partija**. Dobivaš **kod** od 6 znakova i poveznicu za dijeljenje. Ti igraš bijelim, a tko god sljedeći otvori poveznicu igra crnim.',
           'Osvježavanje stranice ili gubitak signala vraća te na tvoje mjesto. Remi možeš ponuditi ili se predati u bilo kojem trenutku, a **revanš** zamjenjuje boje.',
         ],
       },
       backRow: {
-        kind: 'Raspored',
+        kind: 'Način igre',
         title: 'Zadnji red',
         p: [
           'Prije partije svatko **rasporedi svoj zadnji red** kako želi. Pješaci ostaju gdje su uvijek.',
@@ -579,7 +567,7 @@ export const hr: Dict = {
         ],
       },
       battleship: {
-        kind: 'Raspored',
+        kind: 'Način igre',
         title: 'Potapanje brodova',
         p: [
           'Postavi **svih šesnaest figura bilo gdje u svoja četiri reda**, uključujući pješake. Sakrij kralja, sagradi zid ili usmjeri topa niz otvorenu liniju.',
@@ -592,6 +580,14 @@ export const hr: Dict = {
         p: [
           'Kad sam raspoređuješ figure, kralj može početi u opasnosti. Ništa to ne sprječava: dio je igre. Ako pobijediš **već prvim potezom**, to je **snajperska pobjeda**.',
           'I dalje se računa, ali oba rejtinga pomiče samo četvrtinu onoga što bi cijela partija.',
+        ],
+      },
+      jester: {
+        kind: 'Mod',
+        title: 'Pješaci lakrdijaši',
+        p: [
+          'Na stranici **modova** pješaci mogu postati lakrdijaši. Lakrdijaš se **kreće jedno polje u bilo kojem smjeru, kao kralj**, i **uzima na svakom od tih polja**, ravno naprijed i unatrag također.',
+          'Ostalo je i dalje pješak: **dvostruki korak** s početnog polja, **en passant** i **promocija** na zadnjem redu. Vidi sva polja oko sebe, a lakrdijaš do kralja ga napada.',
         ],
       },
       clocks: {
@@ -607,72 +603,7 @@ export const hr: Dict = {
         title: 'Remi i ostalo',
         p: [
           'Partija je remi **patom**, **trostrukim ponavljanjem**, **pravilom 50 poteza**, **nedovoljnim materijalom** ili kad se oboje složite.',
-          '**Rokada** i **en passant** rade, a pješak na zadnjem redu se **promovira** u figuru koju odabereš. Poslužitelj provjerava svaki potez, pa ploča nudi samo dopuštene.',
-        ],
-      },
-    },
-    modCards: {
-      fullBoard: {
-        kind: 'Što vidiš',
-        title: 'Cijela ploča',
-        p: ['**Isključi maglu** i obje strane vide cijelu ploču, kao u običnom šahu.'],
-      },
-      checkmate: {
-        kind: 'Kako pobjeđuješ',
-        title: 'Šah-mat',
-        p: [
-          'Igra se **sa šahom**: kralja ne smiješ ostaviti napadnutog, a pobjeđuješ **šah-matom** umjesto uzimanjem kralja.',
-          'U magli ti se uvijek kaže kad si u šahu, jer ti to ograničava poteze, ali nikad kad ga ti daješ.',
-        ],
-      },
-      warning: {
-        kind: 'Što ti se kaže',
-        title: 'Upozorenje za kralja',
-        p: [
-          'Kad **bilo koja** figura napada tvog kralja, kralj dobiva crveni prsten i stranica to kaže, **čak i kad je napadač skriven u magli**. Saznaješ da si napadnut, ali ne i odakle.',
-          'Podigni kralja i označena su i polja koja pokriva figura koju vidiš, pa skriveni napadač ostaje skriven.',
-        ],
-      },
-      center: {
-        kind: 'Što vidiš',
-        title: 'Pogled iz centra',
-        p: [
-          'Dovedi **bilo koju figuru u centar njihove polovice** (d5 ili e5 kao bijeli, d4 ili e4 kao crni) i **vidiš cijelu ploču** dok god ona stoji tamo.',
-          'Ta su polja uokvirena na ploči, tvoja punom a njihova isprekidanom linijom, i tvoja zasvijetle dok držiš jedno od njih.',
-        ],
-      },
-      hill: {
-        kind: 'Kako pobjeđuješ',
-        title: 'Kralj brda',
-        p: ['Pobjeđuješ i kad kralja dovedeš na **jedno od četiri središnja polja**. Uzimanje kralja i dalje pobjeđuje.'],
-      },
-      jump: {
-        kind: 'Figure',
-        title: 'Jump King',
-        p: ['Tvoj kralj može i **skočiti kao skakač**, preko svega na putu. Nacrtan je kao princ da ga prepoznaš.'],
-      },
-      jester: {
-        kind: 'Figure',
-        title: 'Pješaci lakrdijaši',
-        p: [
-          'Lakrdijaš se **kreće jedno polje u bilo kojem smjeru, kao kralj**, i **uzima na svakom od tih polja**, ravno naprijed i unatrag također.',
-          'Ostalo je i dalje pješak: **dvostruki korak** s početnog polja, **en passant** i **promocija** na zadnjem redu. Vidi sva polja oko sebe.',
-        ],
-      },
-      sync: {
-        kind: 'Potezi',
-        title: 'Istodobni potez',
-        p: [
-          'Oba igrača **pošalju potez svaki krug** i oba se odigraju **istodobno**. Poslani potez je zaključan.',
-          'Kad obje strane igraju zajedno nema šaha, pa su partije s istodobnim potezom uvijek Pojedi kralja.',
-        ],
-      },
-      four: {
-        kind: 'Igrači',
-        title: 'Četiri igrača',
-        p: [
-          'Četiri vojske na **ploči u obliku križa**, svatko za sebe, potezi idu u smjeru kazaljke na satu.',
-          'Uzmi kralja da izbaciš njegovog igrača. Pobjeđuje **zadnji preživjeli kralj**.',
+          '**Rokada**, **en passant** i **promocija** rade. Poslužitelj provjerava svaki potez, pa ploča nudi samo dopuštene.',
         ],
       },
     },

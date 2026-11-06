@@ -4,8 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
-- Eat the King is now exactly fog of war, no check or checkmate, and no warning when your king is attacked. Centre vision and the king-in-danger ring are mods (Centre vision, and the new King warning switch); arenas and ranked Eat the King games have neither; War Mode keeps the warning. Games already saved keep what they were played with.
-- Rules page split in two: `/rules` is Eat the King (the game, layouts, playing a match, the Opera Game replay) and `/rules/mods` has one card per mod. The mods page links to it.
+- Back to the default rules: Eat the King warns you when your king is attacked and has centre vision again, and `/rules` is one page. This undoes #45 (in 0.18.0, never released).
 - Cyberpunk pieces and tiles, for everyone in the beta: ice white with dark lines for White, deep violet with neon cyan lines for Black, a pink and cyan glitch edge, and a glitched star on the king, queen and prince; flat cyan and violet squares with neon corners. Everyone has them while the beta is open, guests included; after `BETA_ENDS` accounts made before then keep them. Drawn by `scripts/cyberpunk.py`.
 - Fixed: opening a match link that no longer exists (a mistyped code, or a game from before a server restart) crashed the page with "Something broke" instead of saying the match wasn't found.
 - Security: a player knocked out of a four-player fog game no longer sees the board live (they watch a few moves behind, like spectators), and while the game goes on only other players who are out read what they write.
