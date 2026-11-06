@@ -196,9 +196,9 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
       trigger={
         <button
           aria-label={t.header.yourMenu}
-          className="rounded-full p-0.5 transition-shadow outline-none hover:shadow-[0_0_0_2px_var(--color-fg)] focus-visible:shadow-[0_0_0_2px_var(--color-fg)] data-[state=open]:shadow-[0_0_0_2px_var(--color-fg)]"
+          className="flex rounded-full p-0.5 transition-shadow outline-none hover:shadow-[0_0_0_2px_var(--color-fg)] focus-visible:shadow-[0_0_0_2px_var(--color-fg)] data-[state=open]:shadow-[0_0_0_2px_var(--color-fg)]"
         >
-          <span className="relative block">
+          <span className="relative flex">
             <Avatar size={34} name={username} />
             {unreadChats > 0 && (
               <span className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-fg shadow-[0_0_0_2px_var(--color-bg)]" />

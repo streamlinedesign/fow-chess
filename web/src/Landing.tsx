@@ -34,6 +34,9 @@ import { api, openOffer, type UserCard } from './social'
 import { countdown, type Tournament } from './TournamentsPage'
 import { Button } from './ui'
 
+/** The day the beta ends and the full game ships. */
+const RELEASE = '2027-02-02'
+
 /** Clocks split by how long a game takes: Short is Blitz and Rapid, Long the rest. */
 const SHORT_GROUPS = ['Blitz', 'Rapid']
 export const presets = (long: boolean) => TIME_GROUPS.filter(([g]) => SHORT_GROUPS.includes(g) !== long).flatMap(([, p]) => p)
@@ -60,6 +63,13 @@ export function Landing() {
         <div className="home-cell home-menu">
           <section>
             <h1 className="home-title">{t.landing.tagline}</h1>
+            <p className="home-release">
+              {t.landing.release(
+                new Intl.DateTimeFormat(t.locale, { day: 'numeric', month: 'long', year: 'numeric' }).format(
+                  new Date(`${RELEASE}T12:00:00`),
+                ),
+              )}
+            </p>
           </section>
           <PlayMenu settings={settings} onChange={setSettings} signedIn={!!me} busy={busy} />
           <FindFour signedIn={!!me} />

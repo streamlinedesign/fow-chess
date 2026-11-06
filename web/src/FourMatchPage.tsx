@@ -238,6 +238,9 @@ export function FourMatchPage({ id }: { id: string }) {
             </div>
           )}
 
+          {youOut && playing && !!state?.behind && (
+            <p className="text-sm text-accent">{t.four.outBehind(state.behind)}</p>
+          )}
           <div className="flex flex-wrap gap-2">
             {you && (playing || arranging) && !youOut && (
               <Button onClick={() => setConfirmResign(true)}>{t.match.resign}</Button>

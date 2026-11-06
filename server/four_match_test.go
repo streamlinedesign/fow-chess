@@ -81,10 +81,35 @@ func TestFourSeatsAndTurns(t *testing.T) {
 	if s.Players["r"].Out != "resignation" || s.Turn != "g" {
 		t.Errorf("after red resigns: %+v turn %s", s.Players["r"], s.Turn)
 	}
-	// A player who is out sees everything.
-	if r := lastFour(t, cs[0]); r.Board[12*14+6] == "?" {
-		t.Errorf("red is out and should see the whole board")
+	// A player who is out watches a few rounds behind, like a spectator, so
+	// they can't pass on what they see to players still in.
+	if r := lastFour(t, cs[0]); r.Behind == 0 || len(r.Legal) != 0 {
+		t.Errorf("red is out and should be kept behind: behind %d legal %v", r.Behind, r.Legal)
 	}
+	// What red writes now reaches only players who are out.
+	m.handle(cs[0], fourIn{Type: "chat", Text: "blue's queen is on d8"})
+	if line := lastChat(cs[2]); line != "" {
+		t.Errorf("a player still in read the chat of a player who is out: %q", line)
+	}
+	if line := lastChat(cs[0]); line != "blue's queen is on d8" {
+		t.Errorf("red should see their own line, got %q", line)
+	}
+	// Green, still in, rejoins: the history leaves red's line out.
+	if lines := m.chatFor(2); len(lines) != 0 {
+		t.Errorf("chat history for green: %+v", lines)
+	}
+}
+
+// lastChat is the text of the newest chat line a client was sent, or "".
+func lastChat(c *client) string {
+	msgs := c.drain()
+	for i := len(msgs) - 1; i >= 0; i-- {
+		var msg chatMsg
+		if json.Unmarshal(msgs[i], &msg) == nil && msg.Type == "chat" && len(msg.Lines) > 0 {
+			return msg.Lines[len(msg.Lines)-1].Text
+		}
+	}
+	return ""
 }
 
 func TestFourBotsFillAndFinish(t *testing.T) {

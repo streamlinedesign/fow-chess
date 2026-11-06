@@ -82,6 +82,7 @@ export const en = {
   landing: {
     title: 'Play',
     tagline: 'Capture the king in the fog of war.',
+    release: (date: string) => `In beta. Full release on ${date}.`,
     howToPlay: 'How to play',
     finding: 'Finding a match…',
     findingSince: (n: number) => `Waiting for a player near your rating, ${n} s`,
@@ -312,6 +313,8 @@ export const en = {
     resigned: 'resigned',
     outOfTime: 'ran out of time',
     seeAs: 'See as',
+    outBehind: (n: number) =>
+      `You see the game ${n} moves behind the players, and only players who are out read what you write, until it ends.`,
     behind: (n: number) => `You're ${n} moves behind the players, so you can't help anyone.`,
     chatPlaceholder: 'Message the table',
     chat: 'Chat',
@@ -600,7 +603,7 @@ export const en = {
 
   profile: {
     loading: 'Loading profile',
-    ratingLabel: 'rating',
+    ratingLabel: 'Eat the King rating',
     fourRatingLabel: 'War Mode rating',
     onBoard: (rank: number) => `#${rank} on the board`,
     joined: (date: string) => `Joined ${date}`,

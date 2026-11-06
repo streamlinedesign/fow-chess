@@ -4,6 +4,12 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Fixed: opening a match link that no longer exists (a mistyped code, or a game from before a server restart) crashed the page with "Something broke" instead of saying the match wasn't found.
+- Security: a player knocked out of a four-player fog game no longer sees the board live (they watch a few moves behind, like spectators), and while the game goes on only other players who are out read what they write.
+- Avatars show the whole head of the piece inside the circle, centred, for every kind and set; the menu button's avatar sits in the middle of its ring.
+- The fallen king in the logo lines up with the name on phones (its offset now scales with the type size).
+- Profile on a phone: each rating keeps its label beside it ("Eat the King rating", "War Mode rating"), and the numbers sit two by two.
+- The home page says when the full game ships: 2 February 2027.
 - Desktop app for Windows, Mac and Linux (`desktop/`, Rust and Tauri): the game in its own window, with a loading screen while it connects and a "can't reach the game" screen that retries by itself. Its home has three ways to play side by side: Eat the King, War Mode (the ranked four-player game) and Modded, with your rating and place under the two ranked ones. Installers are built for each release tag and attached to the GitHub release.
 - The site has a Download link and a /download page (the build for your system, every build, and how to add the site to a phone's home screen), and a strip on the home page on computers.
 - The site can be installed on a phone: it has a web app manifest and icons.
