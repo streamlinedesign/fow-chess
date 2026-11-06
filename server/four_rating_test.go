@@ -55,7 +55,7 @@ func TestFourRanked(t *testing.T) {
 		m.join(cs[i], p)
 	}
 	s := lastFour(t, cs[0])
-	if s.Status != "setup" || !s.Settings.Rated || s.Settings.Board != "extended" || s.Settings.Fog || !s.Settings.Sync {
+	if s.Status != "setup" || !s.Settings.Rated || s.Settings.Board != "extended" || s.Settings.Fog || !s.Settings.Sync || !s.Settings.JesterPawns {
 		t.Fatalf("status %s settings %+v", s.Status, s.Settings)
 	}
 	if s.Players["r"].Rating != 1500 {

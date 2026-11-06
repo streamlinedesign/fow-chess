@@ -44,8 +44,9 @@ type fourSettings struct {
 }
 
 // rankedFour is the one ranked four-player game: the extended board,
-// Battleship, Sync Move and no fog, ten minutes each.
-var rankedFour = fourSettings{Board: "extended", Setup: "battleship", Sync: true, Time: TimeControl{Base: 600}, Rated: true}
+// Battleship, Sync Move, jester pawns and no fog, ten minutes each.
+var rankedFour = fourSettings{Board: "extended", Setup: "battleship", Sync: true, JesterPawns: true,
+	Time: TimeControl{Base: 600}, Rated: true}
 
 // fourArrangeTime is how long players of a ranked game have to place their
 // pieces; anyone still arranging then gets a bot's arrangement.
