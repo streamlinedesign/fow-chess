@@ -138,7 +138,7 @@ export function WarRules() {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       <Card id="warBoard" art={<FourSeats />} />
-      <Card id="warSetup" art={<MiniBoard fen="8/8/8/8/1P2N2P/P1R2Q1P/1PB1PPB1/P1RK1N2" seen={rows(4)} />} />
+      <Card id="warSetup" art={<MiniBoard fen="8/8/8/8/8/P1R2Q1P/1PB1PPBN/PNRK2PP" seen={rows(3)} />} />
       <Card
         id="warTurns"
         art={

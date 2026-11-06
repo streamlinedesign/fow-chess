@@ -5,6 +5,8 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 ## [Unreleased]
 
 - Rex inutilis is a basic bot: he plays the classic pieces and beating him unlocks nothing. Holy, the set he wore, now unlocks on reaching a 2000 rating in either Eat the King or War Mode, and stays once reached (`rating:2000` in `unlocks`). Players who already beat Rex keep holy (migration 012).
+- War Mode is back on the four-player cross (three rows each, the four middle squares give full vision); the extended board is a mod again. Ranked games, the home page board and the rules page all follow.
+- The home page War Mode board works in turns: your move shows at once, the line under the board says whose move it is, and the bots show as thinking while they play. A player knocked out there keeps seeing the board live instead of jumping a few moves back. The move list keeps each player's moves in their own column when someone is out.
 - War Mode takes turns again, Red, Blue, Green, Violet, in place of Sync Move: ranked games, the home page board against three bots, and the rules page. Sync Move stays a mod (Mods, Four players), and works with the extended board and Battleship there. Games already going keep the rules they started with.
 - Signing out goes back to this browser's guest pieces and tiles (the defaults if none were picked) instead of keeping the account's, which made cyberpunk look like the guest default. Guest and account choices are stored apart; guest picks made before this are reset once.
 - Fog is Dusk only: hidden squares stay under a dark veil tinted by their tile skin. Smoke and the fog setting are gone; the settings preview's Fog button still shows it.

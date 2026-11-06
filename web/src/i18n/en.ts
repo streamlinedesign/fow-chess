@@ -144,7 +144,7 @@ export const en = {
     noGames: 'Nothing in progress. Press Play to start a game.',
     noArena: 'No arena coming up right now.',
     fourTitle: 'War Mode',
-    fourAbout: 'Four players · Extended board · Battleship · Jester pawns · Fog of war',
+    fourAbout: 'Four players · Battleship · Jester pawns · Fog of war',
     fourRanked: 'Ranked on a War Mode rating of its own. 30 minutes each, plus 10 seconds a move.',
     official: 'Official',
     yourRating: 'your rating',
@@ -160,7 +160,7 @@ export const en = {
     opponents: 'Opponents',
     threeBots: (bot: string) => `${bot} ×3`,
     demoBots: 'Three demo bots',
-    warTip: 'Place your pieces in your four rows, then take turns with the bots. No clock, and nothing is saved.',
+    warTip: 'Place your pieces in your three rows, then take turns with the bots. No clock, and nothing is saved.',
     placing: 'Place your pieces',
   },
 
@@ -252,7 +252,7 @@ export const en = {
   about: {
     title: 'About the game',
     paras: [
-      'Eat the King is the original game: chess in the fog of war. You see only the squares your pieces can reach, there is no check, and you win by capturing the king. It always starts from the usual position. War Mode is the second official game: four players in the fog on the extended board, with Battleship and jester pawns, taking turns.',
+      'Eat the King is the original game: chess in the fog of war. You see only the squares your pieces can reach, there is no check, and you win by capturing the king. It always starts from the usual position. War Mode is the second official game: four players in the fog on a cross-shaped board, with Battleship and jester pawns, taking turns.',
       'Everything else is a mod. Mods turn one dial at a time: lift the fog, play to checkmate, set your pieces up in secret, race to the hill, or try other four-player games. Mods games are never ranked.',
     ],
     inspired: 'Inspired by',
@@ -575,17 +575,17 @@ export const en = {
       },
       warBoard: {
         kind: 'The board',
-        title: 'Four players, extended board',
+        title: 'Four players, one cross',
         p: [
-          'A **16 by 16** board with **four rows each** and **open corners** anyone can cross. Red, Blue, Green and Violet sit round it.',
-          'It’s played in the **fog of war**, as Eat the King is: you see only what your pieces see. Get any piece onto one of your **two vision squares** in the middle (the pair just past the centre, on the far side from you) and you **see the whole board** while it stays there. Pawns promote **past the middle**, or on the **side walls** of the players beside you.',
+          'A **cross-shaped board**: a full 8 by 8 in the middle and **three rows on each side**, 14 by 14 with the corners cut off. Red, Blue, Green and Violet sit round it.',
+          'It’s played in the **fog of war**, as Eat the King is: you see only what your pieces see. Get any piece onto one of the **four middle squares** and you **see the whole board** while it stays there. Pawns promote on the **eighth rank** from your side, just past the middle. The bigger extended board is a mod.',
         ],
       },
       warSetup: {
         kind: 'Before the game',
         title: 'Battleship setup',
         p: [
-          'Everyone places **all sixteen pieces anywhere in their four rows**, pawns included, without seeing anyone else’s. Tap or drag them into place.',
+          'Everyone places **all sixteen pieces anywhere in their three rows**, pawns included, without seeing anyone else’s. Tap or drag them into place.',
           'You have **two minutes**. Whoever isn’t ready by then gets a bot’s arrangement. A king can start in danger.',
         ],
       },

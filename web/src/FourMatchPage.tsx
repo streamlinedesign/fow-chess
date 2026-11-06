@@ -445,14 +445,29 @@ export function Moves({ state }: { state: FourState }) {
 }
 
 /**
- * The history as cells of a four-column grid. In Sync Move each round is a
- * row with each player's move in their own column; anyone leaving gets a row
- * of their own.
+ * The history as cells of a four-column grid, each player's moves in their
+ * own column. In turns a row is one time round the table, with a gap where a
+ * player who is out is skipped. In Sync Move each round is a row; anyone
+ * leaving gets a row of their own.
  */
 function moveCells(state: FourState) {
   type Cell = FourState['history'][number] | null
-  if (!state.settings.sync) return state.history
   const cells: Cell[] = []
+  if (!state.settings.sync) {
+    let row: Cell[] = [null, null, null, null]
+    let prev = -1
+    for (const e of state.history) {
+      const i = SEATS.indexOf(e.by)
+      if (i <= prev) {
+        cells.push(...row)
+        row = [null, null, null, null]
+      }
+      row[i] = e
+      prev = i
+    }
+    if (prev >= 0) cells.push(...row.slice(0, prev + 1))
+    return cells
+  }
   let row: Cell[] | null = null
   let round = -1
   for (const e of state.history) {
