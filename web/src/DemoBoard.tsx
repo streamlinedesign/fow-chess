@@ -4,12 +4,12 @@ import { Board } from './Board'
 import { useT } from './i18n'
 import { applyLocal } from './position'
 import { playerId } from './player'
-import { getPrefs, usePieces, usePrefs } from './prefs'
+import { getPrefs, usePieces, usePrefs, useUnlocked } from './prefs'
 import { navigate } from './router'
 import { avatarImg } from './sets'
 import { PromotionDialog } from './Promotion'
 import { AvatarImg } from './Avatar'
-import { BOT_FACE, BOTS, gameLook, type Bot } from './settings'
+import { BOT_FACE, BOT_SET, BOTS, gameLook, type Bot } from './settings'
 import { botSide, useMatch, type Color, type MatchState } from './useMatch'
 import { WarDemo } from './WarDemo'
 
@@ -19,7 +19,7 @@ const startView = (side: Color) => {
   return side === 'w' ? start.slice(0, 32) + '?'.repeat(32) : '?'.repeat(32) + start.slice(32)
 }
 
-/** The demo board's opponent unless the player picked another. */
+/** The home page board's opponent, always: the other bots have their own cards further down. */
 export const DEMO_BOT: Bot = 'solomon'
 
 /** Which game the home page board plays: Eat the King, or War Mode against three bots. */
@@ -33,36 +33,24 @@ export function savedDemoMode(): DemoMode {
   }
 }
 
-function savedBot(): Bot {
-  try {
-    const b = localStorage.getItem('demoBot')
-    if (BOTS.some((x) => x.level === b)) return b as Bot
-  } catch {}
-  return DEMO_BOT
-}
-
 /**
- * The home page's board: a game against a bot (Solomon unless you pick
- * another) that's playable the moment the page loads, or in War Mode you
- * against three copies of it, starting with your Battleship setup. The
+ * The home page's board: a game against Solomon that's playable the moment
+ * the page loads, or in War Mode you against three copies of him, starting with your Battleship setup. The
  * server keeps it in memory only, with no clock, and never saves, lists or
  * ranks it.
  */
 export function DemoBoard({ me, mode, onMode }: { me?: string; mode: DemoMode; onMode: (m: DemoMode) => void }) {
   const t = useT()
   const [side, setSide] = useState<Color>(() => getPrefs().side || 'w')
-  const [bot, setBot] = useState<Bot>(savedBot)
+  const bot = DEMO_BOT
+  const unlocked = useUnlocked()
   const [id, setId] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
 
   const start = useCallback((s: Color, b: Bot) => {
     setSide(s)
-    setBot(b)
     setId(null)
     setFailed(false)
-    try {
-      localStorage.setItem('demoBot', b)
-    } catch {}
     fetch(`/api/matches?player=${playerId}`, {
       method: 'POST',
       body: JSON.stringify({ demo: true, side: s, bot: b }),
@@ -74,12 +62,8 @@ export function DemoBoard({ me, mode, onMode }: { me?: string; mode: DemoMode; o
 
   const [warId, setWarId] = useState<string | null>(null)
   const startWar = useCallback((b: Bot) => {
-    setBot(b)
     setWarId(null)
     setFailed(false)
-    try {
-      localStorage.setItem('demoBot', b)
-    } catch {}
     fetch(`/api/four?player=${playerId}`, { method: 'POST', body: JSON.stringify({ demo: true, bot: b }) })
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((b) => setWarId(b.id))
@@ -92,8 +76,8 @@ export function DemoBoard({ me, mode, onMode }: { me?: string; mode: DemoMode; o
     try {
       localStorage.setItem('demoMode', mode)
     } catch {}
-    if (mode === 'war') startWar(savedBot())
-    else start(getPrefs().side || 'w', savedBot())
+    if (mode === 'war') startWar(DEMO_BOT)
+    else start(getPrefs().side || 'w', DEMO_BOT)
   }, [mode, start, startWar])
 
   const other: Color = side === 'w' ? 'b' : 'w'
@@ -118,6 +102,8 @@ export function DemoBoard({ me, mode, onMode }: { me?: string; mode: DemoMode; o
     </div>
   )
   const war = mode === 'war'
+  const botName = BOTS.find((b) => b.level === bot)!.name
+  const skin = BOT_SET[bot]
   const picker = (
     <>
       <div className="demo-opp">
@@ -137,35 +123,21 @@ export function DemoBoard({ me, mode, onMode }: { me?: string; mode: DemoMode; o
         </RadioGroup.Root>
       </div>
       <div className="demo-opp">
-        <h3 id="demo-opp">{war ? t.home.opponents : t.home.opponent}</h3>
-        <RadioGroup.Root
-          aria-labelledby="demo-opp"
-          value={bot}
-          onValueChange={(b) => (war ? startWar(b as Bot) : start(side, b as Bot))}
-          className="demo-bots"
-        >
-          {BOTS.map((b, i) => (
-            <RadioGroup.Item key={b.level} value={b.level} className="demo-bot">
-              <span className="demo-bot-face" aria-hidden>
-                <img src={BOT_FACE[b.level]} alt="" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block font-semibold">{b.name}</span>
-                <span className="block truncate text-[13px] text-accent">{t.landing.botHints[b.level]}</span>
-              </span>
-              <span className="strength" aria-label={`${i + 1}/4`}>
-                {BOTS.map((_, j) => (
-                  <i key={j} data-on={j <= i} />
-                ))}
-              </span>
-            </RadioGroup.Item>
-          ))}
-        </RadioGroup.Root>
+        <h3>{war ? t.home.opponents : t.home.opponent}</h3>
+        <div className="demo-bot">
+          <span className="demo-bot-face" aria-hidden>
+            <img src={BOT_FACE[bot]} alt="" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-semibold">{war ? t.home.threeOf(botName) : botName}</span>
+            <span className="block text-[13px] text-accent">{t.landing.botHints[bot]}</span>
+          </span>
+        </div>
+        {!war && skin && <p className="mt-2 text-[13px] text-accent">{skinLine(skin, !!me, unlocked, t)}</p>}
       </div>
     </>
   )
-  const name = BOTS.find((b) => b.level === bot)!.name
-  const extra = { bot, name, picker }
+  const extra = { bot, name: botName, picker }
 
   if (war)
     return (
@@ -175,7 +147,7 @@ export function DemoBoard({ me, mode, onMode }: { me?: string; mode: DemoMode; o
         failed={failed}
         me={me}
         bot={bot}
-        name={name}
+        name={botName}
         picker={picker}
         onNew={() => startWar(bot)}
       />
@@ -252,7 +224,7 @@ function Live({
         predicting={!!shown}
         onMove={move}
         history={state.history}
-        status={over(state, you, t, extra.name)}
+        status={over(state, you, t, extra.name, !!me)}
         thinking={!!shown || (state.status === 'playing' && state.turn !== you)}
         actions={actions}
       />
@@ -266,12 +238,26 @@ function Live({
   )
 }
 
-function over(state: MatchState, you: Color, t: ReturnType<typeof useT>, bot: string) {
+function over(state: MatchState, you: Color, t: ReturnType<typeof useT>, bot: string, signedIn: boolean) {
   if (state.status !== 'over') return null
   if (state.result === '1/2-1/2') return t.home.drawn
   const won = (state.result === '1-0') === (you === 'w')
   if (won && state.unlocked) return `${t.home.youWon} ${t.home.unlockedSkin(t.pieces.sets[state.unlocked] ?? state.unlocked)}`
+  // A guest's win counts for nothing: say so, and how to make the next one count.
+  if (won && !signedIn) return `${t.home.youWon} ${t.home.guestWon}`
   return won ? t.home.youWon : t.home.youLost(bot.split(' ')[0])
+}
+
+/** What beating a bot that wears a set gets you: already yours, yours to win, or nothing until you log in. */
+export function skinLine(
+  set: string,
+  signedIn: boolean,
+  unlocked: ReadonlySet<string> | null,
+  t: ReturnType<typeof useT>,
+) {
+  const name = t.pieces.sets[set]
+  if (!signedIn) return t.landing.skinGuest(name)
+  return unlocked?.has(set) ? t.landing.skinWon(name) : t.landing.skinToWin(name)
 }
 
 function Frame({

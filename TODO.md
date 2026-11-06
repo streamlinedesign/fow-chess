@@ -20,7 +20,7 @@
 ## Later
 
 - Set `BETA_ENDS` in `/etc/<name>/env` when the beta closes, so cyberpunk stays with beta accounts only
-- Unlocks: a guest who beats a bot keeps nothing; decide whether to hold the win until they sign up. Replays and Watch don't draw a bot's set or tiles yet
+- Unlocks: replays and Watch don't draw a bot's set or tiles yet
 - 1.0: desktop app downloads. Set the `GAME_URL` repository variable (Actions > Variables), `make release`, then turn on `DOWNLOADS` in `web/src/features.ts`
 - 1.0: split the rules engine into its own Go repo (`streamlinedesign/chess-engine`) shared by the server and chess-bots
 - Desktop app: code signing (Apple Developer account, Windows certificate), a notification when it's your move, `eattheking://` game links, auto-update
@@ -42,7 +42,8 @@
 
 ## Done
 
-- 0.28.0: War Mode clocks of 30 minutes, 2 hours and a day; War Mode with friends by code
+- 0.29.0: War Mode clocks of 30 minutes, 2 hours and a day; War Mode with friends by code
+- 0.28.0: home page plays Solomon, other bots as cards below, Upcoming list; guests are told wins unlock nothing
 - 0.24.2: fog is Dusk only
 - 0.24.0: crisp board, Smoke and Dusk fog tinted by tile skin, live preview in settings
 - 0.19.0: stronger bots for both games; four-player bot levels that play Sync Move

@@ -87,6 +87,30 @@ func TestBeatingABotUnlocksItsTheme(t *testing.T) {
 		t.Errorf("a guest unlocked %q", st.Unlocked)
 	}
 	g.mu.Unlock()
+
+	// Not even by beating Solomon on the home page board, which a signed-in player is rewarded for.
+	demo := Settings{Demo: true, Bot: string(bots.Solomon)}
+	demo.normalize()
+	h := site.hub.CreateBetween(guest, botPlayer(bots.Solomon), demo)
+	h.handle(newClient(guest.key), inMsg{Type: "move", UCI: "e2e4"})
+	h.handle(newClient("bot:solomon"), inMsg{Type: "resign"})
+	h.mu.Lock()
+	if st := h.base(); st.Status != "over" || st.Unlocked != "" {
+		t.Errorf("a guest beating Solomon on the home page: %s, unlocked %q", st.Status, st.Unlocked)
+	}
+	h.mu.Unlock()
+	sd := Settings{Demo: true, Bot: string(bots.Solomon)}
+	sd.normalize()
+	d := site.hub.CreateBetween(me, botPlayer(bots.Solomon), sd)
+	dc := newClient(me.key)
+	d.join(dc, me)
+	d.handle(dc, inMsg{Type: "move", UCI: "e2e4"})
+	d.handle(newClient("bot:solomon"), inMsg{Type: "resign"})
+	d.mu.Lock()
+	if st := d.base(); st.Unlocked != "galaxy" {
+		t.Errorf("beating Solomon on the home page board unlocked %q", st.Unlocked)
+	}
+	d.mu.Unlock()
 }
 
 // Rex inutilis plays the classic pieces; holy, the set he used to wear, is

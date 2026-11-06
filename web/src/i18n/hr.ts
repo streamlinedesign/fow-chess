@@ -95,6 +95,7 @@ export const hr: Dict = {
     skinToWin: (set: string) => `Igra kompletom ${set.toLowerCase()}. Pobijedi ga i otključaj ga.`,
     skinWon: (set: string) => `${set}: otključano.`,
     noSkin: 'Igra klasičnim figurama. Nema što otključati.',
+    skinGuest: (set: string) => `Igra kompletom ${set.toLowerCase()}. Prijavi se, pa ga pobijedi i otključaj komplet.`,
     codePlaceholder: 'Zalijepi kod',
     codeLabel: 'Kod partije',
     join: 'Pridruži se',
@@ -141,6 +142,8 @@ export const hr: Dict = {
     demoTip: 'Klikni figuru da je pomakneš. Ništa se ne postavlja i ništa se ne sprema: ovo je zagrijavanje.',
     youWon: 'Uzeo si kralja.',
     unlockedSkin: (set: string) => `Otključane figure i polja: ${set}.`,
+    guestWon: 'Gosti ne zadržavaju ništa što osvoje: prijavi se da otključaš komplete.',
+    threeOf: (name: string) => `${name} × 3`,
     youLost: (bot) => `${bot} ti je uzeo kralja.`,
     drawn: 'Remi.',
     noGames: 'Nema partija u tijeku. Pritisni Igraj za novu.',
@@ -257,6 +260,18 @@ export const hr: Dict = {
   },
 
   about: {
+    plansHeading: 'Uskoro',
+    plansSub: (date) => `Stiže s punim izdanjem, ${date}.`,
+    plans: [
+      'Pravila obje igre još se mogu mijenjati',
+      'Ručno crtane figure i skinovi',
+      'Aplikacije za Windows, Linux, Mac, iOS i Android',
+      'Zaseban pogon igre za vlastiti poslužitelj',
+      'Više skinova',
+      'Turniri',
+      'Više modova',
+      'Sigurnost i borba protiv varanja',
+    ],
     title: 'O igri',
     paras: [
       'Eat the King je izvorna igra: šah u magli rata. Vidiš samo polja do kojih tvoje figure dosežu, nema šaha, a pobjeđuješ kad uzmeš kralja. Uvijek počinje iz uobičajenog položaja. Ratni način je druga službena igra: četiri igrača na ploči u obliku križa, potapanje brodova i pješaci lakrdijaši, na red, u magli rata.',
@@ -524,18 +539,6 @@ export const hr: Dict = {
     warSub: 'Četiri igrača, svatko za sebe. Rangira se po vlastitom rejtingu.',
     modsNote:
       'Sve ostalo, od šah-mata do Kralja brda, je mod. Svaki je objašnjen tamo gdje ga biraš, na stranici Modovi.',
-    plansHeading: 'Planovi za v1.0',
-    plansSub: (date) => `Puno izdanje, ${date}.`,
-    plans: [
-      ['Pravila se mogu mijenjati', 'Pravila obje igre još se mogu mijenjati tijekom bete.'],
-      ['Ručno crtane figure i skinovi', 'Svaki set i polja nacrtani rukom.'],
-      ['Aplikacije', 'Posebne aplikacije za Windows, Linux, Mac, iOS i Android.'],
-      ['Vlastiti poslužitelj', 'Pogon igre kao zaseban projekt, da možeš sam pokrenuti poslužitelj.'],
-      ['Više skinova', 'Novi setovi i polja za otključavanje.'],
-      ['Turniri', 'Arene i događaji s vlastitim poretkom.'],
-      ['Više modova', 'Više opcija na stranici Modovi.'],
-      ['Sigurnost i borba protiv varanja', 'Jači poslužitelj i hvatanje igrača kojima netko pomaže.'],
-    ],
     cards: {
       fog: {
         kind: 'Što vidiš',
