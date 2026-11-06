@@ -2,7 +2,7 @@ import * as RadioGroup from '@radix-ui/react-radio-group'
 import { useEffect, useState } from 'react'
 import { Avatar, Who } from './Avatar'
 import { useMe } from './auth'
-import { DemoBoard, savedDemoMode, type DemoMode } from './DemoBoard'
+import { DEMO_BOT, DemoBoard, savedDemoMode, skinLine, type DemoMode } from './DemoBoard'
 import { DOWNLOADS, TOURNAMENTS, releaseDate } from './features'
 import { BUILDS, detectOS, downloadUrl, OS_NAME } from './desktop'
 import { DownloadIcon } from './DownloadPage'
@@ -43,8 +43,8 @@ const isLong = (t: TimeControl) => !SHORT_GROUPS.includes(timeGroup(t))
 
 /**
  * The home page is one big board, full width, its cells split by hairlines:
- * a game you can play at once against a bot (Solomon by default) next to the
- * play menu, what the game is, then what's going on around you. Every game started here is ranked when both
+ * a game you can play at once against Solomon next to the play menu, what the
+ * game is and what's coming, then what's going on around you, and the other bots. Every game started here is ranked when both
  * players are signed in; Mods have their own page and are never ranked.
  */
 export function Landing() {
@@ -88,6 +88,8 @@ export function Landing() {
 
       <About />
 
+      <Upcoming />
+
       <div className={`home-row home-r1 ${TOURNAMENTS ? '' : 'two'}`}>
         <div className="home-cell cross">{me ? <YourGames username={me.username} /> : <GuestPitch />}</div>
         {TOURNAMENTS && (
@@ -100,7 +102,7 @@ export function Landing() {
 
       {DOWNLOADS && <AppStrip />}
 
-      <Bots settings={settings} />
+      <Bots settings={settings} signedIn={!!me} />
 
       <div className="home-row home-r3">
         <div className="home-cell">
@@ -289,8 +291,11 @@ async function playBot(settings: Settings, bot: Bot) {
   navigate(`/m/${id}`)
 }
 
-/** The computer opponents, a row of cells. They play with the mode and clock set above. */
-function Bots({ settings }: { settings: Settings }) {
+/**
+ * The other bots, a row of cells: Solomon plays on the board at the top, the
+ * rest are here. Each opens a new game with the mode and clock set above.
+ */
+function Bots({ settings, signedIn }: { settings: Settings; signedIn: boolean }) {
   const t = useT()
   const unlocked = useUnlocked()
   const [starting, setStarting] = useState<Bot | null>(null)
@@ -303,45 +308,44 @@ function Bots({ settings }: { settings: Settings }) {
       setStarting(null)
     })
   }
+  const rest = BOTS.filter((b) => b.level !== DEMO_BOT)
   return (
-    <div className="home-row home-bots">
-      {BOTS.map((b, i) => (
-        <div key={b.level} className={`home-cell home-bot ${i < 3 ? 'cross' : ''}`}>
-          <span className="home-bot-top">
-            <span className="home-bot-face" aria-hidden>
-              <img src={BOT_FACE[b.level]} alt="" />
+    <div className="home-row home-bots three">
+      {rest.map((b, i) => {
+        const strength = BOTS.indexOf(b)
+        const set = BOT_SET[b.level]
+        return (
+          <div key={b.level} className={`home-cell home-bot ${i < rest.length - 1 ? 'cross' : ''}`}>
+            <span className="home-bot-top">
+              <span className="home-bot-face" aria-hidden>
+                <img src={BOT_FACE[b.level]} alt="" />
+              </span>
+              <span className="strength" aria-label={`${strength + 1}/${BOTS.length}`}>
+                {BOTS.map((_, j) => (
+                  <i key={j} data-on={j <= strength} />
+                ))}
+              </span>
             </span>
-            <span className="strength" aria-label={`${i + 1}/4`}>
-              {BOTS.map((_, j) => (
-                <i key={j} data-on={j <= i} />
-              ))}
-            </span>
-          </span>
-          <h3>{b.name}</h3>
-          <p className="text-sm text-accent">{t.landing.botHints[b.level]}</p>
-          <p className="home-bot-skin text-sm">
-            {(() => {
-              const set = BOT_SET[b.level]
-              if (!set) return t.landing.noSkin
-              return unlocked?.has(set) ? t.landing.skinWon(t.pieces.sets[set]) : t.landing.skinToWin(t.pieces.sets[set])
-            })()}
-          </p>
-          <Button
-            variant={b.level === 'solomon' ? 'solid' : 'outline'}
-            className="home-bot-play h-10 px-4"
-            onClick={() => start(b.level)}
-            loading={starting === b.level}
-            disabled={starting !== null}
-          >
-            {t.home.playBot(b.name.split(' ')[0])}
-          </Button>
-          {error && starting === null && i === 0 && (
-            <p role="alert" className="text-sm text-danger">
-              {error}
-            </p>
-          )}
-        </div>
-      ))}
+            <h3>{b.name}</h3>
+            <p className="text-sm text-accent">{t.landing.botHints[b.level]}</p>
+            <p className="home-bot-skin text-sm">{set ? skinLine(set, signedIn, unlocked, t) : t.landing.noSkin}</p>
+            <Button
+              variant="outline"
+              className="home-bot-play h-10 px-4"
+              onClick={() => start(b.level)}
+              loading={starting === b.level}
+              disabled={starting !== null}
+            >
+              {t.home.playBot(b.name.split(' ')[0])}
+            </Button>
+            {error && starting === null && i === 0 && (
+              <p role="alert" className="text-sm text-danger">
+                {error}
+              </p>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -825,6 +829,29 @@ function About() {
             </div>
           ))}
         </dl>
+      </div>
+    </section>
+  )
+}
+
+/** Upcoming: what's coming with 1.0, one short line each. */
+function Upcoming() {
+  const t = useT()
+  return (
+    <section className="home-row" aria-labelledby="upcoming-title">
+      <div className="home-cell">
+        <h2 id="upcoming-title" className="text-[22px] font-semibold tracking-tight">
+          {t.about.plansHeading}
+        </h2>
+        <p className="mt-1 text-[13px] text-accent">{t.about.plansSub(releaseDate(t.locale))}</p>
+        <ol className="plans">
+          {t.about.plans.map((p, i) => (
+            <li key={p}>
+              <span className="plans-n">{String(i + 1).padStart(2, '0')}</span>
+              {p}
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   )

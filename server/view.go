@@ -43,8 +43,8 @@ type Settings struct {
 	Bot string `json:"bot,omitempty"`
 	// Tournament is the arena this game is part of, if any.
 	Tournament int64 `json:"tournament,omitempty"`
-	// Demo is the home page's warm-up game against a bot (Solomon unless the
-	// player picks another): no clock, kept only in memory, never listed or ranked.
+	// Demo is the home page's warm-up game against a bot (Solomon from the home
+	// page): no clock, kept only in memory, never listed or ranked.
 	Demo bool `json:"demo,omitempty"`
 }
 

@@ -23,8 +23,8 @@ type Props = {
 }
 
 /**
- * War Mode on the home page board: you as Red against three copies of the
- * bot you pick, on the extended board with Battleship and jester pawns,
+ * War Mode on the home page board: you as Red against three copies of
+ * Solomon, on the extended board with Battleship and jester pawns,
  * taking turns. It opens on your setup; the bots have placed theirs already.
  */
 export function WarDemo(props: Props) {

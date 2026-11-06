@@ -4,6 +4,8 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Home page: the board always plays Solomon (or three of him in War Mode); the opponent picker is gone. Rex, Vercingetorix and Ramesses II have their own cards at the bottom, each opening a new game on the clock picked above. The v1.0 plans list is called Upcoming.
+- Guests are told that wins unlock nothing until they log in: the bot cards and Solomon's line say "Log in, then beat it to unlock the set", and a guest's win on the home page board says so. Signed-in players still unlock galaxy by beating Solomon on the home page board, as before.
 - Rex inutilis is a basic bot: he plays the classic pieces and beating him unlocks nothing. Holy, the set he wore, now unlocks on reaching a 2000 rating in either Eat the King or War Mode, and stays once reached (`rating:2000` in `unlocks`). Players who already beat Rex keep holy (migration 012).
 - War Mode is back on the four-player cross (three rows each, the four middle squares give full vision); the extended board is a mod again. Ranked games, the home page board and the rules page all follow.
 - The home page War Mode board works in turns: your move shows at once, the line under the board says whose move it is, and the bots show as thinking while they play. A player knocked out there keeps seeing the board live instead of jumping a few moves back. The move list keeps each player's moves in their own column when someone is out.
@@ -15,7 +17,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 - A crisper board: a double rule frame, square corners, slightly brighter squares, an outlined last move, darker move dots, corner wedges for captures and a small shadow under pieces.
 - Settings has a live preview beside every setting (inside Pieces on narrower screens): a full board in both your sets on your tiles, with Swap sides and a Fog button to see your fog style.
 - Tap an enemy piece you can see to see where it could move, in both games. The server works it out from the board as you see it (hidden squares count as empty, no castling or en passant), so it tells you nothing new. New `reach` field in the game state.
-- The rules page has "Plans for v1.0" (rules may change, hand-drawn pieces and skins, apps for Windows, Linux, Mac, iOS and Android, self-hosting, more skins, tournaments, more mods, security and anti-cheat) in place of the Opera Game replay, which is gone along with its data and test.
+- The home page lists what's coming in "Upcoming", under About the game: rules may change, hand-drawn pieces and skins, apps for Windows, Linux, Mac, iOS and Android, a separate engine for self-hosting, more skins, tournaments, more mods, security and anti-cheat. The Opera Game replay is gone from the rules page, along with its data and test.
 - War Mode's Play button is solid, like Eat the King's.
 - War Mode rules: the Battleship setup card says you can tap or drag.
 - Holy pieces: the halo and its rays fit inside the piece, so the queen's, king's and prince's halos are no longer cut off at the top. Cyberpunk king, queen and prince have no star.
