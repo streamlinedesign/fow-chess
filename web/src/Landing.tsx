@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Avatar, Who } from './Avatar'
 import { useMe } from './auth'
 import { DemoBoard } from './DemoBoard'
+import { TOURNAMENTS } from './features'
 import { useT } from './i18n'
 import { Icon } from './icons'
 import { Leaderboard } from './Leaderboard'
@@ -74,11 +75,13 @@ export function Landing() {
 
       <About />
 
-      <div className="home-row home-r1">
+      <div className={`home-row home-r1 ${TOURNAMENTS ? '' : 'two'}`}>
         <div className="home-cell cross">{me ? <YourGames username={me.username} /> : <GuestPitch />}</div>
-        <div className="home-cell cross">
-          <NextArena />
-        </div>
+        {TOURNAMENTS && (
+          <div className="home-cell cross">
+            <NextArena />
+          </div>
+        )}
         <div className="home-cell">{me ? <FriendsOnline /> : <WatchTeaser />}</div>
       </div>
 

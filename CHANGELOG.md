@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Tournaments are hidden for now: no links in the header, the menu or the home page, and /tournaments shows not found. Switch them back on with `TOURNAMENTS` in `web/src/features.ts`.
 - Ranked four-player games are played with jester pawns, rules and pieces.
 - Ranked four-player games: one fixed game (extended board, Battleship, Sync Move, no fog, 10 minutes each), found from the home page in a queue of four by rating. It has its own Glicko-2 rating and its own leaderboard tab; each game counts as a result against each of the other three by finishing order. Players have two minutes to place their pieces, then get a bot's arrangement.
 - Four players, extended board: pawns promote past the middle, as on the cross (the ninth rank from their side on), or on the side walls where the players beside them sit.

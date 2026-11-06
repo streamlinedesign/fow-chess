@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { logout, useMe } from './auth'
 import { Avatar } from './Avatar'
 import { Bell } from './Bell'
+import { TOURNAMENTS } from './features'
 import { LANGS, setLang, useLang, useT } from './i18n'
 import { Icon } from './icons'
 import { useCounts } from './live'
@@ -72,13 +73,15 @@ export function Header() {
             >
               {t.landing.howToPlay}
             </a>
-            <a
-              href="/tournaments"
-              onClick={(e) => go(e, '/tournaments')}
-              className="flex h-9 items-center rounded-md px-3 text-sm font-semibold transition-colors hover:bg-muted max-sm:hidden"
-            >
-              {t.common.tournaments}
-            </a>
+            {TOURNAMENTS && (
+              <a
+                href="/tournaments"
+                onClick={(e) => go(e, '/tournaments')}
+                className="flex h-9 items-center rounded-md px-3 text-sm font-semibold transition-colors hover:bg-muted max-sm:hidden"
+              >
+                {t.common.tournaments}
+              </a>
+            )}
             <a
               href="/watch"
               onClick={(e) => go(e, '/watch')}
@@ -225,10 +228,12 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
         <Icon name="book" />
         {t.landing.howToPlay}
       </MenuItem>
-      <MenuItem onSelect={() => navigate('/tournaments')}>
-        <Icon name="swords" />
-        {t.common.tournaments}
-      </MenuItem>
+      {TOURNAMENTS && (
+        <MenuItem onSelect={() => navigate('/tournaments')}>
+          <Icon name="swords" />
+          {t.common.tournaments}
+        </MenuItem>
+      )}
       <MenuItem onSelect={() => navigate('/mods')}>
         <Icon name="gear" />
         {t.common.mods}

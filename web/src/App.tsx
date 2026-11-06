@@ -19,6 +19,7 @@ import { ReplayPage } from './ReplayPage'
 import { RulesPage } from './RulesPage'
 import { ModsPage } from './ModsPage'
 import { TournamentsPage } from './TournamentsPage'
+import { TOURNAMENTS } from './features'
 import { navigate, usePath } from './router'
 import { WatchPage } from './WatchPage'
 import { SettingsPage } from './SettingsPage'
@@ -76,7 +77,7 @@ export function App() {
     <RulesPage />
   ) : path === '/mods' ? (
     <ModsPage />
-  ) : path === '/tournaments' ? (
+  ) : TOURNAMENTS && path === '/tournaments' ? (
     <TournamentsPage />
   ) : path === '/' ? (
     <Landing />

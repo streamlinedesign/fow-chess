@@ -1,0 +1,4 @@
+/** Parts of the site that are built but switched off for now. */
+
+/** Tournaments (arenas): hidden from the header, the menu and the home page, and /tournaments is a 404. The server still runs them. */
+export const TOURNAMENTS = false
