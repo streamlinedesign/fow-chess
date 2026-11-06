@@ -21,8 +21,6 @@ import {
   NO_CLOCK,
   sameTime,
   saveSettings,
-  SETUPS,
-  setupMode,
   TIME_GROUPS,
   timeGroup,
   timeLabel,
@@ -96,7 +94,7 @@ export function Landing() {
   )
 }
 
-/** Matchmaking: game length, clock and mode, then one big Play. */
+/** Eat the King matchmaking: game length and clock, then one big Play. Always the usual start; layouts are mods. */
 function PlayMenu({
   settings,
   onChange,
@@ -128,13 +126,12 @@ function PlayMenu({
     set({ ...settings, time })
   }
   const clocks = presets(long)
-  const layout = t.setups[setupMode(settings).value].label
-  const summary = [describeTime(settings.time, t), t.home.layoutIs(layout), signedIn ? t.home.ranked : t.home.guestNote]
+  const summary = [describeTime(settings.time, t), t.home.etkAbout, signedIn ? t.home.ranked : t.home.guestNote]
 
   return (
     <section>
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-[22px] font-semibold tracking-tight">{t.home.findOpponent}</h2>
+        <h2 className="text-[22px] font-semibold tracking-tight">{t.home.etkTitle}</h2>
       </div>
       <div className="mt-4 flex flex-col gap-3.5">
         <RadioGroup.Root
@@ -166,29 +163,6 @@ function PlayMenu({
             </RadioGroup.Item>
           ))}
         </RadioGroup.Root>
-
-        <div>
-          <div id="home-mode" className="mb-2 text-sm font-semibold">
-            {t.home.layout}
-          </div>
-          <RadioGroup.Root
-            aria-labelledby="home-mode"
-            value={setupMode(settings).value || 'standard'}
-            onValueChange={(v) =>
-              set({
-                ...settings,
-                setup: v === 'standard' ? '' : (v as Settings['setup']),
-              })
-            }
-            className="seg"
-          >
-            {SETUPS.map((m) => (
-              <RadioGroup.Item key={m.value} value={m.value || 'standard'} title={t.setups[m.value].hint}>
-                {t.setups[m.value].label}
-              </RadioGroup.Item>
-            ))}
-          </RadioGroup.Root>
-        </div>
 
         <FindMatch settings={settings} signedIn={signedIn} busy={busy} summary={summary} />
       </div>
@@ -476,8 +450,8 @@ function FindMatch({
 }
 
 /**
- * The ranked four-player game: one fixed game (extended board, Battleship,
- * Sync Move, no fog), found in its own queue of four.
+ * War Mode, the ranked four-player game: one fixed game (extended board,
+ * Battleship, Sync Move, jester pawns, no fog), found in its own queue of four.
  */
 function FindFour({ signedIn }: { signedIn: boolean }) {
   const t = useT()

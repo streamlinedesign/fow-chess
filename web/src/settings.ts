@@ -194,6 +194,7 @@ export function loadSettings(mods = false): Settings {
       delete saved.hill
       delete saved.sync
       delete saved.fourBoard
+      saved.setup = ''
       saved.centerVision = 'any'
       delete saved.mods
       delete saved.bot
