@@ -143,7 +143,7 @@ export const en = {
     noGames: 'Nothing in progress. Press Play to start a game.',
     noArena: 'No arena coming up right now.',
     fourTitle: 'War Mode',
-    fourAbout: 'Four players · Extended board · Battleship · Sync Move · Jester pawns · Fog of war',
+    fourAbout: 'Four players · Extended board · Battleship · Jester pawns · Fog of war',
     fourRanked: 'Ranked on a War Mode rating of its own. 30 minutes each, plus 10 seconds a move.',
     official: 'Official',
     yourRating: 'your rating',
@@ -159,7 +159,7 @@ export const en = {
     opponents: 'Opponents',
     threeBots: (bot: string) => `${bot} ×3`,
     demoBots: 'Three demo bots',
-    warTip: 'Place your pieces in your four rows, then everyone moves at once. No clock, and nothing is saved.',
+    warTip: 'Place your pieces in your four rows, then take turns with the bots. No clock, and nothing is saved.',
     placing: 'Place your pieces',
   },
 
@@ -168,7 +168,7 @@ export const en = {
     original: 'Eat the King',
     originalAbout: 'The original. Two players in the fog of war, no check, capture the king to win.',
     war: 'War Mode',
-    warAbout: 'Four players, everyone moves at once, in the fog, and pawns are jesters. Last king standing wins.',
+    warAbout: 'Four players taking turns in the fog, and pawns are jesters. Last king standing wins.',
     modded: 'Modded',
     moddedAbout: 'Every switch: fog, checkmate, King of the Hill, Sync Move, any clock, two or four players.',
     place: (rank: number, of: number) => {
@@ -251,7 +251,7 @@ export const en = {
   about: {
     title: 'About the game',
     paras: [
-      'Eat the King is the original game: chess in the fog of war. You see only the squares your pieces can reach, there is no check, and you win by capturing the king. It always starts from the usual position. War Mode is the second official game: four players in the fog on the extended board, with Battleship, Sync Move and jester pawns.',
+      'Eat the King is the original game: chess in the fog of war. You see only the squares your pieces can reach, there is no check, and you win by capturing the king. It always starts from the usual position. War Mode is the second official game: four players in the fog on the extended board, with Battleship and jester pawns, taking turns.',
       'Everything else is a mod. Mods turn one dial at a time: lift the fog, play to checkmate, set your pieces up in secret, race to the hill, or try other four-player games. Mods games are never ranked.',
     ],
     inspired: 'Inspired by',
@@ -588,12 +588,12 @@ export const en = {
           'You have **two minutes**. Whoever isn’t ready by then gets a bot’s arrangement. A king can start in danger.',
         ],
       },
-      warSync: {
+      warTurns: {
         kind: 'How a round goes',
-        title: 'Sync Move',
+        title: 'Taking turns',
         p: [
-          '**Everyone moves at once.** Each round you pick a move, and the moves happen together once all four are in.',
-          '**Captures come last**, so a piece that moves away in the same round dodges the capture.',
+          '**One move at a time**, clockwise: Red, Blue, Green, then Violet. Only the player to move has their clock running.',
+          'A player who is out is skipped. Sync Move, where everyone moves at once, is a mod on the Mods page.',
         ],
       },
       warJester: {

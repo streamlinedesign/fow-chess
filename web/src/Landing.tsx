@@ -485,7 +485,7 @@ export function FindMatch({
 
 /**
  * War Mode, the ranked four-player game: one fixed game (extended board,
- * Battleship, Sync Move, jester pawns, fog of war), found in its own queue of four.
+ * Battleship, jester pawns, fog of war, taking turns), found in its own queue of four.
  */
 export function FindFour({
   signedIn,

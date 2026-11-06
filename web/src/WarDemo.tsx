@@ -24,8 +24,8 @@ type Props = {
 
 /**
  * War Mode on the home page board: you as Red against three copies of the
- * bot you pick, on the extended board with Battleship, Sync Move and jester
- * pawns. It opens on your setup; the bots have placed theirs already.
+ * bot you pick, on the extended board with Battleship and jester pawns,
+ * taking turns. It opens on your setup; the bots have placed theirs already.
  */
 export function WarDemo(props: Props) {
   return props.id ? <Live {...props} id={props.id} /> : <Table {...props} state={null} />

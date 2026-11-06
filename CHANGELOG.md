@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- War Mode takes turns again, Red, Blue, Green, Violet, in place of Sync Move: ranked games, the home page board against three bots, and the rules page. Sync Move stays a mod (Mods, Four players), and works with the extended board and Battleship there. Games already going keep the rules they started with.
 - Fog is Dusk only: hidden squares stay under a dark veil tinted by their tile skin. Smoke and the fog setting are gone; the settings preview's Fog button still shows it.
 - Four-player bots in the fog weigh their king's exposure less (0.5 pawns a way in, was 1.5): as strong, and bot-only games end far more often. The test of bots playing on after a player resigns no longer needs the game to end, only 400 moves, so it stops failing CI now and then. Bots in a four-player game stop moving once no person is left in it and nobody is watching, so a game of bots alone no longer runs on the server for good; anyone who opens it starts them again.
 - Fog has two looks, picked in Settings: Smoke (the default), one soft cloud with grain over what you can't see, and Dusk, a dark veil that keeps each hidden square's colour and tile. Both take the colour of the tile skin underneath. Vision squares and the hill stay ringed above the fog. The fog style is kept with your preferences (`fog` in `/api/prefs`) and only shows on your screen.

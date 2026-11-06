@@ -140,12 +140,16 @@ export function WarRules() {
       <Card id="warBoard" art={<FourSeats />} />
       <Card id="warSetup" art={<MiniBoard fen="8/8/8/8/1P2N2P/P1R2Q1P/1PB1PPB1/P1RK1N2" seen={rows(4)} />} />
       <Card
-        id="warSync"
+        id="warTurns"
         art={
           <div className="grid grid-cols-2 gap-1.5" aria-hidden>
-            {Object.values(SEAT_COLORS).map((c) => (
-              <span key={c} className="grid size-12 place-items-center rounded-md text-xl text-white" style={{ background: c }}>
-                ✓
+            {(['r', 'b', 'v', 'g'] as const).map((s) => (
+              <span
+                key={s}
+                className="grid size-12 place-items-center rounded-md text-xl text-white"
+                style={{ background: SEAT_COLORS[s] }}
+              >
+                {'rbgv'.indexOf(s) + 1}
               </span>
             ))}
           </div>
