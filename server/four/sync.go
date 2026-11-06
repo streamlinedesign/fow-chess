@@ -131,10 +131,16 @@ func (g *Game) PlayRound(ucis [4]string) ([]Event, error) {
 	g.pos = p
 	g.history = append(g.history, events...)
 
+	stamped := false
 	for _, pc := range lost {
 		if pc.Kind() == King && !g.pos.Out[pc.Color()] {
+			if !stamped {
+				g.outs++
+				stamped = true
+			}
 			g.pos.Eliminate(pc.Color())
 			g.fell[pc.Color()] = KingCaptured
+			g.outAt[pc.Color()] = g.outs
 		}
 	}
 	if g.pos.HillOn() {

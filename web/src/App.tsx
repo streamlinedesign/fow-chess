@@ -51,6 +51,7 @@ export function App() {
       )
     // Find match or an arena paired you: go to the game, wherever you are.
     if (e.type === 'match' && e.matchId) navigate(`/m/${e.matchId}`)
+    if (e.type === 'four' && e.matchId) navigate(`/f/${e.matchId}`)
   })
 
   const page = match ? (

@@ -366,6 +366,16 @@ function Seats({ state, you, toMove }: { state: FourState | null; you: Seat | nu
             </span>
             {s === you && <span className="text-accent">{t.match.youTag}</span>}
             {p.bot && <span className="text-accent">{t.four.bot}</span>}
+            {!!p.rating && (
+              <span className="font-mono text-sm text-accent tabular-nums">
+                {p.rating}
+                {p.ratingDiff !== undefined && (
+                  <b className="ml-1 font-semibold text-fg">
+                    {p.ratingDiff >= 0 ? `+${p.ratingDiff}` : `−${-p.ratingDiff}`}
+                  </b>
+                )}
+              </span>
+            )}
             <span className="ml-auto flex min-w-0 items-center gap-2">
               {p.out ? (
                 <span className="text-sm text-accent">{t.four.outBy[p.out] ?? t.four.out}</span>

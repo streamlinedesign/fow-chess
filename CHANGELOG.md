@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Ranked four-player games: one fixed game (extended board, Battleship, Sync Move, no fog, 10 minutes each), found from the home page in a queue of four by rating. It has its own Glicko-2 rating and its own leaderboard tab; each game counts as a result against each of the other three by finishing order. Players have two minutes to place their pieces, then get a bot's arrangement.
 - Four players, extended board: pawns promote past the middle, as on the cross (the ninth rank from their side on), or on the side walls where the players beside them sit.
 - Four players, extended board: pawns promote on any edge but their own side (the side edges count past your own rows), not just the far edge. Fixed the board jumping while a move was being sent on the extended board.
 - Security: a guest ID can no longer name a signed-in player's or a bot's seat, which let anyone play, resign or see the fog view of any signed-in player's game. Rate limits now count the real address behind Caddy, so a few wrong passwords no longer lock everyone out of signing in. New limits per address on sign-ups, new matches and match codes that don't exist; bug reports count per address whatever browser ID they send.

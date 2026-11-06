@@ -52,6 +52,9 @@ type Profile = {
   hideOnline?: boolean
   stats: Record
   rank?: number
+  /** The ranked four-player rating and place, once they've played one. */
+  fourRating?: number
+  fourRank?: number
   current: GameSummary[]
   finished: GameSummary[]
   // For a signed-in visitor.
@@ -154,6 +157,15 @@ export function ProfilePage({ name }: { name: string }) {
                 {t.profile.ratingLabel}
                 {profile.rank ? ` · ${t.profile.onBoard(profile.rank)}` : ''}
               </span>
+              {profile.fourRating !== undefined && (
+                <>
+                  <span className="font-mono text-2xl tabular-nums">{profile.fourRating}</span>
+                  <span className="text-[13px] text-accent">
+                    {t.profile.fourRatingLabel}
+                    {profile.fourRank ? ` · ${t.profile.onBoard(profile.fourRank)}` : ''}
+                  </span>
+                </>
+              )}
             </div>
             <div className="mt-2.5 flex flex-wrap gap-4 text-[13.5px] text-accent">
               {status && (

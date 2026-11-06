@@ -38,7 +38,18 @@ type fourSettings struct {
 	// Board is "" for the usual cross, or "extended" for the 16 by 16 board
 	// with four rows each and neutral corners. It has no hill.
 	Board string `json:"board,omitempty"`
+	// Rated is a ranked game: only the four-player queue starts one, always
+	// with rankedFour's settings.
+	Rated bool `json:"rated,omitempty"`
 }
+
+// rankedFour is the one ranked four-player game: the extended board,
+// Battleship, Sync Move and no fog, ten minutes each.
+var rankedFour = fourSettings{Board: "extended", Setup: "battleship", Sync: true, Time: TimeControl{Base: 600}, Rated: true}
+
+// fourArrangeTime is how long players of a ranked game have to place their
+// pieces; anyone still arranging then gets a bot's arrangement.
+const fourArrangeTime = 2 * time.Minute
 
 var fourShapes = map[string]four.Shape{"": four.Cross, "extended": four.Extended}
 
@@ -115,6 +126,33 @@ func (h *FourHub) Create(creator *player, settings fourSettings) *FourMatch {
 	}
 }
 
+// CreateRanked starts a ranked game for four players from the queue, seated
+// in the order given, with their four-player ratings as they start.
+func (h *FourHub) CreateRanked(ps [4]*player, ratings [4]int) *FourMatch {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	for {
+		id := newID(6)
+		if _, taken := h.matches[id]; taken {
+			continue
+		}
+		if rec, _ := h.load(id); rec != nil {
+			continue
+		}
+		now := time.Now()
+		m := &FourMatch{hub: h, id: id, settings: rankedFour, game: four.NewGame(rankedFour.rules()),
+			clients: map[*client]struct{}{}, created: now, touched: now, ratings: ratings}
+		m.resetClock()
+		for c, p := range ps {
+			m.seat(four.Color(c), p)
+		}
+		m.armArrange()
+		m.save()
+		h.matches[id] = m
+		return m
+	}
+}
+
 // Get returns a match from memory or the database; nil if there's none.
 func (h *FourHub) Get(id string) *FourMatch {
 	h.mu.Lock()
@@ -169,6 +207,8 @@ type fourRecord struct {
 	TurnStart time.Time
 	Created   time.Time
 	Updated   time.Time
+	// RatingDiff is how a ranked game moved each seat's rating, once rated.
+	RatingDiff *[4]int
 	// done, when set, makes this record a marker that is closed once every
 	// write before it is done; see flush.
 	done chan struct{}
@@ -235,9 +275,10 @@ func (h *FourHub) load(id string) (*fourRecord, error) {
 	var r fourRecord
 	var settings, seats, names, users, clock, start string
 	var turnStart sql.NullTime
-	err := h.db.QueryRow(`SELECT match_id, settings, seats, users, names, moves, result, reason, clock_ms, turn_started_at, created_at, updated_at, start
+	var diff sql.NullString
+	err := h.db.QueryRow(`SELECT match_id, settings, seats, users, names, moves, result, reason, clock_ms, turn_started_at, created_at, updated_at, start, rating_diff
 		FROM four_games WHERE match_id = $1`, id).
-		Scan(&r.ID, &settings, &seats, &users, &names, &r.Moves, &r.Result, &r.Reason, &clock, &turnStart, &r.Created, &r.Updated, &start)
+		Scan(&r.ID, &settings, &seats, &users, &names, &r.Moves, &r.Result, &r.Reason, &clock, &turnStart, &r.Created, &r.Updated, &start, &diff)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -249,6 +290,10 @@ func (h *FourHub) load(id string) (*fourRecord, error) {
 	json.Unmarshal([]byte(names), &r.Names)
 	json.Unmarshal([]byte(users), &r.Users)
 	json.Unmarshal([]byte(start), &r.Start)
+	if diff.Valid {
+		r.RatingDiff = new([4]int)
+		json.Unmarshal([]byte(diff.String), r.RatingDiff)
+	}
 	var ms [4]int64
 	json.Unmarshal([]byte(clock), &ms)
 	for i, n := range ms {
@@ -263,7 +308,8 @@ func (h *FourHub) load(id string) (*fourRecord, error) {
 func restoreFour(h *FourHub, r *fourRecord) (*FourMatch, error) {
 	m := &FourMatch{hub: h, id: r.ID, settings: r.Settings, game: four.NewGame(r.Settings.rules()),
 		clients: map[*client]struct{}{}, created: r.Created, touched: time.Now(),
-		seats: r.Seats, users: r.Users, names: r.Names, clock: r.Clock, turnStart: r.TurnStart, start: r.Start}
+		seats: r.Seats, users: r.Users, names: r.Names, clock: r.Clock, turnStart: r.TurnStart, start: r.Start,
+		ratingDiff: r.RatingDiff}
 	for i, key := range r.Seats {
 		m.bots[i] = strings.HasPrefix(key, "bot:")
 	}
@@ -284,6 +330,13 @@ func restoreFour(h *FourHub, r *fourRecord) (*FourMatch, error) {
 	}
 	if m.game.Over() {
 		m.turnStart = time.Time{}
+	}
+	if m.settings.Rated {
+		m.ratings = h.fourRatings(m.users)
+		m.mu.Lock()
+		m.armArrange()
+		m.rate()
+		m.mu.Unlock()
 	}
 	if m.running() {
 		m.mu.Lock()
@@ -329,6 +382,12 @@ type FourMatch struct {
 	// "w" or "b", picked at random the first time. Kept only in memory.
 	skins [4]*skin
 	half  [4]string
+	// ratings are the players' four-player ratings in a ranked game, and
+	// ratingDiff how the game moved them, once it's over and rated.
+	ratings    [4]int
+	ratingDiff *[4]int
+	rating     bool // a rating update is under way
+	arrange    *time.Timer
 }
 
 func (m *FourMatch) seat(c four.Color, p *player) {
@@ -360,11 +419,62 @@ func (m *FourMatch) online(c int) bool {
 	return false
 }
 
-// save queues the match for the database. Callers hold m.mu.
+// save queues the match for the database, and rates a ranked game that has
+// just ended. Callers hold m.mu.
 func (m *FourMatch) save() {
 	m.hub.writes <- fourRecord{ID: m.id, Settings: m.settings, Seats: m.seats, Users: m.users, Names: m.names,
 		Moves: m.game.Tokens(), Result: m.game.Result(), Reason: m.game.Method().String(), Start: m.start,
 		Clock: m.clock, TurnStart: m.turnStart, Created: m.created, Updated: time.Now()}
+	m.rate()
+}
+
+// rate updates the players' four-player ratings once a ranked game is over,
+// after the result is saved. Callers hold m.mu.
+func (m *FourMatch) rate() {
+	if !m.settings.Rated || !m.game.Over() || m.ratingDiff != nil || m.rating || m.hub.db == nil {
+		return
+	}
+	m.rating = true
+	users, places := m.users, m.game.Places()
+	go func() {
+		m.hub.flush()
+		diff, err := m.hub.rateFour(m.id, users, places)
+		m.mu.Lock()
+		defer m.mu.Unlock()
+		m.rating = false
+		if err != nil {
+			log.Printf("rating four-player game %s: %v", m.id, err)
+			return
+		}
+		if diff != nil {
+			m.ratingDiff = diff
+			m.broadcast()
+		}
+	}()
+}
+
+// armArrange gives the players of a ranked game fourArrangeTime from the
+// start to place their pieces. Callers hold m.mu.
+func (m *FourMatch) armArrange() {
+	if !m.settings.Rated || !m.arranging() || m.arrange != nil {
+		return
+	}
+	m.arrange = time.AfterFunc(time.Until(m.created.Add(fourArrangeTime)), func() {
+		m.mu.Lock()
+		defer m.mu.Unlock()
+		if !m.arranging() {
+			return
+		}
+		rng := rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64()))
+		for c, s := range m.start.Setups {
+			if s == "" {
+				m.start.Setups[c] = four.BotSetup(m.settings.shape(), rng)
+			}
+		}
+		m.begin(time.Now())
+		m.save()
+		m.broadcast()
+	})
 }
 
 func (m *FourMatch) resetClock() {
@@ -862,6 +972,10 @@ type fourSeat struct {
 	// plays in its own colour.
 	Skin *skin  `json:"skin,omitempty"`
 	Half string `json:"half,omitempty"`
+	// Rating is the player's four-player rating in a ranked game, and
+	// RatingDiff how the game moved it, once rated.
+	Rating     int  `json:"rating,omitempty"`
+	RatingDiff *int `json:"ratingDiff,omitempty"`
 }
 
 type fourEvent struct {
@@ -1004,6 +1118,12 @@ func (m *FourMatch) base() fourState {
 			seat.Half = m.half[c]
 		}
 		seat.Online = seat.Taken && m.online(int(c))
+		if m.settings.Rated {
+			seat.Rating = m.ratings[c]
+			if m.ratingDiff != nil {
+				seat.RatingDiff = &m.ratingDiff[c]
+			}
+		}
 		if f := m.game.Fell(c); f != four.NoMethod {
 			seat.Out = f.String()
 		}

@@ -139,6 +139,13 @@ export const hr: Dict = {
     drawn: 'Remi.',
     noGames: 'Nema partija u tijeku. Pritisni Igraj za novu.',
     noArena: 'Trenutačno nema najavljene arene.',
+    fourTitle: 'Četiri igrača, rangirano',
+    fourAbout: 'Proširena ploča · Potapanje brodova · Istodobni potez · Bez magle',
+    fourRanked: 'Rangira se na zasebnom rejtingu za četiri igrača. 10 minuta svakome.',
+    fourPlay: 'Nađi partiju za četiri igrača',
+    fourFinding: 'Tražim još tri igrača…',
+    fourWaiting: (n, secs) => `${n} od 4 čeka, ${secs} s`,
+    fourGuest: 'Rangirane partije traže račun.',
     keepGames: 'Sačuvaj svoje partije',
     playBot: (name) => `Igraj: ${name}`,
     cantStart: 'Ploča se nije pokrenula. Osvježi stranicu za novi pokušaj.',
@@ -542,6 +549,7 @@ export const hr: Dict = {
   profile: {
     loading: 'Učitavanje profila',
     ratingLabel: 'rejting',
+    fourRatingLabel: 'rejting za četiri igrača',
     onBoard: (rank) => `#${rank} na ljestvici`,
     joined: (date) => `Član od: ${date}`,
     hidden: 'Skriveno od drugih',
@@ -882,6 +890,9 @@ export const hr: Dict = {
 
   leaderboard: {
     title: 'Top 100',
+    oneOnOne: 'Jedan na jedan',
+    fourPlayers: 'Četiri igrača',
+    nobodyRatedFour: 'Još nitko nije rangiran. Odigraj rangiranu partiju za četiri igrača i pojavit ćeš se ovdje.',
     updated: 'Ažurira se nakon svake rangirane partije',
     loading: 'Učitavanje ljestvice',
     nobodyRated:

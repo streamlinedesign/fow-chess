@@ -117,7 +117,12 @@ type Game struct {
 	// rounds is how many Sync Move rounds have been played.
 	rounds int
 	// fell is how each player went out, NoMethod while they're in.
-	fell   [4]Method
+	fell [4]Method
+	// outAt is when each player went out, counting from 1; players who
+	// went out together, like two kings taken in one Sync Move round, share
+	// a number. 0 while in.
+	outAt  [4]int
+	outs   int
 	over   bool
 	winner Color
 	drawn  bool
@@ -170,6 +175,8 @@ func (g *Game) PlayUCI(uci string) (Event, error) {
 	g.pos = next
 	if captured.Kind() == King {
 		g.fell[captured.Color()] = KingCaptured
+		g.outs++
+		g.outAt[captured.Color()] = g.outs
 		san += "#"
 	}
 	e := Event{By: us, Move: m, SAN: san, Captured: captured}
@@ -189,6 +196,8 @@ func (g *Game) Leave(c Color, why Method) {
 	}
 	g.pos.Eliminate(c)
 	g.fell[c] = why
+	g.outs++
+	g.outAt[c] = g.outs
 	g.history = append(g.history, Event{By: c, Out: why})
 	g.evaluate(why)
 }
@@ -324,4 +333,35 @@ func sanAt(p *Position, m Move) string {
 		b.WriteByte(m.Promo.Letter())
 	}
 	return b.String()
+}
+
+// Places is where each player finished once the game is over, 1 for the
+// best: the winner first, then the players who went out, the last to go out
+// best placed. Players who finished level share a place, like everyone still
+// in at a draw, or two kings taken in the same Sync Move round. Nil while
+// the game is on.
+func (g *Game) Places() []int {
+	if !g.over {
+		return nil
+	}
+	// rank orders players: higher is better.
+	rank := func(c Color) int {
+		switch {
+		case !g.drawn && c == g.winner:
+			return g.outs + 2
+		case g.outAt[c] == 0:
+			return g.outs + 1
+		}
+		return g.outAt[c]
+	}
+	places := make([]int, 4)
+	for _, c := range Colors {
+		places[c] = 1
+		for _, o := range Colors {
+			if rank(o) > rank(c) {
+				places[c]++
+			}
+		}
+	}
+	return places
 }

@@ -234,3 +234,35 @@ func TestExtendedPromotionEdges(t *testing.T) {
 		t.Errorf("blue from e2: %v", got)
 	}
 }
+
+func TestPlaces(t *testing.T) {
+	g := NewGame(Rules{})
+	if g.Places() != nil {
+		t.Fatal("places while playing")
+	}
+	g.Leave(Green, Resignation)
+	g.Leave(Red, Timeout)
+	g.Leave(Violet, Resignation)
+	if got := g.Places(); got[Blue] != 1 || got[Violet] != 2 || got[Red] != 3 || got[Green] != 4 {
+		t.Errorf("places %v", got)
+	}
+	g = NewGame(Rules{})
+	g.Leave(Green, Resignation)
+	g.AgreeDraw()
+	if got := g.Places(); got[Red] != 1 || got[Blue] != 1 || got[Violet] != 1 || got[Green] != 4 {
+		t.Errorf("draw places %v", got)
+	}
+}
+
+// Two kings taken in one Sync Move round share a place.
+func TestPlacesSyncTie(t *testing.T) {
+	g := NewGame(Rules{Sync: true})
+	g.Leave(Green, Resignation)
+	g.outs++
+	g.outAt[Red], g.outAt[Blue] = g.outs, g.outs
+	g.pos.Out[Red], g.pos.Out[Blue] = true, true
+	g.end(Violet, KingCaptured)
+	if got := g.Places(); got[Violet] != 1 || got[Red] != 2 || got[Blue] != 2 || got[Green] != 4 {
+		t.Errorf("places %v", got)
+	}
+}

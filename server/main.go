@@ -148,6 +148,8 @@ func main() {
 
 	// Four-player games, from the mods page.
 	fourHub := NewFourHub(store)
+	social.fours, social.fourQueue = fourHub, NewFourQueue()
+	social.fourQueueRoutes(mux)
 	mux.HandleFunc("POST /api/four", func(w http.ResponseWriter, r *http.Request) {
 		if !creates.take(clientIP(r)) {
 			jsonError(w, "Too many attempts. Try again in a few minutes.", http.StatusTooManyRequests)
@@ -159,6 +161,7 @@ func main() {
 		}
 		var settings fourSettings
 		json.NewDecoder(http.MaxBytesReader(w, r.Body, 1024)).Decode(&settings)
+		settings.Rated = false // only the queue starts ranked games
 		if !settings.valid() {
 			jsonError(w, "Those match settings aren't available.", http.StatusBadRequest)
 			return
