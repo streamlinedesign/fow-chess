@@ -401,69 +401,24 @@
 }
 
 /*
- * Fog: squares the viewer's pieces can't see, in the style they picked (the
- * root's data-fog-style, from prefs.ts). Each hidden square carries
- * --fog-tint, a deep shade of its tile skin (FOG_TINT in sets.ts).
- *
- * Smoke, the default: the squares go dark and Fog.tsx lays one blurred cloud
- * over them, with grain on top. The cloud sits above the squares and below
- * the pieces, so its soft edge spills a little onto what you can see.
+ * Fog: squares the viewer's pieces can't see stay on the board, colour and
+ * tile, under a dark veil. Each hidden square carries --fog-tint, a deep
+ * shade of its tile skin (FOG_TINT in sets.ts), so the veil takes the skin's colour.
  */
 .sq[data-fog='true'] {
-  background: color-mix(in srgb, var(--fog-tint, #34342c) 80%, #050505);
-}
-.sq[data-fog='true'] .coord {
-  color: color-mix(in srgb, #fffabd 40%, transparent);
-}
-.fog-smoke,
-.fog-grain {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  pointer-events: none;
-  z-index: 0;
-}
-.fog-smoke {
-  filter: blur(calc(var(--board, 400px) / 80));
-}
-.fog-smoke i[style] {
-  background: var(--fog-tint);
-}
-.fog-grain i[data-on] {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02' numOctaves='4' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 1  0 0 0 0 0.98  0 0 0 0 0.74  0 0 0 1.6 -0.35'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: calc(var(--fog-n) * 100%) calc(var(--fog-n) * 100%);
-  mix-blend-mode: soft-light;
-  opacity: 0.4;
-}
-/* Rings on hidden squares (the hill, the vision squares) are drawn again above the cloud. */
-.sq[data-fog='true'][data-outpost]::before,
-.sq[data-fog='true'][data-hill='true']::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  outline: inherit;
-  outline-offset: inherit;
-  box-shadow: inherit;
-}
-
-/* Dusk: the squares stay, colour and tile, under a dark veil tinted by the skin. */
-:root[data-fog-style='dusk'] .fog-smoke,
-:root[data-fog-style='dusk'] .fog-grain {
-  display: none;
-}
-:root[data-fog-style='dusk'] .sq[data-fog='true'] {
   --veil: color-mix(in srgb, color-mix(in srgb, var(--fog-tint, #34342c) 45%, #0a0a08) 76%, transparent);
   background: linear-gradient(var(--veil), var(--veil)), var(--color-sq-dark);
 }
-:root[data-fog-style='dusk'] .sq[data-fog='true'][data-light='true'] {
+.sq[data-fog='true'][data-light='true'] {
   background: linear-gradient(var(--veil), var(--veil)), var(--color-sq-light);
 }
-:root[data-fog-style='dusk'] .sq[data-fog='true'][data-tile] {
+.sq[data-fog='true'][data-tile] {
   background:
     linear-gradient(var(--veil), var(--veil)),
     var(--tile) center / cover;
+}
+.sq[data-fog='true'] .coord {
+  color: color-mix(in srgb, #fffabd 40%, transparent);
 }
 
 /* Whose move it is. The side to move gets a filled bar; on your move the board gets a ring too. */

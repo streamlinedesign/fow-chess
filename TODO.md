@@ -40,6 +40,7 @@
 
 ## Done
 
+- 0.24.2: fog is Dusk only
 - 0.24.0: crisp board, Smoke and Dusk fog tinted by tile skin, live preview in settings
 - 0.19.0: stronger bots for both games; four-player bot levels that play Sync Move
 - 0.17.0: cyberpunk pieces and tiles for beta players

@@ -882,12 +882,6 @@ export const en = {
     swapSides: 'Swap sides',
     previewWhite: 'As White: your White set at the bottom, your Black set at the top, on your tiles.',
     previewBlack: 'As Black: your Black set at the bottom, your White set at the top, on your tiles.',
-    fog: 'Fog',
-    fogHint: {
-      smoke: 'Smoke: one soft cloud over what you can’t see. Only on your screen.',
-      dusk: 'Dusk: hidden squares stay under a dark veil, so you still see their colour. Only on your screen.',
-    } as Record<string, string>,
-    fogStyles: { smoke: 'Smoke', dusk: 'Dusk' } as Record<string, string>,
     link: 'Pieces',
     section: 'Pieces and avatar',
     preview: 'Your White set at the bottom, your Black set at the top, on your tiles',
