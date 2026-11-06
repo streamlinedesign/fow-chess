@@ -13,6 +13,14 @@ import (
 
 type fourPlayer func(p *Position, rng *rand.Rand) (Move, bool)
 
+// fogged plays f from what the player to move sees.
+func fogged(s Strength, w *weights) fourPlayer {
+	return func(p *Position, r *rand.Rand) (Move, bool) {
+		v := p.Vision(p.Turn)
+		return botMoveWith(p, &v, s, w, r)
+	}
+}
+
 // playFour plays one War Mode game (extended board, Battleship setups, Sync
 // Move, jester pawns, no fog) with players[c] in each seat, and returns the
 // winner, or false for a draw.
@@ -121,6 +129,26 @@ func TestFourLadder(t *testing.T) {
 	}
 	w, _ := fourMatch(n, level(Strongest), level(Careful), BotSetup, warMode)
 	t.Logf("Strongest vs three Careful: %.3f", w)
+}
+
+// TestFourFog plays War Mode with fog and vision squares: the bot that
+// guards its king against the fog and holds the vision squares, against
+// three that don't. Over 400 games it won 0.296 (0.25 is level); the fog
+// cost or the vision square alone did less, and doubling either no better.
+func TestFourFog(t *testing.T) {
+	n, _ := strconv.Atoi(os.Getenv("FOUR_GAMES"))
+	if n == 0 {
+		t.Skip("set FOUR_GAMES to the number of games")
+	}
+	blind := strongest
+	blind.fog, blind.outpost = 0, 0
+	rules := warMode
+	rules.CenterVision = CenterAny
+	tries := []weights{strongest}
+	for _, try := range tries {
+		w, _ := fourMatch(n, fogged(Strongest, &try), fogged(Strongest, &blind), BotSetup, rules)
+		t.Logf("fog %.2f outpost %.2f vs three without: %.3f", try.fog, try.outpost, w)
+	}
 }
 
 var warMode = Rules{Shape: Extended, Sync: true, JesterPawns: true}

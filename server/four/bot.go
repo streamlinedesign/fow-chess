@@ -39,6 +39,12 @@ const (
 // of its king above all, and a little for heading to the middle and pushing
 // pawns towards promotion.
 func BotMoveSeeing(p *Position, seen *[NumSquares]bool, strength Strength, rng *rand.Rand) (Move, bool) {
+	return botMoveWith(p, seen, strength, nil, rng)
+}
+
+// botMoveWith is BotMoveSeeing with weights w in place of the level's, for
+// tests.
+func botMoveWith(p *Position, seen *[NumSquares]bool, strength Strength, w *weights, rng *rand.Rand) (Move, bool) {
 	if strength <= Greedy {
 		return greedyMove(p, seen, rng)
 	}
@@ -55,9 +61,12 @@ func BotMoveSeeing(p *Position, seen *[NumSquares]bool, strength Strength, rng *
 			}
 		}
 	}
-	b := bot{us: us, known: &known, w: careful}
+	b := bot{us: us, known: &known, w: careful, seen: seen}
 	if strength >= Strongest {
 		b.w = strongest
+	}
+	if w != nil {
+		b.w = *w
 	}
 	if known.Sync {
 		b.reach = b.reaches(&known)
@@ -87,6 +96,10 @@ type weights struct {
 	// of the piece's value; centre what heading for the middle is worth, and
 	// pawn each step a pawn takes forward.
 	threat, centre, pawn float64
+	// fog is what each way into the king from squares the bot can't see
+	// costs, and outpost what holding a vision square (the whole board under
+	// centre vision) is worth.
+	fog, outpost float64
 	// noise is how much chance goes into each move's score.
 	noise float64
 }
@@ -96,16 +109,19 @@ type weights struct {
 // up next round's captures (threat) made no difference against itself
 // either, but against the Greedy bot it won 85% of games instead of 62%, and
 // it ends games: a third as many were still going after 400 rounds. careful
-// is the same bot without it and with more chance in what it plays.
+// is the same bot without it and with more chance in what it plays. Under
+// fog both guard the king and hold the vision squares (see TestFourFog).
 var (
-	strongest = weights{hit: 0.4, dodge: 0.45, king: 60, take: 40, centre: 1.0 / 60, pawn: 0.1, threat: 0.3, noise: 0.05}
-	careful   = weights{hit: 0.4, dodge: 0.45, king: 60, take: 40, centre: 1.0 / 60, pawn: 0.1, noise: 4}
+	strongest = weights{hit: 0.4, dodge: 0.45, king: 60, take: 40, centre: 1.0 / 60, pawn: 0.1, threat: 0.3, fog: 1.5, outpost: 1.5, noise: 0.05}
+	careful   = weights{hit: 0.4, dodge: 0.45, king: 60, take: 40, centre: 1.0 / 60, pawn: 0.1, fog: 1.5, outpost: 1.5, noise: 4}
 )
 
 type bot struct {
 	us    Color
 	known *Position
 	w     weights
+	// seen is what the bot sees under fog, nil without it.
+	seen *[NumSquares]bool
 	// reach counts, for each square, how many other players could move a
 	// piece there this round, and cheapest is the least valuable such piece.
 	reach *reachMap
@@ -222,6 +238,25 @@ func (b *bot) score(m Move) float64 {
 		}
 	}
 
+	// Under fog: the ways into the king from what it can't see, and the
+	// vision squares that show the whole board.
+	if b.seen != nil {
+		k := after.KingSquare(b.us)
+		if k != NoSquare {
+			score -= b.w.fog * float64(b.exposure(&after, k))
+		}
+		if p.CenterVision != CenterOff && (p.CenterVision == CenterAny || pc.Kind() == Pawn) {
+			for _, o := range p.Shape.Outposts(b.us) {
+				if m.To == o {
+					score += b.w.outpost
+				}
+				if m.From == o {
+					score -= b.w.outpost
+				}
+			}
+		}
+	}
+
 	// Heading for the middle, and pawns forward.
 	if pc.Kind() != King {
 		w := float64(p.Shape.Width())/2 - 0.5
@@ -260,4 +295,28 @@ func (b *bot) cover(p *Position) *[NumSquares]bool {
 		q.Board[sq] = other
 	}
 	return &c
+}
+
+// exposure counts the ways into the king on k from squares the bot can't
+// see: each line from it that reaches the fog before a piece, and each
+// knight's jump away that's in the fog. Anything could be waiting there.
+func (b *bot) exposure(p *Position, k Square) int {
+	n := 0
+	for _, d := range kingDeltas {
+		for sq, ok := p.Shape.Offset(k, d.dx, d.dy); ok; sq, ok = p.Shape.Offset(sq, d.dx, d.dy) {
+			if !b.seen[sq] {
+				n++
+				break
+			}
+			if !p.Board[sq].IsEmpty() {
+				break
+			}
+		}
+	}
+	for _, d := range knightDeltas {
+		if sq, ok := p.Shape.Offset(k, d.dx, d.dy); ok && !b.seen[sq] {
+			n++
+		}
+	}
+	return n
 }
