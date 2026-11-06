@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Four-player bots in the fog weigh their king's exposure less (0.5 pawns a way in, was 1.5): as strong, and bot-only games end far more often. The test of bots playing on after a player resigns no longer needs the game to end, only 400 moves, so it stops failing CI now and then.
 - Tap an enemy piece you can see to see where it could move, in both games. The server works it out from the board as you see it (hidden squares count as empty, no castling or en passant), so it tells you nothing new. New `reach` field in the game state.
 - The rules page has "Plans for v1.0" (rules may change, hand-drawn pieces and skins, apps for Windows, Linux, Mac, iOS and Android, self-hosting, more skins, tournaments, more mods, security and anti-cheat) in place of the Opera Game replay, which is gone along with its data and test.
 - War Mode's Play button is solid, like Eat the King's.

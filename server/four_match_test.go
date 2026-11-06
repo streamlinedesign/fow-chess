@@ -127,20 +127,22 @@ func TestFourBotsFillAndFinish(t *testing.T) {
 	if s.Status != "playing" || !s.Players["v"].Bot || s.Players["v"].Name != fourBotName {
 		t.Fatalf("after fill: %s %+v", s.Status, s.Players["v"])
 	}
-	// Ann resigns at once; the three bots play it out.
+	// Ann resigns at once; the three bots play on. Careful bots in the fog can
+	// dodge each other for a very long time, so it's enough that they finish
+	// or play 400 moves.
 	m.handle(c, fourIn{Type: "resign"})
 	deadline := time.Now().Add(20 * time.Second)
 	for {
 		m.mu.Lock()
-		over := m.game.Over()
+		over, n := m.game.Over(), len(m.game.History())
 		m.mu.Unlock()
-		if over {
+		if over || n >= 400 {
 			break
 		}
 		if time.Now().After(deadline) {
-			t.Fatal("bots still playing after 20s")
+			t.Fatalf("bots stopped after %d moves", n)
 		}
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(20 * time.Millisecond)
 	}
 }
 

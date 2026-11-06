@@ -133,8 +133,10 @@ func TestFourLadder(t *testing.T) {
 
 // TestFourFog plays War Mode with fog and vision squares: the bot that
 // guards its king against the fog and holds the vision squares, against
-// three that don't. Over 400 games it won 0.296 (0.25 is level); the fog
-// cost or the vision square alone did less, and doubling either no better.
+// three that don't. Over 400 games it won 0.296 (0.25 is level) with the fog
+// cost at 0.5 or 1.5; either term alone did less. At 1.5 the bots hid their
+// kings so well that 8 in 20 bot-only fog games on the cross hadn't ended
+// after 2,000 moves, against 2 in 20 at 0.5.
 func TestFourFog(t *testing.T) {
 	n, _ := strconv.Atoi(os.Getenv("FOUR_GAMES"))
 	if n == 0 {
