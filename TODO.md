@@ -19,7 +19,6 @@
 
 ## Later
 
-- Blueprint unlocks at 1150, below the 1500 every account starts on, so every signed-in player has it; raise the mark if it should take work
 - Set `BETA_ENDS` in `/etc/<name>/env` when the beta closes, so cyberpunk stays with beta accounts only
 - Unlocks: replays and Watch don't draw a bot's set or tiles yet
 - 1.0: desktop app downloads. Set the `GAME_URL` repository variable (Actions > Variables), `make release`, then turn on `DOWNLOADS` in `web/src/features.ts`
