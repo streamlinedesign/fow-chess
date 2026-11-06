@@ -1,5 +1,4 @@
 import { memo, useRef, useState } from 'react'
-import { FogLayer } from './Fog'
 import { pieceAt, squareIndex, type Look } from './position'
 import { usePieces, useTiles } from './prefs'
 import { fogTint } from './sets'
@@ -171,7 +170,6 @@ export const Board = memo(function Board({
   }
 
   const squares = []
-  const fogCells: (string | null)[] = []
   for (let row = 0; row < 8; row++) {
     for (let col = 0; col < 8; col++) {
       const sq = squareAt(col, row, orientation)
@@ -182,7 +180,6 @@ export const Board = memo(function Board({
       // Hidden squares keep their tiles: dusk shows them under its veil, and the fog takes their colour.
       const skin = tile(i >> 3, light)
       const tint = fog ? fogTint(skin) : null
-      fogCells.push(tint)
       const target = targets.has(sq)
       // A pawn moving diagonally onto an empty square is capturing en passant.
       const capture = target && (piece !== null || (pieceAt(board, sel!)?.toLowerCase() === 'p' && sel![0] !== sq[0]))
@@ -236,7 +233,6 @@ export const Board = memo(function Board({
       onContextMenu={(e) => e.preventDefault()}
     >
       {squares}
-      <FogLayer cells={fogCells} size={8} />
     </div>
   )
 })

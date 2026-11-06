@@ -1,5 +1,4 @@
 import { memo, useMemo, useRef, useState } from 'react'
-import { FogLayer } from './Fog'
 import { fogTint } from './sets'
 import { geoOf, parseMove, pieceImg4, squareName, tile4, type FourLook, type Seat } from './four'
 
@@ -140,12 +139,10 @@ export const FourBoard = memo(function FourBoard({
   }
 
   const cells = []
-  const fogCells: (string | null)[] = []
   for (let row = 0; row < SIZE; row++) {
     for (let col = 0; col < SIZE; col++) {
       const sq = grid[row][col]
       if (!sq) {
-        fogCells.push(null)
         cells.push(<div key={`${row}-${col}`} className="off" aria-hidden />)
         continue
       }
@@ -158,7 +155,6 @@ export const FourBoard = memo(function FourBoard({
       const [x, y] = [sq.charCodeAt(0) - 97, Number(sq.slice(1)) - 1]
       const tileSrc = tile4(look, geo, x, y)
       const tint = fog ? fogTint(tileSrc) : null
-      fogCells.push(tint)
       cells.push(
         <div
           key={sq}
@@ -208,7 +204,6 @@ export const FourBoard = memo(function FourBoard({
       onContextMenu={(e) => e.preventDefault()}
     >
       {cells}
-      <FogLayer cells={fogCells} size={SIZE} />
     </div>
   )
 })
