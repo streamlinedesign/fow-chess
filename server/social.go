@@ -17,6 +17,9 @@ type Social struct {
 	hub   *Hub
 	auth  *Auth
 	queue *Queue
+	// fours and fourQueue are the four-player games and their ranked queue.
+	fours     *FourHub
+	fourQueue *FourQueue
 }
 
 // notify stores a notification for the bell and tells the player's open tabs.

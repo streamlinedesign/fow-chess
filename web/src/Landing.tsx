@@ -61,6 +61,7 @@ export function Landing() {
             <h1 className="home-title">{t.landing.tagline}</h1>
           </section>
           <PlayMenu settings={settings} onChange={setSettings} signedIn={!!me} busy={busy} />
+          <FindFour signedIn={!!me} />
           <CodeGame settings={settings} busy={busy} setBusy={setBusy} />
           <section>
             <a href="/mods" onClick={(e) => go(e, '/mods')} className="home-mods">
@@ -468,6 +469,106 @@ function FindMatch({
         </p>
       )}
     </div>
+  )
+}
+
+/**
+ * The ranked four-player game: one fixed game (extended board, Battleship,
+ * Sync Move, no fog), found in its own queue of four.
+ */
+function FindFour({ signedIn }: { signedIn: boolean }) {
+  const t = useT()
+  const [since, setSince] = useState<number | null>(null)
+  const [now, setNow] = useState(0)
+  const [size, setSize] = useState(1)
+  const [error, setError] = useState('')
+  const waiting = since !== null
+
+  const found = (matchId: string) => {
+    setSince(null)
+    navigate(`/f/${matchId}`)
+  }
+  type QueueReply = { matchId?: string; waiting?: boolean; size?: number }
+
+  const start = async () => {
+    setError('')
+    try {
+      const b = await api<QueueReply>('POST', '/api/four/queue')
+      if (b.matchId) return found(b.matchId)
+      setSize(b.size ?? 1)
+      setSince(Date.now())
+    } catch (e) {
+      setError((e as Error).message)
+    }
+  }
+  const stop = () => {
+    setSince(null)
+    api('DELETE', '/api/four/queue').catch(() => {})
+  }
+
+  useEffect(() => {
+    if (!waiting) return
+    let live = true
+    const poll = () =>
+      api<QueueReply>('GET', '/api/four/queue')
+        .then((b) => {
+          if (!live) return
+          if (b.matchId) found(b.matchId)
+          else if (!b.waiting) setSince(null)
+          else setSize(b.size ?? 1)
+        })
+        .catch(() => {})
+    const timer = setInterval(poll, QUEUE_POLL_MS)
+    const tick = setInterval(() => setNow(Date.now()), 1000)
+    return () => {
+      live = false
+      clearInterval(timer)
+      clearInterval(tick)
+    }
+  }, [waiting])
+  useLive((e) => {
+    if (waiting && e.type === 'four' && e.matchId) found(e.matchId)
+  })
+  useEffect(() => () => void (since !== null && api('DELETE', '/api/four/queue').catch(() => {})), [since])
+
+  return (
+    <section className="flex flex-col gap-2.5">
+      <h2 className="text-[22px] font-semibold tracking-tight">{t.home.fourTitle}</h2>
+      <p className="home-summary">
+        <b>{t.home.fourAbout}</b>
+        <span className="block">{signedIn ? t.home.fourRanked : t.home.fourGuest}</span>
+      </p>
+      {!signedIn ? (
+        <Button className="home-play" onClick={() => navigate('/login')}>
+          {t.home.logInToPlay}
+        </Button>
+      ) : waiting ? (
+        <div className="tick flex items-center gap-3 p-3.5" role="status">
+          <span className="spinner" aria-hidden />
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="font-semibold">{t.home.fourFinding}</span>
+            <span className="text-sm text-accent">
+              {t.home.fourWaiting(
+                Math.min(4, Math.max(1, size)),
+                Math.max(0, Math.round(((now || since) - since) / 1000)),
+              )}
+            </span>
+          </span>
+          <Button className="h-9 px-3.5 text-sm" onClick={stop}>
+            {t.common.cancel}
+          </Button>
+        </div>
+      ) : (
+        <Button className="home-play" onClick={start}>
+          {t.home.fourPlay}
+        </Button>
+      )}
+      {error && (
+        <p role="alert" className="text-sm text-danger">
+          {error}
+        </p>
+      )}
+    </section>
   )
 }
 

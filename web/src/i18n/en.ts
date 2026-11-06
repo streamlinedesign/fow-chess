@@ -139,6 +139,13 @@ export const en = {
     drawn: 'A draw.',
     noGames: 'Nothing in progress. Press Play to start a game.',
     noArena: 'No arena coming up right now.',
+    fourTitle: 'Four players, ranked',
+    fourAbout: 'Extended board · Battleship · Sync Move · No fog',
+    fourRanked: 'Ranked on a four-player rating of its own. 10 minutes each.',
+    fourPlay: 'Find a four-player game',
+    fourFinding: 'Finding three players…',
+    fourWaiting: (n: number, secs: number) => `${n} of 4 waiting, ${secs} s`,
+    fourGuest: 'Ranked games need an account.',
     keepGames: 'Keep your games',
     playBot: (name: string) => `Play ${name}`,
     cantStart: 'Couldn’t start the board. Reload to try again.',
@@ -544,6 +551,7 @@ export const en = {
   profile: {
     loading: 'Loading profile',
     ratingLabel: 'rating',
+    fourRatingLabel: 'four-player rating',
     onBoard: (rank: number) => `#${rank} on the board`,
     joined: (date: string) => `Joined ${date}`,
     hidden: 'Hidden from others',
@@ -883,6 +891,9 @@ export const en = {
 
   leaderboard: {
     title: 'Top 100',
+    oneOnOne: 'One on one',
+    fourPlayers: 'Four players',
+    nobodyRatedFour: "Nobody's ranked yet. Play a ranked four-player game and you'll show up here.",
     updated: 'Updated after every ranked game',
     loading: 'Loading the leaderboard',
     nobodyRated: "Nobody's ranked yet. Play a ranked game against someone signed in, and you'll both show up here.",

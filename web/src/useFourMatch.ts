@@ -19,6 +19,8 @@ export type FourSettings = {
   sync?: boolean
   /** The 16 by 16 board with four rows each and neutral corners; no hill. */
   board?: '' | 'extended'
+  /** A ranked game, started by the four-player queue. */
+  rated?: boolean
 }
 
 export type FourSeatState = {
@@ -33,6 +35,9 @@ export type FourSeatState = {
   /** The player's own skin, and which of its two sets they play in here. */
   skin?: Skin
   half?: 'w' | 'b'
+  /** The player's four-player rating in a ranked game, and how the game moved it once rated. */
+  rating?: number
+  ratingDiff?: number
 }
 
 /** Must match fourState in server/four_match.go. */
