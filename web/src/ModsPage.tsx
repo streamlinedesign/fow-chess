@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { geo } from './four'
 import { FourBoard } from './FourBoard'
 import { useT } from './i18n'
@@ -16,14 +16,20 @@ export function ModsPage() {
   const t = useT()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [settings, setSettings] = useState<Settings>(() => loadSettings(true))
+  // A link from the home page's Mods band (/mods?mod=jump) turns that one switch on.
+  const [linked] = useState(() => new URLSearchParams(location.search).get('mod') ?? '')
+  const [settings, setSettings] = useState<Settings>(() => modFromLink(loadSettings(true), linked))
   const [four, setFour] = useState(() => {
+    if (linked === 'extended') return true
     try {
       return localStorage.getItem('modsPlayers') === '4'
     } catch {
       return false
     }
   })
+  useEffect(() => {
+    if (linked) history.replaceState(null, '', '/mods')
+  }, [linked])
   const pickFour = (on: boolean) => {
     setFour(on)
     try {
@@ -120,6 +126,30 @@ export function ModsPage() {
       </div>
     </Page>
   )
+}
+
+/** Settings with one mod switched on, by its name in a /mods?mod= link; unknown names change nothing. */
+export function modFromLink(s: Settings, mod: string): Settings {
+  switch (mod) {
+    case 'extended':
+      return { ...s, fourBoard: 'extended' }
+    case 'sync':
+      return { ...s, sync: true, kingCapture: true }
+    case 'jump':
+      return { ...s, jumpKing: true }
+    case 'jester':
+      return { ...s, jesterPawns: true }
+    case 'battleship':
+      return { ...s, setup: 'battleship' }
+    case 'hill':
+      return { ...s, hill: true }
+    case 'nofog':
+      return { ...s, fog: false }
+    case 'mate':
+      return { ...s, kingCapture: false, sync: false }
+    default:
+      return s
+  }
 }
 
 /** What the board beside it shows, in words: the game picked and what each setting means at the start. */

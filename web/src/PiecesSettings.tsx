@@ -96,7 +96,7 @@ function useLockOf(): LockOf {
       const reason = THEME_LOCK[family]
       if (!reason || !unlocked || unlocked.has(family)) return undefined
       if (reason === 'beta') return t.pieces.lockedBeta
-      if (reason === 'rating:2000') return t.pieces.lockedRating
+      if (reason.startsWith('rating:')) return t.pieces.lockedRating(reason.slice(7))
       const bot = BOTS.find((b) => 'bot:' + b.level === reason)
       return bot ? t.pieces.lockedBy(bot.name.split(' ')[0]) : t.pieces.lockedBeta
     },

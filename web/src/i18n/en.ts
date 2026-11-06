@@ -130,7 +130,6 @@ export const en = {
     codeSubWar: 'Same War Mode clock as above. Send the code to up to three friends; bots can take the empty seats.',
     codeGame: 'Game with a friend',
     createCode: 'Create a code',
-    modsSub: 'Every rule switch: no fog, checkmate, King of the Hill, any clock. Never ranked.',
     demoBot: 'Demo bot',
     thinking: 'thinking',
     yourMove: 'your move',
@@ -295,6 +294,68 @@ export const en = {
     currentSetup: 'Current setup',
     intro:
       'The game with the dials exposed. Turn the fog off, play with check, add a hill or a jumping king, or take the clock away. Mods games are for fun and never count for rating.',
+  },
+
+  /** The Mods band on the home page. */
+  modsBand: {
+    title: ['Turn', 'every', 'dial.'],
+    lede: 'Mods are the same game with the rules let loose. Lift the fog, let the king jump, or put four players on a 16 by 16 board.',
+    sub: 'Any mix of switches, any clock. Mods games are for fun and never ranked.',
+    open: 'Open Mods',
+    tryExtended: 'Try the extended board',
+    boardLabel: "An extended four-player board in the fog. Red's knight crosses the open corner and eats a blue pawn.",
+    boardCap: 'Extended board · four players · fog of war',
+    start: 'Red sees only what its pieces reach',
+    steps: [
+      'The pawn steps out, and the fog lifts a little',
+      'A knight heads for the open corner',
+      'The bishop sees down the long diagonal',
+      'Corners belong to nobody: anyone can cross',
+      'The queen comes up behind',
+      'The knight eats a blue pawn it could only just see',
+    ],
+    ticker: [
+      'Extended board',
+      'Sync Move',
+      'Jump King',
+      'Jester pawns',
+      'Battleship',
+      'Back row',
+      'King of the Hill',
+      'Centre vision',
+      'No fog',
+      'Checkmate',
+      'Four players',
+      'Any clock',
+    ],
+    cells: {
+      extended: ['Extended board', '16 by 16, four rows each. The corners are open to everyone.'],
+      sync: ['Sync Move', 'Everyone moves at once. Captures come last, so a piece that moves away dodges.'],
+      jump: ['Jump King', 'Your king can also jump like a knight.'],
+      jester: ['Jester pawns', 'Pawns also step and take one square any way, like a king.'],
+      battleship: ['Battleship', 'Place all sixteen pieces anywhere in your rows. Nobody sees where.'],
+      hill: ['King of the Hill', 'Walk your king onto a centre square to win.'],
+      nofog: ['No fog', 'The whole board in plain sight. Chess, with the king up for eating.'],
+      mate: ['Checkmate', 'Plain chess rules with check. Win the old way.'],
+    } as Record<string, [string, string]>,
+    footLeft: 'Never ranked · any mix of mods · any clock',
+    footRight: 'Open Mods to see every switch',
+  },
+
+  /** The skins showcase on the home page. */
+  skins: {
+    title: 'Skins',
+    all: 'All pieces and tiles',
+    sub: 'Each set comes with its own tiles and avatars. Win it to wear it. Colours are always free.',
+    guest: "Sign in first. Wins as a guest don't unlock anything.",
+    beat: (bot: string) => `Beat ${bot}`,
+    onThisPage: 'on this page',
+    reach: (n: number) => `Reach ${n} in either mode`,
+    beta: 'Beta players',
+    unlocked: 'unlocked',
+    playHere: (bot: string) => `Play ${bot}`,
+    isNew: 'new',
+    locked: 'Locked',
   },
 
   four: {
@@ -924,11 +985,11 @@ export const en = {
     plainTiles: 'Plain',
     lockedBy: (bot: string) => `Beat ${bot}`,
     lockedBeta: 'Beta players',
-    lockedRating: 'Reach 2000',
+    lockedRating: (n: string) => `Reach ${n}`,
     unlockHint:
-      'Colours are yours. Most themed sets belong to a bot: beat it to unlock its pieces, tiles and avatars. Holy is for reaching a 2000 rating.',
+      'Colours are yours. Most themed sets belong to a bot: beat it to unlock its pieces, tiles and avatars. Blueprint is for reaching a 1150 rating, Holy for 2000.',
     unlockGuest:
-      'Colours are yours. Most themed sets belong to a bot: sign in and beat it to unlock it. Holy is for reaching a 2000 rating.',
+      'Colours are yours. Most themed sets belong to a bot: sign in and beat it to unlock it. Blueprint is for reaching a 1150 rating, Holy for 2000.',
     sets: {
       classic: 'Classic',
       cream: 'Cream',
@@ -960,6 +1021,9 @@ export const en = {
       cyberpunk: 'Cyberpunk',
       'cyberpunk-light': 'Cyberpunk, light',
       'cyberpunk-dark': 'Cyberpunk, dark',
+      survey: 'Survey',
+      'survey-light': 'Survey, light',
+      'survey-dark': 'Survey, dark',
     } as Record<string, string>,
   },
 

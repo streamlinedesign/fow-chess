@@ -52,7 +52,7 @@ export type Bot = 'rex' | 'vercingetorix' | 'ramesses' | 'solomon'
  * the classic pieces and unlocks nothing.
  */
 export const BOT_SET: Partial<Record<Bot, string>> = {
-  vercingetorix: 'blueprint',
+  vercingetorix: 'survey',
   ramesses: 'ancient',
   solomon: 'galaxy',
 }
@@ -60,7 +60,7 @@ export const BOT_SET: Partial<Record<Bot, string>> = {
 /** Each bot's face: a piece of its strength from its own set. J is the jester pawn, X the prince. */
 export const BOT_FACE: Record<Bot, string> = {
   rex: setImg('ink', 'J'), // Rex inutilis: the classic jester pawn
-  vercingetorix: setImg('blueprint-dark', 'N'),
+  vercingetorix: setImg('survey-dark', 'N'),
   ramesses: setImg('ancient-dark', 'X'),
   solomon: setImg('galaxy-dark', 'K'),
 }

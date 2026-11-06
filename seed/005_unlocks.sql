@@ -1,5 +1,5 @@
 -- What the demo opponents have unlocked, so their themed skins from
--- 003_avatars.sql show. demo has beaten Vercingetorix (blueprint), carol has
+-- 003_avatars.sql show. demo has beaten Vercingetorix (survey), carol has
 -- reached a 2000 rating once (holy), and no one has everything, so the locked
 -- skins can be seen too.
 INSERT INTO unlocks (user_id, reason)
