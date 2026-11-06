@@ -295,7 +295,7 @@ export const en = {
 
   /** The Mods band on the home page. */
   modsBand: {
-    title: ['Modded', 'Bonanza.'],
+    title: ['Modded', 'Bonanza'],
     lede: 'Mods are the same game with the rules let loose. Lift the fog, let the king jump, or put four players on a 16 by 16 board.',
     sub: 'Any mix of switches, any clock. Mods games are for fun and never ranked.',
     open: 'Open Mods',

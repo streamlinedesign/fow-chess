@@ -3771,6 +3771,8 @@ a.tick:active {
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  /* So the flight below can be measured in the band's own height (cqh). */
+  container-type: size;
 }
 .mods-sky img {
   position: absolute;
@@ -3787,6 +3789,8 @@ a.tick:active {
   }
   to {
     transform: translate(var(--dx), calc(-100% - 140vh)) rotate(var(--r1));
+    /* The whole band plus the piece (with room for its turn), so it leaves the top before it starts over. */
+    transform: translate(var(--dx), calc(-150% - 100cqh)) rotate(var(--r1));
   }
 }
 /* A soft dark behind the words so they stay readable. */
@@ -3886,7 +3890,6 @@ a.tick:active {
   grid-row: span 2;
   width: 40px;
   height: 40px;
-  transition: transform 0.3s;
 }
 .mods-cell .ic.sw {
   display: grid;
@@ -3920,9 +3923,6 @@ a.tick:active {
 }
 .mods-cell:hover p {
   color: #505050;
-}
-.mods-cell:hover .ic {
-  transform: rotate(-12deg) scale(1.15);
 }
 .mods-band-foot {
   display: flex;
