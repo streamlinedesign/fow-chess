@@ -126,6 +126,17 @@ export function MatchPage({ id }: { id: string }) {
     lastPly.current = ply
   }, [ply])
 
+  const overKey = state ? `${state.round}:${state.ply}` : ''
+  const over = state?.status === 'over' ? resultText(state, t) : null
+  // The fog lifts and the last move shows for a moment before the dialog covers the board,
+  // so a player sees what took their king.
+  const [showOver, setShowOver] = useState('')
+  useEffect(() => {
+    if (!over) return
+    const id = setTimeout(() => setShowOver(overKey), state!.last && state!.ply > 0 ? 1400 : 0)
+    return () => clearTimeout(id)
+  }, [over, overKey, state])
+
   const link = `${location.origin}/m/${id}`
 
   if (conn === 'missing' || conn === 'outdated') {
@@ -144,16 +155,6 @@ export function MatchPage({ id }: { id: string }) {
     )
   }
 
-  const overKey = state ? `${state.round}:${state.ply}` : ''
-  const over = state?.status === 'over' ? resultText(state, t) : null
-  // The fog lifts and the last move shows for a moment before the dialog covers the board,
-  // so a player sees what took their king.
-  const [showOver, setShowOver] = useState('')
-  useEffect(() => {
-    if (!over) return
-    const id = setTimeout(() => setShowOver(overKey), state!.last && state!.ply > 0 ? 1400 : 0)
-    return () => clearTimeout(id)
-  }, [over, overKey, state])
   const danger = !!you && playing && !predicting && !!state?.danger
 
   const status = (() => {

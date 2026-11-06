@@ -151,20 +151,23 @@ export function ProfilePage({ name }: { name: string }) {
             <h1 className="text-[clamp(32px,6vw,48px)] leading-none font-semibold tracking-tight break-all">
               {profile.username}
             </h1>
-            <div className="mt-2 flex flex-wrap items-baseline gap-2.5">
-              <span className="font-mono text-2xl tabular-nums">{profile.rating}</span>
-              <span className="text-[13px] text-accent">
-                {t.profile.ratingLabel}
-                {profile.rank ? ` · ${t.profile.onBoard(profile.rank)}` : ''}
+            {/* Each rating keeps its label beside it, so they still pair up when they wrap. */}
+            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1">
+              <span className="flex items-baseline gap-2">
+                <span className="font-mono text-2xl tabular-nums">{profile.rating}</span>
+                <span className="text-[13px] text-accent">
+                  {t.profile.ratingLabel}
+                  {profile.rank ? ` · ${t.profile.onBoard(profile.rank)}` : ''}
+                </span>
               </span>
               {profile.fourRating !== undefined && (
-                <>
+                <span className="flex items-baseline gap-2">
                   <span className="font-mono text-2xl tabular-nums">{profile.fourRating}</span>
                   <span className="text-[13px] text-accent">
                     {t.profile.fourRatingLabel}
                     {profile.fourRank ? ` · ${t.profile.onBoard(profile.fourRank)}` : ''}
                   </span>
-                </>
+                </span>
               )}
             </div>
             <div className="mt-2.5 flex flex-wrap gap-4 text-[13.5px] text-accent">

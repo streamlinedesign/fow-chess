@@ -8,9 +8,8 @@
 
 ## Next
 
-- Security before the beta, still open (from the review): a knocked-out four-player player sees the whole board and can still chat to players who are in; security headers (CSP, frame-ancestors, nosniff, HSTS) in the Caddy block when `deploy/` is written; never run `make db-seed` against production (known `demo` passwords)
+- Security before the beta, still open (from the review): security headers (CSP, frame-ancestors, nosniff, HSTS) in the Caddy block when `deploy/` is written; never run `make db-seed` against production (known `demo` passwords)
 - Copy the backward pawns removal (`engine/`) into `chess-bots`
-- Beta launch: check the new home page and mods page on a phone
 - Copy the jester pawns engine change into `chess-bots` (or extract the engine module first)
 - Review the mod artwork: jester pawn (`wJ`/`bJ`) and jump king (`wX`/`bX`) in `web/src/pieces/`
 - Adopt the Streamline design system (typeface, tokens) in place of Geist/Tailwind defaults
@@ -39,6 +38,7 @@
 
 ## Done
 
+- 0.16.1: avatar framing, logo on phones, match-not-found crash, knocked-out four-player players kept behind and out of the chat, release date on the home page
 - 0.11.0: White and Black sets that opponents see, light and dark lines for colours, tiles on your half (three rows with four players), faster settings, head avatars
 - 0.10.1: themed piece sets (galaxy, blueprint, holy with the wing knight, ancient), tile skins with Greek key ancient tiles, skins switch
 - 0.5.0: bug reports from the footer and game pages; read them with `make bugs`

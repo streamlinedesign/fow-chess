@@ -753,8 +753,8 @@ func (m *FourMatch) join(c *client, p *player) {
 	}
 	m.clients[c] = struct{}{}
 	m.touched = time.Now()
-	if m.colorOf(c.playerID) >= 0 {
-		c.send(m.chatJSON(true, m.chat))
+	if color := m.colorOf(c.playerID); color >= 0 {
+		c.send(m.chatJSON(true, m.chatFor(color)))
 	}
 	m.pokeBot()
 	m.broadcast()
@@ -890,14 +890,15 @@ func (m *FourMatch) handle(c *client, msg fourIn) {
 			text = string([]rune(text)[:chatMaxLen])
 		}
 		m.chatID++
-		line := chatLine{ID: m.chatID, From: four.Color(color).String(), Text: text, At: now.UnixMilli()}
+		line := chatLine{ID: m.chatID, From: four.Color(color).String(), Text: text, At: now.UnixMilli(),
+			outOnly: m.knockedOut(color)}
 		m.chat = append(m.chat, line)
 		if len(m.chat) > chatMaxLines {
 			m.chat = slices.Clone(m.chat[len(m.chat)-chatMaxLines:])
 		}
 		b := m.chatJSON(false, []chatLine{line})
 		for cl := range m.clients {
-			if m.colorOf(cl.playerID) >= 0 {
+			if to := m.colorOf(cl.playerID); to >= 0 && (!line.outOnly || m.knockedOut(to)) {
 				cl.send(b)
 			}
 		}
@@ -1214,12 +1215,40 @@ func (m *FourMatch) base() fourState {
 	return s
 }
 
+// knockedOut reports whether a seated player is out while the game goes on.
+// They know more than the players still in (they see more of the board), so
+// what they write reaches only others who are out, and they watch a few
+// rounds behind like spectators. Callers hold m.mu.
+func (m *FourMatch) knockedOut(color int) bool {
+	return color >= 0 && !m.game.Over() && m.game.Position().Out[color]
+}
+
+// chatFor is the chat a seated player may read: lines from players who were
+// out while the game ran are left out for players still in it, until it ends.
+// Callers hold m.mu.
+func (m *FourMatch) chatFor(color int) []chatLine {
+	if m.game.Over() || m.knockedOut(color) {
+		return m.chat
+	}
+	lines := make([]chatLine, 0, len(m.chat))
+	for _, l := range m.chat {
+		if !l.outOnly {
+			lines = append(lines, l)
+		}
+	}
+	return lines
+}
+
 // view fills in the state for a player (color 0 to 3) or a spectator who
 // watches as side. Callers hold m.mu.
 func (m *FourMatch) view(s fourState, color, side int) []byte {
 	if color >= 0 {
 		s.You = four.Color(color).String()
 		s.fourView = fourViewFor(m.game, color, s.Status == "playing", m.settings.Fog)
+		if m.settings.Fog && m.knockedOut(color) {
+			// Out of the game, they'd see everything live and could pass it on.
+			s.fourView = m.spectatorView(color)
+		}
 		s.Planned = m.pending[color]
 		if s.Planned != "" {
 			s.Legal = []string{}

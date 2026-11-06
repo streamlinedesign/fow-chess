@@ -303,6 +303,9 @@ type chatLine struct {
 	From string `json:"from"` // "w" or "b"
 	Text string `json:"text"`
 	At   int64  `json:"at"` // unix milliseconds
+	// outOnly marks a four-player line sent by a player who was already out
+	// while the game ran: only other players who are out may read it.
+	outOnly bool
 }
 
 type chatMsg struct {

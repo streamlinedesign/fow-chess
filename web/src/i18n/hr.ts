@@ -82,6 +82,7 @@ export const hr: Dict = {
   landing: {
     title: 'Igraj',
     tagline: 'Uhvati kralja u magli rata.',
+    release: (date) => `U beti. Puno izdanje ${date}.`,
     howToPlay: 'Kako se igra',
     finding: 'Tražim partiju…',
     findingSince: (n) => `Čekam igrača blizu tvog rejtinga, ${n} s`,
@@ -322,6 +323,8 @@ export const hr: Dict = {
     resigned: 'predao',
     outOfTime: 'ostao bez vremena',
     seeAs: 'Gledaj kao',
+    outBehind: (n) =>
+      `Igru vidiš ${n} poteza iza igrača, a ono što pišeš čitaju samo igrači koji su ispali, dok igra ne završi.`,
     behind: (n: number) => `Kasniš ${n} poteza za igračima, pa nikome ne možeš pomoći.`,
     chatPlaceholder: 'Poruka stolu',
     chat: 'Razgovor',
@@ -608,7 +611,7 @@ export const hr: Dict = {
 
   profile: {
     loading: 'Učitavanje profila',
-    ratingLabel: 'rejting',
+    ratingLabel: 'rejting Eat the King',
     fourRatingLabel: 'rejting Ratnog načina',
     onBoard: (rank) => `#${rank} na ljestvici`,
     joined: (date) => `Član od: ${date}`,

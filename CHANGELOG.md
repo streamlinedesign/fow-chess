@@ -4,6 +4,12 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Fixed: opening a match link that no longer exists (a mistyped code, or a game from before a server restart) crashed the page with "Something broke" instead of saying the match wasn't found.
+- Security: a player knocked out of a four-player fog game no longer sees the board live (they watch a few moves behind, like spectators), and while the game goes on only other players who are out read what they write.
+- Avatars show the whole head of the piece inside the circle, centred, for every kind and set; the menu button's avatar sits in the middle of its ring.
+- The fallen king in the logo lines up with the name on phones (its offset now scales with the type size).
+- Profile on a phone: each rating keeps its label beside it ("Eat the King rating", "War Mode rating"), and the numbers sit two by two.
+- The home page says when the full game ships: 2 February 2027.
 - War Mode is 30 minutes each plus 10 seconds a move (was 10 minutes); placing your pieces still has two minutes. The home page board has a War Mode toggle: you against three copies of the bot you pick, starting on your Battleship setup, no clock, nothing saved.
 - Themed skins are earned: each bot plays a theme on its own tiles (Rex inutilis holy, Vercingetorix blueprint, Ramesses II ancient, Solomon galaxy), and beating it while signed in unlocks that set, its tiles and its avatars. Plain colours stay free. Locked skins show in Pieces with the bot to beat; the server refuses them in settings and drops them from live games. Themed avatars picked before go back to the pawn. `GET /api/unlocks` lists what you have. A "beta" lock is ready for skins everyone gets during the beta (`BETA_ENDS`).
 - The desktop app's downloads are hidden until 1.0: no Download link, menu item or home page strip, and /download shows not found. Switch them back on with `DOWNLOADS` in `web/src/features.ts`. The app can still be installed on a phone from the browser.
