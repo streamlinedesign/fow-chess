@@ -148,7 +148,7 @@ export const en = {
     noGames: 'Nothing in progress. Press Play to start a game.',
     noArena: 'No arena coming up right now.',
     fourTitle: 'War Mode',
-    fourAbout: 'Four players · Ambush · Jester pawns · Fog of war',
+    fourAbout: 'Four\u00a0players\u00a0· Ambush\u00a0· Jester\u00a0pawns\u00a0· Fog\u00a0of\u00a0war',
     warLength: 'War Mode clock',
     warTimes: [
       { label: '30 min', sub: '+10s a move' },

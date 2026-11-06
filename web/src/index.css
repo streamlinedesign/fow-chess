@@ -2412,6 +2412,8 @@ a.tick:active {
   background: var(--color-fg);
 }
 .home-summary {
+  /* No single word left alone on a last line; War Mode's list keeps each item whole (no-break spaces in the copy). */
+  text-wrap: pretty;
   font-size: 14px;
   line-height: 1.45;
   color: var(--color-accent);
@@ -2876,6 +2878,10 @@ a.tick:active {
 .home-bot-item .home-bot-face img {
   width: 34px;
   height: 34px;
+}
+.home-bot-item p,
+.home-code p {
+  text-wrap: pretty;
 }
 .home-bot-item h3 {
   margin-top: 4px;
