@@ -301,17 +301,16 @@ function Frame({
             <span className="strip-name">{name}</span>
             <span className="strip-meta">
               {t.landing.botHints[bot]}
-              {thinking && (
-                <>
-                  {' · '}
-                  {t.home.thinking}
-                  <span className="thinking" aria-hidden>
-                    <b />
-                    <b />
-                    <b />
-                  </span>
-                </>
-              )}
+              {/* Always drawn, only shown while the bot thinks, so the line never rewraps and the board never jumps. */}
+              <span className={thinking ? 'think-slot' : 'think-slot off'}>
+                {' · '}
+                {t.home.thinking}
+                <span className="thinking" aria-hidden>
+                  <b />
+                  <b />
+                  <b />
+                </span>
+              </span>
             </span>
           </span>
         </div>

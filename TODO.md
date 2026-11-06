@@ -21,6 +21,7 @@
 
 ## Later
 
+- Croatian: turn `CROATIAN` back on in `web/src/features.ts` once the translation is checked
 - Set `BASE_URL` in `/etc/<name>/env` once the domain is picked, so link previews point at it
 - Link previews of War Mode games show the two-player board; draw the cross board for them
 

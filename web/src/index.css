@@ -2678,6 +2678,9 @@ a.tick:active {
   font-size: 13px;
   color: var(--color-accent);
 }
+.think-slot.off {
+  visibility: hidden;
+}
 .thinking {
   display: inline-flex;
   gap: 3px;
@@ -3804,7 +3807,7 @@ a.tick:active {
 }
 .mods-band-title {
   margin: 0;
-  font-size: clamp(76px, 12vw, 184px);
+  font-size: clamp(76px, 10.5vw, 168px);
   line-height: 0.84;
   font-weight: 800;
   letter-spacing: -0.065em;

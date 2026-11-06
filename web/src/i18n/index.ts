@@ -1,17 +1,24 @@
 import { createElement, Fragment, useSyncExternalStore, type ReactNode } from 'react'
 import { en } from './en'
 import { hr } from './hr'
+import { CROATIAN } from '../features'
 
 /** The shape every language must fill in, taken from English. */
 export type Dict = typeof en
 
 export type Lang = 'en' | 'hr'
 
-/** The languages on offer, with their names in themselves. Add a dictionary and a row here for a new one. */
-export const LANGS: { code: Lang; name: string; short: string }[] = [
+/** Every language with a dictionary, with its name in itself. Add a dictionary and a row here for a new one. */
+const ALL_LANGS: { code: Lang; name: string; short: string }[] = [
   { code: 'en', name: 'English', short: 'EN' },
   { code: 'hr', name: 'Hrvatski', short: 'HR' },
 ]
+
+/** The languages on offer: switched-off ones are left out of the pickers and never chosen. */
+export const LANGS = ALL_LANGS.filter((l) => l.code !== 'hr' || CROATIAN)
+
+/** Whether there's a choice to make, so the language pickers show. */
+export const MANY_LANGS = LANGS.length > 1
 
 const dicts: Record<Lang, Dict> = { en, hr }
 

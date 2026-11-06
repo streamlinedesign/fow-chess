@@ -2,7 +2,7 @@ import * as Switch from '@radix-ui/react-switch'
 import { useEffect, useState } from 'react'
 import { logout, refreshMe, useMe } from './auth'
 import { go } from './ProfilePage'
-import { LANGS, setLang, useLang, useT } from './i18n'
+import { LANGS, MANY_LANGS, setLang, useLang, useT } from './i18n'
 import { Page, PageHead } from './Page'
 import { LivePreview, PiecesSettings } from './PiecesSettings'
 import { navigate } from './router'
@@ -102,18 +102,20 @@ export function SettingsPage() {
                   }}
                 />
               </div>
-              <div className="set-row">
-                <div className="row-l">
-                  <b>{t.header.language}</b>
-                  <span>{t.account.languageHint}</span>
+              {MANY_LANGS && (
+                <div className="set-row">
+                  <div className="row-l">
+                    <b>{t.header.language}</b>
+                    <span>{t.account.languageHint}</span>
+                  </div>
+                  <Seg
+                    label={t.header.language}
+                    value={lang}
+                    options={LANGS.map((l) => [l.code, l.name])}
+                    onChange={(l) => setLang(l as (typeof LANGS)[number]['code'])}
+                  />
                 </div>
-                <Seg
-                  label={t.header.language}
-                  value={lang}
-                  options={LANGS.map((l) => [l.code, l.name])}
-                  onChange={(l) => setLang(l as (typeof LANGS)[number]['code'])}
-                />
-              </div>
+              )}
             </section>
 
             <section className="set-sec" id="s-pieces">

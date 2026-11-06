@@ -5,7 +5,7 @@ import { Bell } from './Bell'
 import { DOWNLOADS, TOURNAMENTS } from './features'
 import { DESKTOP } from './desktop'
 import { DownloadIcon } from './DownloadPage'
-import { LANGS, setLang, useLang, useT } from './i18n'
+import { LANGS, MANY_LANGS, setLang, useLang, useT } from './i18n'
 import { Icon } from './icons'
 import { useCounts } from './live'
 import { navigate } from './router'
@@ -78,7 +78,7 @@ export function Header() {
                 {t.desktop.download}
               </a>
             )}
-            <LangMenu />
+            {MANY_LANGS && <LangMenu />}
             <button
               onClick={toggleTheme}
               aria-label={t.header.toggleDark}
@@ -255,12 +255,14 @@ function UserMenu({ username, rating, fourRating }: { username: string; rating: 
           setMode(m)
         }}
       />
-      <Seg
-        label={t.header.language}
-        value={lang}
-        options={LANGS.map((l) => [l.code, l.short])}
-        onChange={(l) => setLang(l)}
-      />
+      {MANY_LANGS && (
+        <Seg
+          label={t.header.language}
+          value={lang}
+          options={LANGS.map((l) => [l.code, l.short])}
+          onChange={(l) => setLang(l)}
+        />
+      )}
       <MenuSeparator />
       <MenuItem
         onSelect={async () => {

@@ -4,6 +4,9 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- Croatian is switched off for the beta (`CROATIAN` in `web/src/features.ts`): the language pickers hide, a Croatian browser gets English, and a saved Croatian choice falls back to English. The translation stays in `web/src/i18n/hr.ts`.
+- The home page Mods band is headed "Modded Bonanza.", set a touch smaller so the longer word fits beside the cards.
+- The home page demo boards keep room for the bot's "thinking" line, so on phones the board no longer jumps each time the bot moves.
 - Sharing: link previews for every page (OpenGraph and Twitter tags put into index.html by the server, with a 1200 by 630 picture drawn at `/og/<page>.png`): the home page, games (players, mods, clock, result; the board only once a game is over, so the fog holds), replays, profiles (title, ratings, games) and mods setups. `BASE_URL` sets the address used in them; unset, it's the one the request came to.
 - Share buttons on games, replays and profiles, and Share this setup on the Mods page: the share sheet on phones, else the link is copied. A mods link (`/mods?mod=prince&mod=ambush&players=4&clock=5-0`) opens the Mods page with exactly those switches on, and its preview lists them with what each does.
 - Installable app: a service worker (`web/public/sw.js`) keeps the app's files for quick and offline starts and never touches the API, live games or previews; the manifest gains a maskable icon and shortcuts to Mods, Watch and How to play.
