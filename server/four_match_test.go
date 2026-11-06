@@ -440,11 +440,12 @@ func TestFourWarModeTurns(t *testing.T) {
 	m := hub.Create(ann, demoFour(""))
 	c := newClient(ann.key)
 	m.join(c, ann)
-	m.handle(c, fourIn{Type: "setup", Board: "RNBQKBNR" + "................" + "PPPPPPPP"})
-	if s := lastFour(t, c); s.Status != "playing" || s.Turn != "r" || s.Settings.Sync {
-		t.Fatalf("status %s turn %s sync %v", s.Status, s.Turn, s.Settings.Sync)
+	m.handle(c, fourIn{Type: "setup", Board: four.Cross.StandardSetup()})
+	s := lastFour(t, c)
+	if s.Status != "playing" || s.Turn != "r" || s.Settings.Sync || s.Settings.Board != "" || len(s.Legal) == 0 {
+		t.Fatalf("status %s turn %s sync %v board %q", s.Status, s.Turn, s.Settings.Sync, s.Settings.Board)
 	}
-	m.handle(c, fourIn{Type: "move", UCI: "e4e5"})
+	m.handle(c, fourIn{Type: "move", UCI: s.Legal[0]})
 	deadline := time.Now().Add(5 * time.Second)
 	for {
 		m.mu.Lock()

@@ -74,13 +74,27 @@ function Table({
   const look = fourLook(state, you, prefs)
   const playing = state?.status === 'playing'
   const out = !!state?.players[you]?.out
-  const planned = sent || state?.planned || ''
-  const legal = state && playing && !planned ? state.legal : []
+  const shape = state?.settings.board ?? ''
+  const sync = !!state?.settings.sync
+  // In turns your move shows on the board at once; in Sync Move it's marked until the round is played.
+  const predicting = !sync && !!sent
+  const planned = sync ? sent || state?.planned || '' : ''
+  const legal = state && playing && !planned && !predicting ? state.legal : []
   const yourMove = playing && !out && legal.length > 0
-  const thinking = playing && !!planned
-  const blank = geo('extended')
+  const thinking = playing && !out && (sync ? !!planned : !yourMove)
+  const blank = geo(shape)
     .startBoard()
     .map((v) => (v === ' ' ? ' ' : '.'))
+  const board = (() => {
+    if (!state?.board.length) return blank
+    if (!predicting) return state.board
+    const m = parseMove(sent)!
+    const b = [...state.board]
+    const idx = geo(shape).squareIdx
+    b[idx(m.to)] = m.promo ? b[idx(m.from)][0] + m.promo.toUpperCase() : b[idx(m.from)]
+    b[idx(m.from)] = '.'
+    return b
+  })()
 
   const status = (() => {
     if (failed) return t.home.cantStart
@@ -97,9 +111,13 @@ function Table({
     : state.status === 'setup'
       ? t.home.placing
       : playing && !out
-        ? planned
-          ? t.four.sent
-          : t.four.pickMove
+        ? sync
+          ? planned
+            ? t.four.sent
+            : t.four.pickMove
+          : yourMove
+            ? t.common.yourMove
+            : t.four.toMove(t.four.seats[state.turn])
         : null
 
   const move = (from: string, to: string) => {
@@ -138,7 +156,7 @@ function Table({
               <FourSetup
                 seat={you}
                 layout="battleship"
-                board="extended"
+                board={shape}
                 look={look}
                 mine={state.arranged}
                 onReady={onSetup}
@@ -148,10 +166,10 @@ function Table({
           ) : (
             <div className="board-turn relative rounded-md" data-your-move={yourMove}>
               <FourBoard
-                board={state?.board.length ? state.board : blank}
+                board={board}
                 seat={you}
                 legal={legal}
-                lastMove={state?.last}
+                lastMove={predicting ? parseMove(sent!) : state?.last}
                 lastMoves={state?.lastRound}
                 planned={planned ? parseMove(planned) : null}
                 danger={state?.danger}

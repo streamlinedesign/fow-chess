@@ -144,7 +144,7 @@ export const hr: Dict = {
     noArena: 'Trenutačno nema najavljene arene.',
     fourTitle: 'Ratni način',
     fourAbout:
-      'Četiri igrača · Proširena ploča · Potapanje brodova · Pješaci lakrdijaši · Magla rata',
+      'Četiri igrača · Potapanje brodova · Pješaci lakrdijaši · Magla rata',
     fourRanked: 'Rangira se na zasebnom rejtingu Ratnog načina. 30 minuta svakome, plus 10 sekundi po potezu.',
     official: 'Službeno',
     yourRating: 'tvoj rejting',
@@ -160,7 +160,7 @@ export const hr: Dict = {
     opponents: 'Protivnici',
     threeBots: (bot) => `${bot} ×3`,
     demoBots: 'Tri bota za probu',
-    warTip: 'Postavi figure u svoja četiri reda, a onda igraj na red s botovima. Bez sata, i ništa se ne sprema.',
+    warTip: 'Postavi figure u svoja tri reda, a onda igraj na red s botovima. Bez sata, i ništa se ne sprema.',
     placing: 'Postavi figure',
   },
 
@@ -250,7 +250,7 @@ export const hr: Dict = {
   about: {
     title: 'O igri',
     paras: [
-      'Eat the King je izvorna igra: šah u magli rata. Vidiš samo polja do kojih tvoje figure dosežu, nema šaha, a pobjeđuješ kad uzmeš kralja. Uvijek počinje iz uobičajenog položaja. Ratni način je druga službena igra: četiri igrača na proširenoj ploči, potapanje brodova i pješaci lakrdijaši, na red, u magli rata.',
+      'Eat the King je izvorna igra: šah u magli rata. Vidiš samo polja do kojih tvoje figure dosežu, nema šaha, a pobjeđuješ kad uzmeš kralja. Uvijek počinje iz uobičajenog položaja. Ratni način je druga službena igra: četiri igrača na ploči u obliku križa, potapanje brodova i pješaci lakrdijaši, na red, u magli rata.',
       'Sve ostalo su modovi. Modovi okreću jedan po jedan kotačić: digni maglu, igraj do šah-mata, postavi figure u tajnosti, utrkuj se do brda ili probaj druge partije za četiri igrača. Partije s modovima nikad nisu rangirane.',
     ],
     inspired: 'Inspiracija',
@@ -571,17 +571,17 @@ export const hr: Dict = {
       },
       warBoard: {
         kind: 'Ploča',
-        title: 'Četiri igrača, proširena ploča',
+        title: 'Četiri igrača, jedan križ',
         p: [
-          'Ploča **16 puta 16** s **četiri reda za svakoga** i **otvorenim kutovima** koje svatko smije prijeći. Oko nje sjede Crveni, Plavi, Zeleni i Ljubičasti.',
-          'Igra se u **magli rata**, kao Pojedi kralja: vidiš samo ono što vide tvoje figure. Dovedi bilo koju figuru na jedno od svoja **dva polja vida** u sredini (par odmah iza središta, na suprotnoj strani od tebe) i **vidiš cijelu ploču** dok ondje stoji. Pješaci se promoviraju **iza sredine** ili na **bočnim zidovima** igrača do tebe.',
+          'Ploča **u obliku križa**: puna 8 sa 8 u sredini i **tri reda sa svake strane**, 14 sa 14 bez kutova. Oko nje sjede Crveni, Plavi, Zeleni i Ljubičasti.',
+          'Igra se u **magli rata**, kao Pojedi kralja: vidiš samo ono što vide tvoje figure. Dovedi bilo koju figuru na jedno od **četiri srednja polja** i **vidiš cijelu ploču** dok ondje stoji. Pješaci se promoviraju na **osmom redu** od tvoje strane, odmah iza sredine. Veća proširena ploča je mod.',
         ],
       },
       warSetup: {
         kind: 'Prije igre',
         title: 'Postavljanje kao Potapanje brodova',
         p: [
-          'Svatko postavlja **svih šesnaest figura bilo gdje u svoja četiri reda**, i pješake, ne vidjevši tuđe. Dodirni ili povuci figure na mjesto.',
+          'Svatko postavlja **svih šesnaest figura bilo gdje u svoja tri reda**, i pješake, ne vidjevši tuđe. Dodirni ili povuci figure na mjesto.',
           'Imaš **dvije minute**. Tko do tada nije spreman, dobiva raspored bota. Kralj može početi u opasnosti.',
         ],
       },
