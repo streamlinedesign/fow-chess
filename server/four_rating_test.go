@@ -14,16 +14,16 @@ func TestFourQueueGroups(t *testing.T) {
 	users := []*User{{ID: 1}, {ID: 2}, {ID: 3}, {ID: 4}, {ID: 5}}
 	ratings := []int{1500, 1520, 1480, 1510, 2400}
 	for i := range 3 {
-		q.join(users[i], ratings[i])
+		q.join(users[i], ratings[i], warMode.Time)
 		if g := q.group(users[i]); g != nil {
 			t.Fatalf("grouped with %d waiting", i+1)
 		}
 	}
-	q.join(users[4], ratings[4])
+	q.join(users[4], ratings[4], warMode.Time)
 	if g := q.group(users[4]); g != nil {
 		t.Fatal("a far rating grouped at once")
 	}
-	q.join(users[3], ratings[3])
+	q.join(users[3], ratings[3], warMode.Time)
 	g := q.group(users[3])
 	if len(g) != 4 {
 		t.Fatalf("group of %d", len(g))
@@ -33,8 +33,80 @@ func TestFourQueueGroups(t *testing.T) {
 			t.Error("the far rating was picked over a close one")
 		}
 	}
-	if q.Size() != 1 {
-		t.Errorf("%d left waiting", q.Size())
+	if q.Size(warMode.Time) != 1 {
+		t.Errorf("%d left waiting", q.Size(warMode.Time))
+	}
+}
+
+// Players only sit down with others who asked for the same clock.
+func TestFourQueueKeepsClocksApart(t *testing.T) {
+	q := NewFourQueue()
+	daily, twoHours := warTimes[2], warTimes[1]
+	for i := range 3 {
+		q.join(&User{ID: int64(i + 1)}, 1500, daily)
+	}
+	odd := &User{ID: 4}
+	q.join(odd, 1500, twoHours)
+	if g := q.group(odd); g != nil {
+		t.Fatal("seated with players on another clock")
+	}
+	if q.Size(daily) != 3 || q.Size(twoHours) != 1 {
+		t.Fatalf("sizes %d and %d", q.Size(daily), q.Size(twoHours))
+	}
+	// Changing their mind moves them over.
+	q.join(odd, 1500, daily)
+	g := q.group(odd)
+	if len(g) != 4 {
+		t.Fatalf("group of %d", len(g))
+	}
+	for _, e := range g {
+		if e.time != daily {
+			t.Errorf("%+v", e)
+		}
+	}
+}
+
+func TestWarTimes(t *testing.T) {
+	for _, tc := range warTimes {
+		s := warFour(tc)
+		if s.Time != tc || !s.War || !s.Fog || s.Setup != "battleship" || !s.JesterPawns || s.Rated || !s.valid() {
+			t.Errorf("%+v: %+v", tc, s)
+		}
+		if r := rankedWar(tc); !r.Rated || r.Time != tc {
+			t.Errorf("ranked %+v", r)
+		}
+	}
+	if warFour(TimeControl{Base: 60}).Time != warMode.Time {
+		t.Error("a clock War Mode doesn't have should fall back to the default")
+	}
+	if fourArrangeTime(warTimes[0]) != 2*time.Minute || fourArrangeTime(warTimes[1]) != 5*time.Minute ||
+		fourArrangeTime(warTimes[2]) != 24*time.Hour {
+		t.Error("arrange times")
+	}
+}
+
+// A daily War Mode game from the queue gives a day for each move.
+func TestFourRankedDaily(t *testing.T) {
+	hub := NewFourHub(nil)
+	var ps [4]*player
+	var cs [4]*client
+	for i := range ps {
+		ps[i] = guestPlayer(string(rune('a' + i)))
+	}
+	m := hub.CreateRanked(ps, [4]int{1500, 1500, 1500, 1500}, warTimes[2])
+	for i, p := range ps {
+		cs[i] = newClient(p.key)
+		m.join(cs[i], p)
+	}
+	for i := range cs {
+		m.handle(cs[i], fourIn{Type: "setup", Board: four.Cross.StandardSetup()})
+	}
+	s := lastFour(t, cs[0])
+	if s.Status != "playing" || s.Settings.Time.PerMove != 24*60*60 || s.Clock == nil {
+		t.Fatalf("status %s settings %+v", s.Status, s.Settings)
+	}
+	if left := s.Clock.Left["r"]; left < (24*time.Hour-time.Minute).Milliseconds() || left > (24*time.Hour).Milliseconds() {
+		t.Errorf("red has %dms", left)
 	}
 }
 
@@ -50,7 +122,7 @@ func TestFourRanked(t *testing.T) {
 		}
 		ps[i] = userPlayer(u, "")
 	}
-	m := hub.CreateRanked(ps, [4]int{1500, 1500, 1500, 1500})
+	m := hub.CreateRanked(ps, [4]int{1500, 1500, 1500, 1500}, warMode.Time)
 	for i, p := range ps {
 		cs[i] = newClient(p.key)
 		m.join(cs[i], p)

@@ -4,6 +4,8 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- War Mode has three clocks: 30 minutes plus 10 seconds a move (as before), 2 hours plus 30 seconds a move, and a day for every move. The home page and the desktop app pick one; the queue only seats players who picked the same clock, and all three count on the one War Mode rating. Players get 2 minutes to place their pieces, 5 in a two-hour game and a day in a daily one.
+- Play a friend with a code can start War Mode: pick War Mode, create a code, and up to three friends join with it; bots take the seats nobody takes. Never ranked. Joining by code finds War Mode games too.
 - Home page: the board always plays Solomon (or three of him in War Mode); the opponent picker is gone. Rex, Vercingetorix and Ramesses II have their own cards at the bottom, each opening a new game on the clock picked above. The v1.0 plans list is called Upcoming.
 - Guests are told that wins unlock nothing until they log in: the bot cards and Solomon's line say "Log in, then beat it to unlock the set", and a guest's win on the home page board says so. Signed-in players still unlock galaxy by beating Solomon on the home page board, as before.
 - Rex inutilis is a basic bot: he plays the classic pieces and beating him unlocks nothing. Holy, the set he wore, now unlocks on reaching a 2000 rating in either Eat the King or War Mode, and stays once reached (`rating:2000` in `unlocks`). Players who already beat Rex keep holy (migration 012).

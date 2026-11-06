@@ -36,10 +36,13 @@
 - Four-player extended board: the seat names and clocks aren't drawn in the corners (they're playable there), only in the list beside the board; find a place for them on the board
 - Four-player bots: Solomon only matches Ramesses II against itself (it beats the old bot clearly); a two-round look ahead might separate them. A smarter Battleship arrangement (two tried, neither beat the shuffled back row)
 - War Mode: a bot or friendlier wait when fewer than four are in the queue; show War Mode games in the profile's game lists
+- War Mode daily games: no bell when it's your move yet, and a game nobody opens only notices a player out of time when someone opens it (same as two-player daily)
+- War Mode with friends: no time limit on placing pieces; one player can hold up the start
 - Decide what else the hub should show
 
 ## Done
 
+- 0.29.0: War Mode clocks of 30 minutes, 2 hours and a day; War Mode with friends by code
 - 0.28.0: home page plays Solomon, other bots as cards below, Upcoming list; guests are told wins unlock nothing
 - 0.24.2: fog is Dusk only
 - 0.24.0: crisp board, Smoke and Dusk fog tinted by tile skin, live preview in settings

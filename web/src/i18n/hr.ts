@@ -127,6 +127,8 @@ export const hr: Dict = {
     guestNote: 'Traženje protivnika je rangirano, pa treba račun. Ploča i botovi ne trebaju ništa.',
     codeTitle: 'Igraj s prijateljem preko koda',
     codeSub: 'Isti sat kao gore. Pošalji kod ili poveznicu, a prijatelj se pridruži s njim.',
+    codeSubWar: 'Isti sat Ratnog načina kao gore. Pošalji kod do trojici prijatelja; botovi mogu zauzeti prazna mjesta.',
+    codeGame: 'Igra s prijateljem',
     createCode: 'Napravi kod',
     modsSub: 'Svako pravilo po želji: bez magle, šah-mat, Kralj brda, bilo koji sat. Nikad rangirano.',
     demoBot: 'Bot za probu',
@@ -149,7 +151,13 @@ export const hr: Dict = {
     fourTitle: 'Ratni način',
     fourAbout:
       'Četiri igrača · Potapanje brodova · Pješaci lakrdijaši · Magla rata',
-    fourRanked: 'Rangira se na zasebnom rejtingu Ratnog načina. 30 minuta svakome, plus 10 sekundi po potezu.',
+    fourRanked: 'Rangira se na zasebnom rejtingu Ratnog načina, istom za svaku duljinu.',
+    warLength: 'Sat Ratnog načina',
+    warTimes: [
+      { label: '30 min', sub: '+10 s po potezu' },
+      { label: '2 sata', sub: '+30 s po potezu' },
+      { label: '1 dan', sub: 'po potezu' },
+    ],
     official: 'Službeno',
     yourRating: 'tvoj rejting',
     yourRatingIn: (game, n) => `Tvoj rejting u igri ${game}, ${n}`,
@@ -181,7 +189,7 @@ export const hr: Dict = {
     logInForRating: 'Prijavi se za rejting',
     neverRanked: 'Nikad rangirano',
     chooseMods: 'Odaberi modove',
-    warClock: '30 min + 10 s svakome',
+    warClocks: ['30 min + 10 s svakome', '2 h + 30 s svakome', '1 dan po potezu'],
     clock: 'Sat',
     title: 'Igraj na računalu.',
     about:
@@ -617,7 +625,8 @@ export const hr: Dict = {
         kind: 'Rangirano',
         title: 'Sat i rejting',
         p: [
-          '**30 minuta svakome, plus 10 sekundi po potezu.** Pritisni **Igraj** na početnoj stranici i uđi u red četvorice blizu tvog rejtinga.',
+          'Odaberi sat: **30 minuta svakome plus 10 sekundi po potezu**, **2 sata svakome plus 30 sekundi po potezu** ili **dan za svaki potez**. Pritisni **Igraj** na početnoj stranici i uđi u red četvorice blizu tvog rejtinga koji su odabrali isti sat.',
+          'Za igru s prijateljima odaberi Ratni način pod **Igraj s prijateljem preko koda** i pošalji im kod. Pridružiti se mogu do trojica, botovi zauzmu prazna mjesta, a igra se nikad ne rangira.',
           'Svaka igra se broji kao rezultat **protiv svakog od ostale trojice**, po redoslijedu kojim ste završili. Ratni način ima **vlastiti rejting**, od 1500, i vlastitu ljestvicu.',
         ],
       },
