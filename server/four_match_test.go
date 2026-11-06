@@ -428,7 +428,8 @@ func TestFourBotsAloneWait(t *testing.T) {
 }
 
 // War Mode takes turns: the home page game against three bots goes Red,
-// Blue, Green, Violet, one move each, and Red is to move again.
+// Blue, Green, Violet, one move each, and Red is to move again. A bot whose
+// king starts in danger may be eaten first, and then its turn is skipped.
 func TestFourWarModeTurns(t *testing.T) {
 	if warMode.Sync || rankedFour.Sync {
 		t.Fatal("War Mode is Sync Move")
@@ -447,14 +448,17 @@ func TestFourWarModeTurns(t *testing.T) {
 	deadline := time.Now().Add(5 * time.Second)
 	for {
 		m.mu.Lock()
-		n, turn, over := len(m.game.History()), m.game.Turn(), m.game.Over()
+		hist, turn, over := m.game.History(), m.game.Turn(), m.game.Over()
 		m.mu.Unlock()
+		n := len(hist)
 		if over {
 			return // a bot may take a king that starts in danger
 		}
-		if n >= 4 && turn == four.Red {
-			if n != 4 {
-				t.Fatalf("%d moves before Red's second turn", n)
+		if n >= 2 && turn == four.Red {
+			for i, e := range hist {
+				if e.Round != 0 || (i > 0 && e.By <= hist[i-1].By) {
+					t.Fatalf("not in turn: %+v", hist)
+				}
 			}
 			return
 		}
