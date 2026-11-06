@@ -44,6 +44,8 @@ type credentials struct {
 type meResponse struct {
 	Username string `json:"username"`
 	Rating   int    `json:"rating"`
+	// FourRating is the War Mode rating.
+	FourRating int `json:"fourRating"`
 	// The player's avatar and look preferences, so they follow them to every device.
 	lookResponse
 }
@@ -247,7 +249,7 @@ func (a *Auth) me(u *User) meResponse {
 		log.Printf("me: %v", err)
 	}
 	look.fill()
-	return meResponse{u.Username, int(u.Rating + 0.5), look}
+	return meResponse{u.Username, int(u.Rating + 0.5), int(u.FourRating + 0.5), look}
 }
 
 // user returns the signed-in user for a request, or nil for a guest.

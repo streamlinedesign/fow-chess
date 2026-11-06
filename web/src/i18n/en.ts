@@ -69,7 +69,6 @@ export const en = {
   } as Record<string, string>,
 
   header: {
-    yourRating: (n: number) => `Your rating, ${n}`,
     toggleDark: 'Toggle dark mode',
     yourMenu: 'Your menu',
     theme: 'Theme',
@@ -148,7 +147,9 @@ export const en = {
     fourTitle: 'War Mode',
     fourAbout: 'Four players · Extended board · Battleship · Sync Move · Jester pawns · No fog',
     fourRanked: 'Ranked on a War Mode rating of its own. 30 minutes each, plus 10 seconds a move.',
-    fourPlay: 'Find a War Mode game',
+    official: 'Official',
+    yourRating: 'your rating',
+    yourRatingIn: (game: string, n: number) => `Your ${game} rating, ${n}`,
     fourFinding: 'Finding three players…',
     fourWaiting: (n: number, secs: number) => `${n} of 4 waiting, ${secs} s`,
     fourGuest: 'Ranked games need an account.',
@@ -274,7 +275,6 @@ export const en = {
       ['Kriegspiel', 'Playing without seeing the other side.'],
       ['King of the Hill', 'Winning by walking your king to the centre.'],
       ['Battleship', 'Placing your pieces where nobody can see them.'],
-      ['Hungry Hungry Hippos', 'Eating is the point. Take the king and it’s over.'],
       ['Four-player chess', 'Everyone for themselves on a cross-shaped board.'],
     ] as [string, string][],
   },
@@ -400,11 +400,11 @@ export const en = {
     },
     backRow: {
       label: 'Back row',
-      hint: 'Arrange your back row however you like.',
+      hint: 'Arrange your back row however you like. Kings can start in danger: winning on your first move is a Sniper Win.',
     },
     battleship: {
       label: 'Battleship',
-      hint: 'Place all sixteen pieces anywhere in your four rows.',
+      hint: 'Place all sixteen pieces anywhere in your four rows. Kings can start in danger: winning on your first move is a Sniper Win.',
     },
   },
 
@@ -525,8 +525,13 @@ export const en = {
   rules: {
     heading: 'How it plays',
     intro:
-      'Normal chess pieces and moves, with two changes: you only see what your pieces see, and you win by taking the king.',
+      'The two official games: Eat the King, chess in the fog where you win by taking the king, and War Mode, four players out to take each other’s kings.',
     yourMatchCode: 'your match code',
+    etkHeading: 'Eat the King rules',
+    etkSub: 'One against one, in the fog, from the usual position. Ranked.',
+    warHeading: 'War Mode rules',
+    warSub: 'Four players, everyone for themselves. Ranked on a rating of its own.',
+    modsNote: 'Everything else, from checkmate to King of the Hill, is a mod. Each one is explained where you pick it, on the Mods page.',
     cards: {
       fog: {
         kind: 'What you see',
@@ -561,44 +566,60 @@ export const en = {
           'Refreshing or losing signal puts you back in your seat. You can offer a draw or resign at any time, and a **rematch** swaps colours.',
         ],
       },
-      backRow: {
-        kind: 'Mode',
-        title: 'Back row',
-        p: [
-          'Before the game, you each **arrange your back row** however you like. The pawns stay where they always are.',
-          'You set up at the same time, so nobody gets to react. Castling works only for a king and rook left on their usual squares.',
-        ],
-      },
-      battleship: {
-        kind: 'Mode',
-        title: 'Battleship',
-        p: [
-          'Place **all sixteen pieces anywhere in your four rows**, pawns included. Hide the king, build a wall, or aim a rook down an open file.',
-          'You never see the other setup, so the first moves are a hunt.',
-        ],
-      },
-      sniper: {
-        kind: 'Back row and Battleship',
-        title: 'Sniper Win',
-        p: [
-          "When you set up your own pieces, a king can start in danger. Nothing stops that: it's part of the game. If you win **on your very first move**, that's a **Sniper Win**.",
-          'It still counts, but it moves both ratings only a quarter as far as a whole game.',
-        ],
-      },
-      jester: {
-        kind: 'Mod',
-        title: 'Jester pawns',
-        p: [
-          'On the **mods** page, pawns can become jesters. A jester **steps one square any way, like a king**, and **takes on any of those squares**, straight ahead and backward included.',
-          'The rest is still a pawn: the **double step** from its starting square, **en passant**, and **promotion** on the last rank. It sees every square around it, and a jester next to a king attacks it.',
-        ],
-      },
       clocks: {
         kind: 'Ranked',
         title: 'Clocks and rating',
         p: [
           "Clocks run on the server, so closing the tab doesn't stop them. Run out and you lose, unless your opponent can't win with what's left. **Daily** gives you 24 hours per move and **Weekly** 7 days, reset after every move.",
           'Every game between two signed-in players is **ranked**, with a rating of its own for Eat the King and for War Mode, each starting at 1500. Press **Play** on the home page to be paired with the player nearest your rating. **Mods** games and games against a bot never count.',
+        ],
+      },
+      warBoard: {
+        kind: 'The board',
+        title: 'Four players, extended board',
+        p: [
+          'A **16 by 16** board with **four rows each** and **open corners** anyone can cross. Red, Blue, Green and Violet sit round it.',
+          'There is **no fog**: everyone sees the whole board. Pawns promote **past the middle**, or on the **side walls** of the players beside you.',
+        ],
+      },
+      warSetup: {
+        kind: 'Before the game',
+        title: 'Battleship setup',
+        p: [
+          'Everyone places **all sixteen pieces anywhere in their four rows**, pawns included, without seeing anyone else’s.',
+          'You have **two minutes**. Whoever isn’t ready by then gets a bot’s arrangement. A king can start in danger.',
+        ],
+      },
+      warSync: {
+        kind: 'How a round goes',
+        title: 'Sync Move',
+        p: [
+          '**Everyone moves at once.** Each round you pick a move, and the moves happen together once all four are in.',
+          '**Captures come last**, so a piece that moves away in the same round dodges the capture.',
+        ],
+      },
+      warJester: {
+        kind: 'Pawns',
+        title: 'Jester pawns',
+        p: [
+          'A jester **steps one square any way, like a king**, and **takes on any of those squares**.',
+          'It keeps the pawn’s **double step** from its starting square, **en passant** and **promotion**. A jester next to a king attacks it.',
+        ],
+      },
+      warWin: {
+        kind: 'How you win',
+        title: 'Last king standing',
+        p: [
+          'There is **no check**. Take a king and its player is **out**: their pieces leave the board and the others play on. The **last king standing** wins.',
+          'A player who is out watches a few moves behind, and only other players who are out read their chat until the game ends.',
+        ],
+      },
+      warRating: {
+        kind: 'Ranked',
+        title: 'Clock and rating',
+        p: [
+          '**30 minutes each, plus 10 seconds a move.** Press **Play** on the home page to join a queue of four near your rating.',
+          'Each game counts as a result **against each of the other three**, by the order you finished in. War Mode has its **own rating**, starting at 1500, and its own leaderboard.',
         ],
       },
       draws: {

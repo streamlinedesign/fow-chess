@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { rich, useT, type Dict } from './i18n'
 import { pieceImg, type Look } from './position'
+import { SEAT_COLORS } from './four'
 import { HILL } from './settings'
 
 /** A FEN board as 64 characters from a1 to h8, the way the server sends boards. */
@@ -85,85 +86,115 @@ function Card({ id, art, children }: { id: CardKey; art: ReactNode; children?: R
 
 const rows = (n: number) => [...Array(n * 8)].map((_, i) => FILES[i % 8] + (Math.floor(i / 8) + 1))
 
-/** How the game works. Keep in step with server/engine and server/view.go. */
-export function Rules() {
+/** Eat the King, the original game. Keep in step with server/engine and server/view.go. */
+export function EatRules() {
   const t = useT()
   return (
-    <section id="rules" className="flex flex-col gap-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card
-          id="fog"
-          art={<MiniBoard fen="8/8/8/8/3N4/8/8/8" seen={['d4', 'b3', 'b5', 'c2', 'c6', 'e2', 'e6', 'f3', 'f5']} />}
-        />
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <Card
+        id="fog"
+        art={<MiniBoard fen="8/8/8/8/3N4/8/8/8" seen={['d4', 'b3', 'b5', 'c2', 'c6', 'e2', 'e6', 'f3', 'f5']} />}
+      />
 
-        <Card
-          id="eat"
-          art={
-            <div className="flex items-center gap-2.5" aria-hidden>
-              <img src={pieceImg('Q')} alt="" className="size-[72px]" />
-              <span className="text-3xl text-accent">→</span>
-              <img src={pieceImg('k')} alt="" className="size-[72px] -rotate-90 opacity-55" />
+      <Card id="eat" art={<KingTaken />} />
+
+      <Card
+        id="danger"
+        art={<MiniBoard fen="8/8/8/8/8/2n5/8/4K3" seen={['e1', 'd1', 'd2', 'e2', 'f1', 'f2', 'c3']} danger="e1" />}
+      />
+
+      <Card
+        id="start"
+        art={
+          <div className="flex flex-col gap-1.5">
+            <div className="flex gap-1">
+              {'K7Q2XD'.split('').map((c, i) => (
+                <span
+                  key={i}
+                  className="grid h-11 w-8 place-items-center rounded-md border-[1.5px] border-fg font-mono text-xl"
+                >
+                  {c}
+                </span>
+              ))}
             </div>
-          }
-        />
+            <span className="font-mono text-xs text-accent">{t.rules.yourMatchCode}</span>
+          </div>
+        }
+      />
 
-        <Card
-          id="danger"
-          art={<MiniBoard fen="8/8/8/8/8/2n5/8/4K3" seen={['e1', 'd1', 'd2', 'e2', 'f1', 'f2', 'c3']} danger="e1" />}
-        />
+      <Card id="clocks" art={<ClockArt time="5:00" inc="+0" />}>
+        <span className="font-mono text-[15px]">
+          1500 → <strong className="text-fg">1512</strong>
+        </span>
+      </Card>
 
-        <Card
-          id="start"
-          art={
-            <div className="flex flex-col gap-1.5">
-              <div className="flex gap-1">
-                {'K7Q2XD'.split('').map((c, i) => (
-                  <span
-                    key={i}
-                    className="grid h-11 w-8 place-items-center rounded-md border-[1.5px] border-fg font-mono text-xl"
-                  >
-                    {c}
-                  </span>
-                ))}
-              </div>
-              <span className="font-mono text-xs text-accent">{t.rules.yourMatchCode}</span>
-            </div>
-          }
-        />
+      <Card id="draws" art={<span className="text-[60px] leading-none font-light tracking-tight">½ – ½</span>} />
+    </div>
+  )
+}
 
-        <Card id="backRow" art={<MiniBoard fen="8/8/8/8/8/8/PPPPPPPP/BNRKQRNB" seen={rows(2)} last={rows(1)} />} />
-
-        <Card id="battleship" art={<MiniBoard fen="8/8/8/8/1P2N2P/P1R2Q1P/1PB1PPB1/P1RK1N2" seen={rows(4)} />} />
-
-        <Card
-          id="jester"
-          art={
-            <MiniBoard
-              fen="8/8/8/3n4/4P3/8/8/8"
-              look={{ jesterPawns: true }}
-              dots={['d3', 'e3', 'f3', 'd4', 'f4', 'd5', 'e5', 'f5']}
-            />
-          }
-        />
-
-        <Card id="sniper" art={<MiniBoard fen="4k3/8/8/8/8/4R3/8/4K3" last={['e3', 'e8']} />} />
-
-        <Card
-          id="clocks"
-          art={
-            <div className="flex flex-col gap-2">
-              <span className="flex items-baseline gap-2 rounded-md bg-fg px-3.5 py-2 font-mono text-[34px] leading-none text-bg">
-                5:00<span className="text-base opacity-70">+0</span>
+/** War Mode, the ranked four-player game. Keep in step with server/four and server/four_queue.go. */
+export function WarRules() {
+  return (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <Card id="warBoard" art={<FourSeats />} />
+      <Card id="warSetup" art={<MiniBoard fen="8/8/8/8/1P2N2P/P1R2Q1P/1PB1PPB1/P1RK1N2" seen={rows(4)} />} />
+      <Card
+        id="warSync"
+        art={
+          <div className="grid grid-cols-2 gap-1.5" aria-hidden>
+            {Object.values(SEAT_COLORS).map((c) => (
+              <span key={c} className="grid size-12 place-items-center rounded-md text-xl text-white" style={{ background: c }}>
+                ✓
               </span>
-              <span className="font-mono text-[15px]">
-                1500 → <strong className="text-fg">1512</strong>
-              </span>
-            </div>
-          }
-        />
+            ))}
+          </div>
+        }
+      />
+      <Card
+        id="warJester"
+        art={
+          <MiniBoard
+            fen="8/8/8/3n4/4P3/8/8/8"
+            look={{ jesterPawns: true }}
+            dots={['d3', 'e3', 'f3', 'd4', 'f4', 'd5', 'e5', 'f5']}
+          />
+        }
+      />
+      <Card id="warWin" art={<KingTaken />} />
+      <Card id="warRating" art={<ClockArt time="30:00" inc="+10" />} />
+    </div>
+  )
+}
 
-        <Card id="draws" art={<span className="text-[60px] leading-none font-light tracking-tight">½ – ½</span>} />
-      </div>
-    </section>
+function KingTaken() {
+  return (
+    <div className="flex items-center gap-2.5" aria-hidden>
+      <img src={pieceImg('Q')} alt="" className="size-[72px]" />
+      <span className="text-3xl text-accent">→</span>
+      <img src={pieceImg('k')} alt="" className="size-[72px] -rotate-90 opacity-55" />
+    </div>
+  )
+}
+
+function ClockArt({ time, inc }: { time: string; inc: string }) {
+  return (
+    <span className="flex items-baseline gap-2 rounded-md bg-fg px-3.5 py-2 font-mono text-[34px] leading-none text-bg">
+      {time}
+      <span className="text-base opacity-70">{inc}</span>
+    </span>
+  )
+}
+
+/** The four seats round the extended board, with its open corners. */
+function FourSeats() {
+  const side = (c: string, cls: string) => <span className={`absolute rounded-sm ${cls}`} style={{ background: c }} />
+  return (
+    <div className="relative size-32 rounded-[3px] border-[1.5px] border-fg" aria-hidden>
+      {side(SEAT_COLORS.r, 'inset-x-7 bottom-1 h-6')}
+      {side(SEAT_COLORS.b, 'inset-y-7 left-1 w-6')}
+      {side(SEAT_COLORS.g, 'inset-x-7 top-1 h-6')}
+      {side(SEAT_COLORS.v, 'inset-y-7 right-1 w-6')}
+    </div>
   )
 }

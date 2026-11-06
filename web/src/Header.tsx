@@ -40,31 +40,8 @@ export function Header() {
       <div className="flex items-center gap-1.5">
         {me === undefined ? null : me ? (
           <>
-            <a
-              href={`/u/${me.username}`}
-              onClick={(e) => go(e, `/u/${me.username}`)}
-              aria-label={t.header.yourRating(me.rating)}
-              className="flex h-8 items-center gap-1.5 rounded-md bg-muted px-2.5 font-mono text-sm tabular-nums transition-colors hover:bg-fg/10"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 15 15"
-                fill="none"
-                aria-hidden
-                className="text-accent max-sm:hidden"
-              >
-                <path
-                  d="M1.5 11 5.5 7l2.5 2.5L13.5 4M10 4h3.5v3.5"
-                  stroke="currentColor"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              {me.rating}
-            </a>
             <Bell />
-            <UserMenu username={me.username} rating={me.rating} />
+            <UserMenu username={me.username} rating={me.rating} fourRating={me.fourRating} />
           </>
         ) : (
           <>
@@ -185,7 +162,7 @@ function Seg<T extends string>({
   )
 }
 
-function UserMenu({ username, rating }: { username: string; rating: number }) {
+function UserMenu({ username, rating, fourRating }: { username: string; rating: number; fourRating?: number }) {
   const t = useT()
   const lang = useLang()
   const [mode, setMode] = useState(themeMode)
@@ -209,11 +186,19 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
     >
       <div className="flex items-center gap-3 px-2.5 pt-3 pb-3.5">
         <Avatar size={44} name={username} />
-        <div className="flex min-w-0 flex-col">
-          <span className="truncate text-[17px] font-semibold">{username}</span>
-          <span className="font-mono text-sm text-accent tabular-nums">{rating}</span>
-        </div>
+        <span className="truncate text-[17px] font-semibold">{username}</span>
       </div>
+      {/* Both ranked games, each with its own rating. */}
+      <dl className="menu-ratings">
+        <div>
+          <dt>{t.home.etkTitle}</dt>
+          <dd>{rating}</dd>
+        </div>
+        <div>
+          <dt>{t.home.fourTitle}</dt>
+          <dd>{fourRating ?? '—'}</dd>
+        </div>
+      </dl>
       <MenuSeparator />
       <MenuItem onSelect={() => navigate(`/u/${username}`)}>
         <Icon name="user" />
@@ -253,7 +238,7 @@ function UserMenu({ username, rating }: { username: string; rating: number }) {
         </MenuItem>
       )}
       <MenuItem onSelect={() => navigate('/mods')}>
-        <Icon name="gear" />
+        <Icon name="dial" />
         {t.common.mods}
       </MenuItem>
       <MenuItem onSelect={() => navigate('/settings')}>
