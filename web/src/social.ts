@@ -47,7 +47,6 @@ export type Notification = {
     result?: 'won' | 'lost' | 'draw'
     reason?: string
     kingCapture?: boolean
-    sniper?: boolean
     kind?: string
     place?: number
     players?: number

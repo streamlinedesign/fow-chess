@@ -56,7 +56,6 @@ type gameResult struct {
 	Settings Settings
 	Users    [2]int64
 	Outcome  engine.Outcome
-	Sniper   bool
 }
 
 func NewHub(store *Store) *Hub {
@@ -439,7 +438,7 @@ func (m *Match) save() {
 			m.playingChanged()
 			if m.hooks.over != nil {
 				go m.hooks.over(gameResult{MatchID: m.id, Round: m.round, Settings: m.settings, Users: m.users,
-					Outcome: m.game.Outcome(), Sniper: sniperWin(rec.Result, rec.Reason, len(m.game.History()))})
+					Outcome: m.game.Outcome()})
 			}
 		}
 	}
@@ -480,7 +479,6 @@ func (m *Match) notifyOver() {
 			UserID: m.users[c], Kind: notifyGameOver, ActorID: m.users[1-c], MatchID: m.id, Round: m.round,
 			Data: map[string]any{
 				"result": result, "reason": m.game.Method().String(), "kingCapture": m.settings.KingCapture,
-				"sniper": sniperWin(outcome, m.game.Method().String(), len(m.game.History())),
 			},
 		})
 	}
@@ -639,8 +637,6 @@ type stateMsg struct {
 	Spectators int `json:"spectators"`
 	// Setup is who's ready while the players arrange their pieces.
 	Setup *setupState `json:"setup,omitempty"`
-	// Sniper marks a game won on the winner's first move; see sniperWin.
-	Sniper bool `json:"sniper,omitempty"`
 	// Sent is who has sent a move in the Sync Move round in play.
 	Sent map[string]bool `json:"sent,omitempty"`
 	// Ticking is whose clocks run in a Sync Move round.
@@ -1067,7 +1063,6 @@ func (m *Match) base() stateMsg {
 		base.RatingDiff = map[string]int{"w": d[white], "b": d[black]}
 	}
 	if status == "over" {
-		base.Sniper = sniperWin(result, reason, len(m.game.History()))
 		if m.botWinner() != 0 {
 			base.Unlocked = botTheme(m.settings.Bot)
 		}

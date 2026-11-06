@@ -69,7 +69,7 @@ func (h *FourHub) rateFour(matchID string, users [4]int64, places []int, clock T
 			continue
 		}
 		after := before[c] + float64(diff[c])
-		lost := places[c] != 1
+		lost := warLost(places[c])
 		if _, err := tx.Exec(`UPDATE users SET four_rating = $2, four_rated_games = four_rated_games + 1,
 			four_lost_on = CASE WHEN $3 THEN `+utcToday+` ELSE four_lost_on END WHERE id = $1`,
 			users[c], after, lost); err != nil {

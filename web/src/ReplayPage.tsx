@@ -26,7 +26,6 @@ type Replay = {
   history: string[]
   frames: Frame[]
   ended: number
-  sniper?: boolean
   /** The signed-in players' skins as they are now. */
   skins?: Partial<Record<Color, Skin>>
 }
@@ -36,8 +35,7 @@ const noop = () => {}
 
 function resultLine(r: Replay, t: Dict) {
   if (r.result === '1/2-1/2') return t.replay.drawBy(how(r.reason, t))
-  const won = t.replay.sideWon(r.result === '1-0' ? t.common.white : t.common.black, how(r.reason, t))
-  return r.sniper ? t.replay.sniper(won) : won
+  return t.replay.sideWon(r.result === '1-0' ? t.common.white : t.common.black, how(r.reason, t))
 }
 
 /** Steps through a finished game with the whole board visible. */

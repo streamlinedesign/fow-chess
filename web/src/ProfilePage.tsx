@@ -29,7 +29,6 @@ export type GameSummary = {
   /** The owner's rating change, once the game is rated. */
   ratingDiff?: number
   /** Won on the winner's first move; see the rules. */
-  sniper?: boolean
 }
 
 type Record = {
@@ -413,11 +412,7 @@ function MatchCard({ g, owner }: { g: GameSummary; owner: string }) {
   const title =
     r === 'draw'
       ? t.profile.cardDraw
-      : g.sniper
-        ? r === 'win'
-          ? t.match.sniperWin
-          : t.match.sniped
-        : ate
+      : ate
           ? r === 'win'
             ? t.profile.cardAteKing
             : t.profile.cardKingGotAte
@@ -449,7 +444,6 @@ function MatchCard({ g, owner }: { g: GameSummary; owner: string }) {
           <h3>{title}</h3>
           <p className="how-won">
             {winner} {how}
-            {g.sniper && t.profile.onFirstMove}
           </p>
         </div>
       </div>

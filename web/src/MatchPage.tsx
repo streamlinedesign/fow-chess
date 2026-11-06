@@ -24,11 +24,6 @@ function resultText(s: MatchState, t: Dict) {
   const h = how(s.reason, t)
   if (s.result === '1/2-1/2') return { title: t.match.draw, detail: t.match.drawDetail(h) }
   const winner: Color = s.result === '1-0' ? 'w' : 'b'
-  if (s.sniper) {
-    const title = s.you && s.you !== winner ? t.match.sniped : t.match.sniperWin
-    const detail = t.match.sniperDetail(sideName(t, winner), h)
-    return { title, detail: s.rated ? `${detail} ${t.match.sniperRating}` : detail }
-  }
   const title = s.you ? (s.you === winner ? t.match.youWin : t.match.youLose) : t.match.sideWins(sideName(t, winner))
   return { title, detail: t.match.winsDetail(sideName(t, winner), h) }
 }

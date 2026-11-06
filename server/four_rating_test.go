@@ -164,14 +164,14 @@ func TestFourRanked(t *testing.T) {
 		}
 		return *d
 	}
-	// A 30-minute game at equal ratings is worth 21 to the winner. It's
-	// everyone's first loss of the day: second loses half, third nothing,
-	// fourth a quarter.
-	if diff("r") != 21 || diff("v") != -11 || diff("g") != 0 || diff("b") != -5 {
+	// A 30-minute game at equal ratings is worth 21 to the winner, and half
+	// of it to second, which counts as a win. It's third's and fourth's first
+	// loss of the day: third loses nothing, fourth a quarter.
+	if diff("r") != 21 || diff("v") != 11 || diff("g") != 0 || diff("b") != -5 {
 		t.Errorf("diffs r %d v %d g %d b %d", diff("r"), diff("v"), diff("g"), diff("b"))
 	}
 	top, err := store.Leaderboard(10, true)
-	if err != nil || len(top) != 4 || top[0].Username != "ann" || top[1].Username != "cat" || top[3].Username != "dan" {
+	if err != nil || len(top) != 4 || top[0].Username != "ann" || top[1].Username != "dan" || top[3].Username != "ben" {
 		t.Errorf("four-player leaderboard %+v %v", top, err)
 	}
 	if one, _ := store.Leaderboard(10, false); len(one) != 0 {

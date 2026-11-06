@@ -44,14 +44,11 @@ func TestWinValue(t *testing.T) {
 
 func TestDuelPoints(t *testing.T) {
 	short := TimeControl{Base: 300}
-	if w, l := duelPoints(short, 1000, 1000, false, false); w != 21 || l != -21 {
+	if w, l := duelPoints(short, 1000, 1000, false); w != 21 || l != -21 {
 		t.Errorf("a loss %d %d", w, l)
 	}
-	if w, l := duelPoints(short, 1000, 1000, true, false); w != 21 || l != -11 {
+	if w, l := duelPoints(short, 1000, 1000, true); w != 21 || l != -11 {
 		t.Errorf("a first loss of the day %d %d", w, l)
-	}
-	if w, l := duelPoints(short, 1000, 1000, false, true); w != 5 || l != -5 {
-		t.Errorf("a Sniper Win %d %d", w, l)
 	}
 }
 
@@ -68,10 +65,10 @@ func TestWarPoints(t *testing.T) {
 		firstLoss [4]bool
 		want      [4]int
 	}{
-		{"short", short, []int{1, 4, 3, 2}, even, none, [4]int{21, -11, -11, -21}},
-		{"long", long, []int{1, 4, 3, 2}, even, none, [4]int{26, -13, -13, -26}},
-		{"first losses", long, []int{1, 4, 3, 2}, even, all, [4]int{26, -7, 0, -13}},
-		{"underdog", short, []int{2, 3, 4, 1}, [4]float64{1400, 1400, 1400, 1000}, none, [4]int{-23, -12, -12, 23}},
+		{"short", short, []int{1, 4, 3, 2}, even, none, [4]int{21, -11, -11, 11}},
+		{"long", long, []int{1, 4, 3, 2}, even, none, [4]int{26, -13, -13, 13}},
+		{"first losses", long, []int{1, 4, 3, 2}, even, all, [4]int{26, -7, 0, 13}},
+		{"underdog", short, []int{2, 3, 4, 1}, [4]float64{1400, 1400, 1400, 1000}, none, [4]int{12, -12, -12, 23}},
 		{"draw", short, []int{1, 1, 3, 4}, even, none, [4]int{0, 0, -11, -11}},
 		{"everyone level", short, []int{1, 1, 1, 1}, even, none, [4]int{}},
 	} {
