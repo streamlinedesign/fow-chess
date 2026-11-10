@@ -36,12 +36,12 @@ P_SHAPES = ('<rect x="27" y="78" width="46" height="10" rx="2.5"/>'
 P_LINES = '<path d="M27 78 H73"/><path d="M37 59 H63"/>'
 
 # The Eye: a plain almond eye on the collar where the cup was, a small cross on top.
-ALMOND = '<path d="M21 34 C34 21 66 21 79 34 C66 47 34 47 21 34 Z"/>'
-EYE_CROSS = '<path d="M47.75 27 V20.5 H43.5 V16 H47.75 V11.5 H52.25 V16 H56.5 V20.5 H52.25 V27 Z"/>'
+ALMOND = '<path d="M24 34 C31 17 69 17 76 34 C69 51 31 51 24 34 Z"/>'
+EYE_CROSS = '<path d="M47.75 23 V17 H43.5 V12.5 H47.75 V8 H52.25 V12.5 H56.5 V17 H52.25 V23 Z"/>'
 EYE_SHAPES = BASE + BODY + COLLAR + EYE_CROSS + ALMOND
 EYE_LINES = ('<path d="M22 78 H78"/><path d="M35 51 H65"/>'
-             '<circle cx="50" cy="34" r="7.5"/>'
-             '<path d="M50 28.5 V39.5" stroke-width="4.5"/>')
+             '<circle cx="50" cy="34" r="8.5"/>'
+             '<path d="M50 28 V40" stroke-width="3"/>')
 
 # The swap king: battlements for a crown.
 BATTLEMENTS = '<path d="M36 28 V13 H42.5 V18 H47 V13 H53 V18 H57.5 V13 H64 V28 Z"/>'
