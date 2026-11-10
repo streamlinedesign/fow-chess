@@ -10,7 +10,7 @@ const coloured = import.meta.glob<string>('./pieces/four/*.svg', { eager: true, 
 const lightLines = import.meta.glob<string>('./pieces/light/*.svg', { eager: true, import: 'default' })
 const inkLines = import.meta.glob<string>('./pieces/ink/*.svg', { eager: true, import: 'default' })
 const themed = import.meta.glob<string>(
-  './pieces/{mono,galaxy,blueprint,holy,ancient,cyberpunk,survey,bronze,silver,gold,grandmaster,king}/*.svg',
+  './pieces/{mono,japanese,galaxy,blueprint,holy,ancient,cyberpunk,survey,bronze,silver,gold,grandmaster,king}/*.svg',
   { eager: true, import: 'default' },
 )
 const still = import.meta.glob<string>('./pieces/king-still/*.svg', { eager: true, import: 'default' })
@@ -25,6 +25,7 @@ const LETTER: Record<string, string> = { red: 'r', blue: 'b', green: 'g', violet
 /** The themed sets: each has a light side for White and a dark side for Black, and tiles to match. */
 export const THEMES = [
   'mono',
+  'japanese',
   'galaxy',
   'blueprint',
   'holy',
@@ -156,6 +157,7 @@ export function avatarImg(code: string | undefined) {
 export const FOG_TINT: Record<string, string> = {
   '': '#34342c',
   mono: '#2a2a2a',
+  japanese: '#141d38',
   galaxy: '#231b52',
   blueprint: '#112a58',
   holy: '#4a3c1c',
@@ -165,7 +167,7 @@ export const FOG_TINT: Record<string, string> = {
   bronze: '#3a2416',
   silver: '#2a2f37',
   gold: '#3a2c0c',
-  grandmaster: '#140b30',
+  grandmaster: '#1c1c18',
   king: '#2a2210',
 }
 

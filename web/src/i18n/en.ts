@@ -1018,9 +1018,9 @@ export const en = {
     lockedBeta: 'Beta players',
     lockedRating: (n: string, title: string) => `${title}, ${n}`,
     unlockHint:
-      'Colours and black and white are yours. Most themed sets belong to a bot: beat it to unlock its pieces, tiles and avatars. The rest come with titles: Blueprint at 1150, then Bronze, Silver, Gold, Holy, Grandmaster and King.',
+      'Colours, black and white and Japanese are yours. Most themed sets belong to a bot: beat it to unlock its pieces, tiles and avatars. The rest come with titles: Blueprint at 1150, then Bronze, Silver, Gold, Holy, Grandmaster and King.',
     unlockGuest:
-      'Colours and black and white are yours. Most themed sets belong to a bot: sign in and beat it to unlock it. The rest come with titles: Blueprint at 1150, then Bronze, Silver, Gold, Holy, Grandmaster and King.',
+      'Colours, black and white and Japanese are yours. Most themed sets belong to a bot: sign in and beat it to unlock it. The rest come with titles: Blueprint at 1150, then Bronze, Silver, Gold, Holy, Grandmaster and King.',
     sets: {
       classic: 'Classic',
       cream: 'Cream',
@@ -1040,6 +1040,9 @@ export const en = {
       mono: 'Black and white',
       'mono-light': 'Black and white, light',
       'mono-dark': 'Black and white, dark',
+      japanese: 'Japanese',
+      'japanese-light': 'Japanese, light',
+      'japanese-dark': 'Japanese, dark',
       galaxy: 'Galaxy',
       'galaxy-light': 'Galaxy, light',
       'galaxy-dark': 'Galaxy, dark',

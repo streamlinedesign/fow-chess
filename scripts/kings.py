@@ -75,7 +75,7 @@ NAMES = {'E': 'The Eye', 'S': 'Swap king', 'H': 'Pawn king', 'I': 'Infinity king
 
 
 def redraw(svg, side, src, dst, old_shapes, old_lines, new_shapes, new_lines):
-    if svg.count(old_lines) != 1 or old_shapes not in svg:
+    if old_lines not in svg or old_shapes not in svg:
         raise ValueError('template is not drawn from the classic shapes')
     svg = re.sub(r'<metadata>.*?</metadata>', '', svg, flags=re.S)  # provenance of the old file
     svg = svg.replace(old_shapes, new_shapes).replace(old_lines, new_lines)
