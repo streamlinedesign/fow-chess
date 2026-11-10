@@ -7,8 +7,8 @@ all from the classic silhouettes; open `index.html` here for the contact sheet.
 
 | File | King | Drawn as |
 |---|---|---|
-| `E` | The Eye | a lidless eye with a slit pupil under a crown of flame |
-| `S` | Swap king | rook battlements for a crown, swap arrows on the cup |
+| `E` | The Eye | a plain eye with a slit pupil and a small cross on top |
+| `S` | Swap king | rook battlements for a crown |
 | `H` | Pawn king | a pawn with a small cross on its head |
 | `I` | Infinity king | an infinity sign where the cross was |
 

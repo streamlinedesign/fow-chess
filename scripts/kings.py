@@ -5,8 +5,8 @@ Writes design/kings/<set>/<side><kind>.svg and design/kings/index.html (a contac
 Every set draws its king (and pawn) from the classic silhouettes, so a new king is
 that set's file with the classic shapes and detail lines swapped for the new ones.
 
-  E  the Eye: a lidless eye with a slit pupil and a crown of flame, on the king's body
-  S  the swap king: a rook's battlements for a crown and swap arrows on the cup
+  E  the Eye: a plain eye with a slit pupil and a small cross, on the king's body
+  S  the swap king: a rook's battlements for a crown
   H  the pawn king: a pawn with a small cross on its head
   I  the infinity king: an infinity sign where the cross was
 
@@ -35,22 +35,18 @@ P_SHAPES = ('<rect x="27" y="78" width="46" height="10" rx="2.5"/>'
             '<rect x="37" y="52" width="26" height="7" rx="2"/><circle cx="50" cy="38" r="12.5"/>')
 P_LINES = '<path d="M27 78 H73"/><path d="M37 59 H63"/>'
 
-# The Eye: an almond eye sits on the collar where the cup was, flames rise from its lid.
-FLAMES = ('<path d="M30 26 C31 20 29 15 25 11 C32 12 37 15 40 20 C40 14 42 10 45 7 '
-          'C46 10 48 14 50 18 C52 14 54 10 55 7 C58 10 60 14 60 20 C63 15 68 12 75 11 '
-          'C71 15 69 20 70 26 Z"/>')
-ALMOND = '<path d="M19 32 C33 17 67 17 81 32 C67 47 33 47 19 32 Z"/>'
-EYE_SHAPES = BASE + BODY + COLLAR + FLAMES + ALMOND
+# The Eye: a plain almond eye on the collar where the cup was, a small cross on top.
+ALMOND = '<path d="M21 34 C34 21 66 21 79 34 C66 47 34 47 21 34 Z"/>'
+EYE_CROSS = '<path d="M47.75 27 V20.5 H43.5 V16 H47.75 V11.5 H52.25 V16 H56.5 V20.5 H52.25 V27 Z"/>'
+EYE_SHAPES = BASE + BODY + COLLAR + EYE_CROSS + ALMOND
 EYE_LINES = ('<path d="M22 78 H78"/><path d="M35 51 H65"/>'
-             '<path d="M23.5 29 C36 20 64 20 76.5 29"/>'
-             '<circle cx="50" cy="32" r="8"/>'
-             '<path d="M50 25.5 V38.5" stroke-width="4.5"/>')
+             '<circle cx="50" cy="34" r="7.5"/>'
+             '<path d="M50 28.5 V39.5" stroke-width="4.5"/>')
 
-# The swap king: battlements for a crown, and a pair of swap arrows on the cup.
+# The swap king: battlements for a crown.
 BATTLEMENTS = '<path d="M36 28 V13 H42.5 V18 H47 V13 H53 V18 H57.5 V13 H64 V28 Z"/>'
 SWAP_SHAPES = BASE + BODY + COLLAR + CUP + BATTLEMENTS
-SWAP_LINES = ('<path d="M22 78 H78"/><path d="M35 51 H65"/><path d="M33 45 H67"/>'
-              '<path d="M38 33.5 H60 L56 30.5"/><path d="M62 39.5 H40 L44 42.5"/>')
+SWAP_LINES = K_LINES
 
 # The pawn king: the pawn as it is, a small cross on its head.
 SMALL_CROSS = '<path d="M47.5 27 V22 H43 V17.5 H47.5 V12.5 H52.5 V17.5 H57 V22 H52.5 V27 Z"/>'
