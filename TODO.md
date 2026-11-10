@@ -11,6 +11,7 @@
 - Security before the beta, still open (from the review): security headers (CSP, frame-ancestors, nosniff, HSTS) in the Caddy block when `deploy/` is written; never run `make db-seed` against production (known `demo` passwords)
 - Copy the backward pawns removal (`engine/`) into `chess-bots`
 - Copy the jester pawns engine change into `chess-bots` (or extract the engine module first)
+- Pick which proposed king to build first (`design/kings/README.md`: the Eye, swap king, pawn king, infinity king), then move its art into `web/src/pieces/`
 - Review the mod artwork: jester pawn (`wJ`/`bJ`) and jump king (`wX`/`bX`) in `web/src/pieces/`
 - Adopt the Streamline design system (typeface, tokens) in place of Geist/Tailwind defaults
 
