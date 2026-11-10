@@ -4,6 +4,8 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- The grandmaster set is redrawn as Duality: cream and ink, each piece holding part of the other tone along an S curve, with the base and the larger part in its side's own tone so the sides stay easy to tell apart. Its tiles carry the other tone curling in from a corner. `scripts/duality.py` draws it.
+- New Japanese set: washi pieces lined in indigo and black lacquer pieces lined in gold, each with a red seal bearing its name, on tatami and indigo tiles with the same wave pattern. Free for everyone until its unlock is decided. `scripts/japanese.py` draws it.
 - The colour sets keep the game's cream and ink and use the colour only as ink: the light half (White's) is cream pieces drawn in red, blue, green or violet, the dark half (Black's) ink pieces lined in it. Four-player seats use the light half, and the seat colours follow. `scripts/colours.py` draws them from the classic pieces.
 - New Black and white set: plain white and plain black pieces on grey tiles, free for everyone.
 - The mod once called Battleship, then Ambush, is Open Setup (Otvoreni raspored in Croatian). Mods links use `mod=opensetup`; old `ambush` and `battleship` links still work.

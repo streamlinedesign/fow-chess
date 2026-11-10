@@ -1016,9 +1016,9 @@ export const hr: Dict = {
     lockedBeta: 'Za beta igrače',
     lockedRating: (n: string, title: string) => `${title}, ${n}`,
     unlockHint:
-      'Boje i crno-bijele su tvoje. Većina tematskih kompleta pripada nekom botu: pobijedi ga i otključaš figure, polja i avatare. Ostali dolaze s titulama: Nacrt na 1150, zatim Bronca, Srebro, Zlato, Sveti, Velemajstor i Kralj.',
+      'Boje, crno-bijele i japanske su tvoje. Većina tematskih kompleta pripada nekom botu: pobijedi ga i otključaš figure, polja i avatare. Ostali dolaze s titulama: Nacrt na 1150, zatim Bronca, Srebro, Zlato, Sveti, Velemajstor i Kralj.',
     unlockGuest:
-      'Boje i crno-bijele su tvoje. Većina tematskih kompleta pripada nekom botu: prijavi se i pobijedi ga da ga otključaš. Ostali dolaze s titulama: Nacrt na 1150, zatim Bronca, Srebro, Zlato, Sveti, Velemajstor i Kralj.',
+      'Boje, crno-bijele i japanske su tvoje. Većina tematskih kompleta pripada nekom botu: prijavi se i pobijedi ga da ga otključaš. Ostali dolaze s titulama: Nacrt na 1150, zatim Bronca, Srebro, Zlato, Sveti, Velemajstor i Kralj.',
     sets: {
       classic: 'Klasične',
       cream: 'Krem',
@@ -1038,6 +1038,9 @@ export const hr: Dict = {
       mono: 'Crno-bijele',
       'mono-light': 'Crno-bijele, svijetle',
       'mono-dark': 'Crno-bijele, tamne',
+      japanese: 'Japanske',
+      'japanese-light': 'Japanske, svijetle',
+      'japanese-dark': 'Japanske, tamne',
       galaxy: 'Galaksija',
       'galaxy-light': 'Galaksija, svijetle',
       'galaxy-dark': 'Galaksija, tamne',

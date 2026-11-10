@@ -15,7 +15,7 @@ import (
 var setFamilies = []string{
 	"classic",
 	"red", "blue", "green", "violet",
-	"mono", "galaxy", "blueprint", "holy", "ancient", "cyberpunk", "survey",
+	"mono", "japanese", "galaxy", "blueprint", "holy", "ancient", "cyberpunk", "survey",
 	"bronze", "silver", "gold", "grandmaster", "king",
 }
 
@@ -27,7 +27,7 @@ var pieceSets = []string{
 	"red", "blue", "green", "violet",
 	"red-light", "blue-light", "green-light", "violet-light",
 	"red-ink", "blue-ink", "green-ink", "violet-ink",
-	"mono-light", "mono-dark",
+	"mono-light", "mono-dark", "japanese-light", "japanese-dark",
 	"galaxy-light", "galaxy-dark", "blueprint-light", "blueprint-dark",
 	"holy-light", "holy-dark", "ancient-light", "ancient-dark",
 	"cyberpunk-light", "cyberpunk-dark", "survey-light", "survey-dark",
@@ -37,7 +37,7 @@ var pieceSets = []string{
 }
 
 // tileSkins are the board skins for your half: "" is the plain board. Must match TILE_IDS in web/src/sets.ts.
-var tileSkins = []string{"", "mono", "galaxy", "blueprint", "holy", "ancient", "cyberpunk", "survey", "bronze", "silver", "gold", "grandmaster", "king"}
+var tileSkins = []string{"", "mono", "japanese", "galaxy", "blueprint", "holy", "ancient", "cyberpunk", "survey", "bronze", "silver", "gold", "grandmaster", "king"}
 
 // avatarKinds are the pieces an avatar can be: the usual six, the jester pawn and the prince.
 const avatarKinds = "KQRBNPJX"
