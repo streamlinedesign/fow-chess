@@ -4,6 +4,8 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- The colour sets keep the game's cream and ink and use the colour only as ink: the light half (White's) is cream pieces drawn in red, blue, green or violet, the dark half (Black's) ink pieces lined in it. Four-player seats use the light half, and the seat colours follow. `scripts/colours.py` draws them from the classic pieces.
+- New Black and white set: plain white and plain black pieces on grey tiles, free for everyone.
 - The mod once called Battleship, then Ambush, is Open Setup (Otvoreni raspored in Croatian). Mods links use `mod=opensetup`; old `ambush` and `battleship` links still work.
 - Bots take turns to think: at most one fewer than the server's cores search at once (one on a one-core droplet), so a crowd of bot games no longer slows human games. A bot that starts while others are queued thinks less (`bots.ChooseBusy`: Solomon imagines 8 boards instead of 32, and every searching bot looks at a quarter of the positions within 150 ms), which plays about as well as Ramesses II and keeps the queue short. On one core with 1,000 human games and 40 Solomon games, human moves went from about 1 s to 50 ms at the 99th percentile, and the bots still answered in the same time.
 - Croatian is switched off for the beta (`CROATIAN` in `web/src/features.ts`): the language pickers hide, a Croatian browser gets English, and a saved Croatian choice falls back to English. The translation stays in `web/src/i18n/hr.ts`.

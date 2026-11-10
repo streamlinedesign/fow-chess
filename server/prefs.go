@@ -9,13 +9,13 @@ import (
 
 // setFamilies are the sets a player picks for White and for Black. Must match
 // SET_IDS in web/src/sets.ts. "classic" is Eat the King's own: cream for White,
-// ink for Black. A colour is drawn with light lines as White and dark lines as
+// ink for Black. A colour is cream drawn in that colour as White and ink lined in it as
 // Black, and a theme in its light half as White and its dark half as Black, so
 // the two sides never look alike even when both players pick the same set.
 var setFamilies = []string{
 	"classic",
 	"red", "blue", "green", "violet",
-	"galaxy", "blueprint", "holy", "ancient", "cyberpunk", "survey",
+	"mono", "galaxy", "blueprint", "holy", "ancient", "cyberpunk", "survey",
 	"bronze", "silver", "gold", "grandmaster", "king",
 }
 
@@ -27,6 +27,7 @@ var pieceSets = []string{
 	"red", "blue", "green", "violet",
 	"red-light", "blue-light", "green-light", "violet-light",
 	"red-ink", "blue-ink", "green-ink", "violet-ink",
+	"mono-light", "mono-dark",
 	"galaxy-light", "galaxy-dark", "blueprint-light", "blueprint-dark",
 	"holy-light", "holy-dark", "ancient-light", "ancient-dark",
 	"cyberpunk-light", "cyberpunk-dark", "survey-light", "survey-dark",
@@ -36,7 +37,7 @@ var pieceSets = []string{
 }
 
 // tileSkins are the board skins for your half: "" is the plain board. Must match TILE_IDS in web/src/sets.ts.
-var tileSkins = []string{"", "galaxy", "blueprint", "holy", "ancient", "cyberpunk", "survey", "bronze", "silver", "gold", "grandmaster", "king"}
+var tileSkins = []string{"", "mono", "galaxy", "blueprint", "holy", "ancient", "cyberpunk", "survey", "bronze", "silver", "gold", "grandmaster", "king"}
 
 // avatarKinds are the pieces an avatar can be: the usual six, the jester pawn and the prince.
 const avatarKinds = "KQRBNPJX"
