@@ -167,7 +167,7 @@ export const FOG_TINT: Record<string, string> = {
   bronze: '#3a2416',
   silver: '#2a2f37',
   gold: '#3a2c0c',
-  grandmaster: '#1c1c18',
+  grandmaster: '#34342c',
   king: '#2a2210',
 }
 

@@ -4,6 +4,7 @@ All notable changes, newest first. `make release` turns Unreleased into a versio
 
 ## [Unreleased]
 
+- The Duality (grandmaster) tiles are the plain board's squares with their corners cut out in the other tone, so where four squares meet the cuts make a disc of alternating quarters.
 - The grandmaster set is redrawn as Duality: cream and ink, each piece holding part of the other tone along an S curve, with the base and the larger part in its side's own tone so the sides stay easy to tell apart. Its tiles carry the other tone curling in from a corner. `scripts/duality.py` draws it.
 - New Japanese set: washi pieces lined in indigo and black lacquer pieces lined in gold, each with a red seal bearing its name, on tatami and indigo tiles with the same wave pattern. Free for everyone until its unlock is decided. `scripts/japanese.py` draws it.
 - The colour sets keep the game's cream and ink and use the colour only as ink: the light half (White's) is cream pieces drawn in red, blue, green or violet, the dark half (Black's) ink pieces lined in it. Four-player seats use the light half, and the seat colours follow. `scripts/colours.py` draws them from the classic pieces.
