@@ -5,7 +5,8 @@ Writes web/src/pieces/grandmaster/{w,b}<kind>.svg and web/src/tiles/grandmaster-
 Cream and ink, each holding part of the other, like yin and yang: a White piece is
 cream with its outer side in ink, along an S curve; a Black piece is the mirror. So
 the side is never in doubt, the larger part of the piece and its whole base stay in the
-side's own tone, and the outline is the classic one: ink round White, cream round Black.
+side's own tone, and the outline is the classic one: ink round White, cream round Black. The tiles are the
+plain board's, each with its corners cut out in the other tone.
 """
 import os
 import re
@@ -43,12 +44,12 @@ def piece(side, kind):
 
 
 def tile(light):
-    """A square in its own tone, the other tone curling in from a corner, a seed of each in the other."""
-    a, b = ('#fbf5bf', '#1a1a16') if light else ('#2a2a24', '#fbf5bf')
-    op = 0.14 if light else 0.12
+    """The plain board's square with its corners cut out in the other square's tone, so
+    where four squares meet the cuts make a disc of alternating quarters."""
+    a, b = ('#fbf5bf', '#aeab8c') if light else ('#aeab8c', '#fbf5bf')
+    cuts = ''.join(f'<circle cx="{x}" cy="{y}" r="13"/>' for x in (0, 100) for y in (0, 100))
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="{a}"/>'
-            f'<path d="M100 40 C70 40 70 70 40 70 C25 70 15 85 15 100 H100 Z" fill="{b}" opacity="{op}"/>'
-            f'<circle cx="74" cy="76" r="4" fill="{a}" opacity="0.9"/><circle cx="30" cy="34" r="4" fill="{b}" opacity="{op + 0.02}"/></svg>')
+            f'<g fill="{b}">{cuts}</g></svg>')
 
 
 for side in 'wb':
