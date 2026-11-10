@@ -10,7 +10,7 @@ const coloured = import.meta.glob<string>('./pieces/four/*.svg', { eager: true, 
 const lightLines = import.meta.glob<string>('./pieces/light/*.svg', { eager: true, import: 'default' })
 const inkLines = import.meta.glob<string>('./pieces/ink/*.svg', { eager: true, import: 'default' })
 const themed = import.meta.glob<string>(
-  './pieces/{galaxy,blueprint,holy,ancient,cyberpunk,survey,bronze,silver,gold,grandmaster,king}/*.svg',
+  './pieces/{mono,galaxy,blueprint,holy,ancient,cyberpunk,survey,bronze,silver,gold,grandmaster,king}/*.svg',
   { eager: true, import: 'default' },
 )
 const still = import.meta.glob<string>('./pieces/king-still/*.svg', { eager: true, import: 'default' })
@@ -24,6 +24,7 @@ const LETTER: Record<string, string> = { red: 'r', blue: 'b', green: 'g', violet
 
 /** The themed sets: each has a light side for White and a dark side for Black, and tiles to match. */
 export const THEMES = [
+  'mono',
   'galaxy',
   'blueprint',
   'holy',
@@ -102,7 +103,7 @@ const byId = new Map(SETS.map((s) => [s.id, s]))
 
 /**
  * The one-colour set a family is drawn in for one side: classic is cream for
- * White and ink for Black, a colour its light or dark lines, a theme its light
+ * White and ink for Black, a colour cream drawn in it or ink lined in it, a theme its light
  * or dark half. So the sides never look alike, even in the same family.
  */
 export function concrete(id: string, color: Color) {
@@ -154,6 +155,7 @@ export function avatarImg(code: string | undefined) {
  */
 export const FOG_TINT: Record<string, string> = {
   '': '#34342c',
+  mono: '#2a2a2a',
   galaxy: '#231b52',
   blueprint: '#112a58',
   holy: '#4a3c1c',

@@ -10,7 +10,7 @@ export const SEATS = ['r', 'b', 'g', 'v'] as const
 export type Seat = (typeof SEATS)[number]
 
 /** The piece colours, for swatches. Must match the fills in pieces/four. */
-export const SEAT_COLORS: Record<Seat, string> = { r: '#b65a40', b: '#4e6a9a', g: '#4e7f63', v: '#835482' }
+export const SEAT_COLORS: Record<Seat, string> = { r: '#b8402c', b: '#2c56a0', g: '#2e6e48', v: '#6e3a8e' }
 
 /**
  * The board's shape: the usual cross, 14 by 14 with the corners cut off and
